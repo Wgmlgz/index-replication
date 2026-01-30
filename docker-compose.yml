@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    ports:
+      - "30000:30000"
+    environment:
+      - PORT=30000
