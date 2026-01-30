@@ -1,13 +1,75 @@
 version: "3.9"
+
 services:
-  api:
-    build: .
+  traefik:
+    image: traefik:v2.11
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
     ports:
-      - "30000:30000"
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=app
+      - POSTGRES_DB=app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
     environment:
       - PORT=30000
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:30000/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      - DATABASE_URL=postgres://app:app@postgres:5432/app?sslmode=disable
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_TTL=15m
+      - REFRESH_TOKEN_TTL=168h
+      - COOKIE_SECURE=false
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
+      - CORS_ORIGINS=http://${WEB_HOST}
+      - RUN_MIGRATIONS=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`${API_HOST}`)"
+      - "traefik.http.routers.api.entrypoints=web"
+
+  web:
+    build:
+      context: ./web
+      args:
+        - NEXT_PUBLIC_API_BASE_URL=http://${API_HOST}
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://${API_HOST}
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
+      - "traefik.http.routers.web.entrypoints=web"
+
+  adminer:
+    image: adminer:4
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`${ADMINER_HOST}`)"
+      - "traefik.http.routers.adminer.entrypoints=web"
+
+volumes:
+  pgdata:
