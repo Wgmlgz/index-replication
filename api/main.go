@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +33,12 @@ func main() {
 
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET is required")
+		generated, err := generateJWTSecret()
+		if err != nil {
+			log.Fatalf("failed to generate JWT_SECRET: %v", err)
+		}
+		jwtSecret = generated
+		log.Print("JWT_SECRET was not set; generated an ephemeral secret for this run")
 	}
 
 	accessTTL := parseDuration("ACCESS_TOKEN_TTL", "15m")
@@ -143,4 +150,12 @@ func parseCSV(value string) []string {
 		}
 	}
 	return out
+}
+
+func generateJWTSecret() (string, error) {
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(secret), nil
 }

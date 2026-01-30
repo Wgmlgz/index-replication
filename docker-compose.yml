@@ -44,22 +44,24 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`${API_HOST}`)"
+      - "traefik.http.routers.api.rule=Host(`${WEB_HOST}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.priority=100"
 
   web:
     build:
       context: ./web
       args:
-        - NEXT_PUBLIC_API_BASE_URL=http://${API_HOST}
+        - NEXT_PUBLIC_API_BASE_URL=http://${WEB_HOST}
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://${API_HOST}
+      - NEXT_PUBLIC_API_BASE_URL=http://${WEB_HOST}
     depends_on:
       - api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
       - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.routers.web.priority=1"
 
   adminer:
     image: adminer:4
@@ -68,8 +70,11 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.adminer.rule=Host(`${ADMINER_HOST}`)"
+      - "traefik.http.routers.adminer.rule=Host(`${WEB_HOST}`) && PathPrefix(`/adminer`)"
       - "traefik.http.routers.adminer.entrypoints=web"
+      - "traefik.http.routers.adminer.priority=90"
+      - "traefik.http.routers.adminer.middlewares=adminer-strip"
+      - "traefik.http.middlewares.adminer-strip.stripprefix.prefixes=/adminer"
 
 volumes:
   pgdata:
