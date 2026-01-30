@@ -6,3 +6,8 @@ services:
       - "30000:30000"
     environment:
       - PORT=30000
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:30000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3

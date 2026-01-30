@@ -7,6 +7,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/app ./
 
 FROM alpine:3.19
 WORKDIR /app
+RUN apk add --no-cache curl
 COPY --from=build /out/app ./app
 EXPOSE 30000
 ENTRYPOINT ["/app/app"]
