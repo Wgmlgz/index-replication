@@ -9,29 +9,29 @@ tasks:
   install:
     desc: Install dependencies
     cmds:
-      - npm ci
+      - bun install
 
   dev:
     desc: Run the app in dev mode
     cmds:
-      - npm run dev
+      - bun run dev
 
   build:
     desc: Build the  app
     cmds:
-      - npm run build
+      - bun run build
 
   start:
     desc: Serve the production build
     cmds:
-      - npm run start
+      - bun run start
 
   lint:
     desc: Lint the app
     cmds:
-      - npm run lint
+      - bun run lint
 
   api-generate:
     desc: Regenerate the API client from OpenAPI
     cmds:
-      - npm run api-generate
+      - bun run api-generate
