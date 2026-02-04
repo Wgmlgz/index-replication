@@ -10,6 +10,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func NewTestDB(t *testing.T) (*gorm.DB, func()) {
@@ -22,14 +23,18 @@ func NewTestDB(t *testing.T) (*gorm.DB, func()) {
 	if err != nil {
 		t.Fatalf("failed to open sqlite db: %v", err)
 	}
-	sqlDB.SetMaxOpenConns(1)
+	// Allow multiple connections to avoid deadlocks in adapters that open transactions
+	// while issuing additional Exec calls (e.g., Casbin SavePolicy).
+	sqlDB.SetMaxOpenConns(5)
 
 	if err := migrations.Up(sqlDB, migrations.DialectSQLite, ""); err != nil {
 		_ = sqlDB.Close()
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
-	gormDB, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
+	gormDB, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		_ = sqlDB.Close()
 		t.Fatalf("failed to open gorm db: %v", err)

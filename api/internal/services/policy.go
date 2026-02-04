@@ -44,7 +44,6 @@ func (c *CasbinService) CheckPermission(
 		return true
 	}
 	ok, _ := c.enforcer.Enforce(role, permission.Obj, permission.Act)
-	log.Println("can= ", ok)
 	return ok
 }
 

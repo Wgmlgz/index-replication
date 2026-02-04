@@ -8,7 +8,6 @@ vars:
   MIGRATIONS_DIR: ./migrations
   DATABASE_URL: '{{.DATABASE_URL | default "postgres://app:app@localhost:5432/app?sslmode=disable"}}'
 
-
 tasks:
   default:
     desc: List available tasks
@@ -38,7 +37,7 @@ tasks:
   test:
     desc: Run all tests
     cmds:
-      - go test ./...
+      - go run github.com/kyoh86/richgo@latest test --timeout 30s ./tests  -count=1 -v -timeout 30s
 
   test:repo:
     desc: Run repository tests
