@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { usersApi as api, authApi } from '@/lib/api';
 import { ModelsPermission } from '@/api-client';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 type RoleKey =
   | string
@@ -47,21 +47,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [permissions, setPermissions] = useState<ModelsPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const refreshUser = async () => {
     setLoading(true);
     try {
       const resp = await api.meGet();
-      console.log('user', user)
+      console.log('user', user);
       setUser(resp.data.user);
       setPermissions(resp.data.permissions);
     } catch (e) {
-      console.log(e)
+      console.log(e);
       setUser(null);
       setPermissions([]);
       if (axios.isAxiosError(e)) {
-        if (e.status === axios.HttpStatusCode.Unauthorized) {
-          router.push('/login');
+        if (
+          e.status === axios.HttpStatusCode.Unauthorized &&
+          !pathname.startsWith('/login')
+        ) {
+          router.push('/login', {});
         }
       }
     } finally {
@@ -75,7 +79,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(null);
       setPermissions([]);
     } catch (e) {
-      console.warn('logout error', e)
+      console.warn('logout error', e);
     }
   };
 
@@ -112,8 +116,7 @@ export type PermissionStr =
   | 'settings:view'
   | 'system_metadata:view'
   | 'self:view'
-  | 'self:reset_password'
-  ;
+  | 'self:reset_password';
 
 export type PermissionChecker = (permissionStr: PermissionStr) => boolean;
 export type UseUserRet = UserContextValue & {
