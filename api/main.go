@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"server/internal/config"
+	"server/internal/migrations"
 	"server/internal/repository"
 	"server/internal/routes"
 	"server/internal/services"
@@ -37,6 +38,16 @@ func main() {
 	repoRegistry := repository.NewRepositoryRegistry(db)
 
 	auditService := services.NewAuditService(db)
+
+	if cfg.RunMigrations {
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Fatal("Failed to get sql.DB:", err)
+		}
+		if err := migrations.Up(sqlDB, migrations.DialectPostgres, cfg.MigrationsDir); err != nil {
+			log.Fatal("Failed to run migrations:", err)
+		}
+	}
 
 	// Auto migrate the schema (commented out to avoid foreign key constraint issues)
 	// if err := db.AutoMigrate(&models.User{}); err != nil {

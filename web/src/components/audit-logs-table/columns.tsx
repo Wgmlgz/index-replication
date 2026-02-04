@@ -8,7 +8,6 @@ import { Eye } from "lucide-react"
 import { Time } from "../ui/time"
 import { actionColors, actionLabels, entityTypeLabels, extractRectsFromLog } from "@/lib/logs"
 import { ModelsAuditLogResponse } from "@/api-client"
-import { ImagePopup } from "./image-popup"
 
 // This type is used to define the shape of our data.
 export type AuditLog = {
@@ -107,9 +106,6 @@ export const columns: ColumnDef<AuditLog>[] = [
           <Eye className="h-4 w-4" />
           <span className="sr-only">Просмотр деталей</span>
         </Button>
-        {row.original.log_image && (
-          <ImagePopup url={row.original.log_image} results={extractRectsFromLog(row.original)}></ImagePopup>
-        )}
       </div>
     ),
     enableSorting: false,

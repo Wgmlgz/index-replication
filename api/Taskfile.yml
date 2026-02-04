@@ -1,0 +1,71 @@
+version: '3'
+
+dotenv:
+  - .env
+
+vars:
+  GOOSE_VERSION: v3.26.0
+  MIGRATIONS_DIR: ./migrations
+  DATABASE_URL: '{{.DATABASE_URL | default "postgres://app:app@localhost:5432/app?sslmode=disable"}}'
+
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  deps:
+    desc: Download Go module dependencies
+    cmds:
+      - go mod download
+
+  tidy:
+    desc: Tidy Go module dependencies
+    cmds:
+      - go mod tidy
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - find . -name '*.go' -type f -print0 | xargs -0 gofmt -w
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  test:repo:
+    desc: Run repository tests
+    cmds:
+      - go test ./internal/repository -run Test
+
+  run:
+    desc: Run the API locally
+    cmds:
+      - go run ./main.go
+
+  migrate:status:
+    desc: Show migration status (Postgres)
+    cmds:
+      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir {{.MIGRATIONS_DIR}} postgres "{{.DATABASE_URL}}" status
+
+  migrate:up:
+    desc: Apply migrations (Postgres)
+    cmds:
+      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir {{.MIGRATIONS_DIR}} postgres "{{.DATABASE_URL}}" up
+
+  migrate:down:
+    desc: Roll back one migration (Postgres)
+    cmds:
+      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir {{.MIGRATIONS_DIR}} postgres "{{.DATABASE_URL}}" down 1
+
+  openapi:gen:
+    desc: Generate OpenAPI docs (swag)
+    cmds:
+      - go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g ./main.go -o ./docs

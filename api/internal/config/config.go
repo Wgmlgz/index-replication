@@ -11,7 +11,7 @@ import (
 )
 
 type Config struct {
-	DatabaseURL  string
+	DatabaseURL   string
 	DBUser        string
 	DBPassword    string
 	DBHost        string
@@ -20,6 +20,8 @@ type Config struct {
 	ServerPort    string
 	SessionSecret string
 	BotsToken     string
+	RunMigrations bool
+	MigrationsDir string
 }
 
 func LoadConfig() *Config {
@@ -27,15 +29,17 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", ""),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBName:     getEnv("DB_NAME", "postgres"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", ""),
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		DBName:      getEnv("DB_NAME", "postgres"),
 
 		ServerPort:    getEnv("SERVER_PORT", "8080"),
 		SessionSecret: getEnv("SESSION_SECRET", "dev_secret"),
 		BotsToken:     getEnv("BOTS_TOKEN", "secret_token"),
+		RunMigrations: getEnvBool("RUN_MIGRATIONS", true),
+		MigrationsDir: getEnv("MIGRATIONS_DIR", ""),
 	}
 }
 
@@ -71,4 +75,20 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	value, exists := os.LookupEnv(key)
+	if !exists || value == "" {
+		return defaultValue
+	}
+
+	switch value {
+	case "1", "true", "TRUE", "True", "yes", "YES", "Yes", "on", "ON", "On":
+		return true
+	case "0", "false", "FALSE", "False", "no", "NO", "No", "off", "OFF", "Off":
+		return false
+	default:
+		return defaultValue
+	}
 }

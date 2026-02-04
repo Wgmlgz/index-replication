@@ -14,7 +14,6 @@ import { Time } from "../ui/time";
 import { AuditLog } from "./columns";
 import { actionColors, actionLabels, extractRectsFromLog } from "@/lib/logs";
 import { ModelsAuditLogResponse } from '@/api-client';
-import { ImagePopup } from './image-popup';
 
 interface DetailsPopupProps {
   auditLog: ModelsAuditLogResponse | null
@@ -111,14 +110,7 @@ export function DetailsPopup({ auditLog, open, onOpenChange }: DetailsPopupProps
                   </div>
                 </div>
               )}
-              {auditLog.log_image && (
-                <div>
-                  <label className="text-sm font-medium">Изображение</label>
-                  <div className="mt-1">
-                    <ImagePopup url={auditLog.log_image} results={extractRectsFromLog(auditLog)} />
-                  </div>
-                </div>
-              )}
+              
               <div>
                 <label className="text-sm font-medium">
                   Время

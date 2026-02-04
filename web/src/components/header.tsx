@@ -26,7 +26,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { DashboardCards } from '@/lib/menu';
-import RecognizerStatus from './recognizer-status';
 
 // const menuItems: { icon: any, href: string, label: string, permission: null | PermissionStr }[] = [
 //   { icon: Home, href: '/dashboard', label: 'Главная', permission: null }, // always visible
@@ -61,7 +60,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuItem>
                 );
               })}
-              <RecognizerStatus />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -134,9 +132,6 @@ export default function UserStuff({ }) {
             {!isMobile && <Package />}
             Retail
           </a>
-          {!isMobile &&
-            <RecognizerStatus />
-          }
 
           {!isMobile &&
             <NavigationMenu viewport={false} className=''>

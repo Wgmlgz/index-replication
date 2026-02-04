@@ -9,6 +9,7 @@ FROM alpine:latest
 WORKDIR /root/
 COPY --from=builder /app/app .
 COPY --from=builder /app/internal/config ./internal/config
+COPY --from=builder /app/migrations ./migrations
 COPY wait-for-db.sh ./wait-for-db.sh
 RUN chmod +x ./wait-for-db.sh
 # ENV GIN_MODE=release

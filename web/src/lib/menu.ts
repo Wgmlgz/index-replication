@@ -12,13 +12,6 @@ export type DashboardCard = {
 
 export const DashboardCards: DashboardCard[] = [
   {
-    title: 'Распознавание',
-    icon: Camera,
-    buttonText: 'Выбрать фото',
-    href: '/',
-    permission: null, // Always visible
-  },
-  {
     title: 'Журнал событий',
     icon: History,
     buttonText: 'Просмотреть журнал',
