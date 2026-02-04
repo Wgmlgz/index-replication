@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  docker:
+    desc: Reboots docker  
+    cmds:
+      - docker compose up --build --force-recreate
