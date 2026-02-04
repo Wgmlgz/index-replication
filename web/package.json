@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "serve out",
+    "start": "npx serve out",
     "lint": "eslint .",
     "tauri": "tauri",
     "android-dev": "tauri android dev",
     "android-build": "tauri android build",
-    "api-generate": "openapi-generator-cli generate -i ../server/docs/swagger.json -g typescript-axios -o ./src/api-client"
+    "api-generate": "npx @openapitools/openapi-generator-cli generate -i ../server/docs/swagger.json -g typescript-axios -o ./src/api-client"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

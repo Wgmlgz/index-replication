@@ -4,7 +4,7 @@ Next.js frontend for the index replication project. The UI includes auth, user m
 
 ## Requirements
 
-- Bun 1.x
+- Node.js 18+ and npm
 - Optional: Taskfile runner (`task`) if you want the Taskfile shortcuts
 
 ## Quick Start
@@ -13,13 +13,13 @@ Next.js frontend for the index replication project. The UI includes auth, user m
 
 ```bash
 cd web
-bun install
+npm ci
 ```
 
 2. Start the dev server:
 
 ```bash
-bun run dev
+npm run dev
 ```
 
 3. Open the app:
