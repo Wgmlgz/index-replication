@@ -1,0 +1,87 @@
+package repository
+
+import (
+	"server/internal/models"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+type AuditLogRepository struct {
+	db *gorm.DB
+}
+
+func NewAuditLogRepository(db *gorm.DB) *AuditLogRepository {
+	return &AuditLogRepository{db: db}
+}
+
+func (r *AuditLogRepository) ListAuditLogs(
+	page, pageSize int,
+	search, action, entityType, entityId, performedBy string,
+	start, end *time.Time,
+) ([]models.AuditLog, int64, error) {
+	dbQuery := r.db.Model(&models.AuditLog{}).
+		Preload("PerformedByUser")
+
+	// Apply filters
+	if search != "" {
+		like := "%" + search + "%"
+		dbQuery = dbQuery.Where(
+			"CAST(id AS CHAR) LIKE ? OR action LIKE ? OR entity_type LIKE ? OR details LIKE ?",
+			like, like, like, like,
+		)
+	}
+	if action != "" {
+		dbQuery = dbQuery.Where("action = ?", action)
+	}
+	if entityType != "" {
+		dbQuery = dbQuery.Where("entity_type = ?", entityType)
+	}
+	if entityId != "" {
+		dbQuery = dbQuery.Where("entity_id = ?", entityId)
+	}
+	if performedBy != "" {
+		dbQuery = dbQuery.Where("performed_by = ?", performedBy)
+	}
+	if start != nil {
+		dbQuery = dbQuery.Where("timestamp >= ?", *start)
+	}
+	if end != nil {
+		dbQuery = dbQuery.Where("timestamp < ?", *end)
+	}
+	total := int64(0)
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// sort by timestamp then id, if multiple logs happened in 1 transaction (equal timestamp, but id's still in order)
+	dbQuery = dbQuery.Order("timestamp DESC, id DESC")
+	dbQuery = dbQuery.Offset((page - 1) * pageSize).Limit(pageSize)
+
+	var auditLogs []models.AuditLog
+	if err := dbQuery.Find(&auditLogs).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return auditLogs, total, nil
+}
+
+func (r *AuditLogRepository) GetAuditLogByID(id string) (*models.AuditLog, error) {
+	var log models.AuditLog
+	if err := r.db.Preload("PerformedByUser").First(&log, id).Error; err != nil {
+		return nil, err
+	}
+	return &log, nil
+}
+
+func (r *AuditLogRepository) GetAuditLogActions() ([]string, error) {
+	var actions []string
+	err := r.db.Model(&models.AuditLog{}).Distinct().Pluck("action", &actions).Error
+	return actions, err
+}
+
+func (r *AuditLogRepository) GetAuditLogEntityTypes() ([]string, error) {
+	var entityTypes []string
+	err := r.db.Model(&models.AuditLog{}).Distinct().Pluck("entity_type", &entityTypes).Error
+	return entityTypes, err
+}

@@ -1,0 +1,72 @@
+package routes
+
+import (
+	"server/internal/config"
+	h "server/internal/handlers"
+	m "server/internal/middleware"
+	"server/internal/repository"
+	"server/internal/services"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+
+	gormsessions "github.com/gin-contrib/sessions/gorm"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.RepositoryRegistry, auditService *services.AuditService) *gin.Engine {
+	router := gin.Default()
+
+	// CORS configuration
+	router.Use(cors.New(cors.Config{
+		AllowOriginFunc: func(origin string) bool {
+			return true // Allow ALL origins
+		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * 60 * 60, // 12 hours
+	}))
+
+	// Auth routes
+	cs := services.NewCasbinService(db)
+	cs.InitializePolicies()
+	authHandler := h.NewAuthHandler(db, cfg, repoRegistry.UserRepo, auditService, cs)
+	store := gormsessions.NewStore(db, true, []byte(cfg.SessionSecret))
+	router.Use(sessions.Sessions("auth_session", store))
+
+	// Create API group
+	api := router.Group("/api")
+
+	api.POST("/login", authHandler.Login)
+
+	userHandler := h.NewUserHandler(cfg, repoRegistry.UserRepo, cs, auditService)
+	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
+
+	// Protected user routes
+	a := api.Group("/")
+	a.Use(m.SessionAuthMiddleware())
+	{
+		a.POST("/logout", authHandler.Logout)
+
+		// User management
+		a.GET("/me", m.RPM(cs, config.SelfView), userHandler.GetCurrentUser)
+		a.PUT("/me/password", m.RPM(cs, config.SelfUpdatePassword), authHandler.ChangePassword)
+
+		a.GET("/users", m.RPM(cs, config.UsersView), userHandler.ListUsers)
+		a.POST("/users", m.RPM(cs, config.UsersCreate), userHandler.CreateUser)
+		a.PUT("/users/:id", m.RPM(cs, config.UsersEdit), userHandler.UpdateUser)
+		a.GET("/users/:id", m.RPM(cs, config.UsersView), userHandler.GetUser)
+		a.POST("/users/:id/block", m.RPM(cs, config.UsersBlock), userHandler.BlockUser)
+		a.POST("/users/:id/unblock", m.RPM(cs, config.UsersBlock), userHandler.UnblockUser)
+		a.DELETE("/users/:id", m.RPM(cs, config.UsersDelete), userHandler.DeleteUser)
+
+		// Audit log management
+		a.GET("/audit-logs", m.RPM(cs, config.AuditLogsView), auditHandler.ListAuditLogs)
+		a.GET("/audit-logs/actions", m.RPM(cs, config.AuditLogsView), auditHandler.GetAuditLogActions)
+		a.GET("/audit-logs/:id", m.RPM(cs, config.AuditLogsView), auditHandler.GetAuditLog)
+	}
+	return router
+}
