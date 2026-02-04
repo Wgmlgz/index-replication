@@ -1,4 +1,4 @@
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 ENV NEXTJS_IGNORE_BUILD_ERRORS=1
 ENV NEXT_DISABLE_LINTING=1
@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine as runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/.next ./.next
