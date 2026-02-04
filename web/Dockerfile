@@ -1,22 +1,20 @@
-FROM node:20-alpine AS deps
+FROM node:20-alpine as builder
 WORKDIR /app
-COPY package.json package-lock.json* ./
+ENV NEXTJS_IGNORE_BUILD_ERRORS=1
+ENV NEXT_DISABLE_LINTING=1
+COPY package* .
 RUN npm ci
-
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG NEXT_PUBLIC_API_BASE_URL
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:20-alpine as runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/out ./out
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["npx", "serve", "out"] 

@@ -41,9 +41,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
 }
 
 :root {
@@ -122,4 +119,57 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+
+.leaflet-control-attribution {
+  display: none;
+}
+
+
+div[data-testid="joystick-base"] {
+  /* background-color: #00000000 !important;
+  
+  border-style: var(--tw-border-style);
+  border-width: 2px;
+  border-color: var(--color-black)  */
+
+  @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive;
+  @apply border bg-background!   shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50;
+}
+
+div[data-testid="joystick-base"] > button {
+  @apply whitespace-nowrap rounded-md text-sm font-medium  disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive;
+  @apply bg-primary! text-primary-foreground shadow-xs hover:bg-primary/90;
+}
+
+div[role="dialog"] {
+  z-index: 1000000;
+}
+div[role="alertdialog"] {
+  z-index: 1000001;
+}
+
+div[data-slot="alert-dialog-overlay"] {
+  z-index: 1000001;
+}
+div[data-radix-popper-content-wrapper] {
+  z-index: 1000000 !important;
+}
+
+div[data-slot="navigation-menu-content"] {
+  z-index: 1000000 !important;
+}
+
+/* * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+} */
+
+#app {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
