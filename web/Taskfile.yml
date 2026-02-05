@@ -31,7 +31,7 @@ tasks:
     cmds:
       - npm run lint
 
-  api-generate:
+  api:gen:
     desc: Regenerate the API client from OpenAPI
     cmds:
-      - npm run api-generate
+      - npm run api:gen

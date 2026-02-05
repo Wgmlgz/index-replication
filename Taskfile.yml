@@ -1,5 +1,5 @@
 version: '3'
-
+output: prefixed
 tasks:
   default:
     cmds:
@@ -10,3 +10,43 @@ tasks:
     desc: Reboots docker  
     cmds:
       - docker compose up --build --force-recreate
+
+  dev:
+    desc: Run API and web in dev mode
+    deps:
+      - dev:api
+      - dev:web
+
+  lint:
+    desc: Lint API and web
+    deps:
+      - lint:api
+      - lint:web
+
+  api:gen:
+    desc: Generate OpenAPI docs and regenerate the web client
+    cmds:
+      - task -d api api:gen
+      - task -d web api:gen
+
+  deps:
+    desc: Install API and web dependencies
+    cmds:
+      - task -d api deps
+      - task -d web install
+
+  dev:api:
+    cmds:
+      - task -d api dev
+
+  dev:web:
+    cmds:
+      - task -d web dev
+
+  lint:api:
+    cmds:
+      - task -d api lint
+
+  lint:web:
+    cmds:
+      - task -d web lint

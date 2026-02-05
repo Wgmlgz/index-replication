@@ -28,7 +28,7 @@ Common tasks:
 - `task dev`
 - `task build`
 - `task lint`
-- `task api-generate`
+- `task api:gen`
 
 ## Architecture & Principles
 
@@ -64,7 +64,7 @@ The API client is generated from the OpenAPI spec. Regenerate it with:
 
 ```bash
 cd web
-task api-generate
+task api:gen
 ```
 
 If you update API endpoints, regenerate the client and verify type usage in the affected pages/components.

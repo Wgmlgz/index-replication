@@ -9,6 +9,7 @@ This repo contains a Go REST API and a Next.js web app. New contributors should 
 ## Tech Overview
 
 Backend:
+
 - Go 1.23, Gin, GORM
 - Postgres as primary DB
 - Session-based auth (cookie) with `gin-contrib/sessions` + GORM store
@@ -17,6 +18,7 @@ Backend:
 - OpenAPI/Swagger via swaggo (used to generate frontend API client)
 
 Frontend:
+
 - Next.js App Router (React 19)
 - Tailwind CSS v4 + shadcn/ui (Radix UI + class-variance-authority)
 - Axios for API calls (with Tauri adapter support)
@@ -42,7 +44,7 @@ task docker
 2. Or run services individually with their Taskfiles:
 
 ```bash
-cd api && task run
+cd api && task dev
 cd web && task dev
 ```
 
@@ -65,14 +67,14 @@ The frontend API client is generated from the backend OpenAPI spec.
 
 ```bash
 cd api
-task openapi:gen
+task api:gen
 ```
 
 2. Regenerate the frontend client:
 
 ```bash
 cd web
-task api-generate
+task api:gen
 ```
 
 The spec is output to `api/docs/swagger.json`. The generation script currently points to `../server/docs/swagger.json` in `web/package.json`. If your backend folder is `api/`, update that script path or add a symlink.

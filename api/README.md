@@ -24,10 +24,13 @@ task --list
 
 Common tasks:
 
-- `task run`
+- `task dev`
+- `task lint`
 - `task test`
 - `task migrate:up`
-- `task openapi:gen`
+- `task api:gen`
+
+Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading.
 
 ## Architecture & Principles
 
@@ -106,7 +109,7 @@ Swagger annotations live in handlers. Generate docs with:
 
 ```bash
 cd api
-task openapi:gen
+task api:gen
 ```
 
 Generated files are written to `api/docs/`. The frontend API client consumes this spec.

@@ -44,10 +44,15 @@ tasks:
     cmds:
       - go test ./internal/repository -run Test
 
-  run:
+  lint:
+    desc: Lint the API
+    cmds:
+      - go vet ./...
+
+  dev:
     desc: Run the API locally
     cmds:
-      - go run ./main.go
+      - go run github.com/air-verse/air@latest
 
   migrate:status:
     desc: Show migration status (Postgres)
@@ -64,7 +69,7 @@ tasks:
     cmds:
       - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir {{.MIGRATIONS_DIR}} postgres "{{.DATABASE_URL}}" down 1
 
-  openapi:gen:
+  api:gen:
     desc: Generate OpenAPI docs (swag)
     cmds:
       - go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g ./main.go -o ./docs

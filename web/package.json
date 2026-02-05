@@ -10,7 +10,7 @@
     "tauri": "tauri",
     "android-dev": "tauri android dev",
     "android-build": "tauri android build",
-    "api-generate": "npx @openapitools/openapi-generator-cli generate -i ../server/docs/swagger.json -g typescript-axios -o ./src/api-client"
+    "api:gen": "npx @openapitools/openapi-generator-cli generate -i ../server/docs/swagger.json -g typescript-axios -o ./src/api-client"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
