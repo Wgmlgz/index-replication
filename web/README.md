@@ -1,37 +1,70 @@
-# Web App
+# Web App (Frontend)
 
 Next.js frontend for the index replication project. The UI includes auth, user management, audit logs, and an image recognition flow.
 
-## Requirements
+## Tech & Libraries
 
-- Node.js 18+ and npm
-- Optional: Taskfile runner (`task`) if you want the Taskfile shortcuts
+- Next.js App Router + React 19
+- Tailwind CSS v4 with design tokens in `web/src/app/globals.css`
+- shadcn/ui components built on Radix UI and class-variance-authority
+- Axios for API calls (with Tauri adapter support)
+- React Hook Form + Zod for forms and validation
+- TanStack Table for data grids
+- Next Themes for theme switching
+- OpenAPI Generator `typescript-axios` client in `web/src/api-client`
 
-## Quick Start
+## Preferred Commands
 
-1. Install dependencies:
+Use the Taskfile for all common operations:
 
 ```bash
 cd web
-npm ci
+task --list
 ```
 
-2. Start the dev server:
+Common tasks:
 
-```bash
-npm run dev
-```
+- `task install`
+- `task dev`
+- `task build`
+- `task lint`
+- `task api-generate`
 
-3. Open the app:
+## Architecture & Principles
 
-```text
-http://localhost:3000
-```
+- Routing is App Router under `web/src/app/`.
+- UI primitives live in `web/src/components/ui/` and follow shadcn/ui patterns.
+- Shared UI and features live in `web/src/components/`.
+- API access is centralized in `web/src/lib/api.ts` using a generated client.
+- Generated code in `web/src/api-client/` should not be edited manually.
+- Forms use React Hook Form with Zod schemas for validation.
+- Tailwind tokens and global styling are in `web/src/app/globals.css`.
+- Tauri support is wired through Axios adapters in `web/src/lib/api.ts`.
+
+## Entry Points
+
+- App Router root: `web/src/app/`
+- Global layout: `web/src/app/layout.tsx`
+- Home page: `web/src/app/page.tsx`
+
+Feature routes (App Router):
+- `web/src/app/login/page.tsx`
+- `web/src/app/users/page.tsx`
+- `web/src/app/audit-logs/page.tsx`
+- `web/src/app/settings/page.tsx`
+- `web/src/app/dashboard/page.tsx`
 
 ## API Configuration
 
-By default the frontend talks to the API at `http://localhost:8080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering.
+By default the frontend talks to the API at `http://localhost:8080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering. `web/src/lib/api.ts` also supports a local storage override.
 
-## Taskfile
+## API Client Generation
 
-A Taskfile is available in `web/Taskfile.yml`. If you have `task` installed, you can use it.
+The API client is generated from the OpenAPI spec. Regenerate it with:
+
+```bash
+cd web
+task api-generate
+```
+
+If you update API endpoints, regenerate the client and verify type usage in the affected pages/components.
