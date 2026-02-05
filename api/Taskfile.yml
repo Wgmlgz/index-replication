@@ -51,6 +51,8 @@ tasks:
 
   dev:
     desc: Run the API locally
+    env:
+      GIN_LOG_FORMAT: short
     cmds:
       - go run github.com/air-verse/air@latest
 

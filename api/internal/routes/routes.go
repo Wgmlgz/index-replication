@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"server/internal/config"
 	h "server/internal/handlers"
 	m "server/internal/middleware"
@@ -16,7 +17,13 @@ import (
 )
 
 func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.RepositoryRegistry, auditService *services.AuditService) *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
+	if cfg.GinLogFormat == "short" {
+		router.Use(gin.LoggerWithFormatter(shortLogFormatter))
+	} else {
+		router.Use(gin.Logger())
+	}
+	router.Use(gin.Recovery())
 
 	// CORS configuration
 	router.Use(cors.New(cors.Config{
@@ -69,4 +76,12 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.GET("/audit-logs/:id", m.RPM(cs, config.AuditLogsView), auditHandler.GetAuditLog)
 	}
 	return router
+}
+
+func shortLogFormatter(param gin.LogFormatterParams) string {
+	path := param.Path
+	if param.Request != nil && param.Request.URL != nil && param.Request.URL.RawQuery != "" {
+		path = fmt.Sprintf("%s?%s", path, param.Request.URL.RawQuery)
+	}
+	return fmt.Sprintf("[GIN] %3d | %s %s\n", param.StatusCode, param.Method, path)
 }

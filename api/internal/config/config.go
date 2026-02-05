@@ -22,6 +22,7 @@ type Config struct {
 	BotsToken     string
 	RunMigrations bool
 	MigrationsDir string
+	GinLogFormat  string
 }
 
 func LoadConfig() *Config {
@@ -40,6 +41,7 @@ func LoadConfig() *Config {
 		BotsToken:     getEnv("BOTS_TOKEN", "secret_token"),
 		RunMigrations: getEnvBool("RUN_MIGRATIONS", true),
 		MigrationsDir: getEnv("MIGRATIONS_DIR", ""),
+		GinLogFormat:  getEnv("GIN_LOG_FORMAT", ""),
 	}
 }
 
