@@ -27,6 +27,7 @@ type MoexSecuritiesResponse = {
 
 type MoexHistoryResponse = {
   history: MoexTable;
+  'history.cursor'?: MoexTable;
 };
 
 type RequestParams = Record<
@@ -118,24 +119,56 @@ export class MoexClient {
     secid: string,
     options?: { from?: string; till?: string; signal?: AbortSignal }
   ): Promise<MoexIndexHistoryPoint[]> {
-    const data = await this.request<MoexHistoryResponse>(
-      `history/engines/stock/markets/index/securities/${encodeURIComponent(secid)}.json`,
-      {
-        'iss.meta': 'off',
-        from: options?.from,
-        till: options?.till,
-        'history.columns': 'TRADEDATE,CLOSE,OPEN,HIGH,LOW',
-      },
-      options?.signal
-    );
+    const pageSize = 100;
+    let start = 0;
+    let total: number | null = null;
+    let iterations = 0;
+    const results: MoexIndexHistoryPoint[] = [];
 
-    return tableToObjects(data.history).map((row) => ({
-      tradeDate: String(row.TRADEDATE ?? ''),
-      close: toNumber(row.CLOSE),
-      open: toNumber(row.OPEN),
-      high: toNumber(row.HIGH),
-      low: toNumber(row.LOW),
-    }));
+    while (iterations < 100) {
+      iterations += 1;
+      const data = await this.request<MoexHistoryResponse>(
+        `history/engines/stock/markets/index/securities/${encodeURIComponent(secid)}.json`,
+        {
+          'iss.meta': 'off',
+          from: options?.from,
+          till: options?.till,
+          limit: pageSize,
+          start,
+          'history.columns': 'TRADEDATE,CLOSE,OPEN,HIGH,LOW',
+        },
+        options?.signal
+      );
+
+      const rows = tableToObjects(data.history).map((row) => ({
+        tradeDate: String(row.TRADEDATE ?? ''),
+        close: toNumber(row.CLOSE),
+        open: toNumber(row.OPEN),
+        high: toNumber(row.HIGH),
+        low: toNumber(row.LOW),
+      }));
+      results.push(...rows);
+
+      const cursorTable = data['history.cursor'];
+      if (cursorTable) {
+        const cursorRows = tableToObjects(cursorTable);
+        const cursor = cursorRows[0] ?? {};
+        total = toNumber(cursor.TOTAL);
+        const page = toNumber(cursor.PAGESIZE) ?? pageSize;
+        start += page;
+        if (total !== null && start >= total) {
+          break;
+        }
+        if (rows.length === 0) {
+          break;
+        }
+        continue;
+      }
+
+      break;
+    }
+
+    return results;
   }
 }
 

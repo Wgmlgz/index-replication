@@ -35,6 +35,11 @@ tasks:
       - task -d api deps
       - task -d web install
 
+  moex:docs:
+    desc: Cache MOEX ISS docs locally
+    cmds:
+      - node scripts/fetch-moex-docs.js
+
   dev:api:
     cmds:
       - task -d api dev

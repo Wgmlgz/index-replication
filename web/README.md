@@ -11,6 +11,7 @@ Next.js frontend for the index replication project. The UI includes auth, user m
 - React Hook Form + Zod for forms and validation
 - TanStack Table for data grids
 - Next Themes for theme switching
+- Lightweight Charts for market data visualization
 - OpenAPI Generator `typescript-axios` client in `web/src/api-client`
 
 ## Preferred Commands
@@ -36,6 +37,7 @@ Common tasks:
 - UI primitives live in `web/src/components/ui/` and follow shadcn/ui patterns.
 - Shared UI and features live in `web/src/components/`.
 - API access is centralized in `web/src/lib/api.ts` using a generated client.
+- MOEX ISS access is handled by `web/src/lib/moex-client.ts` (axios-based).
 - Generated code in `web/src/api-client/` should not be edited manually.
 - Forms use React Hook Form with Zod schemas for validation.
 - Tailwind tokens and global styling are in `web/src/app/globals.css`.
@@ -58,6 +60,10 @@ Feature routes (App Router):
 ## API Configuration
 
 By default the frontend talks to the API at `http://localhost:8080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering. `web/src/lib/api.ts` also supports a local storage override.
+
+The MOEX ISS client uses `NEXT_PUBLIC_MOEX_BASE_URL` if set; otherwise it calls `https://iss.moex.com/iss` directly.
+
+Before changing the MOEX client or screens, read `docs/moex/ISS-CONCEPTS.md`.
 
 ## API Client Generation
 

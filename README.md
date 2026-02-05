@@ -22,6 +22,7 @@ Frontend:
 - Next.js App Router (React 19)
 - Tailwind CSS v4 + shadcn/ui (Radix UI + class-variance-authority)
 - Axios for API calls (with Tauri adapter support)
+- Lightweight Charts for market data visualization
 - React Hook Form + Zod (i18next-backed error messages)
 - OpenAPI Generator `typescript-axios` client in `web/src/api-client`
 
@@ -58,6 +59,18 @@ cd web && task dev
 ## Docs Maintenance
 
 If you change code or behavior in a way that makes any README inaccurate or incomplete, update the docs in the same change. The expectation is that docs stay correct and actionable for the next developer (human or AI).
+
+## MOEX Docs Cache
+
+To keep a local copy of the MOEX ISS reference pages, run:
+
+```bash
+task moex:docs
+```
+
+Cached docs are stored in `docs/moex/`.
+
+If you are working on the MOEX client or related UI, read `docs/moex/ISS-CONCEPTS.md` first.
 
 ## API Client Generation (Backend → Frontend)
 
