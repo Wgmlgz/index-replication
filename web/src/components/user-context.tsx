@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usersApi as api, authApi } from '@/lib/api';
 import { ModelsPermission } from '@/api-client';
 import axios from 'axios';
@@ -40,56 +41,85 @@ interface UserContextValue {
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
+const USER_QUERY_KEY = ['auth', 'me'];
+
+type MeData = {
+  user: User | null;
+  permissions: ModelsPermission[];
+};
+
+const emptyMeData: MeData = {
+  user: null,
+  permissions: [],
+};
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [permissions, setPermissions] = useState<ModelsPermission[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
-  const refreshUser = async () => {
-    setLoading(true);
-    try {
+  const { data, isLoading, refetch } = useQuery<MeData>({
+    queryKey: USER_QUERY_KEY,
+    queryFn: async () => {
       const resp = await api.meGet();
-      console.log('user', user);
-      setUser(resp.data.user);
-      setPermissions(resp.data.permissions);
-    } catch (e) {
-      console.log(e);
-      setUser(null);
-      setPermissions([]);
-      if (axios.isAxiosError(e)) {
+      return {
+        user: resp.data.user ?? null,
+        permissions: resp.data.permissions ?? [],
+      };
+    },
+    retry: false,
+    initialData: () => queryClient.getQueryData<MeData>(USER_QUERY_KEY),
+    onError: error => {
+      queryClient.setQueryData(USER_QUERY_KEY, emptyMeData);
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
         if (
-          e.status === axios.HttpStatusCode.Unauthorized &&
+          status === axios.HttpStatusCode.Unauthorized &&
           !pathname.startsWith('/login')
         ) {
           router.push('/login', {});
         }
       }
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const refreshUser = async () => {
+    await refetch();
   };
 
   const logoutUser = async () => {
     try {
       await authApi.logoutPost();
-      setUser(null);
-      setPermissions([]);
     } catch (e) {
       console.warn('logout error', e);
+    } finally {
+      queryClient.setQueryData(USER_QUERY_KEY, emptyMeData);
+      queryClient.removeQueries({ queryKey: USER_QUERY_KEY });
     }
   };
 
-  useEffect(() => {
-    refreshUser();
-  }, []);
+  const setUser = (nextUser: User | null) => {
+    queryClient.setQueryData<MeData>(USER_QUERY_KEY, prev => {
+      const current = prev ?? emptyMeData;
+      return {
+        user: nextUser,
+        permissions: nextUser ? current.permissions : [],
+      };
+    });
+  };
 
   return (
     <UserContext.Provider
-      value={{ user, setUser, loading, refreshUser, logoutUser, permissions }}
+      value={{
+        user: data?.user ?? null,
+        permissions: data?.permissions ?? [],
+        setUser,
+        loading: isLoading,
+        refreshUser,
+        logoutUser,
+      }}
     >
       {children}
     </UserContext.Provider>

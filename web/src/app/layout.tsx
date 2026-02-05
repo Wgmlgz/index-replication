@@ -8,14 +8,9 @@ import 'moment/locale/ru';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 
 import { UserProvider } from '../components/user-context';
-import dynamic from 'next/dynamic';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/header';
-
-export const Header = dynamic(() => import('@/components/header'), {
-  ssr: false,
-  loading: () => <p>Loading...</p>,
-});
+import Header, { AppSidebar } from '@/components/header';
+import { QueryProvider } from '@/components/query-provider';
 
 moment.locale('ru');
 
@@ -48,26 +43,28 @@ export default function RootLayout({
               "--sidebar-width-mobile": "20rem",
             } as React.CSSProperties}
           >
-            <UserProvider>
-              <AppSidebar variant="inset" />
-              <Toaster />
-              <ThemeProvider
-                attribute='class'
-                defaultTheme='system'
-                enableSystem
-                disableTransitionOnChange
-              >
+            <QueryProvider>
+              <UserProvider>
+                <AppSidebar variant="inset" />
+                <Toaster />
+                <ThemeProvider
+                  attribute='class'
+                  defaultTheme='system'
+                  enableSystem
+                  disableTransitionOnChange
+                >
 
-                <div className='w-full'>
-                  <Header />
-                  <div className='min-h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'>
-                    <main className=' mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-                      {children}
-                    </main>
+                  <div className='w-full'>
+                    <Header />
+                    <div className='min-h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'>
+                      <main className=' mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+                        {children}
+                      </main>
+                    </div>
                   </div>
-                </div>
-              </ThemeProvider>
-            </UserProvider>
+                </ThemeProvider>
+              </UserProvider>
+            </QueryProvider>
           </SidebarProvider>
         </div>
       </body>
