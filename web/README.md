@@ -53,6 +53,7 @@ Feature routes (App Router):
 - `web/src/app/audit-logs/page.tsx`
 - `web/src/app/settings/page.tsx`
 - `web/src/app/dashboard/page.tsx`
+- `web/src/app/moex-indexes/page.tsx`
 
 ## API Configuration
 

@@ -1,5 +1,5 @@
 import { PermissionStr } from "@/components/user-context";
-import { History, Camera, Users } from "lucide-react";
+import { History, Camera, Users, LineChart } from "lucide-react";
 
 export type DashboardCard = {
   title: string;
@@ -11,6 +11,13 @@ export type DashboardCard = {
 
 
 export const DashboardCards: DashboardCard[] = [
+  {
+    title: 'Индексы MOEX',
+    icon: LineChart,
+    buttonText: 'Открыть индексы',
+    href: '/moex-indexes',
+    permission: null,
+  },
   {
     title: 'Журнал событий',
     icon: History,
