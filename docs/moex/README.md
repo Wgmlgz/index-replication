@@ -5,9 +5,10 @@ developers can browse the API docs offline.
 
 Artifacts:
 
-- `iss-reference.html` (raw HTML)
-- `iss-reference.md` (converted Markdown)
-- `ISS-CONCEPTS.md` (conceptual guide)
+- `html/index.html` (reference index page)
+- `md/index.md` (reference index page)
+- `html/<id>.html` (endpoint pages)
+- `md/<id>.md` (endpoint pages)
 
 To refresh the cache:
 
@@ -15,4 +16,4 @@ To refresh the cache:
 task moex:docs
 ```
 
-Primary source: <https://iss.moex.com/iss/reference/>
+Primary source: https://iss.moex.com/iss/reference/

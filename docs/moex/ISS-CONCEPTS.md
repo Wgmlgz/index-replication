@@ -49,6 +49,8 @@ Many endpoints paginate. The response includes a cursor table, for example
 
 To fetch all rows, keep requesting with `start += PAGESIZE` until `start >= TOTAL`.
 
+
+
 ## Key Endpoint Families
 
 ### 1) Securities (Lists)

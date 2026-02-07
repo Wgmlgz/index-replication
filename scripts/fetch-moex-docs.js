@@ -6,6 +6,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const outDir = path.join(rootDir, 'docs', 'moex');
+const htmlDir = path.join(outDir, 'html');
+const mdDir = path.join(outDir, 'md');
+const referenceBaseUrl = 'https://iss.moex.com/iss/reference/';
+const referenceLang = 'en';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -127,11 +131,138 @@ const htmlToMarkdown = (html) => {
   return md.trim() + '\n';
 };
 
+const normalizeMarkdown = (md) => {
+  let output = md;
+  output = output.replace(/\*\*Default:\s*\*\*/g, '**Default:**');
+  output = output.replace(/\*\*Type:\s*\*\*/g, '**Type:**');
+  return output;
+};
+
+const isHeaderLine = (line) => /^#{1,6}\s+/.test(line.trim());
+const isSectionLine = (line) => /\([A-Z]+\)$/.test(line.trim());
+
+const parseArgument = (lines, startIndex) => {
+  const name = lines[startIndex]?.trim();
+  if (!name) {
+    return { rendered: null, nextIndex: startIndex + 1 };
+  }
+
+  let i = startIndex + 1;
+  const descParts = [];
+  let defValue = '';
+  let typeValue = '';
+
+  for (; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) continue;
+
+    if (!defValue && !typeValue && (isHeaderLine(trimmed) || isSectionLine(trimmed))) {
+      return { rendered: null, nextIndex: startIndex + 1 };
+    }
+
+    if (defValue || typeValue) {
+      if (isHeaderLine(trimmed) || isSectionLine(trimmed)) {
+        break;
+      }
+    }
+
+    if (trimmed.startsWith('**Default:**')) {
+      defValue = trimmed.replace('**Default:**', '').trim() || '—';
+      continue;
+    }
+
+    if (trimmed.startsWith('**Type:**')) {
+      typeValue = trimmed.replace('**Type:**', '').trim() || '—';
+      continue;
+    }
+
+    if (defValue || typeValue) {
+      break;
+    }
+
+    descParts.push(trimmed);
+  }
+
+  const description = descParts.join(' ').trim();
+  const defaultText = defValue || '—';
+  const typeText = typeValue || '—';
+
+  const details = [
+    description ? description : null,
+    `default: ${defaultText}`,
+    `type: ${typeText}`,
+  ].filter(Boolean);
+
+  const rendered = `- \`${name}\` — ${details.join(', ')}`;
+  return { rendered, nextIndex: i };
+};
+
+const formatArguments = (md) => {
+  const lines = md.split('\n');
+  const out = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    out.push(line);
+
+    if (line.trim() !== '## Arguments') {
+      i += 1;
+      continue;
+    }
+
+    i += 1;
+    if (out[out.length - 1]?.trim() !== '') {
+      out.push('');
+    }
+
+    while (i < lines.length && !isHeaderLine(lines[i])) {
+      const trimmed = lines[i].trim();
+      if (!trimmed) {
+        i += 1;
+        continue;
+      }
+
+      if (isSectionLine(trimmed)) {
+        if (out[out.length - 1]?.trim() !== '') {
+          out.push('');
+        }
+        out.push(trimmed);
+        out.push('');
+        i += 1;
+        continue;
+      }
+
+      const { rendered, nextIndex } = parseArgument(lines, i);
+      if (rendered) {
+        out.push(rendered);
+        i = nextIndex;
+        continue;
+      }
+
+      out.push(lines[i]);
+      i += 1;
+    }
+  }
+
+  return out
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim() + '\n';
+};
+
 const writeDocsReadme = async () => {
   const content = `# MOEX ISS Docs Cache
 
 This folder stores a cached copy of the official MOEX ISS reference pages so
 developers can browse the API docs offline.
+
+Artifacts:
+
+- \`html/index.html\` (reference index page)
+- \`md/index.md\` (reference index page)
+- \`html/<id>.html\` (endpoint pages)
+- \`md/<id>.md\` (endpoint pages)
 
 To refresh the cache:
 
@@ -145,14 +276,70 @@ Primary source: https://iss.moex.com/iss/reference/
   await writeFile(path.join(outDir, 'README.md'), content, 'utf8');
 };
 
-const main = async () => {
-  await mkdir(outDir, { recursive: true });
+const rewriteReferenceLinks = (input, extension) => {
+  return input
+    .replace(
+      /href=["'](?:https?:\/\/iss\.moex\.com)?\/iss\/reference\/(\d+)(?:\?lang=[^"']*)?["']/gi,
+      (_, id) => `href="./${id}.${extension}"`
+    )
+    .replace(
+      /href=["']\.\/(\d+)(?:\?lang=[^"']*)?["']/gi,
+      (_, id) => `href="./${id}.${extension}"`
+    );
+};
 
-  console.log('Fetching https://iss.moex.com/iss/reference/');
-  const html = await fetchWithRetry('https://iss.moex.com/iss/reference/');
-  await writeFile(path.join(outDir, 'iss-reference.html'), html, 'utf8');
-  const markdown = htmlToMarkdown(html);
-  await writeFile(path.join(outDir, 'iss-reference.md'), markdown, 'utf8');
+const rewriteMarkdownLinks = (input) => {
+  return input
+    .replace(
+      /\((?:https?:\/\/iss\.moex\.com)?\/iss\/reference\/(\d+)(?:\?lang=[^)]+)?\)/gi,
+      (_, id) => `(./${id}.md)`
+    )
+    .replace(/\(\.\/(\d+)(?:\?lang=[^)]+)?\)/gi, (_, id) => `(./${id}.md)`);
+};
+
+const extractReferenceIds = (html) => {
+  const ids = new Set();
+  const regex =
+    /href=["'](?:https?:\/\/iss\.moex\.com)?\/iss\/reference\/(\d+)(?:\?lang=[^"']*)?["']|href=["']\.\/(\d+)(?:\?lang=[^"']*)?["']/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    const id = match[1] ?? match[2];
+    if (id) {
+      ids.add(id);
+    }
+  }
+  return Array.from(ids).sort((a, b) => Number(a) - Number(b));
+};
+
+const main = async () => {
+  await mkdir(htmlDir, { recursive: true });
+  await mkdir(mdDir, { recursive: true });
+
+  const indexUrl = `${referenceBaseUrl}?lang=${referenceLang}`;
+  console.log(`Fetching ${indexUrl}`);
+  const indexHtmlRaw = await fetchWithRetry(indexUrl);
+  const indexHtml = rewriteReferenceLinks(indexHtmlRaw, 'html');
+  await writeFile(path.join(htmlDir, 'index.html'), indexHtml, 'utf8');
+  const indexMarkdown = formatArguments(
+    normalizeMarkdown(rewriteMarkdownLinks(htmlToMarkdown(indexHtmlRaw)))
+  );
+  await writeFile(path.join(mdDir, 'index.md'), indexMarkdown, 'utf8');
+
+  const ids = extractReferenceIds(indexHtmlRaw);
+  console.log(`Found ${ids.length} reference pages.`);
+
+  for (const [idx, id] of ids.entries()) {
+    const pageUrl = `${referenceBaseUrl}${id}?lang=${referenceLang}`;
+    console.log(`(${idx + 1}/${ids.length}) Fetching ${pageUrl}`);
+    const pageHtmlRaw = await fetchWithRetry(pageUrl);
+    const pageHtml = rewriteReferenceLinks(pageHtmlRaw, 'html');
+    await writeFile(path.join(htmlDir, `${id}.html`), pageHtml, 'utf8');
+    const pageMarkdown = formatArguments(
+      normalizeMarkdown(rewriteMarkdownLinks(htmlToMarkdown(pageHtmlRaw)))
+    );
+    await writeFile(path.join(mdDir, `${id}.md`), pageMarkdown, 'utf8');
+    await sleep(150);
+  }
 
   await writeDocsReadme();
 

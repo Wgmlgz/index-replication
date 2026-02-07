@@ -1,0 +1,58 @@
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<style type="text/css" media="screen">
+body {
+font-family: 'trebuchet ms', sans-serif;
+margin: 0;
+padding: 0 4em;
+}
+dt {
+font-size: 1.8em;
+font-weight: bold;
+margin: 1.5em 0 0;
+padding: 0;
+}
+dd {
+color: #333;
+margin: 0 2em;
+padding: 0;
+}
+</style>
+</head>
+<body>
+<h1>/iss/history/engines/[engine]/markets/[market]/boardgroups/[boardgroup]/securities/[security]/dates</h1>
+<pre>Get dates for which history for the specified security on the specified board group is available.</pre>
+<p>
+<dl>
+<dt>dates (GET)</dt>
+<dd>
+<pre>Date intervals available in the history.</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>interim</dt>
+<dd>
+<p>
+<pre>Show intermediate trading dates (currency market only)</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>tradingsession</dt>
+<dd>
+<p>
+<pre>Show data for required session (Stock market only)
+  0 - Morning
+  1 - Main
+  2 - Evening
+  3 - Total</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</body>
+</html>

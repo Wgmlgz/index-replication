@@ -1,0 +1,395 @@
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<style type="text/css" media="screen">
+body {
+font-family: 'trebuchet ms', sans-serif;
+margin: 0;
+padding: 0 4em;
+}
+dt {
+font-size: 1.8em;
+font-weight: bold;
+margin: 1.5em 0 0;
+padding: 0;
+}
+dd {
+color: #333;
+margin: 0 2em;
+padding: 0;
+}
+</style>
+</head>
+<body>
+<h1>/iss/engines/[engine]/markets/[market]/boardgroups/[boardgroup]/securities/[security]</h1>
+<pre>Get metadata and market data for the specified security traded on the specified board group.</pre>
+<p>
+<dl>
+<dt>securities (GET)</dt>
+<dd>
+<pre>Fields in table with static security data</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>marketprice_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>primary_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>index</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>security_collection</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>previous_session</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>securities</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>first</dt>
+<dd>
+<p>
+<pre>Return n first lines</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_column</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_order</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>asc<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>leaders</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>nearest</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>assets</dt>
+<dd>
+<p>
+<pre>Asset filter (only futures)</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sectypes</dt>
+<dd>
+<p>
+<pre>Security type filter</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>lang</dt>
+<dd>
+<p>
+<pre>Language of the result set: ru or en</pre>
+<strong>Default: </strong>ru<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+</dl>
+</dd>
+<dt>marketdata (GET)</dt>
+<dd>
+<pre>Current market data</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>sort_order</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>asc<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>marketprice_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>primary_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>index</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>previous_session</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>first</dt>
+<dd>
+<p>
+<pre>Return n first lines</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_column</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>leaders</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>nearest</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>assets</dt>
+<dd>
+<p>
+<pre>Asset filter (only futures)</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sectypes</dt>
+<dd>
+<p>
+<pre>Security type filter</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>lang</dt>
+<dd>
+<p>
+<pre>Language of the result set: ru or en</pre>
+<strong>Default: </strong>ru<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>securities</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>seqnum</dt>
+<dd>
+<p>
+<pre>Update sequence number. Incremental parameter which can be used to request only updates.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>number<br />
+</p>
+</dd>
+</dl>
+</dd>
+<dt>dataversion (GET)</dt>
+<dd>
+<pre>Data version information.</pre>
+<h2>Arguments</h2>
+<dl>
+</dl>
+</dd>
+<dt>marketdata_yields (GET)</dt>
+<dd>
+<pre>Yields</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>sort_order</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>asc<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>marketprice_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>primary_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>index</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>previous_session</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>first</dt>
+<dd>
+<p>
+<pre>Return n first lines</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_column</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>leaders</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>nearest</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>assets</dt>
+<dd>
+<p>
+<pre>Asset filter (only futures)</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sectypes</dt>
+<dd>
+<p>
+<pre>Security type filter</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>lang</dt>
+<dd>
+<p>
+<pre>Language of the result set: ru or en</pre>
+<strong>Default: </strong>ru<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>securities</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>seqnum</dt>
+<dd>
+<p>
+<pre>Update sequence number. Incremental parameter which can be used to request only updates.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>number<br />
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</body>
+</html>

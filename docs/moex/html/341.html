@@ -1,0 +1,81 @@
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<style type="text/css" media="screen">
+body {
+font-family: 'trebuchet ms', sans-serif;
+margin: 0;
+padding: 0 4em;
+}
+dt {
+font-size: 1.8em;
+font-weight: bold;
+margin: 1.5em 0 0;
+padding: 0;
+}
+dd {
+color: #333;
+margin: 0 2em;
+padding: 0;
+}
+</style>
+</head>
+<body>
+<h1>/iss/engines/[engine]/markets/[market]/securities/[security]/candles</h1>
+<pre>Get data for candlestick charts for the specified security.</pre>
+<p>
+<dl>
+<dt>candles (GET)</dt>
+<dd>
+<pre>HLOCV for candlestick charts</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>start</dt>
+<dd>
+<p>
+<pre>Row number (the number of the first row is 0) to begin the result set with (see developer manual).
+If the result set contains no data then the specified number is greater than the total number of rows available.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>till</dt>
+<dd>
+<p>
+<pre>Interval end date
+Format: YYYY-MM-DD HH:MM:SS.</pre>
+<strong>Default: </strong>2037-12-31<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>from</dt>
+<dd>
+<p>
+<pre>Interval start date
+Format: YYYY-MM-DD HH:MM:SS.</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>interval</dt>
+<dd>
+<p>
+<pre>Chart interval</pre>
+<strong>Default: </strong>10<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>iss.reverse</dt>
+<dd>
+<p>
+<pre>Change default sort order. Takes true/fale values.</pre>
+<strong>Default: </strong>false<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</body>
+</html>

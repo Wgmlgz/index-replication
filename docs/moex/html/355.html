@@ -1,0 +1,201 @@
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<style type="text/css" media="screen">
+body {
+font-family: 'trebuchet ms', sans-serif;
+margin: 0;
+padding: 0 4em;
+}
+dt {
+font-size: 1.8em;
+font-weight: bold;
+margin: 1.5em 0 0;
+padding: 0;
+}
+dd {
+color: #333;
+margin: 0 2em;
+padding: 0;
+}
+</style>
+</head>
+<body>
+<h1>/iss/engines/[engine]/markets/[market]/boardgroups/[boardgroup]/trades</h1>
+<pre>Get all trades from the specified board group.</pre>
+<p>
+<dl>
+<dt>trades (GET)</dt>
+<dd>
+<pre>List of trades</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>tradeno</dt>
+<dd>
+<p>
+<pre>Trade number to begin the result set with.
+Data returns included trades starting from recevied tradeno parameter.
+If you need to receve data starting next tradeno - use option "next_trade=1".
+
+Deals returns on time ordered mode. On FORTS deals number (TRADENO) of latest deal can be less then previous.
+</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>recno</dt>
+<dd>
+<p>
+<pre>FORTS and OPTIONS markets only.
+Filter via RECNO field (number in deals order).
+
+Replaces filter "tradeno".
+If you need to receve data starting next tradeno - use option "next_trade=1".
+</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>next_trade</dt>
+<dd>
+<p>
+<pre>Exclude received tradeno filter to this result.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>securities</dt>
+<dd>
+<p>
+<pre>No descr_eniption available.</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>limit</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>5000<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>reversed</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>previous_session</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>start</dt>
+<dd>
+<p>
+<pre>Row number (the number of the first row is 0) to begin the result set with (see developer manual).
+If the result set contains no data then the specified number is greater than the total number of rows available.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>number<br />
+</p>
+</dd>
+</dl>
+</dd>
+<dt>dataversion (GET)</dt>
+<dd>
+<pre>Data version information.</pre>
+<h2>Arguments</h2>
+<dl>
+</dl>
+</dd>
+<dt>trades_yields (GET)</dt>
+<dd>
+<pre>Additional yields for trades</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>tradeno</dt>
+<dd>
+<p>
+<pre>Trade number to begin the result set with.
+Data returns included trades starting from recevied tradeno parameter.
+If you need to receve data starting next tradeno - use option "next_trade=1".
+
+Deals returns on time ordered mode. On FORTS deals number (TRADENO) of latest deal can be less then previous.
+</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>recno</dt>
+<dd>
+<p>
+<pre>FORTS and OPTIONS markets only.
+Filter via RECNO field (number in deals order).
+
+Replaces filter "tradeno".
+If you need to receve data starting next tradeno - use option "next_trade=1".
+</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>next_trade</dt>
+<dd>
+<p>
+<pre>Exclude received tradeno filter to this result.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>limit</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>5000<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>reversed</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>securities</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>yielddatetype</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>start</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>number<br />
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</body>
+</html>

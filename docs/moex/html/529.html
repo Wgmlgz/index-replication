@@ -1,0 +1,244 @@
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<style type="text/css" media="screen">
+body {
+font-family: 'trebuchet ms', sans-serif;
+margin: 0;
+padding: 0 4em;
+}
+dt {
+font-size: 1.8em;
+font-weight: bold;
+margin: 1.5em 0 0;
+padding: 0;
+}
+dd {
+color: #333;
+margin: 0 2em;
+padding: 0;
+}
+</style>
+</head>
+<body>
+<h1>/iss/history/engines/[engine]/markets/[market]/sessions/[session]/boards/[board]/securities</h1>
+<pre>Get trade results for all the securities on the specified board for the specified date.</pre>
+<p>
+<dl>
+<dt>history (GET)</dt>
+<dd>
+<pre>Trade results for all the securities on the specified board, filtered by date.</pre>
+<h2>Arguments</h2>
+<dl>
+<dt>security_collection</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>marketprice_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>tradingsession</dt>
+<dd>
+<p>
+<pre>Show data for required session (Stock market only)
+  0 - Morning
+  1 - Main
+  2 - Evening
+  3 - Total</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>start</dt>
+<dd>
+<p>
+<pre>Row number (the number of the first row is 0) to begin the result set with (see developer manual).
+If the result set contains no data then the specified number is greater than the total number of rows available.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>number<br />
+</p>
+</dd>
+<dt>limit</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_column</dt>
+<dd>
+<p>
+<pre>Field to order the result set by.</pre>
+<strong>Default: </strong>secid<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>assetcode</dt>
+<dd>
+<p>
+<pre>Filter by ticker codes.
+Only for the futures and options.</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_order</dt>
+<dd>
+<p>
+<pre>Sort order. 
+Can be 'asc' or 'desc'.</pre>
+<strong>Default: </strong>asc<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>interim</dt>
+<dd>
+<p>
+<pre>Show intermediate trading results (currency market only)</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>lang</dt>
+<dd>
+<p>
+<pre>Language of the result set: ru or en</pre>
+<strong>Default: </strong>ru<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>numtrades</dt>
+<dd>
+<p>
+<pre>Minimum number of trades with a security.</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>date</dt>
+<dd>
+<p>
+<pre>Date to request information for. Format: YYYY-MM-DD.</pre>
+<strong>Default: </strong>today<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>sort_order_desc</dt>
+<dd>
+<p>
+<pre>(Deprecated)
+Sort order.
+Can be empty or set to 'DESC'</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+</dl>
+</dd>
+<dt>history.cursor (GET)</dt>
+<dd>
+<pre></pre>
+<h2>Arguments</h2>
+<dl>
+<dt>start</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>date</dt>
+<dd>
+<p>
+<pre>Date to request information for. 
+Format: YYYY-MM-DD.</pre>
+<strong>Default: </strong>today<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>interim</dt>
+<dd>
+<p>
+<pre>Show intermediate trading results (currency market only)</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>security_type_id</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>numtrades</dt>
+<dd>
+<p>
+<pre>Minimum number of trades with a security</pre>
+<strong>Default: </strong>0<br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>security_collection</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>assetcode</dt>
+<dd>
+<p>
+<pre>Filter by ticker codes. 
+Only for the futures and options</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>limit</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>tradingsession</dt>
+<dd>
+<p>
+<pre>Show data for required session (Stock market only)
+  0 - Morning
+  1 - Main
+  2 - Evening
+  3 - Total</pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+<dt>marketprice_board</dt>
+<dd>
+<p>
+<pre></pre>
+<strong>Default: </strong><br />
+<strong>Type: </strong>var<br />
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</body>
+</html>
