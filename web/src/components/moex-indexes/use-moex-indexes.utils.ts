@@ -1,9 +1,47 @@
 import type { MoexIndex } from '@/lib/moex-client';
-import type { FilterOption, SortKey, SortOption } from './use-moex-indexes.types';
+import type {
+  FilterDefinition,
+  FilterOption,
+  FilterState,
+  SortKey,
+  SortOption,
+} from './use-moex-indexes.types';
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const UNCATEGORIZED_COLLECTION = '__uncategorized__';
 export const EMPTY_FILTER_VALUE = '__empty__';
+
+export const FILTER_DEFS: FilterDefinition[] = [
+  {
+    key: 'collections',
+    label: 'Группы',
+    emptyLabel: 'Без категории',
+  },
+  {
+    key: 'currency',
+    label: 'Валюта',
+    emptyLabel: 'Без валюты',
+    getValue: (index) => index.currency,
+  },
+  {
+    key: 'board',
+    label: 'Board',
+    emptyLabel: 'Без Board',
+    getValue: (index) => index.boardId,
+  },
+  {
+    key: 'calcMode',
+    label: 'Тип',
+    emptyLabel: 'Без типа',
+    getValue: (index) => index.calcMode,
+  },
+];
+
+export const createEmptyFilters = (): FilterState =>
+  FILTER_DEFS.reduce((acc, def) => {
+    acc[def.key] = [];
+    return acc;
+  }, {} as FilterState);
 
 export const SORT_OPTIONS: SortOption[] = [
   { value: 'name-asc', label: 'Название (А-Я)' },

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useMoexIndexesContext } from './moex-indexes-context';
 import type { SortKey } from './use-moex-indexes.types';
+import { FILTER_DEFS } from './use-moex-indexes.utils';
 
 type FilterMenuProps = {
   label: string;
@@ -94,18 +95,9 @@ function FilterMenu({
 
 export function IndexListFilters() {
   const {
-    collectionOptions,
-    selectedCollections,
-    setSelectedCollections,
-    currencyOptions,
-    selectedCurrencies,
-    setSelectedCurrencies,
-    boardOptions,
-    selectedBoards,
-    setSelectedBoards,
-    calcModeOptions,
-    selectedCalcModes,
-    setSelectedCalcModes,
+    filters,
+    setFilter,
+    filterOptions,
     sortKey,
     setSortKey,
     sortOptions,
@@ -121,34 +113,16 @@ export function IndexListFilters() {
   return (
     <>
       <div className='flex flex-wrap items-center gap-2'>
-        <FilterMenu
-          label='Группы'
-          options={collectionOptions}
-          selected={selectedCollections}
-          onChange={setSelectedCollections}
-          disabled={groupsDisabled}
-        />
-        <FilterMenu
-          label='Валюта'
-          options={currencyOptions}
-          selected={selectedCurrencies}
-          onChange={setSelectedCurrencies}
-          disabled={filtersDisabled}
-        />
-        <FilterMenu
-          label='Board'
-          options={boardOptions}
-          selected={selectedBoards}
-          onChange={setSelectedBoards}
-          disabled={filtersDisabled}
-        />
-        <FilterMenu
-          label='Тип'
-          options={calcModeOptions}
-          selected={selectedCalcModes}
-          onChange={setSelectedCalcModes}
-          disabled={filtersDisabled}
-        />
+        {FILTER_DEFS.map((def) => (
+          <FilterMenu
+            key={def.key}
+            label={def.label}
+            options={filterOptions[def.key] ?? []}
+            selected={filters[def.key]}
+            onChange={(next) => setFilter(def.key, next)}
+            disabled={def.key === 'collections' ? groupsDisabled : filtersDisabled}
+          />
+        ))}
         <div className='flex items-center gap-2'>
           <span className='text-xs text-muted-foreground'>Сортировка</span>
           <Select

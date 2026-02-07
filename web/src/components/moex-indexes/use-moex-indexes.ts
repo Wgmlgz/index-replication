@@ -10,10 +10,17 @@ import {
 import { useMoexIndexCollections } from './use-moex-indexes-collections';
 import { useMoexIndexHistory } from './use-moex-indexes-history';
 import { useMoexIndexList } from './use-moex-indexes-list';
-import type { MoexIndexesState, SortKey } from './use-moex-indexes.types';
+import type {
+  FilterKey,
+  FilterOptions,
+  MoexIndexesState,
+  SortKey,
+} from './use-moex-indexes.types';
 import {
   buildFilterOptions,
+  createEmptyFilters,
   DEFAULT_PAGE_SIZE,
+  FILTER_DEFS,
   SORT_OPTIONS,
 } from './use-moex-indexes.utils';
 
@@ -23,10 +30,7 @@ export function useMoexIndexes(): MoexIndexesState {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
-  const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
-  const [selectedCalcModes, setSelectedCalcModes] = useState<string[]>([]);
+  const [filters, setFilters] = useState(createEmptyFilters);
   const [sortKey, setSortKey] = useState<SortKey>('name-asc');
   const queryClient = useQueryClient();
 
@@ -70,20 +74,31 @@ export function useMoexIndexes(): MoexIndexesState {
       .filter((item): item is MoexIndex => Boolean(item));
   }, [favorites, indexes]);
 
-  const currencyOptions = useMemo(
-    () => buildFilterOptions(indexes.map((index) => index.currency), 'Без валюты'),
-    [indexes]
-  );
+  const filterOptions = useMemo<FilterOptions>(() => {
+    const options = {} as FilterOptions;
+    FILTER_DEFS.forEach((def) => {
+      if (def.key === 'collections') {
+        options[def.key] = collectionOptions;
+        return;
+      }
+      if (def.getValue) {
+        options[def.key] = buildFilterOptions(
+          indexes.map((index) => def.getValue?.(index)),
+          def.emptyLabel
+        );
+        return;
+      }
+      options[def.key] = [];
+    });
+    return options;
+  }, [collectionOptions, indexes]);
 
-  const boardOptions = useMemo(
-    () => buildFilterOptions(indexes.map((index) => index.boardId), 'Без Board'),
-    [indexes]
-  );
-
-  const calcModeOptions = useMemo(
-    () => buildFilterOptions(indexes.map((index) => index.calcMode), 'Без типа'),
-    [indexes]
-  );
+  const setFilter = (key: FilterKey, value: string[]) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
 
   const updateFavorites = useMutation({
     mutationFn: (nextFavorites: string[]) =>
@@ -162,8 +177,7 @@ export function useMoexIndexes(): MoexIndexesState {
         : null;
 
   const {
-    favoriteIndexes,
-    collectionGroups,
+    sections,
     foundCount,
     isEmpty,
     showNoFavoritesMessage,
@@ -178,10 +192,7 @@ export function useMoexIndexes(): MoexIndexesState {
     showFavoritesOnly,
     pageIndex,
     pageSize,
-    selectedCollections,
-    selectedCurrencies,
-    selectedBoards,
-    selectedCalcModes,
+    filters,
     sortKey,
     indexesLoading,
     setPageIndex,
@@ -192,17 +203,12 @@ export function useMoexIndexes(): MoexIndexesState {
     return indexCollectionsMap[selectedIndex.secid.toUpperCase()] ?? [];
   }, [indexCollectionsMap, selectedIndex?.secid]);
 
-  const hasActiveFilters =
-    selectedCollections.length > 0 ||
-    selectedCurrencies.length > 0 ||
-    selectedBoards.length > 0 ||
-    selectedCalcModes.length > 0;
+  const hasActiveFilters = Object.values(filters).some(
+    (values) => values.length > 0
+  );
 
   const clearFilters = () => {
-    setSelectedCollections([]);
-    setSelectedCurrencies([]);
-    setSelectedBoards([]);
-    setSelectedCalcModes([]);
+    setFilters(createEmptyFilters());
   };
 
   return {
@@ -218,18 +224,9 @@ export function useMoexIndexes(): MoexIndexesState {
     setPageSize,
     pageCount,
     showPagination,
-    collectionOptions,
-    selectedCollections,
-    setSelectedCollections,
-    currencyOptions,
-    selectedCurrencies,
-    setSelectedCurrencies,
-    boardOptions,
-    selectedBoards,
-    setSelectedBoards,
-    calcModeOptions,
-    selectedCalcModes,
-    setSelectedCalcModes,
+    filters,
+    setFilter,
+    filterOptions,
     sortKey,
     setSortKey,
     sortOptions: SORT_OPTIONS,
@@ -242,8 +239,7 @@ export function useMoexIndexes(): MoexIndexesState {
     collectionsLoading,
     historyLoading,
     error,
-    favoriteIndexes,
-    collectionGroups,
+    listSections: sections,
     indexCollectionsMap,
     favoritesSet,
     toggleFavorite,

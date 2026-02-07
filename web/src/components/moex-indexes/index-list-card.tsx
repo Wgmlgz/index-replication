@@ -19,8 +19,7 @@ export function IndexListCard() {
     foundCount,
     isEmpty,
     showNoFavoritesMessage,
-    favoriteIndexes,
-    collectionGroups,
+    listSections,
   } = useMoexIndexesContext();
 
   return (
@@ -49,21 +48,15 @@ export function IndexListCard() {
         <IndexListFilters />
         <ScrollArea className='min-h-0 flex-1 pr-3'>
           <div className='space-y-4'>
-            {!showFavoritesOnly && (
+            {listSections.map((section) => (
               <IndexListSection
-                title='Избранное'
-                indexes={favoriteIndexes}
-                showCollections
-              />
-            )}
-
-            {collectionGroups.map((group) => (
-              <IndexListSection
-                key={group.key}
-                title={group.title}
-                indexes={group.indexes}
+                key={section.key}
+                title={section.title}
+                indexes={section.indexes}
+                showCollections={section.showCollections}
               />
             ))}
+
 
             {!indexesLoading && isEmpty && (
               <div className='text-sm text-muted-foreground'>

@@ -7,6 +7,19 @@ export type FilterOption = {
   count?: number;
 };
 
+export type FilterKey = 'collections' | 'currency' | 'board' | 'calcMode';
+
+export type FilterState = Record<FilterKey, string[]>;
+
+export type FilterOptions = Record<FilterKey, FilterOption[]>;
+
+export type FilterDefinition = {
+  key: FilterKey;
+  label: string;
+  emptyLabel: string;
+  getValue?: (index: MoexIndex) => string | null | undefined;
+};
+
 export type SortKey =
   | 'name-asc'
   | 'name-desc'
@@ -21,10 +34,11 @@ export type SortOption = {
   label: string;
 };
 
-export type IndexGroup = {
+export type IndexSection = {
   key: string;
   title: string;
   indexes: MoexIndex[];
+  showCollections?: boolean;
 };
 
 export type MoexIndexesState = {
@@ -40,18 +54,9 @@ export type MoexIndexesState = {
   setPageSize: (value: number) => void;
   pageCount: number;
   showPagination: boolean;
-  collectionOptions: FilterOption[];
-  selectedCollections: string[];
-  setSelectedCollections: (value: string[]) => void;
-  currencyOptions: FilterOption[];
-  selectedCurrencies: string[];
-  setSelectedCurrencies: (value: string[]) => void;
-  boardOptions: FilterOption[];
-  selectedBoards: string[];
-  setSelectedBoards: (value: string[]) => void;
-  calcModeOptions: FilterOption[];
-  selectedCalcModes: string[];
-  setSelectedCalcModes: (value: string[]) => void;
+  filters: FilterState;
+  setFilter: (key: FilterKey, value: string[]) => void;
+  filterOptions: FilterOptions;
   sortKey: SortKey;
   setSortKey: (value: SortKey) => void;
   sortOptions: SortOption[];
@@ -64,8 +69,7 @@ export type MoexIndexesState = {
   collectionsLoading: boolean;
   historyLoading: boolean;
   error: string | null;
-  favoriteIndexes: MoexIndex[];
-  collectionGroups: IndexGroup[];
+  listSections: IndexSection[];
   indexCollectionsMap: Record<string, string[]>;
   favoritesSet: Set<string>;
   toggleFavorite: (secid: string) => void;

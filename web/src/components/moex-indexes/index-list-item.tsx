@@ -3,26 +3,32 @@
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { MoexIndex } from '@/lib/moex-client';
+import { useMoexIndexesContext } from './moex-indexes-context';
 
 type IndexListItemProps = {
   index: MoexIndex;
-  isActive: boolean;
-  isFavorite: boolean;
-  collectionTitles: string[];
   showCollections: boolean;
-  onSelect: (secid: string) => void;
-  onToggleFavorite: (secid: string) => void;
 };
 
 export function IndexListItem({
   index,
-  isActive,
-  isFavorite,
-  collectionTitles,
   showCollections,
-  onSelect,
-  onToggleFavorite,
 }: IndexListItemProps) {
+  const {
+    favoritesSet,
+    selectedSecid,
+    setSelectedSecid,
+    toggleFavorite,
+    indexCollectionsMap,
+  } = useMoexIndexesContext();
+
+  const secidKey = index.secid.toUpperCase();
+  const isActive = index.secid === selectedSecid;
+  const isFavorite = favoritesSet.has(secidKey);
+  const collectionTitles = showCollections
+    ? indexCollectionsMap[secidKey] ?? []
+    : [];
+
   const previewCollections = showCollections
     ? collectionTitles.slice(0, 2)
     : [];
@@ -35,10 +41,10 @@ export function IndexListItem({
     <div
       role='button'
       tabIndex={0}
-      onClick={() => onSelect(index.secid)}
+      onClick={() => setSelectedSecid(index.secid)}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
-          onSelect(index.secid);
+          setSelectedSecid(index.secid);
         }
       }}
       className={`w-full rounded-md border px-3 py-2 text-left transition ${
@@ -83,7 +89,7 @@ export function IndexListItem({
           type='button'
           onClick={(event) => {
             event.stopPropagation();
-            onToggleFavorite(index.secid);
+            toggleFavorite(index.secid);
           }}
           className='flex-shrink-0 rounded-full p-1 text-muted-foreground transition hover:text-amber-500'
           title='В избранное'

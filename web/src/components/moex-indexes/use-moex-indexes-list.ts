@@ -1,9 +1,15 @@
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import type { MoexIndex, MoexIndexCollection } from '@/lib/moex-client';
-import type { IndexGroup, SortKey } from './use-moex-indexes.types';
+import type {
+  FilterKey,
+  FilterState,
+  IndexSection,
+  SortKey,
+} from './use-moex-indexes.types';
 import {
   compareStrings,
   EMPTY_FILTER_VALUE,
+  FILTER_DEFS,
   UNCATEGORIZED_COLLECTION,
   sortComparators,
 } from './use-moex-indexes.utils';
@@ -17,18 +23,14 @@ type IndexListInput = {
   showFavoritesOnly: boolean;
   pageIndex: number;
   pageSize: number;
-  selectedCollections: string[];
-  selectedCurrencies: string[];
-  selectedBoards: string[];
-  selectedCalcModes: string[];
+  filters: FilterState;
   sortKey: SortKey;
   indexesLoading: boolean;
   setPageIndex: Dispatch<SetStateAction<number>>;
 };
 
 type IndexListState = {
-  favoriteIndexes: MoexIndex[];
-  collectionGroups: IndexGroup[];
+  sections: IndexSection[];
   foundCount: number;
   isEmpty: boolean;
   showNoFavoritesMessage: boolean;
@@ -45,35 +47,19 @@ export function useMoexIndexList({
   showFavoritesOnly,
   pageIndex,
   pageSize,
-  selectedCollections,
-  selectedCurrencies,
-  selectedBoards,
-  selectedCalcModes,
+  filters,
   sortKey,
   indexesLoading,
   setPageIndex,
 }: IndexListInput): IndexListState {
   const normalizedQuery = query.trim().toLowerCase();
-  const matchesQuery = (index: MoexIndex) => {
-    if (!normalizedQuery) return true;
-    const haystack =
-      `${index.secid} ${index.shortName} ${index.name}`.toLowerCase();
-    return haystack.includes(normalizedQuery);
-  };
 
-  const collectionSet = useMemo(
-    () => new Set(selectedCollections),
-    [selectedCollections]
-  );
-  const currencySet = useMemo(
-    () => new Set(selectedCurrencies),
-    [selectedCurrencies]
-  );
-  const boardSet = useMemo(() => new Set(selectedBoards), [selectedBoards]);
-  const calcModeSet = useMemo(
-    () => new Set(selectedCalcModes),
-    [selectedCalcModes]
-  );
+  const filterSets = useMemo(() => {
+    return FILTER_DEFS.reduce((acc, def) => {
+      acc[def.key] = new Set(filters[def.key]);
+      return acc;
+    }, {} as Record<FilterKey, Set<string>>);
+  }, [filters]);
 
   const matchesFilterValue = (
     value: string | null | undefined,
@@ -84,37 +70,35 @@ export function useMoexIndexList({
     return set.has(key);
   };
 
-  const matchesCollections = (index: MoexIndex) => {
-    if (collectionSet.size === 0) return true;
-    const membership =
-      collectionMemberships[index.secid.toUpperCase()] ?? [];
-    if (membership.some((name) => collectionSet.has(name))) {
-      return true;
-    }
-    return (
-      membership.length === 0 &&
-      collectionSet.has(UNCATEGORIZED_COLLECTION)
-    );
-  };
-
   const filteredIndexes = useMemo(() => {
+    const collectionSet = filterSets.collections;
     return indexes.filter((index) => {
-      if (!matchesQuery(index)) return false;
-      if (!matchesCollections(index)) return false;
-      if (!matchesFilterValue(index.currency, currencySet)) return false;
-      if (!matchesFilterValue(index.boardId, boardSet)) return false;
-      if (!matchesFilterValue(index.calcMode, calcModeSet)) return false;
+      if (normalizedQuery) {
+        const haystack =
+          `${index.secid} ${index.shortName} ${index.name}`.toLowerCase();
+        if (!haystack.includes(normalizedQuery)) return false;
+      }
+
+      if (collectionSet.size > 0) {
+        const membership =
+          collectionMemberships[index.secid.toUpperCase()] ?? [];
+        const matchesCollection =
+          membership.some((name) => collectionSet.has(name)) ||
+          (membership.length === 0 &&
+            collectionSet.has(UNCATEGORIZED_COLLECTION));
+        if (!matchesCollection) return false;
+      }
+
+      for (const def of FILTER_DEFS) {
+        if (def.key === 'collections' || !def.getValue) continue;
+        if (!matchesFilterValue(def.getValue(index), filterSets[def.key])) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [
-    indexes,
-    normalizedQuery,
-    collectionMemberships,
-    collectionSet,
-    currencySet,
-    boardSet,
-    calcModeSet,
-  ]);
+  }, [collectionMemberships, filterSets, indexes, normalizedQuery]);
 
   const sortedIndexes = useMemo(() => {
     const comparator = sortComparators[sortKey];
@@ -143,10 +127,7 @@ export function useMoexIndexList({
     normalizedQuery,
     showFavoritesOnly,
     pageSize,
-    selectedCollections,
-    selectedCurrencies,
-    selectedBoards,
-    selectedCalcModes,
+    filters,
     sortKey,
     setPageIndex,
   ]);
@@ -177,8 +158,8 @@ export function useMoexIndexList({
     );
   }, [groupingCollections]);
 
-  const collectionGroups = useMemo(() => {
-    const groups = new Map<string, IndexGroup>();
+  const collectionGroups = useMemo<IndexSection[]>(() => {
+    const groups = new Map<string, IndexSection>();
     groupingOrder.forEach((collection) => {
       groups.set(collection.name, {
         key: collection.name,
@@ -187,7 +168,7 @@ export function useMoexIndexList({
       });
     });
 
-    const uncategorized: IndexGroup = {
+    const uncategorized: IndexSection = {
       key: UNCATEGORIZED_COLLECTION,
       title: 'Без категории',
       indexes: [],
@@ -209,7 +190,7 @@ export function useMoexIndexList({
       });
     });
 
-    const orderedGroups: IndexGroup[] = [];
+    const orderedGroups: IndexSection[] = [];
     groupingOrder.forEach((collection) => {
       const group = groups.get(collection.name);
       if (group && group.indexes.length > 0) {
@@ -229,6 +210,21 @@ export function useMoexIndexList({
     visibleOthers,
   ]);
 
+  const sections = useMemo<IndexSection[]>(() => {
+    if (showFavoritesOnly || favoriteIndexesAll.length === 0) {
+      return collectionGroups;
+    }
+    return [
+      {
+        key: 'favorites',
+        title: 'Избранное',
+        indexes: favoriteIndexesAll,
+        showCollections: true,
+      },
+      ...collectionGroups,
+    ];
+  }, [collectionGroups, favoriteIndexesAll, showFavoritesOnly]);
+
   const foundCount = showFavoritesOnly
     ? favoriteIndexesAll.length
     : sortedIndexes.length;
@@ -242,8 +238,7 @@ export function useMoexIndexList({
     favoriteIndexesAll.length === 0;
 
   return {
-    favoriteIndexes: visibleFavorites,
-    collectionGroups,
+    sections,
     foundCount,
     isEmpty: sortedIndexes.length === 0,
     showNoFavoritesMessage,

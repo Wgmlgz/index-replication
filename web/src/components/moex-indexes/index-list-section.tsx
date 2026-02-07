@@ -1,7 +1,6 @@
 'use client';
 
 import type { MoexIndex } from '@/lib/moex-client';
-import { useMoexIndexesContext } from './moex-indexes-context';
 import { IndexListItem } from './index-list-item';
 
 type IndexListSectionProps = {
@@ -15,14 +14,6 @@ export function IndexListSection({
   indexes,
   showCollections = false,
 }: IndexListSectionProps) {
-  const {
-    favoritesSet,
-    selectedSecid,
-    setSelectedSecid,
-    toggleFavorite,
-    indexCollectionsMap,
-  } = useMoexIndexesContext();
-
   if (indexes.length === 0) return null;
 
   return (
@@ -36,14 +27,7 @@ export function IndexListSection({
           <IndexListItem
             key={index.secid}
             index={index}
-            isActive={index.secid === selectedSecid}
-            isFavorite={favoritesSet.has(index.secid.toUpperCase())}
-            collectionTitles={
-              indexCollectionsMap[index.secid.toUpperCase()] ?? []
-            }
             showCollections={showCollections}
-            onSelect={(secid) => setSelectedSecid(secid)}
-            onToggleFavorite={toggleFavorite}
           />
         ))}
       </div>
