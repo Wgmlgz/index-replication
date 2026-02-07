@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReadonlyURLSearchParams } from 'next/navigation';
 import type { FilterState, SortKey } from './list/use-moex-indexes.types';
 import { createEmptyFilters, DEFAULT_PAGE_SIZE } from './list/use-moex-indexes.utils';
 import type {
@@ -9,6 +8,11 @@ import type {
   CompositionTab,
   RangeKey,
 } from './detail/moex-indexes-detail.types';
+
+export type SearchParamsLike = {
+  get: (key: string) => string | null;
+  getAll: (key: string) => string[];
+};
 
 export const MOEX_URL_KEYS = {
   selectedSecid: 'i',
@@ -111,7 +115,7 @@ const normalizeList = (values: string[]) => {
 };
 
 export function parseMoexIndexesUrlState(
-  searchParams: ReadonlyURLSearchParams | null
+  searchParams: SearchParamsLike | null
 ): MoexIndexesUrlInitialState {
   if (!searchParams) return {};
 
