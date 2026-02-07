@@ -17,15 +17,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import {
-  moexClient,
-  type MoexIndex,
-} from '@/lib/moex-client';
+import { moexClient, type MoexIndex } from '@/lib/moex-client';
 import {
   userSettingsClient,
   type UserSettings,
 } from '@/lib/user-settings-client';
-
 
 const CHART_HEIGHT = 360;
 
@@ -91,7 +87,13 @@ function IndexChart({ data }: { data: ChartPoint[] }) {
     }
   }, [data]);
 
-  return <div ref={containerRef} className="w-full" style={{ height: CHART_HEIGHT }} />;
+  return (
+    <div
+      ref={containerRef}
+      className='w-full'
+      style={{ height: CHART_HEIGHT }}
+    />
+  );
 }
 
 const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
@@ -130,8 +132,8 @@ export default function MoexIndexesPage() {
 
   const favorites = settingsQuery.data?.favorites ?? [];
   const favoritesSet = useMemo(
-    () => new Set(favorites.map((item) => item.toUpperCase())),
-    [favorites]
+    () => new Set(favorites.map(item => item.toUpperCase())),
+    [favorites],
   );
 
   const updateFavorites = useMutation({
@@ -139,8 +141,10 @@ export default function MoexIndexesPage() {
       userSettingsClient.patchSettings({ favorites: nextFavorites }),
     onMutate: async (nextFavorites: string[]) => {
       await queryClient.cancelQueries({ queryKey: ['user-settings'] });
-      const previous = queryClient.getQueryData<UserSettings>(['user-settings']);
-      queryClient.setQueryData<UserSettings>(['user-settings'], (current) => ({
+      const previous = queryClient.getQueryData<UserSettings>([
+        'user-settings',
+      ]);
+      queryClient.setQueryData<UserSettings>(['user-settings'], current => ({
         favorites: nextFavorites,
         values: current?.values ?? previous?.values,
       }));
@@ -151,7 +155,7 @@ export default function MoexIndexesPage() {
         queryClient.setQueryData(['user-settings'], context.previous);
       }
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       queryClient.setQueryData(['user-settings'], data);
     },
   });
@@ -161,28 +165,30 @@ export default function MoexIndexesPage() {
     if (selectedSecid) {
       return (
         indexes.find(
-          (item) => item.secid.toUpperCase() === selectedSecid.toUpperCase()
+          item => item.secid.toUpperCase() === selectedSecid.toUpperCase(),
         ) ?? null
       );
     }
-    const favoriteMatch = favorites.find((secid) =>
-      indexes.some(
-        (index) => index.secid.toUpperCase() === secid.toUpperCase()
-      )
+    const favoriteMatch = favorites.find(secid =>
+      indexes.some(index => index.secid.toUpperCase() === secid.toUpperCase()),
     );
     if (favoriteMatch) {
       return (
         indexes.find(
-          (item) =>
-            item.secid.toUpperCase() === favoriteMatch.toUpperCase()
+          item => item.secid.toUpperCase() === favoriteMatch.toUpperCase(),
         ) ?? null
       );
     }
-    return indexes.find((item) => item.secid === 'IMOEX') ?? indexes[0] ?? null;
+    return indexes.find(item => item.secid === 'IMOEX') ?? indexes[0] ?? null;
   }, [indexes, selectedSecid, favorites]);
 
   const historyQuery = useQuery({
-    queryKey: ['moex-index-history', selectedIndex?.secid, dateRange.from, dateRange.till],
+    queryKey: [
+      'moex-index-history',
+      selectedIndex?.secid,
+      dateRange.from,
+      dateRange.till,
+    ],
     queryFn: () =>
       moexClient.getIndexHistory(selectedIndex!.secid, {
         from: dateRange.from,
@@ -203,55 +209,56 @@ export default function MoexIndexesPage() {
       ? 'Не удалось загрузить историю индекса.'
       : settingsQuery.error
         ? 'Не удалось загрузить пользовательские настройки.'
-      : null;
+        : null;
 
   const filteredIndexes = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return indexes;
-    return indexes.filter((index) => {
-      const haystack = `${index.secid} ${index.shortName} ${index.name}`.toLowerCase();
+    return indexes.filter(index => {
+      const haystack =
+        `${index.secid} ${index.shortName} ${index.name}`.toLowerCase();
       return haystack.includes(normalized);
     });
   }, [indexes, query]);
 
   const favoriteIndexes = useMemo(
     () =>
-      filteredIndexes.filter((index) =>
-        favoritesSet.has(index.secid.toUpperCase())
+      filteredIndexes.filter(index =>
+        favoritesSet.has(index.secid.toUpperCase()),
       ),
-    [filteredIndexes, favoritesSet]
+    [filteredIndexes, favoritesSet],
   );
 
   const otherIndexes = useMemo(
     () =>
       filteredIndexes.filter(
-        (index) => !favoritesSet.has(index.secid.toUpperCase())
+        index => !favoritesSet.has(index.secid.toUpperCase()),
       ),
-    [filteredIndexes, favoritesSet]
+    [filteredIndexes, favoritesSet],
   );
 
   const toggleFavorite = (secid: string) => {
     const key = secid.toUpperCase();
     const isFavorite = favoritesSet.has(key);
     const nextFavorites = isFavorite
-      ? favorites.filter((item) => item.toUpperCase() !== key)
+      ? favorites.filter(item => item.toUpperCase() !== key)
       : [...favorites, secid];
     updateFavorites.mutate(nextFavorites);
   };
 
   const normalizedHistory = useMemo(() => {
     return history
-      .filter((point) => point.tradeDate && point.close !== null)
+      .filter(point => point.tradeDate && point.close !== null)
       .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
   }, [history]);
 
   const chartData = useMemo<ChartPoint[]>(
     () =>
-      normalizedHistory.map((point) => ({
+      normalizedHistory.map(point => ({
         time: point.tradeDate,
         value: point.close as number,
       })),
-    [normalizedHistory]
+    [normalizedHistory],
   );
 
   const latestPoint = normalizedHistory[normalizedHistory.length - 1];
@@ -259,11 +266,11 @@ export default function MoexIndexesPage() {
   const latestValue = latestPoint?.close ?? null;
   const previousValue = previousPoint?.close ?? null;
   const change =
-    latestValue !== null && previousValue !== null ? latestValue - previousValue : null;
-  const changePercent =
-    change !== null && previousValue
-      ? (change / previousValue) * 100
+    latestValue !== null && previousValue !== null
+      ? latestValue - previousValue
       : null;
+  const changePercent =
+    change !== null && previousValue ? (change / previousValue) * 100 : null;
 
   const numberFormatter = useMemo(() => {
     return new Intl.NumberFormat('ru-RU', {
@@ -272,39 +279,39 @@ export default function MoexIndexesPage() {
   }, [selectedIndex?.decimals]);
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       <div>
-        <h1 className="text-3xl font-bold">Индексы MOEX</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className='text-3xl font-bold'>Индексы MOEX</h1>
+        <p className='text-muted-foreground mt-2'>
           Выберите индекс, чтобы посмотреть динамику за последние 12 месяцев.
         </p>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant='destructive'>
           <AlertTitle>Ошибка</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+      <div className='grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6'>
         <Card>
           <CardHeader>
             <CardTitle>Список индексов</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className='space-y-3'>
             <Input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск по названию или коду"
+              onChange={event => setQuery(event.target.value)}
+              placeholder='Поиск по названию или коду'
             />
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className='flex items-center justify-between text-xs text-muted-foreground'>
               <span>
                 {indexesLoading
                   ? 'Загрузка списка...'
                   : `Найдено: ${showFavoritesOnly ? favoriteIndexes.length : filteredIndexes.length}`}
               </span>
-              <label className="flex items-center gap-2">
+              <label className='flex items-center gap-2'>
                 <span>Только избранное</span>
                 <Switch
                   checked={showFavoritesOnly}
@@ -312,26 +319,26 @@ export default function MoexIndexesPage() {
                 />
               </label>
             </div>
-            <ScrollArea className="h-[420px] pr-3">
-              <div className="space-y-4">
+            <ScrollArea className='h-[420px] pr-3'>
+              <div className='space-y-4'>
                 {favoriteIndexes.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <div className='space-y-2'>
+                    <div className='text-[11px] uppercase tracking-wide text-muted-foreground'>
                       Избранное
                     </div>
-                    <div className="space-y-2">
-                      {favoriteIndexes.map((index) => {
+                    <div className='space-y-2'>
+                      {favoriteIndexes.map(index => {
                         const isActive = index.secid === selectedIndex?.secid;
                         const isFavorite = favoritesSet.has(
-                          index.secid.toUpperCase()
+                          index.secid.toUpperCase(),
                         );
                         return (
                           <div
                             key={index.secid}
-                            role="button"
+                            role='button'
                             tabIndex={0}
                             onClick={() => setSelectedSecid(index.secid)}
-                            onKeyDown={(event) => {
+                            onKeyDown={event => {
                               if (event.key === 'Enter') {
                                 setSelectedSecid(index.secid);
                               }
@@ -342,27 +349,36 @@ export default function MoexIndexesPage() {
                                 : 'border-border hover:bg-muted'
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <div className="text-sm font-medium">
+                            <div className='flex items-start justify-between gap-3'>
+                              <div className='min-w-0 flex-1'>
+                                <div
+                                  className='text-sm font-medium whitespace-normal'
+                                  style={{
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'normal',
+                                    hyphens: 'auto',
+                                  }}
+                                >
                                   {index.shortName || index.name}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className='text-xs text-muted-foreground'>
                                   {index.secid} · {index.name}
                                 </div>
                               </div>
                               <button
-                                type="button"
-                                onClick={(event) => {
+                                type='button'
+                                onClick={event => {
                                   event.stopPropagation();
                                   toggleFavorite(index.secid);
                                 }}
-                                className="rounded-full p-1 text-muted-foreground transition hover:text-amber-500"
-                                title="В избранное"
+                                className='flex-shrink-0 rounded-full p-1 text-muted-foreground transition hover:text-amber-500'
+                                title='В избранное'
                               >
                                 <Star
                                   className={`h-4 w-4 ${
-                                    isFavorite ? 'fill-amber-400 text-amber-500' : ''
+                                    isFavorite
+                                      ? 'fill-amber-400 text-amber-500'
+                                      : ''
                                   }`}
                                 />
                               </button>
@@ -375,23 +391,23 @@ export default function MoexIndexesPage() {
                 )}
 
                 {!showFavoritesOnly && (
-                  <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <div className='space-y-2'>
+                    <div className='text-[11px] uppercase tracking-wide text-muted-foreground'>
                       Все индексы
                     </div>
-                    <div className="space-y-2">
-                      {otherIndexes.map((index) => {
+                    <div className='space-y-2'>
+                      {otherIndexes.map(index => {
                         const isActive = index.secid === selectedIndex?.secid;
                         const isFavorite = favoritesSet.has(
-                          index.secid.toUpperCase()
+                          index.secid.toUpperCase(),
                         );
                         return (
                           <div
                             key={index.secid}
-                            role="button"
+                            role='button'
                             tabIndex={0}
                             onClick={() => setSelectedSecid(index.secid)}
-                            onKeyDown={(event) => {
+                            onKeyDown={event => {
                               if (event.key === 'Enter') {
                                 setSelectedSecid(index.secid);
                               }
@@ -402,27 +418,36 @@ export default function MoexIndexesPage() {
                                 : 'border-border hover:bg-muted'
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <div className="text-sm font-medium">
+                            <div className='flex items-start justify-between gap-3'>
+                              <div className='min-w-0 flex-1'>
+                                <div
+                                  className='text-sm font-medium whitespace-normal'
+                                  style={{
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'normal',
+                                    hyphens: 'auto',
+                                  }}
+                                >
                                   {index.shortName || index.name}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className='text-xs text-muted-foreground'>
                                   {index.secid} · {index.name}
                                 </div>
                               </div>
                               <button
-                                type="button"
-                                onClick={(event) => {
+                                type='button'
+                                onClick={event => {
                                   event.stopPropagation();
                                   toggleFavorite(index.secid);
                                 }}
-                                className="rounded-full p-1 text-muted-foreground transition hover:text-amber-500"
-                                title="В избранное"
+                                className='flex-shrink-0 rounded-full p-1 text-muted-foreground transition hover:text-amber-500'
+                                title='В избранное'
                               >
                                 <Star
                                   className={`h-4 w-4 ${
-                                    isFavorite ? 'fill-amber-400 text-amber-500' : ''
+                                    isFavorite
+                                      ? 'fill-amber-400 text-amber-500'
+                                      : ''
                                   }`}
                                 />
                               </button>
@@ -434,17 +459,16 @@ export default function MoexIndexesPage() {
                   </div>
                 )}
 
-                {!indexesLoading &&
-                  filteredIndexes.length === 0 && (
-                    <div className="text-sm text-muted-foreground">
-                      Ничего не найдено.
-                    </div>
-                  )}
+                {!indexesLoading && filteredIndexes.length === 0 && (
+                  <div className='text-sm text-muted-foreground'>
+                    Ничего не найдено.
+                  </div>
+                )}
                 {!indexesLoading &&
                   showFavoritesOnly &&
                   filteredIndexes.length > 0 &&
                   favoriteIndexes.length === 0 && (
-                    <div className="text-sm text-muted-foreground">
+                    <div className='text-sm text-muted-foreground'>
                       Нет избранных индексов по вашему запросу.
                     </div>
                   )}
@@ -457,26 +481,30 @@ export default function MoexIndexesPage() {
           <CardHeader>
             <CardTitle>График</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className='space-y-3'>
             {selectedIndex && (
-              <div className="space-y-1">
-                <div className="text-lg font-semibold">
+              <div className='space-y-1'>
+                <div className='text-lg font-semibold'>
                   {selectedIndex.name} ({selectedIndex.secid})
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className='text-sm text-muted-foreground'>
                   Период: последние 12 месяцев · Валюта:{' '}
                   {selectedIndex.currency ?? '—'}
                 </div>
                 {latestValue !== null && (
-                  <div className="text-sm">
-                    <span className="font-medium">
+                  <div className='text-sm'>
+                    <span className='font-medium'>
                       {numberFormatter.format(latestValue)}
                     </span>
                     {selectedIndex.currency ? ` ${selectedIndex.currency}` : ''}
                     {change !== null && changePercent !== null && (
                       <span
                         className={`ml-2 text-sm font-medium ${
-                          change > 0 ? 'text-emerald-600' : change < 0 ? 'text-red-600' : 'text-muted-foreground'
+                          change > 0
+                            ? 'text-emerald-600'
+                            : change < 0
+                              ? 'text-red-600'
+                              : 'text-muted-foreground'
                         }`}
                       >
                         {change > 0 ? '+' : ''}
@@ -491,10 +519,14 @@ export default function MoexIndexesPage() {
             )}
 
             {historyLoading && (
-              <div className="text-sm text-muted-foreground">Загрузка графика...</div>
+              <div className='text-sm text-muted-foreground'>
+                Загрузка графика...
+              </div>
             )}
             {!historyLoading && chartData.length === 0 && (
-              <div className="text-sm text-muted-foreground">Нет данных для отображения.</div>
+              <div className='text-sm text-muted-foreground'>
+                Нет данных для отображения.
+              </div>
             )}
             {!historyLoading && chartData.length > 0 && (
               <IndexChart data={chartData} />
