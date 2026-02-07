@@ -4,39 +4,46 @@ This doc describes the MOEX indexes page UI, its components, and the supporting 
 
 **Overview**
 - Page: `web/src/app/moex-indexes/page.tsx`
-- Feature folder: `web/src/components/moex-indexes/`
+- Feature folder: `web/src/components/moex-indexes/` (split into `list/` and `detail/`)
 - Data sources: `web/src/lib/moex-client.ts` and user settings via `web/src/lib/user-settings-client.ts`
-- State orchestration: `web/src/components/moex-indexes/use-moex-indexes.ts`
+- State orchestration: `web/src/components/moex-indexes/use-moex-indexes-data.ts` +
+  `web/src/components/moex-indexes/list/use-moex-indexes-list-state.ts` +
+  `web/src/components/moex-indexes/detail/use-moex-indexes-detail-state.ts`
 
 **Entry Points**
 - Page component mounts `MoexIndexesProvider` and renders `MoexIndexesContent`.
-- The provider exposes a single context consumed by list and chart cards.
+- The provider exposes separate list and detail contexts to avoid sharing large state.
 
 **Component Map**
-- `MoexIndexesProvider` + `useMoexIndexesContext`: `web/src/components/moex-indexes/moex-indexes-context.tsx`
-- List container: `web/src/components/moex-indexes/index-list-card.tsx`
-- List filters: `web/src/components/moex-indexes/index-list-filters.tsx`
-- List pagination: `web/src/components/moex-indexes/index-list-pagination.tsx`
-- List section + item: `web/src/components/moex-indexes/index-list-section.tsx`, `web/src/components/moex-indexes/index-list-item.tsx`
-- Chart container: `web/src/components/moex-indexes/index-chart-card.tsx`
-- Chart renderer: `web/src/components/moex-indexes/index-chart.tsx`
+- `MoexIndexesProvider`: `web/src/components/moex-indexes/moex-indexes-context.tsx`
+- List context: `web/src/components/moex-indexes/list/moex-indexes-list-context.tsx`
+- Detail context: `web/src/components/moex-indexes/detail/moex-indexes-detail-context.tsx`
+- List container: `web/src/components/moex-indexes/list/index-list-card.tsx`
+- List filters: `web/src/components/moex-indexes/list/index-list-filters.tsx`
+- List pagination: `web/src/components/moex-indexes/list/index-list-pagination.tsx`
+- List section + item: `web/src/components/moex-indexes/list/index-list-section.tsx`, `web/src/components/moex-indexes/list/index-list-item.tsx`
+- Chart container: `web/src/components/moex-indexes/detail/index-chart-card.tsx`
+- Chart renderer: `web/src/components/moex-indexes/detail/index-chart.tsx`
 
 **State and Hooks**
-- Types live in `web/src/components/moex-indexes/use-moex-indexes.types.ts`.
-- Utilities and constants live in `web/src/components/moex-indexes/use-moex-indexes.utils.ts`.
+- List types live in `web/src/components/moex-indexes/list/use-moex-indexes.types.ts`.
+- Detail types live in `web/src/components/moex-indexes/detail/moex-indexes-detail.types.ts`.
+- Utilities and constants live in `web/src/components/moex-indexes/list/use-moex-indexes.utils.ts`.
 
 Hooks:
-- `useMoexIndexes` orchestrates queries, selection, favorites, errors, and exposes derived state.
+- `useMoexIndexesData` loads indexes, favorites, and collection metadata.
+- `useMoexIndexListState` owns list UI state (search, filters, pagination) and derived sections.
 - `useMoexIndexCollections` loads index collections and memberships, builds grouping metadata, and prepares filter options.
 - `useMoexIndexList` handles search, filters, sorting, grouping, pagination, and empty states.
+- `useMoexIndexDetailState` resolves the selected index and wires chart metadata.
 - `useMoexIndexHistory` loads the 12-month history for the selected index and derives chart series and change metrics.
 
 **Data Flow**
-1. `useMoexIndexes` loads the base index list (`moexClient.getIndexes()`).
+1. `useMoexIndexesData` loads the base index list (`moexClient.getIndexes()`).
 2. Collections and memberships are loaded to build grouping and filter options.
 3. User favorites are loaded from user settings and stored as a set for fast lookup.
-4. The selected index is resolved using explicit selection, then favorites fallback, then a default index.
-5. History data for the selected index is fetched and mapped to chart data.
+4. `useMoexIndexListState` computes list sections, pagination, and filters.
+5. `useMoexIndexDetailState` resolves the selected index and triggers history fetch.
 
 **Filtering, Sorting, Pagination**
 - Search matches by `secid`, `shortName`, and `name`.
@@ -58,6 +65,8 @@ Hooks:
 - The list content uses `ScrollArea` and `min-h-0` on containers to avoid page scroll.
 
 **Extending the Page**
-- Add a new filter: update `use-moex-indexes.utils.ts` (options), `use-moex-indexes.ts` (state), and `index-list-filters.tsx` (UI).
-- Add a new sort option: update `SORT_OPTIONS` and `sortComparators` in `use-moex-indexes.utils.ts`.
-- Add new metadata chips: update `index-chart-card.tsx` and ensure the data exists on `MoexIndex`.
+- Add a new filter: update `list/use-moex-indexes.utils.ts` (options),
+  `list/use-moex-indexes-list-state.ts` (state), and
+  `list/index-list-filters.tsx` (UI).
+- Add a new sort option: update `SORT_OPTIONS` and `sortComparators` in `list/use-moex-indexes.utils.ts`.
+- Add new metadata chips: update `detail/index-chart-card.tsx` and ensure the data exists on `MoexIndex`.

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { useMoexIndexesContext } from './moex-indexes-context';
+import { useMoexIndexListContext } from './moex-indexes-list-context';
 import { IndexListFilters } from './index-list-filters';
 import { IndexListPagination } from './index-list-pagination';
 import { IndexListSection } from './index-list-section';
@@ -21,7 +21,7 @@ export function IndexListCard() {
     isEmpty,
     showNoFavoritesMessage,
     listSections,
-  } = useMoexIndexesContext();
+  } = useMoexIndexListContext();
   const { t } = useTranslation();
 
   return (

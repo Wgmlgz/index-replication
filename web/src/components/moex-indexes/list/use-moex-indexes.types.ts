@@ -1,5 +1,4 @@
 import type { MoexIndex } from '@/lib/moex-client';
-import type { ChartPoint } from './index-chart';
 
 export type FilterOption = {
   value: string;
@@ -41,7 +40,7 @@ export type IndexSection = {
   showCollections?: boolean;
 };
 
-export type MoexIndexesState = {
+export type MoexIndexListState = {
   query: string;
   setQuery: (value: string) => void;
   selectedSecid: string | null;
@@ -67,17 +66,9 @@ export type MoexIndexesState = {
   showNoFavoritesMessage: boolean;
   indexesLoading: boolean;
   collectionsLoading: boolean;
-  historyLoading: boolean;
   error: string | null;
   listSections: IndexSection[];
   indexCollectionsMap: Record<string, string[]>;
   favoritesSet: Set<string>;
   toggleFavorite: (secid: string) => void;
-  selectedIndex: MoexIndex | null;
-  selectedIndexCollections: string[];
-  chartData: ChartPoint[];
-  latestValue: number | null;
-  change: number | null;
-  changePercent: number | null;
-  numberFormatter: Intl.NumberFormat;
 };

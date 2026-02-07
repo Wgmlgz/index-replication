@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndexChart } from './index-chart';
-import { useMoexIndexesContext } from './moex-indexes-context';
+import { useMoexIndexDetailContext } from './moex-indexes-detail-context';
 
 export function IndexChartCard() {
   const {
@@ -16,7 +16,7 @@ export function IndexChartCard() {
     numberFormatter,
     historyLoading,
     chartData,
-  } = useMoexIndexesContext();
+  } = useMoexIndexDetailContext();
   const { t } = useTranslation();
 
   const collectionPreview = selectedIndexCollections.slice(0, 3);

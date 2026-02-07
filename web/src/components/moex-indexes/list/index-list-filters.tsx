@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMoexIndexesContext } from './moex-indexes-context';
+import { useMoexIndexListContext } from './moex-indexes-list-context';
 import type { SortKey } from './use-moex-indexes.types';
 import { FILTER_DEFS } from './use-moex-indexes.utils';
 
@@ -108,7 +108,7 @@ export function IndexListFilters() {
     clearFilters,
     indexesLoading,
     collectionsLoading,
-  } = useMoexIndexesContext();
+  } = useMoexIndexListContext();
   const { t } = useTranslation();
 
   const filtersDisabled = indexesLoading;

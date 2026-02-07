@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { MoexIndex } from '@/lib/moex-client';
-import { useMoexIndexesContext } from './moex-indexes-context';
+import { useMoexIndexListContext } from './moex-indexes-list-context';
 
 type IndexListItemProps = {
   index: MoexIndex;
@@ -21,7 +21,7 @@ export function IndexListItem({
     setSelectedSecid,
     toggleFavorite,
     indexCollectionsMap,
-  } = useMoexIndexesContext();
+  } = useMoexIndexListContext();
   const { t } = useTranslation();
 
   const secidKey = index.secid.toUpperCase();

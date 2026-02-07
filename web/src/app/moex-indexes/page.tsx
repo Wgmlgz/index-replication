@@ -2,15 +2,16 @@
 
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { IndexChartCard } from '@/components/moex-indexes/index-chart-card';
-import { IndexListCard } from '@/components/moex-indexes/index-list-card';
-import {
-  MoexIndexesProvider,
-  useMoexIndexesContext,
-} from '@/components/moex-indexes/moex-indexes-context';
+import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';
+import { useMoexIndexDetailContext } from '@/components/moex-indexes/detail/moex-indexes-detail-context';
+import { IndexListCard } from '@/components/moex-indexes/list/index-list-card';
+import { useMoexIndexListContext } from '@/components/moex-indexes/list/moex-indexes-list-context';
+import { MoexIndexesProvider } from '@/components/moex-indexes/moex-indexes-context';
 
 function MoexIndexesContent() {
-  const { error } = useMoexIndexesContext();
+  const { error: listError } = useMoexIndexListContext();
+  const { error: detailError } = useMoexIndexDetailContext();
+  const error = listError ?? detailError;
   const { t } = useTranslation();
 
   return (

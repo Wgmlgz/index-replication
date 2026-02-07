@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMoexIndexesContext } from './moex-indexes-context';
+import { useMoexIndexListContext } from './moex-indexes-list-context';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50];
 
@@ -22,7 +22,7 @@ export function IndexListPagination() {
     pageSize,
     setPageIndex,
     setPageSize,
-  } = useMoexIndexesContext();
+  } = useMoexIndexListContext();
   const { t } = useTranslation();
 
   if (!showPagination) return null;
