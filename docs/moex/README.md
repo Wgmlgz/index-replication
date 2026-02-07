@@ -9,6 +9,7 @@ Artifacts:
 - `md/index.md` (reference index page)
 - `html/<id>.html` (endpoint pages)
 - `md/<id>.md` (endpoint pages)
+- `MOEX-INDEXES-PAGE.md` (frontend page and component guide)
 
 To refresh the cache:
 

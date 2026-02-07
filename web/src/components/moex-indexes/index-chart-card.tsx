@@ -1,34 +1,27 @@
-﻿'use client';
+'use client';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { MoexIndex } from '@/lib/moex-client';
-import { IndexChart, type ChartPoint } from './index-chart';
+import { IndexChart } from './index-chart';
+import { useMoexIndexesContext } from './moex-indexes-context';
 
-type IndexChartCardProps = {
-  selectedIndex: MoexIndex | null;
-  selectedCollections: string[];
-  latestValue: number | null;
-  change: number | null;
-  changePercent: number | null;
-  numberFormatter: Intl.NumberFormat;
-  historyLoading: boolean;
-  chartData: ChartPoint[];
-};
+export function IndexChartCard() {
+  const {
+    selectedIndex,
+    selectedIndexCollections,
+    latestValue,
+    change,
+    changePercent,
+    numberFormatter,
+    historyLoading,
+    chartData,
+  } = useMoexIndexesContext();
 
-export function IndexChartCard({
-  selectedIndex,
-  selectedCollections,
-  latestValue,
-  change,
-  changePercent,
-  numberFormatter,
-  historyLoading,
-  chartData,
-}: IndexChartCardProps) {
-  const collectionPreview = selectedCollections.slice(0, 3);
+  const collectionPreview = selectedIndexCollections.slice(0, 3);
   const remainingCollections =
-    selectedCollections.length > 3 ? selectedCollections.length - 3 : 0;
+    selectedIndexCollections.length > 3
+      ? selectedIndexCollections.length - 3
+      : 0;
 
   return (
     <Card className='flex h-full flex-col'>
@@ -43,8 +36,7 @@ export function IndexChartCard({
               <Badge variant='outline'>{selectedIndex.secid}</Badge>
             </div>
             <div className='text-sm text-muted-foreground'>
-              Период: последние 12 месяцев · Валюта:{' '}
-              {selectedIndex.currency ?? '—'}
+              Период: последние 12 месяцев · Валюта: {selectedIndex.currency ?? '?'}
             </div>
             <div className='flex flex-wrap gap-2'>
               {selectedIndex.boardId && (
@@ -64,7 +56,7 @@ export function IndexChartCard({
                 </Badge>
               )}
             </div>
-            {selectedCollections.length > 0 ? (
+            {selectedIndexCollections.length > 0 ? (
               <div className='text-xs text-muted-foreground'>
                 Группы: {collectionPreview.join(', ')}
                 {remainingCollections > 0 && ` +${remainingCollections}`}

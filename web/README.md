@@ -57,6 +57,9 @@ Feature routes (App Router):
 - `web/src/app/dashboard/page.tsx`
 - `web/src/app/moex-indexes/page.tsx`
 
+MOEX indexes page docs:
+- `docs/moex/MOEX-INDEXES-PAGE.md`
+
 ## API Configuration
 
 By default the frontend talks to the API at `http://localhost:8080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering. `web/src/lib/api.ts` also supports a local storage override.
