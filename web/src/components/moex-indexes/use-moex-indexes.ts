@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { moexClient, type MoexIndex } from '@/lib/moex-client';
@@ -11,6 +11,7 @@ import {
 import type { ChartPoint } from './index-chart';
 
 const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
+const DEFAULT_PAGE_SIZE = 20;
 
 type MoexIndexesState = {
   query: string;
@@ -19,10 +20,18 @@ type MoexIndexesState = {
   setSelectedSecid: (value: string | null) => void;
   showFavoritesOnly: boolean;
   setShowFavoritesOnly: (value: boolean) => void;
+  pageIndex: number;
+  setPageIndex: (value: number) => void;
+  pageSize: number;
+  setPageSize: (value: number) => void;
+  pageCount: number;
+  showPagination: boolean;
+  foundCount: number;
+  isEmpty: boolean;
+  showNoFavoritesMessage: boolean;
   indexesLoading: boolean;
   historyLoading: boolean;
   error: string | null;
-  filteredIndexes: MoexIndex[];
   favoriteIndexes: MoexIndex[];
   otherIndexes: MoexIndex[];
   favoritesSet: Set<string>;
@@ -39,6 +48,8 @@ export function useMoexIndexes(): MoexIndexesState {
   const [query, setQuery] = useState('');
   const [selectedSecid, setSelectedSecid] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const queryClient = useQueryClient();
 
   const dateRange = useMemo(() => {
@@ -73,6 +84,15 @@ export function useMoexIndexes(): MoexIndexesState {
     [favorites],
   );
 
+  const favoritesBySecid = useMemo(() => {
+    const map = new Map(
+      indexes.map(item => [item.secid.toUpperCase(), item]),
+    );
+    return favorites
+      .map(secid => map.get(secid.toUpperCase()))
+      .filter((item): item is MoexIndex => Boolean(item));
+  }, [favorites, indexes]);
+
   const updateFavorites = useMutation({
     mutationFn: (nextFavorites: string[]) =>
       userSettingsClient.patchSettings({ favorites: nextFavorites }),
@@ -98,26 +118,31 @@ export function useMoexIndexes(): MoexIndexesState {
   });
 
   const selectedIndex = useMemo<MoexIndex | null>(() => {
-    if (indexes.length === 0) return null;
+    const findIndex = (secid: string) => {
+      const key = secid.toUpperCase();
+      return (
+        favoritesBySecid.find(item => item.secid.toUpperCase() === key) ??
+        indexes.find(item => item.secid.toUpperCase() === key) ??
+        null
+      );
+    };
+
     if (selectedSecid) {
-      return (
-        indexes.find(
-          item => item.secid.toUpperCase() === selectedSecid.toUpperCase(),
-        ) ?? null
-      );
+      return findIndex(selectedSecid);
     }
-    const favoriteMatch = favorites.find(secid =>
-      indexes.some(index => index.secid.toUpperCase() === secid.toUpperCase()),
-    );
+
+    const favoriteMatch = favorites.find(secid => Boolean(findIndex(secid)));
     if (favoriteMatch) {
-      return (
-        indexes.find(
-          item => item.secid.toUpperCase() === favoriteMatch.toUpperCase(),
-        ) ?? null
-      );
+      return findIndex(favoriteMatch);
     }
-    return indexes.find(item => item.secid === 'IMOEX') ?? indexes[0] ?? null;
-  }, [indexes, selectedSecid, favorites]);
+
+    return (
+      findIndex('IMOEX') ??
+      favoritesBySecid[0] ??
+      indexes[0] ??
+      null
+    );
+  }, [favorites, favoritesBySecid, indexes, selectedSecid]);
 
   const historyQuery = useQuery({
     queryKey: [
@@ -148,15 +173,23 @@ export function useMoexIndexes(): MoexIndexesState {
         ? 'Не удалось загрузить пользовательские настройки.'
         : null;
 
-  const filteredIndexes = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return indexes;
-    return indexes.filter(index => {
-      const haystack =
-        `${index.secid} ${index.shortName} ${index.name}`.toLowerCase();
-      return haystack.includes(normalized);
-    });
-  }, [indexes, query]);
+  const normalizedQuery = query.trim().toLowerCase();
+  const matchesQuery = (index: MoexIndex) => {
+    if (!normalizedQuery) return true;
+    const haystack =
+      `${index.secid} ${index.shortName} ${index.name}`.toLowerCase();
+    return haystack.includes(normalizedQuery);
+  };
+
+  const filteredFavorites = useMemo(
+    () => favoritesBySecid.filter(matchesQuery),
+    [favoritesBySecid, normalizedQuery],
+  );
+
+  const filteredIndexes = useMemo(
+    () => indexes.filter(matchesQuery),
+    [indexes, normalizedQuery],
+  );
 
   const favoriteIndexes = useMemo(
     () =>
@@ -173,6 +206,40 @@ export function useMoexIndexes(): MoexIndexesState {
       ),
     [filteredIndexes, favoritesSet],
   );
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [normalizedQuery, showFavoritesOnly, pageSize]);
+
+  const paginationTarget = showFavoritesOnly ? favoriteIndexes : otherIndexes;
+
+  const pageCount = useMemo(() => {
+    return Math.max(1, Math.ceil(paginationTarget.length / pageSize));
+  }, [paginationTarget.length, pageSize]);
+
+  useEffect(() => {
+    setPageIndex(current => Math.min(current, pageCount - 1));
+  }, [pageCount]);
+
+  const paginated = useMemo(() => {
+    const start = pageIndex * pageSize;
+    return paginationTarget.slice(start, start + pageSize);
+  }, [pageIndex, pageSize, paginationTarget]);
+
+  const visibleFavorites = showFavoritesOnly ? paginated : favoriteIndexes;
+  const visibleOthers = showFavoritesOnly ? [] : paginated;
+
+  const foundCount = showFavoritesOnly
+    ? favoriteIndexes.length
+    : filteredIndexes.length;
+
+  const showPagination = paginationTarget.length > 0;
+
+  const showNoFavoritesMessage =
+    showFavoritesOnly &&
+    !indexesLoading &&
+    filteredIndexes.length > 0 &&
+    favoriteIndexes.length === 0;
 
   const toggleFavorite = (secid: string) => {
     const key = secid.toUpperCase();
@@ -222,12 +289,20 @@ export function useMoexIndexes(): MoexIndexesState {
     setSelectedSecid,
     showFavoritesOnly,
     setShowFavoritesOnly,
+    pageIndex,
+    setPageIndex,
+    pageSize,
+    setPageSize,
+    pageCount,
+    showPagination,
+    foundCount,
+    isEmpty: filteredIndexes.length === 0,
+    showNoFavoritesMessage,
     indexesLoading,
     historyLoading,
     error,
-    filteredIndexes,
-    favoriteIndexes,
-    otherIndexes,
+    favoriteIndexes: visibleFavorites,
+    otherIndexes: visibleOthers,
     favoritesSet,
     toggleFavorite,
     selectedIndex,

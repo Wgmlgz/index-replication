@@ -56,6 +56,19 @@ const tableToObjects = (table: MoexTable): Record<string, string | number | null
   });
 };
 
+const INDEX_COLUMNS = 'SECID,SHORTNAME,NAME,CURRENCYID,DECIMALS';
+
+const mapIndexes = (table: MoexTable): MoexIndex[] =>
+  tableToObjects(table)
+    .map((row) => ({
+      secid: String(row.SECID ?? ''),
+      shortName: String(row.SHORTNAME ?? row.NAME ?? ''),
+      name: String(row.NAME ?? row.SHORTNAME ?? ''),
+      currency: row.CURRENCYID ? String(row.CURRENCYID) : null,
+      decimals: toNumber(row.DECIMALS),
+    }))
+    .filter((row) => row.secid.length > 0);
+
 const normalizeParams = (params?: RequestParams) => {
   if (!params) return undefined;
   const normalized: Record<string, string> = {};
@@ -99,20 +112,12 @@ export class MoexClient {
       {
         'iss.meta': 'off',
         lang: 'ru',
-        'securities.columns': 'SECID,SHORTNAME,NAME,CURRENCYID,DECIMALS',
+        'securities.columns': INDEX_COLUMNS,
       },
       signal
     );
 
-    return tableToObjects(data.securities)
-      .map((row) => ({
-        secid: String(row.SECID ?? ''),
-        shortName: String(row.SHORTNAME ?? row.NAME ?? ''),
-        name: String(row.NAME ?? row.SHORTNAME ?? ''),
-        currency: row.CURRENCYID ? String(row.CURRENCYID) : null,
-        decimals: toNumber(row.DECIMALS),
-      }))
-      .filter((row) => row.secid.length > 0);
+    return mapIndexes(data.securities);
   }
 
   async getIndexHistory(

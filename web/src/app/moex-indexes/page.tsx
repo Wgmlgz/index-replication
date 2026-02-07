@@ -13,10 +13,18 @@ export default function MoexIndexesPage() {
     setSelectedSecid,
     showFavoritesOnly,
     setShowFavoritesOnly,
+    pageIndex,
+    setPageIndex,
+    pageSize,
+    setPageSize,
+    pageCount,
+    showPagination,
+    foundCount,
+    isEmpty,
+    showNoFavoritesMessage,
     indexesLoading,
     historyLoading,
     error,
-    filteredIndexes,
     favoriteIndexes,
     otherIndexes,
     favoritesSet,
@@ -52,13 +60,21 @@ export default function MoexIndexesPage() {
           indexesLoading={indexesLoading}
           showFavoritesOnly={showFavoritesOnly}
           onShowFavoritesOnlyChange={setShowFavoritesOnly}
-          filteredIndexes={filteredIndexes}
+          foundCount={foundCount}
+          isEmpty={isEmpty}
+          showNoFavoritesMessage={showNoFavoritesMessage}
           favoriteIndexes={favoriteIndexes}
           otherIndexes={otherIndexes}
           favoritesSet={favoritesSet}
           selectedSecid={selectedSecid}
           onSelect={setSelectedSecid}
           onToggleFavorite={toggleFavorite}
+          pageIndex={pageIndex}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageIndexChange={setPageIndex}
+          onPageSizeChange={setPageSize}
+          showPagination={showPagination}
         />
         <IndexChartCard
           selectedIndex={selectedIndex}
