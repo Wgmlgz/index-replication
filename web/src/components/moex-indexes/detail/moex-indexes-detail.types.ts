@@ -14,6 +14,7 @@ export type RangeKey =
 
 export type ChartViewMode = 'price' | 'percent';
 export type ChartType = ChartSeriesType;
+export type CompositionTab = 'snapshot' | 'trend';
 
 export type MoexIndexDetailState = {
   selectedIndex: MoexIndex | null;
@@ -35,4 +36,6 @@ export type MoexIndexDetailState = {
   setViewMode: (next: ChartViewMode) => void;
   chartType: ChartType;
   setChartType: (next: ChartType) => void;
+  compositionTab: CompositionTab;
+  setCompositionTab: (next: CompositionTab) => void;
 };

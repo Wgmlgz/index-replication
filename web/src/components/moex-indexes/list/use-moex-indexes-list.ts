@@ -123,17 +123,6 @@ export function useMoexIndexList({
     [sortedIndexes, favoritesSet]
   );
 
-  useEffect(() => {
-    setPageIndex(0);
-  }, [
-    normalizedQuery,
-    showFavoritesOnly,
-    pageSize,
-    filters,
-    sortKey,
-    setPageIndex,
-  ]);
-
   const paginationTarget = showFavoritesOnly
     ? favoriteIndexesAll
     : otherIndexesAll;

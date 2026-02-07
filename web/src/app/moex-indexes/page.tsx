@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+import { Suspense } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IndexCompositionCard } from '@/components/moex-indexes/composition/index-composition-card';
 import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';
@@ -44,8 +45,10 @@ function MoexIndexesContent() {
 
 export default function MoexIndexesPage() {
   return (
-    <MoexIndexesProvider>
-      <MoexIndexesContent />
-    </MoexIndexesProvider>
+    <Suspense fallback={<div className='p-6'>Loading...</div>}>
+      <MoexIndexesProvider>
+        <MoexIndexesContent />
+      </MoexIndexesProvider>
+    </Suspense>
   );
 }

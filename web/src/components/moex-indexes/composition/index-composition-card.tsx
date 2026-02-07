@@ -9,6 +9,7 @@ import type { ChartData } from '../detail/index-chart';
 import { IndexCompositionChart, COMPOSITION_SERIES_COLORS } from './index-composition-chart';
 import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
+import type { CompositionTab } from '../detail/moex-indexes-detail.types';
 
 const TOP_SERIES_COUNT = 8;
 const SNAPSHOT_COUNT = TOP_SERIES_COUNT;
@@ -40,6 +41,8 @@ export function IndexCompositionCard() {
     rangeKey,
     customFrom,
     customTill,
+    compositionTab,
+    setCompositionTab,
   } = useMoexIndexDetailContext();
   const { t, i18n } = useTranslation();
 
@@ -83,7 +86,11 @@ export function IndexCompositionCard() {
 
   return (
     <Card className='flex h-full flex-col'>
-      <Tabs defaultValue='snapshot' className='flex h-full flex-col'>
+      <Tabs
+        value={compositionTab}
+        onValueChange={(next) => setCompositionTab(next as CompositionTab)}
+        className='flex h-full flex-col'
+      >
         <CardHeader className='gap-2'>
           <div className='flex flex-wrap items-center justify-between gap-3'>
             <div className='space-y-1'>

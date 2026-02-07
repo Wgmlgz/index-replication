@@ -7,6 +7,7 @@ import type { MoexIndex } from '@/lib/moex-client';
 import type {
   ChartType,
   ChartViewMode,
+  CompositionTab,
   MoexIndexDetailState,
   RangeKey,
 } from './moex-indexes-detail.types';
@@ -18,6 +19,14 @@ type DetailStateInput = {
   favoritesBySecid: MoexIndex[];
   selectedSecid: string | null;
   indexCollectionsMap: Record<string, string[]>;
+  initial?: Partial<{
+    rangeKey: RangeKey;
+    customFrom: string;
+    customTill: string;
+    viewMode: ChartViewMode;
+    chartType: ChartType;
+    compositionTab: CompositionTab;
+  }>;
 };
 
 export function useMoexIndexDetailState({
@@ -26,17 +35,31 @@ export function useMoexIndexDetailState({
   favoritesBySecid,
   selectedSecid,
   indexCollectionsMap,
+  initial,
 }: DetailStateInput): MoexIndexDetailState {
   const { t } = useTranslation();
   const today = new Date();
   const defaultFrom = format(subYears(today, 1), 'yyyy-MM-dd');
   const defaultTill = format(today, 'yyyy-MM-dd');
 
-  const [rangeKey, setRangeKey] = useState<RangeKey>('1y');
-  const [customFrom, setCustomFrom] = useState(defaultFrom);
-  const [customTill, setCustomTill] = useState(defaultTill);
-  const [viewMode, setViewMode] = useState<ChartViewMode>('price');
-  const [chartType, setChartType] = useState<ChartType>('line');
+  const [rangeKey, setRangeKey] = useState<RangeKey>(
+    () => initial?.rangeKey ?? '1y'
+  );
+  const [customFrom, setCustomFrom] = useState(
+    () => initial?.customFrom ?? defaultFrom
+  );
+  const [customTill, setCustomTill] = useState(
+    () => initial?.customTill ?? defaultTill
+  );
+  const [viewMode, setViewMode] = useState<ChartViewMode>(
+    () => initial?.viewMode ?? 'price'
+  );
+  const [chartType, setChartType] = useState<ChartType>(
+    () => initial?.chartType ?? 'line'
+  );
+  const [compositionTab, setCompositionTab] = useState<CompositionTab>(
+    () => initial?.compositionTab ?? 'snapshot'
+  );
 
   const selectedIndex = useMemo<MoexIndex | null>(() => {
     const findIndex = (secid: string) => {
@@ -103,5 +126,7 @@ export function useMoexIndexDetailState({
     setViewMode,
     chartType,
     setChartType,
+    compositionTab,
+    setCompositionTab,
   };
 }

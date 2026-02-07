@@ -7,6 +7,7 @@ import type {
   FilterKey,
   FilterOptions,
   FilterOption,
+  FilterState,
   MoexIndexListState,
   SortKey,
 } from './use-moex-indexes.types';
@@ -32,6 +33,15 @@ type ListStateInput = {
   collectionsError: boolean;
   favoritesSet: Set<string>;
   toggleFavorite: (secid: string) => void;
+  initial?: Partial<{
+    query: string;
+    selectedSecid: string | null;
+    showFavoritesOnly: boolean;
+    pageIndex: number;
+    pageSize: number;
+    filters: FilterState;
+    sortKey: SortKey;
+  }>;
 };
 
 export function useMoexIndexListState({
@@ -47,15 +57,26 @@ export function useMoexIndexListState({
   collectionsError,
   favoritesSet,
   toggleFavorite,
+  initial,
 }: ListStateInput): MoexIndexListState {
   const { t, i18n } = useTranslation();
-  const [query, setQuery] = useState('');
-  const [selectedSecid, setSelectedSecid] = useState<string | null>(null);
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [filters, setFilters] = useState(createEmptyFilters);
-  const [sortKey, setSortKey] = useState<SortKey>('name-asc');
+  const [query, setQueryState] = useState(() => initial?.query ?? '');
+  const [selectedSecid, setSelectedSecid] = useState<string | null>(
+    () => initial?.selectedSecid ?? null
+  );
+  const [showFavoritesOnly, setShowFavoritesOnlyState] = useState(
+    () => initial?.showFavoritesOnly ?? false
+  );
+  const [pageIndex, setPageIndex] = useState(() => initial?.pageIndex ?? 0);
+  const [pageSize, setPageSizeState] = useState(
+    () => initial?.pageSize ?? DEFAULT_PAGE_SIZE
+  );
+  const [filters, setFilters] = useState(
+    () => initial?.filters ?? createEmptyFilters()
+  );
+  const [sortKey, setSortKeyState] = useState<SortKey>(
+    () => initial?.sortKey ?? 'name-asc'
+  );
 
   const filterOptions = useMemo<FilterOptions>(() => {
     const options = {} as FilterOptions;
@@ -76,11 +97,32 @@ export function useMoexIndexListState({
     return options;
   }, [collectionOptions, i18n.language, indexes, t]);
 
+  const setQuery = (value: string) => {
+    setQueryState(value);
+    setPageIndex(0);
+  };
+
+  const setShowFavoritesOnly = (value: boolean) => {
+    setShowFavoritesOnlyState(value);
+    setPageIndex(0);
+  };
+
+  const setPageSize = (value: number) => {
+    setPageSizeState(value);
+    setPageIndex(0);
+  };
+
+  const setSortKey = (value: SortKey) => {
+    setSortKeyState(value);
+    setPageIndex(0);
+  };
+
   const setFilter = (key: FilterKey, value: string[]) => {
     setFilters((current) => ({
       ...current,
       [key]: value,
     }));
+    setPageIndex(0);
   };
 
   const {
@@ -111,6 +153,7 @@ export function useMoexIndexListState({
 
   const clearFilters = () => {
     setFilters(createEmptyFilters());
+    setPageIndex(0);
   };
 
   const error = indexesError
