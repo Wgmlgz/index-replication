@@ -27,6 +27,7 @@ var (
 	SystemMetadataView = Permission{"system_metadata", "view"}
 	SelfView           = Permission{"self", "view"}
 	SelfUpdatePassword = Permission{"self", "update_password"}
+	SelfUpdateSettings = Permission{"self", "update_settings"}
 )
 
 var RolePermissions = map[string][]Permission{
@@ -48,6 +49,7 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		SelfView,
 		SelfUpdatePassword,
+		SelfUpdateSettings,
 	},
 	"manager": {
 		// Manager powers
@@ -61,6 +63,7 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		SelfView,
 		SelfUpdatePassword,
+		SelfUpdateSettings,
 	},
 
 	"operator": {
@@ -68,6 +71,7 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		SelfView,
 		SelfUpdatePassword,
+		SelfUpdateSettings,
 	},
 
 	"observer": {
@@ -75,5 +79,6 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		SelfView,
 		SelfUpdatePassword,
+		SelfUpdateSettings,
 	},
 }

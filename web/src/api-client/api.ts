@@ -18,872 +18,101 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from './common';
 import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
-/**
- * 
- * @export
- * @interface ModelsAddSkuImageRequest
- */
-export interface ModelsAddSkuImageRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsAddSkuImageRequest
-     */
-    'image_data': string;
-}
-/**
- * 
- * @export
- * @interface ModelsAuditLogListResponse
- */
 export interface ModelsAuditLogListResponse {
-    /**
-     * 
-     * @type {Array<ModelsAuditLogResponse>}
-     * @memberof ModelsAuditLogListResponse
-     */
     'logs': Array<ModelsAuditLogResponse>;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsAuditLogListResponse
-     */
     'page': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsAuditLogListResponse
-     */
     'page_size': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsAuditLogListResponse
-     */
     'total': number;
 }
-/**
- * 
- * @export
- * @interface ModelsAuditLogResponse
- */
 export interface ModelsAuditLogResponse {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsAuditLogResponse
-     */
     'action': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsAuditLogResponse
-     */
     'details'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsAuditLogResponse
-     */
     'entity_id'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsAuditLogResponse
-     */
     'entity_type': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsAuditLogResponse
-     */
     'id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsAuditLogResponse
-     */
     'log_image'?: string;
-    /**
-     * 
-     * @type {ModelsUserShort}
-     * @memberof ModelsAuditLogResponse
-     */
     'performed_by'?: ModelsUserShort;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsAuditLogResponse
-     */
     'timestamp': string;
 }
-/**
- * 
- * @export
- * @interface ModelsCreateOrganizationRequest
- */
-export interface ModelsCreateOrganizationRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateOrganizationRequest
-     */
-    'comment'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateOrganizationRequest
-     */
-    'contact_person': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateOrganizationRequest
-     */
-    'email'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateOrganizationRequest
-     */
-    'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateOrganizationRequest
-     */
-    'phone'?: string;
-}
-/**
- * 
- * @export
- * @interface ModelsCreateSkuRequest
- */
-export interface ModelsCreateSkuRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateSkuRequest
-     */
-    'name': string;
-}
-/**
- * 
- * @export
- * @interface ModelsCreateUserRequest
- */
 export interface ModelsCreateUserRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateUserRequest
-     */
     'comment'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateUserRequest
-     */
     'full_name': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsCreateUserRequest
-     */
-    'organization_id'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateUserRequest
-     */
     'password': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsCreateUserRequest
-     */
     'role_id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateUserRequest
-     */
     'username': string;
 }
-/**
- * 
- * @export
- * @interface ModelsDetectRequest
- */
-export interface ModelsDetectRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsDetectRequest
-     */
-    'image': string;
-}
-/**
- * 
- * @export
- * @interface ModelsDetectResponse
- */
-export interface ModelsDetectResponse {
-    /**
-     * 
-     * @type {Array<ModelsRect>}
-     * @memberof ModelsDetectResponse
-     */
-    'rects': Array<ModelsRect>;
-}
-/**
- * 
- * @export
- * @interface ModelsErrorResponse
- */
 export interface ModelsErrorResponse {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsErrorResponse
-     */
     'error'?: string;
 }
-/**
- * 
- * @export
- * @interface ModelsLoginRequest
- */
 export interface ModelsLoginRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsLoginRequest
-     */
     'password'?: string;
     /**
      * Add remember me flag
-     * @type {boolean}
-     * @memberof ModelsLoginRequest
      */
     'remember_me'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsLoginRequest
-     */
     'username'?: string;
 }
-/**
- * 
- * @export
- * @interface ModelsOrganizationListResponse
- */
-export interface ModelsOrganizationListResponse {
-    /**
-     * 
-     * @type {Array<ModelsOrganizationResponse>}
-     * @memberof ModelsOrganizationListResponse
-     */
-    'organizations'?: Array<ModelsOrganizationResponse>;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsOrganizationListResponse
-     */
-    'page'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsOrganizationListResponse
-     */
-    'page_size'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsOrganizationListResponse
-     */
-    'total'?: number;
-}
-/**
- * 
- * @export
- * @interface ModelsOrganizationResponse
- */
-export interface ModelsOrganizationResponse {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'blocked_at': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'comment': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'contact_person': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'created_at': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'email': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsOrganizationResponse
-     */
-    'id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsOrganizationResponse
-     */
-    'phone': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsOrganizationResponse
-     */
-    'user_count': number;
-}
-/**
- * 
- * @export
- * @interface ModelsPasswordChangeRequest
- */
 export interface ModelsPasswordChangeRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsPasswordChangeRequest
-     */
     'new_password'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsPasswordChangeRequest
-     */
     'old_password'?: string;
 }
-/**
- * 
- * @export
- * @interface ModelsPermission
- */
 export interface ModelsPermission {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsPermission
-     */
     'act': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsPermission
-     */
     'obj': string;
 }
-/**
- * 
- * @export
- * @interface ModelsPermissionsResponse
- */
 export interface ModelsPermissionsResponse {
-    /**
-     * 
-     * @type {Array<ModelsPermission>}
-     * @memberof ModelsPermissionsResponse
-     */
     'permissions': Array<ModelsPermission>;
-    /**
-     * 
-     * @type {ModelsUserResponse}
-     * @memberof ModelsPermissionsResponse
-     */
     'user': ModelsUserResponse;
 }
-/**
- * 
- * @export
- * @interface ModelsRecognitionResponse
- */
-export interface ModelsRecognitionResponse {
-    /**
-     * 
-     * @type {Array<ModelsRecognizedSkuDetection>}
-     * @memberof ModelsRecognitionResponse
-     */
-    'detections': Array<ModelsRecognizedSkuDetection>;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsRecognitionResponse
-     */
-    'error'?: string;
-}
-/**
- * 
- * @export
- * @interface ModelsRecognitionStatus
- */
-export interface ModelsRecognitionStatus {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ModelsRecognitionStatus
-     */
-    'connected'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsRecognitionStatus
-     */
-    'connected_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsRecognitionStatus
-     */
-    'last_message_at'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsRecognitionStatus
-     */
-    'pending_requests'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsRecognitionStatus
-     */
-    'remote_addr'?: string;
-}
-/**
- * 
- * @export
- * @interface ModelsRecognizeRequest
- */
-export interface ModelsRecognizeRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsRecognizeRequest
-     */
-    'image': string;
-}
-/**
- * 
- * @export
- * @interface ModelsRecognizedSkuDetection
- */
-export interface ModelsRecognizedSkuDetection {
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsRecognizedSkuDetection
-     */
-    'confidence': number;
-    /**
-     * 
-     * @type {ModelsRect}
-     * @memberof ModelsRecognizedSkuDetection
-     */
-    'rect': ModelsRect;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsRecognizedSkuDetection
-     */
-    'sku': string;
-}
-/**
- * 
- * @export
- * @interface ModelsRect
- */
-export interface ModelsRect {
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsRect
-     */
-    'h': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsRect
-     */
-    'w': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsRect
-     */
-    'x': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsRect
-     */
-    'y': number;
-}
-/**
- * 
- * @export
- * @interface ModelsSkuImageResponse
- */
-export interface ModelsSkuImageResponse {
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsSkuImageResponse
-     */
-    'id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsSkuImageResponse
-     */
-    'url': string;
-}
-/**
- * 
- * @export
- * @interface ModelsSkuListResponse
- */
-export interface ModelsSkuListResponse {
-    /**
-     * 
-     * @type {Array<ModelsSkuResponse>}
-     * @memberof ModelsSkuListResponse
-     */
-    'items'?: Array<ModelsSkuResponse>;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsSkuListResponse
-     */
-    'page'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsSkuListResponse
-     */
-    'page_size'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsSkuListResponse
-     */
-    'total'?: number;
-}
-/**
- * 
- * @export
- * @interface ModelsSkuResponse
- */
-export interface ModelsSkuResponse {
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsSkuResponse
-     */
-    'id': number;
-    /**
-     * 
-     * @type {Array<ModelsSkuImageResponse>}
-     * @memberof ModelsSkuResponse
-     */
-    'images': Array<ModelsSkuImageResponse>;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsSkuResponse
-     */
-    'name': string;
-}
-/**
- * 
- * @export
- * @interface ModelsUpdateOrganizationRequest
- */
-export interface ModelsUpdateOrganizationRequest {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ModelsUpdateOrganizationRequest
-     */
-    'blocked'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateOrganizationRequest
-     */
-    'comment'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateOrganizationRequest
-     */
-    'contact_person'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateOrganizationRequest
-     */
-    'email'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateOrganizationRequest
-     */
-    'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateOrganizationRequest
-     */
-    'phone'?: string;
-}
-/**
- * 
- * @export
- * @interface ModelsUpdateSkuRequest
- */
-export interface ModelsUpdateSkuRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateSkuRequest
-     */
-    'name'?: string;
-}
-/**
- * 
- * @export
- * @interface ModelsUpdateUserRequest
- */
 export interface ModelsUpdateUserRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateUserRequest
-     */
     'comment'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateUserRequest
-     */
     'email'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateUserRequest
-     */
     'full_name'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUpdateUserRequest
-     */
-    'organization_id'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateUserRequest
-     */
     'password'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUpdateUserRequest
-     */
     'phone'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUpdateUserRequest
-     */
     'role_id'?: number;
 }
-/**
- * 
- * @export
- * @interface ModelsUserListResponse
- */
 export interface ModelsUserListResponse {
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserListResponse
-     */
     'page'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserListResponse
-     */
     'page_size'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserListResponse
-     */
     'total'?: number;
-    /**
-     * 
-     * @type {Array<ModelsUserResponse>}
-     * @memberof ModelsUserListResponse
-     */
     'users'?: Array<ModelsUserResponse>;
 }
-/**
- * 
- * @export
- * @interface ModelsUserResponse
- */
 export interface ModelsUserResponse {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'blocked_at': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'comment': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'created_at': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'email': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'full_name': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserResponse
-     */
     'id': number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ModelsUserResponse
-     */
     'is_blocked': boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'last_active': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserResponse
-     */
-    'organization_id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
-    'organization_name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'phone': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserResponse
-     */
     'role_id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'role_key': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserResponse
-     */
     'username': string;
 }
-/**
- * 
- * @export
- * @interface ModelsUserShort
- */
+export interface ModelsUserSettingsPatchRequest {
+    'favorites'?: Array<string>;
+    'values'?: { [key: string]: string; };
+}
+export interface ModelsUserSettingsResponse {
+    'favorites'?: Array<string>;
+    'values'?: { [key: string]: string; };
+}
 export interface ModelsUserShort {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserShort
-     */
     'full_name': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelsUserShort
-     */
     'id': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsUserShort
-     */
     'username': string;
 }
 
 /**
  * AuditLogsApi - axios parameter creator
- * @export
  */
 export const AuditLogsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -906,8 +135,8 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -929,11 +158,10 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
          * @param {number} [performedBy] Performed by user ID filter
          * @param {string} [startDate] Start date (RFC3339)
          * @param {string} [endDate] End date (RFC3339)
-         * @param {number} [organizationId] Filter for org
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        auditLogsGet: async (page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, organizationId?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        auditLogsGet: async (page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/audit-logs`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -982,12 +210,8 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
                 localVarQueryParameter['end_date'] = endDate;
             }
 
-            if (organizationId !== undefined) {
-                localVarQueryParameter['organization_id'] = organizationId;
-            }
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -1020,8 +244,8 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -1036,7 +260,6 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
 
 /**
  * AuditLogsApi - functional programming interface
- * @export
  */
 export const AuditLogsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = AuditLogsApiAxiosParamCreator(configuration)
@@ -1065,12 +288,11 @@ export const AuditLogsApiFp = function(configuration?: Configuration) {
          * @param {number} [performedBy] Performed by user ID filter
          * @param {string} [startDate] Start date (RFC3339)
          * @param {string} [endDate] End date (RFC3339)
-         * @param {number} [organizationId] Filter for org
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, organizationId?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAuditLogListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, organizationId, options);
+        async auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAuditLogListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuditLogsApi.auditLogsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1093,7 +315,6 @@ export const AuditLogsApiFp = function(configuration?: Configuration) {
 
 /**
  * AuditLogsApi - factory interface
- * @export
  */
 export const AuditLogsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = AuditLogsApiFp(configuration)
@@ -1119,12 +340,11 @@ export const AuditLogsApiFactory = function (configuration?: Configuration, base
          * @param {number} [performedBy] Performed by user ID filter
          * @param {string} [startDate] Start date (RFC3339)
          * @param {string} [endDate] End date (RFC3339)
-         * @param {number} [organizationId] Filter for org
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, organizationId?: number, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAuditLogListResponse> {
-            return localVarFp.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, organizationId, options).then((request) => request(axios, basePath));
+        auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAuditLogListResponse> {
+            return localVarFp.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options).then((request) => request(axios, basePath));
         },
         /**
          * Returns details of an audit log entry
@@ -1141,9 +361,6 @@ export const AuditLogsApiFactory = function (configuration?: Configuration, base
 
 /**
  * AuditLogsApi - object-oriented interface
- * @export
- * @class AuditLogsApi
- * @extends {BaseAPI}
  */
 export class AuditLogsApi extends BaseAPI {
     /**
@@ -1151,7 +368,6 @@ export class AuditLogsApi extends BaseAPI {
      * @summary Get audit log actions and entity types
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof AuditLogsApi
      */
     public auditLogsActionsGet(options?: RawAxiosRequestConfig) {
         return AuditLogsApiFp(this.configuration).auditLogsActionsGet(options).then((request) => request(this.axios, this.basePath));
@@ -1169,13 +385,11 @@ export class AuditLogsApi extends BaseAPI {
      * @param {number} [performedBy] Performed by user ID filter
      * @param {string} [startDate] Start date (RFC3339)
      * @param {string} [endDate] End date (RFC3339)
-     * @param {number} [organizationId] Filter for org
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof AuditLogsApi
      */
-    public auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, organizationId?: number, options?: RawAxiosRequestConfig) {
-        return AuditLogsApiFp(this.configuration).auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, organizationId, options).then((request) => request(this.axios, this.basePath));
+    public auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig) {
+        return AuditLogsApiFp(this.configuration).auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1184,7 +398,6 @@ export class AuditLogsApi extends BaseAPI {
      * @param {number} id Audit Log ID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof AuditLogsApi
      */
     public auditLogsIdGet(id: number, options?: RawAxiosRequestConfig) {
         return AuditLogsApiFp(this.configuration).auditLogsIdGet(id, options).then((request) => request(this.axios, this.basePath));
@@ -1195,7 +408,6 @@ export class AuditLogsApi extends BaseAPI {
 
 /**
  * AuthApi - axios parameter creator
- * @export
  */
 export const AuthApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -1221,9 +433,8 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -1254,8 +465,8 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -1287,9 +498,8 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -1306,7 +516,6 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
 
 /**
  * AuthApi - functional programming interface
- * @export
  */
 export const AuthApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = AuthApiAxiosParamCreator(configuration)
@@ -1354,7 +563,6 @@ export const AuthApiFp = function(configuration?: Configuration) {
 
 /**
  * AuthApi - factory interface
- * @export
  */
 export const AuthApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = AuthApiFp(configuration)
@@ -1393,9 +601,6 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
 
 /**
  * AuthApi - object-oriented interface
- * @export
- * @class AuthApi
- * @extends {BaseAPI}
  */
 export class AuthApi extends BaseAPI {
     /**
@@ -1404,7 +609,6 @@ export class AuthApi extends BaseAPI {
      * @param {ModelsLoginRequest} body Login credentials
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof AuthApi
      */
     public loginPost(body: ModelsLoginRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).loginPost(body, options).then((request) => request(this.axios, this.basePath));
@@ -1415,7 +619,6 @@ export class AuthApi extends BaseAPI {
      * @summary Logout
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof AuthApi
      */
     public logoutPost(options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).logoutPost(options).then((request) => request(this.axios, this.basePath));
@@ -1427,7 +630,6 @@ export class AuthApi extends BaseAPI {
      * @param {ModelsPasswordChangeRequest} body Password change info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof AuthApi
      */
     public mePasswordPut(body: ModelsPasswordChangeRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).mePasswordPut(body, options).then((request) => request(this.axios, this.basePath));
@@ -1437,25 +639,18 @@ export class AuthApi extends BaseAPI {
 
 
 /**
- * OrganizationsApi - axios parameter creator
- * @export
+ * SettingsApi - axios parameter creator
  */
-export const OrganizationsApiAxiosParamCreator = function (configuration?: Configuration) {
+export const SettingsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Returns a paginated list of organizations
-         * @summary List organizations
-         * @param {number} [page] Page number
-         * @param {number} [pageSize] Page size
-         * @param {string} [search] Search term
-         * @param {string} [sortBy] Sort by field
-         * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {boolean} [hideBlocked] Don\&#39;t show blocked
+         * Returns settings for the current user, including favorites
+         * @summary Get current user settings
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        organizationsGet: async (page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, hideBlocked?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/organizations`;
+        meSettingsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/settings`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1467,32 +662,8 @@ export const OrganizationsApiAxiosParamCreator = function (configuration?: Confi
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            if (page !== undefined) {
-                localVarQueryParameter['page'] = page;
-            }
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-            if (pageSize !== undefined) {
-                localVarQueryParameter['page_size'] = pageSize;
-            }
-
-            if (search !== undefined) {
-                localVarQueryParameter['search'] = search;
-            }
-
-            if (sortBy !== undefined) {
-                localVarQueryParameter['sort_by'] = sortBy;
-            }
-
-            if (sortDir !== undefined) {
-                localVarQueryParameter['sort_dir'] = sortDir;
-            }
-
-            if (hideBlocked !== undefined) {
-                localVarQueryParameter['hide_blocked'] = hideBlocked;
-            }
-
-
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -1503,17 +674,16 @@ export const OrganizationsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * Blocks an organization and its users
-         * @summary Block organization
-         * @param {number} id Organization ID
+         * Updates settings for the current user, including favorites
+         * @summary Update current user settings
+         * @param {ModelsUserSettingsPatchRequest} payload Settings payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        organizationsIdBlockPost: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('organizationsIdBlockPost', 'id', id)
-            const localVarPath = `/organizations/{id}/block`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+        meSettingsPatch: async (payload: ModelsUserSettingsPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meSettingsPatch', 'payload', payload)
+            const localVarPath = `/me/settings`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1521,193 +691,17 @@ export const OrganizationsApiAxiosParamCreator = function (configuration?: Confi
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Deletes an organization
-         * @summary Delete organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdDelete: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('organizationsIdDelete', 'id', id)
-            const localVarPath = `/organizations/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns details of a specific organization
-         * @summary Get organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdGet: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('organizationsIdGet', 'id', id)
-            const localVarPath = `/organizations/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Updates an existing organization
-         * @summary Update organization
-         * @param {number} id Organization ID
-         * @param {ModelsUpdateOrganizationRequest} body Organization update info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdPut: async (id: number, body: ModelsUpdateOrganizationRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('organizationsIdPut', 'id', id)
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('organizationsIdPut', 'body', body)
-            const localVarPath = `/organizations/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Unblocks an organization
-         * @summary Unblock organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdUnblockPost: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('organizationsIdUnblockPost', 'id', id)
-            const localVarPath = `/organizations/{id}/unblock`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Creates a new organization
-         * @summary Create organization
-         * @param {ModelsCreateOrganizationRequest} body Organization info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsPost: async (body: ModelsCreateOrganizationRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('organizationsPost', 'body', body)
-            const localVarPath = `/organizations`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1718,1189 +712,90 @@ export const OrganizationsApiAxiosParamCreator = function (configuration?: Confi
 };
 
 /**
- * OrganizationsApi - functional programming interface
- * @export
+ * SettingsApi - functional programming interface
  */
-export const OrganizationsApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = OrganizationsApiAxiosParamCreator(configuration)
+export const SettingsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = SettingsApiAxiosParamCreator(configuration)
     return {
         /**
-         * Returns a paginated list of organizations
-         * @summary List organizations
-         * @param {number} [page] Page number
-         * @param {number} [pageSize] Page size
-         * @param {string} [search] Search term
-         * @param {string} [sortBy] Sort by field
-         * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {boolean} [hideBlocked] Don\&#39;t show blocked
+         * Returns settings for the current user, including favorites
+         * @summary Get current user settings
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async organizationsGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, hideBlocked?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsOrganizationListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsGet(page, pageSize, search, sortBy, sortDir, hideBlocked, options);
+        async meSettingsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserSettingsResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meSettingsGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsGet']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['SettingsApi.meSettingsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Blocks an organization and its users
-         * @summary Block organization
-         * @param {number} id Organization ID
+         * Updates settings for the current user, including favorites
+         * @summary Update current user settings
+         * @param {ModelsUserSettingsPatchRequest} payload Settings payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async organizationsIdBlockPost(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: string; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsIdBlockPost(id, options);
+        async meSettingsPatch(payload: ModelsUserSettingsPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserSettingsResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meSettingsPatch(payload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsIdBlockPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Deletes an organization
-         * @summary Delete organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async organizationsIdDelete(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsIdDelete(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsIdDelete']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns details of a specific organization
-         * @summary Get organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async organizationsIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsOrganizationResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsIdGet(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsIdGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Updates an existing organization
-         * @summary Update organization
-         * @param {number} id Organization ID
-         * @param {ModelsUpdateOrganizationRequest} body Organization update info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async organizationsIdPut(id: number, body: ModelsUpdateOrganizationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsOrganizationResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsIdPut(id, body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsIdPut']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Unblocks an organization
-         * @summary Unblock organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async organizationsIdUnblockPost(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: string; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsIdUnblockPost(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsIdUnblockPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Creates a new organization
-         * @summary Create organization
-         * @param {ModelsCreateOrganizationRequest} body Organization info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async organizationsPost(body: ModelsCreateOrganizationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsOrganizationResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.organizationsPost(body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['OrganizationsApi.organizationsPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['SettingsApi.meSettingsPatch']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
 };
 
 /**
- * OrganizationsApi - factory interface
- * @export
+ * SettingsApi - factory interface
  */
-export const OrganizationsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = OrganizationsApiFp(configuration)
+export const SettingsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = SettingsApiFp(configuration)
     return {
         /**
-         * Returns a paginated list of organizations
-         * @summary List organizations
-         * @param {number} [page] Page number
-         * @param {number} [pageSize] Page size
-         * @param {string} [search] Search term
-         * @param {string} [sortBy] Sort by field
-         * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {boolean} [hideBlocked] Don\&#39;t show blocked
+         * Returns settings for the current user, including favorites
+         * @summary Get current user settings
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        organizationsGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, hideBlocked?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<ModelsOrganizationListResponse> {
-            return localVarFp.organizationsGet(page, pageSize, search, sortBy, sortDir, hideBlocked, options).then((request) => request(axios, basePath));
+        meSettingsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserSettingsResponse> {
+            return localVarFp.meSettingsGet(options).then((request) => request(axios, basePath));
         },
         /**
-         * Blocks an organization and its users
-         * @summary Block organization
-         * @param {number} id Organization ID
+         * Updates settings for the current user, including favorites
+         * @summary Update current user settings
+         * @param {ModelsUserSettingsPatchRequest} payload Settings payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        organizationsIdBlockPost(id: number, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
-            return localVarFp.organizationsIdBlockPost(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Deletes an organization
-         * @summary Delete organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdDelete(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.organizationsIdDelete(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns details of a specific organization
-         * @summary Get organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ModelsOrganizationResponse> {
-            return localVarFp.organizationsIdGet(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Updates an existing organization
-         * @summary Update organization
-         * @param {number} id Organization ID
-         * @param {ModelsUpdateOrganizationRequest} body Organization update info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdPut(id: number, body: ModelsUpdateOrganizationRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsOrganizationResponse> {
-            return localVarFp.organizationsIdPut(id, body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Unblocks an organization
-         * @summary Unblock organization
-         * @param {number} id Organization ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsIdUnblockPost(id: number, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
-            return localVarFp.organizationsIdUnblockPost(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Creates a new organization
-         * @summary Create organization
-         * @param {ModelsCreateOrganizationRequest} body Organization info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        organizationsPost(body: ModelsCreateOrganizationRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsOrganizationResponse> {
-            return localVarFp.organizationsPost(body, options).then((request) => request(axios, basePath));
+        meSettingsPatch(payload: ModelsUserSettingsPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserSettingsResponse> {
+            return localVarFp.meSettingsPatch(payload, options).then((request) => request(axios, basePath));
         },
     };
 };
 
 /**
- * OrganizationsApi - object-oriented interface
- * @export
- * @class OrganizationsApi
- * @extends {BaseAPI}
+ * SettingsApi - object-oriented interface
  */
-export class OrganizationsApi extends BaseAPI {
+export class SettingsApi extends BaseAPI {
     /**
-     * Returns a paginated list of organizations
-     * @summary List organizations
-     * @param {number} [page] Page number
-     * @param {number} [pageSize] Page size
-     * @param {string} [search] Search term
-     * @param {string} [sortBy] Sort by field
-     * @param {string} [sortDir] Sort direction (asc/desc)
-     * @param {boolean} [hideBlocked] Don\&#39;t show blocked
+     * Returns settings for the current user, including favorites
+     * @summary Get current user settings
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof OrganizationsApi
      */
-    public organizationsGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, hideBlocked?: boolean, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsGet(page, pageSize, search, sortBy, sortDir, hideBlocked, options).then((request) => request(this.axios, this.basePath));
+    public meSettingsGet(options?: RawAxiosRequestConfig) {
+        return SettingsApiFp(this.configuration).meSettingsGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * Blocks an organization and its users
-     * @summary Block organization
-     * @param {number} id Organization ID
+     * Updates settings for the current user, including favorites
+     * @summary Update current user settings
+     * @param {ModelsUserSettingsPatchRequest} payload Settings payload
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof OrganizationsApi
      */
-    public organizationsIdBlockPost(id: number, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsIdBlockPost(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Deletes an organization
-     * @summary Delete organization
-     * @param {number} id Organization ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof OrganizationsApi
-     */
-    public organizationsIdDelete(id: number, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsIdDelete(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns details of a specific organization
-     * @summary Get organization
-     * @param {number} id Organization ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof OrganizationsApi
-     */
-    public organizationsIdGet(id: number, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsIdGet(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Updates an existing organization
-     * @summary Update organization
-     * @param {number} id Organization ID
-     * @param {ModelsUpdateOrganizationRequest} body Organization update info
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof OrganizationsApi
-     */
-    public organizationsIdPut(id: number, body: ModelsUpdateOrganizationRequest, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsIdPut(id, body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Unblocks an organization
-     * @summary Unblock organization
-     * @param {number} id Organization ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof OrganizationsApi
-     */
-    public organizationsIdUnblockPost(id: number, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsIdUnblockPost(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Creates a new organization
-     * @summary Create organization
-     * @param {ModelsCreateOrganizationRequest} body Organization info
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof OrganizationsApi
-     */
-    public organizationsPost(body: ModelsCreateOrganizationRequest, options?: RawAxiosRequestConfig) {
-        return OrganizationsApiFp(this.configuration).organizationsPost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
- * RecognitionApi - axios parameter creator
- * @export
- */
-export const RecognitionApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * Python recognition stub connects here to receive images and send results
-         * @summary WebSocket endpoint for recognition service
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        botsRecognitionGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/bots/recognition`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Upload a base64-encoded image to detect objects and get their bounding boxes
-         * @summary Detect objects in an image
-         * @param {ModelsDetectRequest} body Base64-encoded image (JPEG/PNG, max 40MB)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        recognitionDetectPost: async (body: ModelsDetectRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('recognitionDetectPost', 'body', body)
-            const localVarPath = `/recognition/detect`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Upload a base64-encoded product image to get Sku and confidence via one-shot recognition
-         * @summary Recognize Sku from image
-         * @param {ModelsRecognizeRequest} body Base64-encoded product photo (JPEG/PNG, max 40MB)
-         * @param {boolean} [isSingle] Is run single detect &amp; embed
-         * @param {boolean} [isSingleEmbed] Is run single embed
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        recognitionRecognizePost: async (body: ModelsRecognizeRequest, isSingle?: boolean, isSingleEmbed?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('recognitionRecognizePost', 'body', body)
-            const localVarPath = `/recognition/recognize`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (isSingle !== undefined) {
-                localVarQueryParameter['is_single'] = isSingle;
-            }
-
-            if (isSingleEmbed !== undefined) {
-                localVarQueryParameter['is_single_embed'] = isSingleEmbed;
-            }
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns whether Python recognizer is connected and some metadata
-         * @summary Get recognizer connection status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        recognitionStatusGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/recognition/status`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * RecognitionApi - functional programming interface
- * @export
- */
-export const RecognitionApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = RecognitionApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * Python recognition stub connects here to receive images and send results
-         * @summary WebSocket endpoint for recognition service
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async botsRecognitionGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.botsRecognitionGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['RecognitionApi.botsRecognitionGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Upload a base64-encoded image to detect objects and get their bounding boxes
-         * @summary Detect objects in an image
-         * @param {ModelsDetectRequest} body Base64-encoded image (JPEG/PNG, max 40MB)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async recognitionDetectPost(body: ModelsDetectRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsDetectResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.recognitionDetectPost(body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['RecognitionApi.recognitionDetectPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Upload a base64-encoded product image to get Sku and confidence via one-shot recognition
-         * @summary Recognize Sku from image
-         * @param {ModelsRecognizeRequest} body Base64-encoded product photo (JPEG/PNG, max 40MB)
-         * @param {boolean} [isSingle] Is run single detect &amp; embed
-         * @param {boolean} [isSingleEmbed] Is run single embed
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async recognitionRecognizePost(body: ModelsRecognizeRequest, isSingle?: boolean, isSingleEmbed?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsRecognitionResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.recognitionRecognizePost(body, isSingle, isSingleEmbed, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['RecognitionApi.recognitionRecognizePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns whether Python recognizer is connected and some metadata
-         * @summary Get recognizer connection status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async recognitionStatusGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsRecognitionStatus>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.recognitionStatusGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['RecognitionApi.recognitionStatusGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * RecognitionApi - factory interface
- * @export
- */
-export const RecognitionApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = RecognitionApiFp(configuration)
-    return {
-        /**
-         * Python recognition stub connects here to receive images and send results
-         * @summary WebSocket endpoint for recognition service
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        botsRecognitionGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.botsRecognitionGet(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Upload a base64-encoded image to detect objects and get their bounding boxes
-         * @summary Detect objects in an image
-         * @param {ModelsDetectRequest} body Base64-encoded image (JPEG/PNG, max 40MB)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        recognitionDetectPost(body: ModelsDetectRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsDetectResponse> {
-            return localVarFp.recognitionDetectPost(body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Upload a base64-encoded product image to get Sku and confidence via one-shot recognition
-         * @summary Recognize Sku from image
-         * @param {ModelsRecognizeRequest} body Base64-encoded product photo (JPEG/PNG, max 40MB)
-         * @param {boolean} [isSingle] Is run single detect &amp; embed
-         * @param {boolean} [isSingleEmbed] Is run single embed
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        recognitionRecognizePost(body: ModelsRecognizeRequest, isSingle?: boolean, isSingleEmbed?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<ModelsRecognitionResponse> {
-            return localVarFp.recognitionRecognizePost(body, isSingle, isSingleEmbed, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns whether Python recognizer is connected and some metadata
-         * @summary Get recognizer connection status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        recognitionStatusGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsRecognitionStatus> {
-            return localVarFp.recognitionStatusGet(options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * RecognitionApi - object-oriented interface
- * @export
- * @class RecognitionApi
- * @extends {BaseAPI}
- */
-export class RecognitionApi extends BaseAPI {
-    /**
-     * Python recognition stub connects here to receive images and send results
-     * @summary WebSocket endpoint for recognition service
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof RecognitionApi
-     */
-    public botsRecognitionGet(options?: RawAxiosRequestConfig) {
-        return RecognitionApiFp(this.configuration).botsRecognitionGet(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Upload a base64-encoded image to detect objects and get their bounding boxes
-     * @summary Detect objects in an image
-     * @param {ModelsDetectRequest} body Base64-encoded image (JPEG/PNG, max 40MB)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof RecognitionApi
-     */
-    public recognitionDetectPost(body: ModelsDetectRequest, options?: RawAxiosRequestConfig) {
-        return RecognitionApiFp(this.configuration).recognitionDetectPost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Upload a base64-encoded product image to get Sku and confidence via one-shot recognition
-     * @summary Recognize Sku from image
-     * @param {ModelsRecognizeRequest} body Base64-encoded product photo (JPEG/PNG, max 40MB)
-     * @param {boolean} [isSingle] Is run single detect &amp; embed
-     * @param {boolean} [isSingleEmbed] Is run single embed
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof RecognitionApi
-     */
-    public recognitionRecognizePost(body: ModelsRecognizeRequest, isSingle?: boolean, isSingleEmbed?: boolean, options?: RawAxiosRequestConfig) {
-        return RecognitionApiFp(this.configuration).recognitionRecognizePost(body, isSingle, isSingleEmbed, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns whether Python recognizer is connected and some metadata
-     * @summary Get recognizer connection status
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof RecognitionApi
-     */
-    public recognitionStatusGet(options?: RawAxiosRequestConfig) {
-        return RecognitionApiFp(this.configuration).recognitionStatusGet(options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
- * SkusApi - axios parameter creator
- * @export
- */
-export const SkusApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * 
-         * @summary List Skus
-         * @param {number} [page] Page number
-         * @param {number} [pageSize] Page size
-         * @param {string} [search] Search term
-         * @param {string} [sortBy] Sort by field
-         * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusGet: async (page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/skus`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (page !== undefined) {
-                localVarQueryParameter['page'] = page;
-            }
-
-            if (pageSize !== undefined) {
-                localVarQueryParameter['page_size'] = pageSize;
-            }
-
-            if (search !== undefined) {
-                localVarQueryParameter['search'] = search;
-            }
-
-            if (sortBy !== undefined) {
-                localVarQueryParameter['sort_by'] = sortBy;
-            }
-
-            if (sortDir !== undefined) {
-                localVarQueryParameter['sort_dir'] = sortDir;
-            }
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Delete Sku
-         * @param {number} id Sku ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdDelete: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('skusIdDelete', 'id', id)
-            const localVarPath = `/skus/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Get Sku
-         * @param {number} id Sku ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdGet: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('skusIdGet', 'id', id)
-            const localVarPath = `/skus/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Add image to Sku
-         * @param {number} id Sku ID
-         * @param {ModelsAddSkuImageRequest} body Image info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdImagesPost: async (id: number, body: ModelsAddSkuImageRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('skusIdImagesPost', 'id', id)
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('skusIdImagesPost', 'body', body)
-            const localVarPath = `/skus/{id}/images`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Update Sku
-         * @param {number} id Sku ID
-         * @param {ModelsUpdateSkuRequest} body Sku update info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdPut: async (id: number, body: ModelsUpdateSkuRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('skusIdPut', 'id', id)
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('skusIdPut', 'body', body)
-            const localVarPath = `/skus/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Remove image from Sku
-         * @param {number} imageId Image ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusImagesImageIdDelete: async (imageId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'imageId' is not null or undefined
-            assertParamExists('skusImagesImageIdDelete', 'imageId', imageId)
-            const localVarPath = `/skus/images/{image_id}`
-                .replace(`{${"image_id"}}`, encodeURIComponent(String(imageId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Create Sku
-         * @param {ModelsCreateSkuRequest} body Sku info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusPost: async (body: ModelsCreateSkuRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('skusPost', 'body', body)
-            const localVarPath = `/skus`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * SkusApi - functional programming interface
- * @export
- */
-export const SkusApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = SkusApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * 
-         * @summary List Skus
-         * @param {number} [page] Page number
-         * @param {number} [pageSize] Page size
-         * @param {string} [search] Search term
-         * @param {string} [sortBy] Sort by field
-         * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsSkuListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusGet(page, pageSize, search, sortBy, sortDir, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Delete Sku
-         * @param {number} id Sku ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusIdDelete(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusIdDelete(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusIdDelete']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Get Sku
-         * @param {number} id Sku ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsSkuResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusIdGet(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusIdGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Add image to Sku
-         * @param {number} id Sku ID
-         * @param {ModelsAddSkuImageRequest} body Image info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusIdImagesPost(id: number, body: ModelsAddSkuImageRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsSkuResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusIdImagesPost(id, body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusIdImagesPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Update Sku
-         * @param {number} id Sku ID
-         * @param {ModelsUpdateSkuRequest} body Sku update info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusIdPut(id: number, body: ModelsUpdateSkuRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsSkuResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusIdPut(id, body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusIdPut']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Remove image from Sku
-         * @param {number} imageId Image ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusImagesImageIdDelete(imageId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusImagesImageIdDelete(imageId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusImagesImageIdDelete']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Create Sku
-         * @param {ModelsCreateSkuRequest} body Sku info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async skusPost(body: ModelsCreateSkuRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsSkuResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.skusPost(body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SkusApi.skusPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * SkusApi - factory interface
- * @export
- */
-export const SkusApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = SkusApiFp(configuration)
-    return {
-        /**
-         * 
-         * @summary List Skus
-         * @param {number} [page] Page number
-         * @param {number} [pageSize] Page size
-         * @param {string} [search] Search term
-         * @param {string} [sortBy] Sort by field
-         * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsSkuListResponse> {
-            return localVarFp.skusGet(page, pageSize, search, sortBy, sortDir, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Delete Sku
-         * @param {number} id Sku ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdDelete(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.skusIdDelete(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Get Sku
-         * @param {number} id Sku ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ModelsSkuResponse> {
-            return localVarFp.skusIdGet(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Add image to Sku
-         * @param {number} id Sku ID
-         * @param {ModelsAddSkuImageRequest} body Image info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdImagesPost(id: number, body: ModelsAddSkuImageRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsSkuResponse> {
-            return localVarFp.skusIdImagesPost(id, body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Update Sku
-         * @param {number} id Sku ID
-         * @param {ModelsUpdateSkuRequest} body Sku update info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusIdPut(id: number, body: ModelsUpdateSkuRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsSkuResponse> {
-            return localVarFp.skusIdPut(id, body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Remove image from Sku
-         * @param {number} imageId Image ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusImagesImageIdDelete(imageId: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.skusImagesImageIdDelete(imageId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Create Sku
-         * @param {ModelsCreateSkuRequest} body Sku info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        skusPost(body: ModelsCreateSkuRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsSkuResponse> {
-            return localVarFp.skusPost(body, options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * SkusApi - object-oriented interface
- * @export
- * @class SkusApi
- * @extends {BaseAPI}
- */
-export class SkusApi extends BaseAPI {
-    /**
-     * 
-     * @summary List Skus
-     * @param {number} [page] Page number
-     * @param {number} [pageSize] Page size
-     * @param {string} [search] Search term
-     * @param {string} [sortBy] Sort by field
-     * @param {string} [sortDir] Sort direction (asc/desc)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusGet(page, pageSize, search, sortBy, sortDir, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Delete Sku
-     * @param {number} id Sku ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusIdDelete(id: number, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusIdDelete(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Get Sku
-     * @param {number} id Sku ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusIdGet(id: number, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusIdGet(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Add image to Sku
-     * @param {number} id Sku ID
-     * @param {ModelsAddSkuImageRequest} body Image info
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusIdImagesPost(id: number, body: ModelsAddSkuImageRequest, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusIdImagesPost(id, body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Update Sku
-     * @param {number} id Sku ID
-     * @param {ModelsUpdateSkuRequest} body Sku update info
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusIdPut(id: number, body: ModelsUpdateSkuRequest, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusIdPut(id, body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Remove image from Sku
-     * @param {number} imageId Image ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusImagesImageIdDelete(imageId: number, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusImagesImageIdDelete(imageId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Create Sku
-     * @param {ModelsCreateSkuRequest} body Sku info
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SkusApi
-     */
-    public skusPost(body: ModelsCreateSkuRequest, options?: RawAxiosRequestConfig) {
-        return SkusApiFp(this.configuration).skusPost(body, options).then((request) => request(this.axios, this.basePath));
+    public meSettingsPatch(payload: ModelsUserSettingsPatchRequest, options?: RawAxiosRequestConfig) {
+        return SettingsApiFp(this.configuration).meSettingsPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -2908,7 +803,6 @@ export class SkusApi extends BaseAPI {
 
 /**
  * UsersApi - axios parameter creator
- * @export
  */
 export const UsersApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -2931,8 +825,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -2950,11 +844,10 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
          * @param {string} [search] Search term
          * @param {string} [sortBy] Sort by field
          * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {number} [organizationId] Filter by organization ID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersGet: async (page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, organizationId?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        usersGet: async (page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/users`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2987,12 +880,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
                 localVarQueryParameter['sort_dir'] = sortDir;
             }
 
-            if (organizationId !== undefined) {
-                localVarQueryParameter['organization_id'] = organizationId;
-            }
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -3025,8 +914,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -3059,8 +948,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -3093,8 +982,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -3130,9 +1019,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -3167,8 +1055,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -3200,9 +1088,8 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -3219,7 +1106,6 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
 
 /**
  * UsersApi - functional programming interface
- * @export
  */
 export const UsersApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = UsersApiAxiosParamCreator(configuration)
@@ -3244,12 +1130,11 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * @param {string} [search] Search term
          * @param {string} [sortBy] Sort by field
          * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {number} [organizationId] Filter by organization ID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, organizationId?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.usersGet(page, pageSize, search, sortBy, sortDir, organizationId, options);
+        async usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.usersGet(page, pageSize, search, sortBy, sortDir, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.usersGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3338,7 +1223,6 @@ export const UsersApiFp = function(configuration?: Configuration) {
 
 /**
  * UsersApi - factory interface
- * @export
  */
 export const UsersApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = UsersApiFp(configuration)
@@ -3360,12 +1244,11 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          * @param {string} [search] Search term
          * @param {string} [sortBy] Sort by field
          * @param {string} [sortDir] Sort direction (asc/desc)
-         * @param {number} [organizationId] Filter by organization ID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, organizationId?: number, options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserListResponse> {
-            return localVarFp.usersGet(page, pageSize, search, sortBy, sortDir, organizationId, options).then((request) => request(axios, basePath));
+        usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserListResponse> {
+            return localVarFp.usersGet(page, pageSize, search, sortBy, sortDir, options).then((request) => request(axios, basePath));
         },
         /**
          * Blocks a user and terminates their sessions
@@ -3433,9 +1316,6 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
 
 /**
  * UsersApi - object-oriented interface
- * @export
- * @class UsersApi
- * @extends {BaseAPI}
  */
 export class UsersApi extends BaseAPI {
     /**
@@ -3443,7 +1323,6 @@ export class UsersApi extends BaseAPI {
      * @summary Get self info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public meGet(options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).meGet(options).then((request) => request(this.axios, this.basePath));
@@ -3457,13 +1336,11 @@ export class UsersApi extends BaseAPI {
      * @param {string} [search] Search term
      * @param {string} [sortBy] Sort by field
      * @param {string} [sortDir] Sort direction (asc/desc)
-     * @param {number} [organizationId] Filter by organization ID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
-    public usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, organizationId?: number, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).usersGet(page, pageSize, search, sortBy, sortDir, organizationId, options).then((request) => request(this.axios, this.basePath));
+    public usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).usersGet(page, pageSize, search, sortBy, sortDir, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3472,7 +1349,6 @@ export class UsersApi extends BaseAPI {
      * @param {number} id User ID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public usersIdBlockPost(id: number, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersIdBlockPost(id, options).then((request) => request(this.axios, this.basePath));
@@ -3484,7 +1360,6 @@ export class UsersApi extends BaseAPI {
      * @param {string} id User ID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public usersIdDelete(id: string, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersIdDelete(id, options).then((request) => request(this.axios, this.basePath));
@@ -3496,7 +1371,6 @@ export class UsersApi extends BaseAPI {
      * @param {number} id User ID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public usersIdGet(id: number, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersIdGet(id, options).then((request) => request(this.axios, this.basePath));
@@ -3509,7 +1383,6 @@ export class UsersApi extends BaseAPI {
      * @param {ModelsUpdateUserRequest} body User update info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public usersIdPut(id: number, body: ModelsUpdateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersIdPut(id, body, options).then((request) => request(this.axios, this.basePath));
@@ -3521,7 +1394,6 @@ export class UsersApi extends BaseAPI {
      * @param {number} id User ID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public usersIdUnblockPost(id: number, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersIdUnblockPost(id, options).then((request) => request(this.axios, this.basePath));
@@ -3533,7 +1405,6 @@ export class UsersApi extends BaseAPI {
      * @param {ModelsCreateUserRequest} body User info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof UsersApi
      */
     public usersPost(body: ModelsCreateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersPost(body, options).then((request) => request(this.axios, this.basePath));

@@ -41,6 +41,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	cs := services.NewCasbinService(db)
 	cs.InitializePolicies()
 	authHandler := h.NewAuthHandler(db, cfg, repoRegistry.UserRepo, auditService, cs)
+	settingsHandler := h.NewUserSettingsHandler(repoRegistry.UserSettingsRepo)
 	store := gormsessions.NewStore(db, true, []byte(cfg.SessionSecret))
 	router.Use(sessions.Sessions("auth_session", store))
 
@@ -60,6 +61,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 
 		// User management
 		a.GET("/me", m.RPM(cs, config.SelfView), userHandler.GetCurrentUser)
+		a.GET("/me/settings", m.RPM(cs, config.SelfView), settingsHandler.GetSettings)
+		a.PATCH("/me/settings", m.RPM(cs, config.SelfUpdateSettings), settingsHandler.PatchSettings)
 		a.PUT("/me/password", m.RPM(cs, config.SelfUpdatePassword), authHandler.ChangePassword)
 
 		a.GET("/users", m.RPM(cs, config.UsersView), userHandler.ListUsers)

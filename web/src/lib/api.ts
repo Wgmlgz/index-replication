@@ -4,8 +4,8 @@ import {
   AuditLogsApi,
   AuthApi,
   Configuration,
+  SettingsApi,
   UsersApi,
-  RecognitionApi,
 } from "@/api-client";
 import axios, { AxiosHeaders } from "axios";
 import axiosTauriApiAdapter from '@/lib/axios-tauri-proxy';
@@ -19,15 +19,15 @@ export const isTauri = () => {
 
 export const axiosClient = isTauri()
   ? axios.create({
+    withCredentials: true,
     adapter: async (c) => {
       console.log(c);
       const res = await axiosTauriApiAdapter(c);
       console.log('rrr', res);
       return res;
-    }
+    },
   })
-  : axios.create()
-  ;
+  : axios.create({ withCredentials: true });
 
 if (isTauri()) {
   const COOKIE_KEY = 'authCookies';
@@ -115,5 +115,5 @@ const config = new Configuration({
 
 export const auditLogsApi = new AuditLogsApi(config, config.basePath, axiosClient);
 export const authApi = new AuthApi(config, config.basePath, axiosClient);
+export const settingsApi = new SettingsApi(config, config.basePath, axiosClient);
 export const usersApi = new UsersApi(config, config.basePath, axiosClient);
-export const recognitionApi = new RecognitionApi(config, config.basePath, axiosClient);

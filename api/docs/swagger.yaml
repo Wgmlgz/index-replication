@@ -172,6 +172,28 @@ definitions:
     - role_key
     - username
     type: object
+  models.UserSettingsPatchRequest:
+    properties:
+      favorites:
+        items:
+          type: string
+        type: array
+      values:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  models.UserSettingsResponse:
+    properties:
+      favorites:
+        items:
+          type: string
+        type: array
+      values:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
   models.UserShort:
     properties:
       full_name:
@@ -406,6 +428,52 @@ paths:
       summary: Change Password
       tags:
       - auth
+  /me/settings:
+    get:
+      description: Returns settings for the current user, including favorites
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserSettingsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get current user settings
+      tags:
+      - settings
+    patch:
+      consumes:
+      - application/json
+      description: Updates settings for the current user, including favorites
+      parameters:
+      - description: Settings payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserSettingsPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserSettingsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update current user settings
+      tags:
+      - settings
   /users:
     get:
       description: Returns a paginated list of users

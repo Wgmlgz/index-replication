@@ -69,7 +69,14 @@ func resolveMigrationsDir(dir string) (string, error) {
 }
 
 func ensurePostgresIdentity(db *sql.DB) error {
-	tables := []string{"roles", "users", "audit_logs", "casbin_rules"}
+	tables := []string{
+		"roles",
+		"users",
+		"audit_logs",
+		"casbin_rules",
+		"user_settings",
+		"user_favorite_indexes",
+	}
 	for _, table := range tables {
 		isIdentity, err := hasIdentity(db, table, "id")
 		if err != nil {

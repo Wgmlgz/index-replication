@@ -18,9 +18,7 @@ Most endpoints return one or more named tables:
 {
   "securities": {
     "columns": ["SECID", "SHORTNAME", "NAME"],
-    "data": [
-      ["IMOEX", "Индекс МосБиржи", "Индекс МосБиржи"]
-    ]
+    "data": [["IMOEX", "Индекс МосБиржи", "Индекс МосБиржи"]]
   }
 }
 ```
@@ -36,7 +34,7 @@ You should map rows to objects by zipping `columns` with each row in `data`.
 
 Example:
 
-```
+```url
 .../securities.json?iss.meta=off&lang=ru&securities.columns=SECID,SHORTNAME,NAME
 ```
 

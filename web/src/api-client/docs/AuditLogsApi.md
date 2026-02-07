@@ -77,7 +77,6 @@ let entityId: string; //Entity id filter (optional) (default to undefined)
 let performedBy: number; //Performed by user ID filter (optional) (default to undefined)
 let startDate: string; //Start date (RFC3339) (optional) (default to undefined)
 let endDate: string; //End date (RFC3339) (optional) (default to undefined)
-let organizationId: number; //Filter for org (optional) (default to undefined)
 
 const { status, data } = await apiInstance.auditLogsGet(
     page,
@@ -88,8 +87,7 @@ const { status, data } = await apiInstance.auditLogsGet(
     entityId,
     performedBy,
     startDate,
-    endDate,
-    organizationId
+    endDate
 );
 ```
 
@@ -106,7 +104,6 @@ const { status, data } = await apiInstance.auditLogsGet(
 | **performedBy** | [**number**] | Performed by user ID filter | (optional) defaults to undefined|
 | **startDate** | [**string**] | Start date (RFC3339) | (optional) defaults to undefined|
 | **endDate** | [**string**] | End date (RFC3339) | (optional) defaults to undefined|
-| **organizationId** | [**number**] | Filter for org | (optional) defaults to undefined|
 
 
 ### Return type

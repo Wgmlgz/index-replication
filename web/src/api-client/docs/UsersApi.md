@@ -80,15 +80,13 @@ let pageSize: number; //Page size (optional) (default to undefined)
 let search: string; //Search term (optional) (default to undefined)
 let sortBy: string; //Sort by field (optional) (default to undefined)
 let sortDir: string; //Sort direction (asc/desc) (optional) (default to undefined)
-let organizationId: number; //Filter by organization ID (optional) (default to undefined)
 
 const { status, data } = await apiInstance.usersGet(
     page,
     pageSize,
     search,
     sortBy,
-    sortDir,
-    organizationId
+    sortDir
 );
 ```
 
@@ -101,7 +99,6 @@ const { status, data } = await apiInstance.usersGet(
 | **search** | [**string**] | Search term | (optional) defaults to undefined|
 | **sortBy** | [**string**] | Sort by field | (optional) defaults to undefined|
 | **sortDir** | [**string**] | Sort direction (asc/desc) | (optional) defaults to undefined|
-| **organizationId** | [**number**] | Filter by organization ID | (optional) defaults to undefined|
 
 
 ### Return type

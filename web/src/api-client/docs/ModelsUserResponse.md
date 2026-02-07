@@ -13,8 +13,6 @@ Name | Type | Description | Notes
 **id** | **number** |  | [default to undefined]
 **is_blocked** | **boolean** |  | [default to undefined]
 **last_active** | **string** |  | [default to undefined]
-**organization_id** | **number** |  | [default to undefined]
-**organization_name** | **string** |  | [default to undefined]
 **phone** | **string** |  | [default to undefined]
 **role_id** | **number** |  | [default to undefined]
 **role_key** | **string** |  | [default to undefined]
@@ -34,8 +32,6 @@ const instance: ModelsUserResponse = {
     id,
     is_blocked,
     last_active,
-    organization_id,
-    organization_name,
     phone,
     role_id,
     role_key,
