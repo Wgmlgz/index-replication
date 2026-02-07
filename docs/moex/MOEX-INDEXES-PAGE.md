@@ -24,6 +24,8 @@ This doc describes the MOEX indexes page UI, its components, and the supporting 
 - List section + item: `web/src/components/moex-indexes/list/index-list-section.tsx`, `web/src/components/moex-indexes/list/index-list-item.tsx`
 - Chart container: `web/src/components/moex-indexes/detail/index-chart-card.tsx`
 - Chart renderer: `web/src/components/moex-indexes/detail/index-chart.tsx`
+- Composition container: `web/src/components/moex-indexes/detail/index-composition-card.tsx`
+- Composition chart: `web/src/components/moex-indexes/detail/index-composition-chart.tsx`
 
 **State and Hooks**
 - List types live in `web/src/components/moex-indexes/list/use-moex-indexes.types.ts`.
@@ -37,6 +39,7 @@ Hooks:
 - `useMoexIndexList` handles search, filters, sorting, grouping, pagination, and empty states.
 - `useMoexIndexDetailState` resolves the selected index and wires chart metadata.
 - `useMoexIndexHistory` loads the 12-month history for the selected index and derives chart series and change metrics.
+- `useMoexIndexComposition` loads the latest composition snapshot and weight history for top constituents.
 
 **Data Flow**
 1. `useMoexIndexesData` loads the base index list (`moexClient.getIndexes()`).
@@ -44,6 +47,7 @@ Hooks:
 3. User favorites are loaded from user settings and stored as a set for fast lookup.
 4. `useMoexIndexListState` computes list sections, pagination, and filters.
 5. `useMoexIndexDetailState` resolves the selected index and triggers history fetch.
+6. `useMoexIndexComposition` fetches composition data for the selected index.
 
 **Filtering, Sorting, Pagination**
 - Search matches by `secid`, `shortName`, and `name`.
@@ -56,13 +60,16 @@ Hooks:
 - The list can be filtered to favorites only.
 
 **Chart Data**
-- History is fetched for the last 365 days.
-- Chart points are normalized and ordered by date.
+- History is fetched based on the selected time range (quick buttons + extra range selector, or custom dates).
+- Chart points are normalized, downsampled for long ranges, and ordered by date.
 - Latest value, change, and change percent are computed for the header meta.
+- The chart supports price vs percent-change view and line vs candlestick rendering.
 
 **Layout and Scrolling**
 - The page uses a full-height layout and constrains overflow so only the list scrolls.
 - The list content uses `ScrollArea` and `min-h-0` on containers to avoid page scroll.
+- The right column is split into two equal-height cards: the price chart and composition analytics.
+- The chart card uses a two-column layout on larger screens (meta/controls left, chart right).
 
 **Extending the Page**
 - Add a new filter: update `list/use-moex-indexes.utils.ts` (options),

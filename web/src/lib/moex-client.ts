@@ -27,6 +27,22 @@ export type MoexIndexHistoryPoint = {
   low: number | null;
 };
 
+export type MoexIndexCompositionEntry = {
+  indexId: string;
+  tradeDate: string;
+  ticker: string;
+  shortName: string;
+  secId: string;
+  weight: number | null;
+  tradingSession: number | null;
+  tradeSessionDate: string | null;
+};
+
+export type MoexIndexTickerAnalyticsPoint = {
+  tradeDate: string;
+  weight: number | null;
+};
+
 type MoexTable = {
   columns: string[];
   data: Array<Array<string | number | null>>;
@@ -43,6 +59,17 @@ type MoexIndexCollectionsResponse = {
 type MoexHistoryResponse = {
   history: MoexTable;
   'history.cursor'?: MoexTable;
+};
+
+type MoexIndexAnalyticsResponse = {
+  analytics: MoexTable;
+  'analytics.cursor'?: MoexTable;
+  'analytics.dates'?: MoexTable;
+};
+
+type MoexIndexTickerAnalyticsResponse = {
+  ticker: MoexTable;
+  'ticker.cursor'?: MoexTable;
 };
 
 type RequestParams = Record<
@@ -265,6 +292,174 @@ export class MoexClient {
     }
 
     return results;
+  }
+
+  async getIndexComposition(
+    indexId: string,
+    options?: {
+      date?: string;
+      tickers?: string[];
+      tradingSession?: number;
+      signal?: AbortSignal;
+    }
+  ): Promise<MoexIndexCompositionEntry[]> {
+    const pageSize = 100;
+    let start = 0;
+    let total: number | null = null;
+    let iterations = 0;
+    const results: MoexIndexCompositionEntry[] = [];
+
+    while (iterations < 100) {
+      iterations += 1;
+      const data = await this.request<MoexIndexAnalyticsResponse>(
+        `statistics/engines/stock/markets/index/analytics/${encodeURIComponent(indexId)}.json`,
+        {
+          'iss.meta': 'off',
+          lang: 'en',
+          date: options?.date,
+          tickers: options?.tickers,
+          tradingsession: options?.tradingSession ?? 3,
+          limit: pageSize,
+          start,
+        },
+        options?.signal
+      );
+
+      const rows = tableToObjects(data.analytics).map((row) => {
+        const tradeSessionDate =
+          row.trade_session_date ??
+          row.TRADE_SESSION_DATE ??
+          row.tradeSessionDate ??
+          row.TRADESESSIONDATE;
+        return {
+          indexId: String(row.indexid ?? row.INDEXID ?? ''),
+          tradeDate: String(row.tradedate ?? row.TRADEDATE ?? ''),
+          ticker: String(row.ticker ?? row.TICKER ?? ''),
+          shortName: String(
+            row.shortnames ??
+              row.SHORTNAMES ??
+              row.shortname ??
+              row.SHORTNAME ??
+              ''
+          ),
+          secId: String(row.secids ?? row.SECIDS ?? row.secid ?? row.SECID ?? ''),
+          weight: toNumber(row.weight ?? row.WEIGHT),
+          tradingSession: toNumber(row.tradingsession ?? row.TRADINGSESSION),
+          tradeSessionDate: tradeSessionDate ? String(tradeSessionDate) : null,
+        };
+      });
+      results.push(
+        ...rows.filter(
+          (row) => row.ticker.length > 0 && row.tradeDate.length > 0
+        )
+      );
+
+      const cursorTable = data['analytics.cursor'];
+      if (cursorTable) {
+        const cursorRows = tableToObjects(cursorTable);
+        const cursor = cursorRows[0] ?? {};
+        total = toNumber(cursor.TOTAL ?? cursor.total);
+        const page = toNumber(cursor.PAGESIZE ?? cursor.pagesize) ?? pageSize;
+        start += page;
+        if (total !== null && start >= total) {
+          break;
+        }
+        if (rows.length === 0) {
+          break;
+        }
+        continue;
+      }
+
+      break;
+    }
+
+    return results;
+  }
+
+  async getIndexTickerAnalytics(
+    indexId: string,
+    ticker: string,
+    options?: {
+      from?: string;
+      till?: string;
+      tradingSession?: number;
+      signal?: AbortSignal;
+    }
+  ): Promise<MoexIndexTickerAnalyticsPoint[]> {
+    const pageSize = 100;
+    let start = 0;
+    let total: number | null = null;
+    let iterations = 0;
+    const results: MoexIndexTickerAnalyticsPoint[] = [];
+
+    while (iterations < 100) {
+      iterations += 1;
+      const data = await this.request<MoexIndexTickerAnalyticsResponse>(
+        `statistics/engines/stock/markets/index/analytics/${encodeURIComponent(indexId)}/tickers/${encodeURIComponent(ticker)}.json`,
+        {
+          'iss.meta': 'off',
+          lang: 'en',
+          from: options?.from,
+          till: options?.till,
+          tradingsession: options?.tradingSession ?? 3,
+          limit: pageSize,
+          start,
+        },
+        options?.signal
+      );
+
+      const rows = tableToObjects(data.ticker).map((row) => ({
+        tradeDate: String(row.tradedate ?? row.TRADEDATE ?? ''),
+        weight: toNumber(row.weight ?? row.WEIGHT),
+      }));
+      results.push(...rows.filter((row) => row.tradeDate.length > 0));
+
+      const cursorTable = data['ticker.cursor'];
+      if (cursorTable) {
+        const cursorRows = tableToObjects(cursorTable);
+        const cursor = cursorRows[0] ?? {};
+        total = toNumber(cursor.TOTAL ?? cursor.total);
+        const page =
+          toNumber(cursor.PAGESIZE ?? cursor.pagesize) ?? pageSize;
+        start += page;
+        if (total !== null && start >= total) {
+          break;
+        }
+        if (rows.length === 0) {
+          break;
+        }
+        continue;
+      }
+
+      break;
+    }
+
+    return results;
+  }
+
+  async getIndexTickerAnalyticsSeries(
+    indexId: string,
+    tickers: string[],
+    options?: {
+      from?: string;
+      till?: string;
+      tradingSession?: number;
+      signal?: AbortSignal;
+    }
+  ): Promise<Record<string, MoexIndexTickerAnalyticsPoint[]>> {
+    if (tickers.length === 0) return {};
+
+    const responses = await Promise.all(
+      tickers.map((ticker) =>
+        this.getIndexTickerAnalytics(indexId, ticker, options)
+      )
+    );
+
+    const result: Record<string, MoexIndexTickerAnalyticsPoint[]> = {};
+    tickers.forEach((ticker, index) => {
+      result[ticker] = responses[index] ?? [];
+    });
+    return result;
   }
 }
 

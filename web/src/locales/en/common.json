@@ -4,7 +4,7 @@
   },
   "moex": {
     "title": "MOEX indexes",
-    "description": "Select an index to review performance over the last 12 months.",
+    "description": "Select an index to review performance over time.",
     "list": {
       "title": "Index list",
       "searchPlaceholder": "Search by name or code",
@@ -45,12 +45,51 @@
     },
     "chart": {
       "title": "Chart",
-      "period": "Period: last {{months}} months ? Currency: {{currency}}",
+      "period": "Period: {{range}} | Currency: {{currency}}",
+      "range": {
+        "label": "Range",
+        "more": "More",
+        "1m": "1M",
+        "3m": "3M",
+        "6m": "6M",
+        "ytd": "YTD",
+        "1y": "1Y",
+        "3y": "3Y",
+        "5y": "5Y",
+        "max": "Max",
+        "custom": "Custom",
+        "customRange": "{{from}} to {{till}}",
+        "from": "From",
+        "to": "To"
+      },
+      "view": {
+        "label": "View",
+        "price": "Price",
+        "percent": "Percent change"
+      },
+      "type": {
+        "label": "Chart",
+        "line": "Line",
+        "candlestick": "Candlestick"
+      },
       "board": "Board {{board}}",
       "max": "Max {{value}}",
       "min": "Min {{value}}",
       "loading": "Loading chart...",
       "noData": "No data to display."
+    },
+    "composition": {
+      "title": "Composition",
+      "asOf": "As of {{date}}",
+      "tabs": {
+        "snapshot": "Snapshot",
+        "trend": "Weight trend"
+      },
+      "topCount": "Top {{count}}",
+      "loading": "Loading composition...",
+      "noData": "No composition data to display.",
+      "noSeries": "No weight history for the selected range.",
+      "error": "Failed to load index composition."
     },
     "errors": {
       "indexes": "Failed to load index list.",

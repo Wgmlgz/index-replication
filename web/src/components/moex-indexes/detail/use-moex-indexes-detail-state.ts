@@ -1,9 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { format, subYears } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import type { MoexIndex } from '@/lib/moex-client';
-import type { MoexIndexDetailState } from './moex-indexes-detail.types';
+import type {
+  ChartType,
+  ChartViewMode,
+  MoexIndexDetailState,
+  RangeKey,
+} from './moex-indexes-detail.types';
 import { useMoexIndexHistory } from './use-moex-indexes-history';
 
 type DetailStateInput = {
@@ -22,6 +28,15 @@ export function useMoexIndexDetailState({
   indexCollectionsMap,
 }: DetailStateInput): MoexIndexDetailState {
   const { t } = useTranslation();
+  const today = new Date();
+  const defaultFrom = format(subYears(today, 1), 'yyyy-MM-dd');
+  const defaultTill = format(today, 'yyyy-MM-dd');
+
+  const [rangeKey, setRangeKey] = useState<RangeKey>('1y');
+  const [customFrom, setCustomFrom] = useState(defaultFrom);
+  const [customTill, setCustomTill] = useState(defaultTill);
+  const [viewMode, setViewMode] = useState<ChartViewMode>('price');
+  const [chartType, setChartType] = useState<ChartType>('line');
 
   const selectedIndex = useMemo<MoexIndex | null>(() => {
     const findIndex = (secid: string) => {
@@ -53,7 +68,13 @@ export function useMoexIndexDetailState({
     change,
     changePercent,
     numberFormatter,
-  } = useMoexIndexHistory(selectedIndex);
+  } = useMoexIndexHistory(selectedIndex, {
+    rangeKey,
+    customFrom,
+    customTill,
+    viewMode,
+    chartType,
+  });
 
   const selectedIndexCollections = useMemo(() => {
     if (!selectedIndex) return [];
@@ -72,5 +93,15 @@ export function useMoexIndexDetailState({
     changePercent,
     numberFormatter,
     error,
+    rangeKey,
+    setRangeKey,
+    customFrom,
+    customTill,
+    setCustomFrom,
+    setCustomTill,
+    viewMode,
+    setViewMode,
+    chartType,
+    setChartType,
   };
 }

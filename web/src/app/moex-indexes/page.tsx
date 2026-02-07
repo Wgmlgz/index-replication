@@ -2,6 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { IndexCompositionCard } from '@/components/moex-indexes/detail/index-composition-card';
 import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';
 import { useMoexIndexDetailContext } from '@/components/moex-indexes/detail/moex-indexes-detail-context';
 import { IndexListCard } from '@/components/moex-indexes/list/index-list-card';
@@ -32,7 +33,10 @@ function MoexIndexesContent() {
 
       <div className='grid flex-1 min-h-0 grid-cols-1 gap-6 grid-rows-[minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[480px_minmax(0,1fr)]'>
         <IndexListCard />
-        <IndexChartCard />
+        <div className='grid min-h-0 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-6'>
+          <IndexChartCard />
+          <IndexCompositionCard />
+        </div>
       </div>
     </div>
   );

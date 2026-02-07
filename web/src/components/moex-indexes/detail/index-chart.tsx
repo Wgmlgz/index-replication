@@ -2,22 +2,35 @@
 
 import { useEffect, useRef } from 'react';
 import {
+  CandlestickSeries,
   ColorType,
   LineSeries,
   createChart,
+  type CandlestickData,
   type IChartApi,
   type ISeriesApi,
   type LineData,
 } from 'lightweight-charts';
 
-const MIN_CHART_HEIGHT = 240;
+const MIN_CHART_HEIGHT = 200;
 
-export type ChartPoint = LineData;
+export type ChartSeriesType = 'line' | 'candlestick';
+export type LineChartPoint = LineData;
+export type CandlestickChartPoint = CandlestickData;
+export type ChartData = LineChartPoint[] | CandlestickChartPoint[];
 
-export function IndexChart({ data }: { data: ChartPoint[] }) {
+type IndexChartProps = {
+  data: ChartData;
+  seriesType: ChartSeriesType;
+};
+
+export function IndexChart({ data, seriesType }: IndexChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null>(
+    null
+  );
+  const seriesTypeRef = useRef<ChartSeriesType | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -48,13 +61,7 @@ export function IndexChart({ data }: { data: ChartPoint[] }) {
       },
     });
 
-    const series = chart.addSeries(LineSeries, {
-      color: '#2563eb',
-      lineWidth: 2,
-    });
-
     chartRef.current = chart;
-    seriesRef.current = series;
 
     const resizeObserver = new ResizeObserver(() => {
       const nextSize = getSize();
@@ -68,16 +75,52 @@ export function IndexChart({ data }: { data: ChartPoint[] }) {
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      seriesTypeRef.current = null;
     };
   }, []);
 
   useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    if (seriesTypeRef.current !== seriesType) {
+      if (seriesRef.current) {
+        chart.removeSeries(seriesRef.current as ISeriesApi<'Line'>);
+        seriesRef.current = null;
+      }
+
+      seriesRef.current =
+        seriesType === 'candlestick'
+          ? chart.addSeries(CandlestickSeries, {
+              upColor: '#16a34a',
+              downColor: '#dc2626',
+              wickUpColor: '#16a34a',
+              wickDownColor: '#dc2626',
+              borderVisible: false,
+            })
+          : chart.addSeries(LineSeries, {
+              color: '#2563eb',
+              lineWidth: 2,
+            });
+      seriesTypeRef.current = seriesType;
+    }
+  }, [seriesType]);
+
+  useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
-    seriesRef.current.setData(data);
+    if (seriesType === 'candlestick') {
+      (seriesRef.current as ISeriesApi<'Candlestick'>).setData(
+        data as CandlestickChartPoint[]
+      );
+    } else {
+      (seriesRef.current as ISeriesApi<'Line'>).setData(
+        data as LineChartPoint[]
+      );
+    }
     if (data.length > 0) {
       chartRef.current.timeScale().fitContent();
     }
-  }, [data]);
+  }, [data, seriesType]);
 
   return (
     <div ref={containerRef} className='h-full w-full' />
