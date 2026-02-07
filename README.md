@@ -59,6 +59,7 @@ cd web && task dev
 ## Docs Maintenance
 
 If you change code or behavior in a way that makes any README inaccurate or incomplete, update the docs in the same change. The expectation is that docs stay correct and actionable for the next developer (human or AI).
+See `docs/GUIDELINES.md` for documentation and code organization guidelines, including keeping files short.
 
 ## MOEX Docs Cache
 
