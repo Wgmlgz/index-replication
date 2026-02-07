@@ -58,7 +58,7 @@ export default function MoexIndexesPage() {
   } = useMoexIndexes();
 
   return (
-    <div className='flex min-h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] flex-col gap-6 overflow-hidden'>
+    <div className='flex h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 flex-col gap-6 overflow-hidden'>
       <div>
         <h1 className='text-3xl font-bold'>Индексы MOEX</h1>
         <p className='text-muted-foreground mt-2'>
