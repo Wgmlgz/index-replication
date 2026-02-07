@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +25,7 @@ import { FILTER_DEFS } from './use-moex-indexes.utils';
 
 type FilterMenuProps = {
   label: string;
+  emptyMessage: string;
   options: Array<{ value: string; label: string; count?: number }>;
   selected: string[];
   onChange: (next: string[]) => void;
@@ -32,6 +34,7 @@ type FilterMenuProps = {
 
 function FilterMenu({
   label,
+  emptyMessage,
   options,
   selected,
   onChange,
@@ -69,7 +72,7 @@ function FilterMenu({
         <DropdownMenuSeparator />
         {options.length === 0 && (
           <div className='px-2 py-1.5 text-sm text-muted-foreground'>
-            Нет доступных значений
+            {emptyMessage}
           </div>
         )}
         {options.map((option) => (
@@ -106,6 +109,7 @@ export function IndexListFilters() {
     indexesLoading,
     collectionsLoading,
   } = useMoexIndexesContext();
+  const { t } = useTranslation();
 
   const filtersDisabled = indexesLoading;
   const groupsDisabled = indexesLoading || collectionsLoading;
@@ -116,7 +120,8 @@ export function IndexListFilters() {
         {FILTER_DEFS.map((def) => (
           <FilterMenu
             key={def.key}
-            label={def.label}
+            label={t(def.labelKey)}
+            emptyMessage={t('moex.filters.emptyValues')}
             options={filterOptions[def.key] ?? []}
             selected={filters[def.key]}
             onChange={(next) => setFilter(def.key, next)}
@@ -124,18 +129,20 @@ export function IndexListFilters() {
           />
         ))}
         <div className='flex items-center gap-2'>
-          <span className='text-xs text-muted-foreground'>Сортировка</span>
+          <span className='text-xs text-muted-foreground'>
+            {t('moex.filters.sort')}
+          </span>
           <Select
             value={sortKey}
             onValueChange={(value) => setSortKey(value as SortKey)}
           >
             <SelectTrigger size='sm'>
-              <SelectValue placeholder='Сортировка' />
+              <SelectValue placeholder={t('moex.filters.sort')} />
             </SelectTrigger>
             <SelectContent side='bottom'>
               {sortOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -148,13 +155,13 @@ export function IndexListFilters() {
             className='text-muted-foreground'
             onClick={clearFilters}
           >
-            Сбросить фильтры
+            {t('moex.filters.clear')}
           </Button>
         )}
       </div>
       {collectionsLoading && !indexesLoading && (
         <div className='text-xs text-muted-foreground'>
-          Загружаем группы индексов...
+          {t('moex.filters.loadingGroups')}
         </div>
       )}
     </>

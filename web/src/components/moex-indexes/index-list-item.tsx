@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { MoexIndex } from '@/lib/moex-client';
@@ -21,6 +22,7 @@ export function IndexListItem({
     toggleFavorite,
     indexCollectionsMap,
   } = useMoexIndexesContext();
+  const { t } = useTranslation();
 
   const secidKey = index.secid.toUpperCase();
   const isActive = index.secid === selectedSecid;
@@ -64,8 +66,12 @@ export function IndexListItem({
             {index.shortName || index.name}
           </div>
           <div className='text-xs text-muted-foreground'>
-            {index.secid}
-            {index.name ? ` ? ${index.name}` : ''}
+            {index.name
+              ? t('moex.list.codeWithName', {
+                  secid: index.secid,
+                  name: index.name,
+                })
+              : t('moex.list.codeOnly', { secid: index.secid })}
           </div>
           <div className='mt-1 flex flex-wrap gap-1 text-[11px] text-muted-foreground'>
             {index.currency && (
@@ -92,7 +98,7 @@ export function IndexListItem({
             toggleFavorite(index.secid);
           }}
           className='flex-shrink-0 rounded-full p-1 text-muted-foreground transition hover:text-amber-500'
-          title='В избранное'
+          title={t('moex.list.addFavorite')}
         >
           <Star
             className={`h-4 w-4 ${isFavorite ? 'fill-amber-400 text-amber-500' : ''}`}

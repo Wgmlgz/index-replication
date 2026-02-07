@@ -14,25 +14,25 @@ export const EMPTY_FILTER_VALUE = '__empty__';
 export const FILTER_DEFS: FilterDefinition[] = [
   {
     key: 'collections',
-    label: 'Группы',
-    emptyLabel: 'Без категории',
+    labelKey: 'moex.filters.groups',
+    emptyLabelKey: 'moex.groups.uncategorized',
   },
   {
     key: 'currency',
-    label: 'Валюта',
-    emptyLabel: 'Без валюты',
+    labelKey: 'moex.filters.currency',
+    emptyLabelKey: 'moex.filters.emptyCurrency',
     getValue: (index) => index.currency,
   },
   {
     key: 'board',
-    label: 'Board',
-    emptyLabel: 'Без Board',
+    labelKey: 'moex.filters.board',
+    emptyLabelKey: 'moex.filters.emptyBoard',
     getValue: (index) => index.boardId,
   },
   {
     key: 'calcMode',
-    label: 'Тип',
-    emptyLabel: 'Без типа',
+    labelKey: 'moex.filters.type',
+    emptyLabelKey: 'moex.filters.emptyType',
     getValue: (index) => index.calcMode,
   },
 ];
@@ -44,13 +44,13 @@ export const createEmptyFilters = (): FilterState =>
   }, {} as FilterState);
 
 export const SORT_OPTIONS: SortOption[] = [
-  { value: 'name-asc', label: 'Название (А-Я)' },
-  { value: 'name-desc', label: 'Название (Я-А)' },
-  { value: 'secid-asc', label: 'Код (A-Z)' },
-  { value: 'secid-desc', label: 'Код (Z-A)' },
-  { value: 'currency-asc', label: 'Валюта' },
-  { value: 'board-asc', label: 'Board' },
-  { value: 'calc-asc', label: 'Тип расчета' },
+  { value: 'name-asc', labelKey: 'moex.sort.nameAsc' },
+  { value: 'name-desc', labelKey: 'moex.sort.nameDesc' },
+  { value: 'secid-asc', labelKey: 'moex.sort.codeAsc' },
+  { value: 'secid-desc', labelKey: 'moex.sort.codeDesc' },
+  { value: 'currency-asc', labelKey: 'moex.sort.currencyAsc' },
+  { value: 'board-asc', labelKey: 'moex.sort.boardAsc' },
+  { value: 'calc-asc', labelKey: 'moex.sort.calcAsc' },
 ];
 
 export const compareStrings = (left: string, right: string) =>

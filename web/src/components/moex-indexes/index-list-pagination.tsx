@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +23,7 @@ export function IndexListPagination() {
     setPageIndex,
     setPageSize,
   } = useMoexIndexesContext();
+  const { t } = useTranslation();
 
   if (!showPagination) return null;
 
@@ -31,7 +33,7 @@ export function IndexListPagination() {
   return (
     <div className='flex flex-wrap items-center gap-3 pt-3 text-xs text-muted-foreground'>
       <div className='flex items-center gap-2'>
-        <span>Строк на странице</span>
+        <span>{t('moex.pagination.rowsPerPage')}</span>
         <Select
           value={`${pageSize}`}
           onValueChange={(value) => setPageSize(Number(value))}
@@ -49,7 +51,10 @@ export function IndexListPagination() {
         </Select>
       </div>
       <div className='text-xs font-medium text-foreground'>
-        {pageIndex + 1} из {pageCount}
+        {t('moex.pagination.pageOf', {
+          page: pageIndex + 1,
+          pageCount,
+        })}
       </div>
       <div className='ml-auto flex items-center gap-2'>
         <Button
@@ -59,7 +64,7 @@ export function IndexListPagination() {
           onClick={() => setPageIndex(Math.max(0, pageIndex - 1))}
           disabled={!canPreviousPage}
         >
-          <span className='sr-only'>Предыдущая страница</span>
+          <span className='sr-only'>{t('moex.pagination.previous')}</span>
           <ChevronLeft />
         </Button>
         <Button
@@ -69,7 +74,7 @@ export function IndexListPagination() {
           onClick={() => setPageIndex(Math.min(pageCount - 1, pageIndex + 1))}
           disabled={!canNextPage}
         >
-          <span className='sr-only'>Следующая страница</span>
+          <span className='sr-only'>{t('moex.pagination.next')}</span>
           <ChevronRight />
         </Button>
       </div>

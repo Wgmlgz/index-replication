@@ -15,8 +15,8 @@ export type FilterOptions = Record<FilterKey, FilterOption[]>;
 
 export type FilterDefinition = {
   key: FilterKey;
-  label: string;
-  emptyLabel: string;
+  labelKey: string;
+  emptyLabelKey: string;
   getValue?: (index: MoexIndex) => string | null | undefined;
 };
 
@@ -31,7 +31,7 @@ export type SortKey =
 
 export type SortOption = {
   value: SortKey;
-  label: string;
+  labelKey: string;
 };
 
 export type IndexSection = {

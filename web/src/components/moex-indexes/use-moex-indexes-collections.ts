@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
   moexClient,
@@ -23,6 +24,7 @@ type CollectionsState = {
 export function useMoexIndexCollections(
   indexes: MoexIndex[]
 ): CollectionsState {
+  const { t, i18n } = useTranslation();
   const collectionsQuery = useQuery({
     queryKey: ['moex-index-collections'],
     queryFn: () => moexClient.getIndexCollections(),
@@ -114,13 +116,13 @@ export function useMoexIndexCollections(
     if (collectionCounts.uncategorized > 0) {
       options.push({
         value: UNCATEGORIZED_COLLECTION,
-        label: 'Без категории',
+        label: t('moex.groups.uncategorized'),
         count: collectionCounts.uncategorized,
       });
     }
 
     return options;
-  }, [collectionCounts, groupingCollections]);
+  }, [collectionCounts, groupingCollections, i18n.language, t]);
 
   const collectionsLoading =
     collectionsQuery.isLoading || membershipsQuery.isLoading;

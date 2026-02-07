@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { moexClient, type MoexIndex } from '@/lib/moex-client';
 import {
@@ -25,6 +26,7 @@ import {
 } from './use-moex-indexes.utils';
 
 export function useMoexIndexes(): MoexIndexesState {
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [selectedSecid, setSelectedSecid] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -84,14 +86,14 @@ export function useMoexIndexes(): MoexIndexesState {
       if (def.getValue) {
         options[def.key] = buildFilterOptions(
           indexes.map((index) => def.getValue?.(index)),
-          def.emptyLabel
+          t(def.emptyLabelKey)
         );
         return;
       }
       options[def.key] = [];
     });
     return options;
-  }, [collectionOptions, indexes]);
+  }, [collectionOptions, i18n.language, indexes, t]);
 
   const setFilter = (key: FilterKey, value: string[]) => {
     setFilters((current) => ({
@@ -167,13 +169,13 @@ export function useMoexIndexes(): MoexIndexesState {
 
   const indexesLoading = indexesQuery.isLoading;
   const error = indexesQuery.error
-    ? 'Не удалось загрузить список индексов.'
+    ? t('moex.errors.indexes')
     : historyError
-      ? 'Не удалось загрузить историю индекса.'
+      ? t('moex.errors.history')
       : settingsQuery.error
-        ? 'Не удалось загрузить пользовательские настройки.'
+        ? t('moex.errors.settings')
         : collectionsError
-          ? 'Не удалось загрузить группы индексов.'
+          ? t('moex.errors.groups')
         : null;
 
   const {

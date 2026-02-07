@@ -65,6 +65,7 @@
     "react-diff-viewer-continued": "^4.0.6",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.59.0",
+    "react-i18next": "^15.7.2",
     "react-joystick-component": "^6.2.1",
     "react-konva": "^19.2.0",
     "react-konva-utils": "^2.0.0",

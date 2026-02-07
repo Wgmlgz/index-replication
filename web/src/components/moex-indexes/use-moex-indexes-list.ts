@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MoexIndex, MoexIndexCollection } from '@/lib/moex-client';
 import type {
   FilterKey,
@@ -52,6 +53,7 @@ export function useMoexIndexList({
   indexesLoading,
   setPageIndex,
 }: IndexListInput): IndexListState {
+  const { t, i18n } = useTranslation();
   const normalizedQuery = query.trim().toLowerCase();
 
   const filterSets = useMemo(() => {
@@ -170,7 +172,7 @@ export function useMoexIndexList({
 
     const uncategorized: IndexSection = {
       key: UNCATEGORIZED_COLLECTION,
-      title: 'Без категории',
+      title: t('moex.groups.uncategorized'),
       indexes: [],
     };
 
@@ -205,7 +207,9 @@ export function useMoexIndexList({
   }, [
     collectionMemberships,
     groupingOrder,
+    i18n.language,
     showFavoritesOnly,
+    t,
     visibleFavorites,
     visibleOthers,
   ]);
@@ -217,13 +221,13 @@ export function useMoexIndexList({
     return [
       {
         key: 'favorites',
-        title: 'Избранное',
+        title: t('moex.list.favorites'),
         indexes: favoriteIndexesAll,
         showCollections: true,
       },
       ...collectionGroups,
     ];
-  }, [collectionGroups, favoriteIndexesAll, showFavoritesOnly]);
+  }, [collectionGroups, favoriteIndexesAll, i18n.language, showFavoritesOnly, t]);
 
   const foundCount = showFavoritesOnly
     ? favoriteIndexesAll.length

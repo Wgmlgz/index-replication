@@ -1,0 +1,71 @@
+{
+  "common": {
+    "error": "Error"
+  },
+  "moex": {
+    "title": "MOEX indexes",
+    "description": "Select an index to review performance over the last 12 months.",
+    "list": {
+      "title": "Index list",
+      "searchPlaceholder": "Search by name or code",
+      "loading": "Loading list...",
+      "found": "Found: {{count}}",
+      "onlyFavorites": "Only favorites",
+      "favorites": "Favorites",
+      "empty": "Nothing found.",
+      "noFavorites": "No favorites match your query.",
+      "addFavorite": "Add to favorites",
+      "codeOnly": "{{secid}}",
+      "codeWithName": "{{secid}} - {{name}}"
+    },
+    "filters": {
+      "groups": "Groups",
+      "currency": "Currency",
+      "board": "Board",
+      "type": "Type",
+      "sort": "Sort",
+      "clear": "Clear filters",
+      "emptyValues": "No values available",
+      "loadingGroups": "Loading index groups...",
+      "emptyCurrency": "No currency",
+      "emptyBoard": "No board",
+      "emptyType": "No type"
+    },
+    "groups": {
+      "uncategorized": "Uncategorized",
+      "list": "Groups: {{groups}}",
+      "more": "Groups: {{groups}} +{{count}}",
+      "none": "Groups: Uncategorized"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "pageOf": "{{page}} of {{pageCount}}",
+      "previous": "Previous page",
+      "next": "Next page"
+    },
+    "chart": {
+      "title": "Chart",
+      "period": "Period: last {{months}} months ? Currency: {{currency}}",
+      "board": "Board {{board}}",
+      "max": "Max {{value}}",
+      "min": "Min {{value}}",
+      "loading": "Loading chart...",
+      "noData": "No data to display."
+    },
+    "errors": {
+      "indexes": "Failed to load index list.",
+      "history": "Failed to load index history.",
+      "settings": "Failed to load user settings.",
+      "groups": "Failed to load index groups."
+    },
+    "sort": {
+      "nameAsc": "Name (A-Z)",
+      "nameDesc": "Name (Z-A)",
+      "codeAsc": "Code (A-Z)",
+      "codeDesc": "Code (Z-A)",
+      "currencyAsc": "Currency",
+      "boardAsc": "Board",
+      "calcAsc": "Calculation type"
+    }
+  }
+}

@@ -6,6 +6,8 @@ import { Toaster } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/ru';
 import { ThemeProvider } from '@/components/ui/theme-provider';
+import { I18nextProvider } from 'react-i18next';
+import { initI18n } from '@/lib/i18n';
 
 import { UserProvider } from '../components/user-context';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -13,6 +15,7 @@ import Header, { AppSidebar } from '@/components/header';
 import { QueryProvider } from '@/components/query-provider';
 
 moment.locale('ru');
+const i18n = initI18n();
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,36 +39,38 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <div id="app">
-          <SidebarProvider
-            defaultOpen={false}
-            style={{
-              "--sidebar-width": "20rem",
-              "--sidebar-width-mobile": "20rem",
-            } as React.CSSProperties}
-          >
-            <QueryProvider>
-              <UserProvider>
-                <AppSidebar variant="inset" />
-                <Toaster />
-                <ThemeProvider
-                  attribute='class'
-                  defaultTheme='system'
-                  enableSystem
-                  disableTransitionOnChange
-                >
+          <I18nextProvider i18n={i18n}>
+            <SidebarProvider
+              defaultOpen={false}
+              style={{
+                "--sidebar-width": "20rem",
+                "--sidebar-width-mobile": "20rem",
+              } as React.CSSProperties}
+            >
+              <QueryProvider>
+                <UserProvider>
+                  <AppSidebar variant="inset" />
+                  <Toaster />
+                  <ThemeProvider
+                    attribute='class'
+                    defaultTheme='system'
+                    enableSystem
+                    disableTransitionOnChange
+                  >
 
-                  <div className='w-full'>
-                    <Header />
-                    <div className='min-h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'>
-                      <main className=' mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-                        {children}
-                      </main>
+                    <div className='w-full'>
+                      <Header />
+                      <div className='min-h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'>
+                        <main className=' mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+                          {children}
+                        </main>
+                      </div>
                     </div>
-                  </div>
-                </ThemeProvider>
-              </UserProvider>
-            </QueryProvider>
-          </SidebarProvider>
+                  </ThemeProvider>
+                </UserProvider>
+              </QueryProvider>
+            </SidebarProvider>
+          </I18nextProvider>
         </div>
       </body>
     </html>

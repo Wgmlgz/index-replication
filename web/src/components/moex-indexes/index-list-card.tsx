@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,24 +22,27 @@ export function IndexListCard() {
     showNoFavoritesMessage,
     listSections,
   } = useMoexIndexesContext();
+  const { t } = useTranslation();
 
   return (
     <Card className='flex h-full flex-col'>
       <CardHeader>
-        <CardTitle>Список индексов</CardTitle>
+        <CardTitle>{t('moex.list.title')}</CardTitle>
       </CardHeader>
       <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder='Поиск по названию или коду'
+          placeholder={t('moex.list.searchPlaceholder')}
         />
         <div className='flex items-center justify-between text-xs text-muted-foreground'>
           <span>
-            {indexesLoading ? 'Загрузка списка...' : `Найдено: ${foundCount}`}
+            {indexesLoading
+              ? t('moex.list.loading')
+              : t('moex.list.found', { count: foundCount })}
           </span>
           <label className='flex items-center gap-2'>
-            <span>Только избранное</span>
+            <span>{t('moex.list.onlyFavorites')}</span>
             <Switch
               checked={showFavoritesOnly}
               onCheckedChange={setShowFavoritesOnly}
@@ -57,15 +61,14 @@ export function IndexListCard() {
               />
             ))}
 
-
             {!indexesLoading && isEmpty && (
               <div className='text-sm text-muted-foreground'>
-                Ничего не найдено.
+                {t('moex.list.empty')}
               </div>
             )}
             {!indexesLoading && showNoFavoritesMessage && (
               <div className='text-sm text-muted-foreground'>
-                Нет избранных индексов по вашему запросу.
+                {t('moex.list.noFavorites')}
               </div>
             )}
           </div>

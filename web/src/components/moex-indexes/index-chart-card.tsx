@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndexChart } from './index-chart';
@@ -16,6 +17,7 @@ export function IndexChartCard() {
     historyLoading,
     chartData,
   } = useMoexIndexesContext();
+  const { t } = useTranslation();
 
   const collectionPreview = selectedIndexCollections.slice(0, 3);
   const remainingCollections =
@@ -23,10 +25,23 @@ export function IndexChartCard() {
       ? selectedIndexCollections.length - 3
       : 0;
 
+  const groupsLabel = selectedIndex
+    ? selectedIndexCollections.length > 0
+      ? remainingCollections > 0
+        ? t('moex.groups.more', {
+            groups: collectionPreview.join(', '),
+            count: remainingCollections,
+          })
+        : t('moex.groups.list', {
+            groups: collectionPreview.join(', '),
+          })
+      : t('moex.groups.none')
+    : '';
+
   return (
     <Card className='flex h-full flex-col'>
       <CardHeader>
-        <CardTitle>График</CardTitle>
+        <CardTitle>{t('moex.chart.title')}</CardTitle>
       </CardHeader>
       <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         {selectedIndex && (
@@ -36,34 +51,38 @@ export function IndexChartCard() {
               <Badge variant='outline'>{selectedIndex.secid}</Badge>
             </div>
             <div className='text-sm text-muted-foreground'>
-              Период: последние 12 месяцев · Валюта: {selectedIndex.currency ?? '?'}
+              {t('moex.chart.period', {
+                months: 12,
+                currency: selectedIndex.currency ?? '?',
+              })}
             </div>
             <div className='flex flex-wrap gap-2'>
               {selectedIndex.boardId && (
-                <Badge variant='secondary'>Board {selectedIndex.boardId}</Badge>
+                <Badge variant='secondary'>
+                  {t('moex.chart.board', { board: selectedIndex.boardId })}
+                </Badge>
               )}
               {selectedIndex.calcMode && (
                 <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
               )}
               {selectedIndex.annualHigh !== null && (
                 <Badge variant='outline'>
-                  Макс {numberFormatter.format(selectedIndex.annualHigh)}
+                  {t('moex.chart.max', {
+                    value: numberFormatter.format(selectedIndex.annualHigh),
+                  })}
                 </Badge>
               )}
               {selectedIndex.annualLow !== null && (
                 <Badge variant='outline'>
-                  Мин {numberFormatter.format(selectedIndex.annualLow)}
+                  {t('moex.chart.min', {
+                    value: numberFormatter.format(selectedIndex.annualLow),
+                  })}
                 </Badge>
               )}
             </div>
-            {selectedIndexCollections.length > 0 ? (
+            {groupsLabel && (
               <div className='text-xs text-muted-foreground'>
-                Группы: {collectionPreview.join(', ')}
-                {remainingCollections > 0 && ` +${remainingCollections}`}
-              </div>
-            ) : (
-              <div className='text-xs text-muted-foreground'>
-                Группы: Без категории
+                {groupsLabel}
               </div>
             )}
             {latestValue !== null && (
@@ -94,12 +113,12 @@ export function IndexChartCard() {
 
         {historyLoading && (
           <div className='text-sm text-muted-foreground'>
-            Загрузка графика...
+            {t('moex.chart.loading')}
           </div>
         )}
         {!historyLoading && chartData.length === 0 && (
           <div className='text-sm text-muted-foreground'>
-            Нет данных для отображения.
+            {t('moex.chart.noData')}
           </div>
         )}
         {!historyLoading && chartData.length > 0 && (

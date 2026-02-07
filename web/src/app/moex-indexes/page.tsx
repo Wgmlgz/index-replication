@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IndexChartCard } from '@/components/moex-indexes/index-chart-card';
 import { IndexListCard } from '@/components/moex-indexes/index-list-card';
@@ -10,19 +11,20 @@ import {
 
 function MoexIndexesContent() {
   const { error } = useMoexIndexesContext();
+  const { t } = useTranslation();
 
   return (
     <div className='flex h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 flex-col gap-6 overflow-hidden'>
       <div>
-        <h1 className='text-3xl font-bold'>Индексы MOEX</h1>
+        <h1 className='text-3xl font-bold'>{t('moex.title')}</h1>
         <p className='text-muted-foreground mt-2'>
-          Выберите индекс, чтобы посмотреть динамику за последние 12 месяцев.
+          {t('moex.description')}
         </p>
       </div>
 
       {error && (
         <Alert variant='destructive'>
-          <AlertTitle>Ошибка</AlertTitle>
+          <AlertTitle>{t('common.error')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}

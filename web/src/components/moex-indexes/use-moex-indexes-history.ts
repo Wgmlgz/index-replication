@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, subDays } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { moexClient, type MoexIndex } from '@/lib/moex-client';
@@ -21,6 +22,7 @@ type HistoryState = {
 export function useMoexIndexHistory(
   selectedIndex: MoexIndex | null
 ): HistoryState {
+  const { i18n } = useTranslation();
   const dateRange = useMemo(() => {
     const today = new Date();
     return {
@@ -78,10 +80,10 @@ export function useMoexIndexHistory(
     change !== null && previousValue ? (change / previousValue) * 100 : null;
 
   const numberFormatter = useMemo(() => {
-    return new Intl.NumberFormat('ru-RU', {
+    return new Intl.NumberFormat(i18n.language || 'en', {
       maximumFractionDigits: selectedIndex?.decimals ?? 2,
     });
-  }, [selectedIndex?.decimals]);
+  }, [i18n.language, selectedIndex?.decimals]);
 
   return {
     historyLoading,
