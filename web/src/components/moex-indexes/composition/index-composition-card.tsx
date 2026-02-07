@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ChartData } from './index-chart';
+import type { ChartData } from '../detail/index-chart';
 import { IndexCompositionChart, COMPOSITION_SERIES_COLORS } from './index-composition-chart';
-import { useMoexIndexDetailContext } from './moex-indexes-detail-context';
+import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
 
 const TOP_SERIES_COUNT = 8;

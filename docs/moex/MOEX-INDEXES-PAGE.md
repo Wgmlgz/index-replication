@@ -24,8 +24,8 @@ This doc describes the MOEX indexes page UI, its components, and the supporting 
 - List section + item: `web/src/components/moex-indexes/list/index-list-section.tsx`, `web/src/components/moex-indexes/list/index-list-item.tsx`
 - Chart container: `web/src/components/moex-indexes/detail/index-chart-card.tsx`
 - Chart renderer: `web/src/components/moex-indexes/detail/index-chart.tsx`
-- Composition container: `web/src/components/moex-indexes/detail/index-composition-card.tsx`
-- Composition chart: `web/src/components/moex-indexes/detail/index-composition-chart.tsx`
+- Composition container: `web/src/components/moex-indexes/composition/index-composition-card.tsx`
+- Composition chart: `web/src/components/moex-indexes/composition/index-composition-chart.tsx`
 
 **State and Hooks**
 - List types live in `web/src/components/moex-indexes/list/use-moex-indexes.types.ts`.

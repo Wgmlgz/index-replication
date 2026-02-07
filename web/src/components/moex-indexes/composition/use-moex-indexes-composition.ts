@@ -8,8 +8,8 @@ import {
   type MoexIndexCompositionEntry,
   type MoexIndexTickerAnalyticsPoint,
 } from '@/lib/moex-client';
-import { resolveDateRange } from './use-moex-indexes-detail.utils';
-import type { RangeKey } from './moex-indexes-detail.types';
+import { resolveDateRange } from '../detail/use-moex-indexes-detail.utils';
+import type { RangeKey } from '../detail/moex-indexes-detail.types';
 
 export type CompositionSnapshotItem = {
   ticker: string;

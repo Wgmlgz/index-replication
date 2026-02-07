@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { IndexCompositionCard } from '@/components/moex-indexes/detail/index-composition-card';
+import { IndexCompositionCard } from '@/components/moex-indexes/composition/index-composition-card';
 import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';
 import { useMoexIndexDetailContext } from '@/components/moex-indexes/detail/moex-indexes-detail-context';
 import { IndexListCard } from '@/components/moex-indexes/list/index-list-card';
