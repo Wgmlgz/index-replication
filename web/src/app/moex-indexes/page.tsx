@@ -19,17 +19,37 @@ export default function MoexIndexesPage() {
     setPageSize,
     pageCount,
     showPagination,
+    collectionOptions,
+    selectedCollections,
+    setSelectedCollections,
+    currencyOptions,
+    selectedCurrencies,
+    setSelectedCurrencies,
+    boardOptions,
+    selectedBoards,
+    setSelectedBoards,
+    calcModeOptions,
+    selectedCalcModes,
+    setSelectedCalcModes,
+    sortKey,
+    setSortKey,
+    sortOptions,
+    hasActiveFilters,
+    clearFilters,
     foundCount,
     isEmpty,
     showNoFavoritesMessage,
     indexesLoading,
+    collectionsLoading,
     historyLoading,
     error,
     favoriteIndexes,
-    otherIndexes,
+    collectionGroups,
+    indexCollectionsMap,
     favoritesSet,
     toggleFavorite,
     selectedIndex,
+    selectedIndexCollections,
     chartData,
     latestValue,
     change,
@@ -38,7 +58,7 @@ export default function MoexIndexesPage() {
   } = useMoexIndexes();
 
   return (
-    <div className='space-y-6'>
+    <div className='flex min-h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] flex-col gap-6 overflow-hidden'>
       <div>
         <h1 className='text-3xl font-bold'>Индексы MOEX</h1>
         <p className='text-muted-foreground mt-2'>
@@ -53,18 +73,37 @@ export default function MoexIndexesPage() {
         </Alert>
       )}
 
-      <div className='grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6'>
+      <div className='grid flex-1 min-h-0 grid-cols-1 gap-6 grid-rows-[minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[480px_minmax(0,1fr)]'>
         <IndexListCard
           query={query}
           onQueryChange={setQuery}
           indexesLoading={indexesLoading}
+          collectionsLoading={collectionsLoading}
           showFavoritesOnly={showFavoritesOnly}
           onShowFavoritesOnlyChange={setShowFavoritesOnly}
+          collectionOptions={collectionOptions}
+          selectedCollections={selectedCollections}
+          onSelectedCollectionsChange={setSelectedCollections}
+          currencyOptions={currencyOptions}
+          selectedCurrencies={selectedCurrencies}
+          onSelectedCurrenciesChange={setSelectedCurrencies}
+          boardOptions={boardOptions}
+          selectedBoards={selectedBoards}
+          onSelectedBoardsChange={setSelectedBoards}
+          calcModeOptions={calcModeOptions}
+          selectedCalcModes={selectedCalcModes}
+          onSelectedCalcModesChange={setSelectedCalcModes}
+          sortKey={sortKey}
+          onSortKeyChange={setSortKey}
+          sortOptions={sortOptions}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
           foundCount={foundCount}
           isEmpty={isEmpty}
           showNoFavoritesMessage={showNoFavoritesMessage}
           favoriteIndexes={favoriteIndexes}
-          otherIndexes={otherIndexes}
+          collectionGroups={collectionGroups}
+          indexCollectionsMap={indexCollectionsMap}
           favoritesSet={favoritesSet}
           selectedSecid={selectedSecid}
           onSelect={setSelectedSecid}
@@ -78,6 +117,7 @@ export default function MoexIndexesPage() {
         />
         <IndexChartCard
           selectedIndex={selectedIndex}
+          selectedCollections={selectedIndexCollections}
           latestValue={latestValue}
           change={change}
           changePercent={changePercent}

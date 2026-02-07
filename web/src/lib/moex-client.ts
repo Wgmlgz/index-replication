@@ -6,6 +6,17 @@ export type MoexIndex = {
   name: string;
   currency: string | null;
   decimals: number | null;
+  boardId: string | null;
+  calcMode: string | null;
+  annualHigh: number | null;
+  annualLow: number | null;
+};
+
+export type MoexIndexCollection = {
+  id: number;
+  name: string;
+  title: string;
+  securityGroupId: number | null;
 };
 
 export type MoexIndexHistoryPoint = {
@@ -23,6 +34,10 @@ type MoexTable = {
 
 type MoexSecuritiesResponse = {
   securities: MoexTable;
+};
+
+type MoexIndexCollectionsResponse = {
+  securitycollections?: MoexTable;
 };
 
 type MoexHistoryResponse = {
@@ -56,7 +71,9 @@ const tableToObjects = (table: MoexTable): Record<string, string | number | null
   });
 };
 
-const INDEX_COLUMNS = 'SECID,SHORTNAME,NAME,CURRENCYID,DECIMALS';
+const INDEX_COLUMNS =
+  'SECID,SHORTNAME,NAME,CURRENCYID,DECIMALS,BOARDID,CALCMODE,ANNUALHIGH,ANNUALLOW';
+const INDEX_SECURITY_GROUP_ID = 12;
 
 const mapIndexes = (table: MoexTable): MoexIndex[] =>
   tableToObjects(table)
@@ -66,6 +83,10 @@ const mapIndexes = (table: MoexTable): MoexIndex[] =>
       name: String(row.NAME ?? row.SHORTNAME ?? ''),
       currency: row.CURRENCYID ? String(row.CURRENCYID) : null,
       decimals: toNumber(row.DECIMALS),
+      boardId: row.BOARDID ? String(row.BOARDID) : null,
+      calcMode: row.CALCMODE ? String(row.CALCMODE) : null,
+      annualHigh: toNumber(row.ANNUALHIGH),
+      annualLow: toNumber(row.ANNUALLOW),
     }))
     .filter((row) => row.secid.length > 0);
 
@@ -118,6 +139,76 @@ export class MoexClient {
     );
 
     return mapIndexes(data.securities);
+  }
+
+  async getIndexCollections(
+    signal?: AbortSignal
+  ): Promise<MoexIndexCollection[]> {
+    const data = await this.request<MoexIndexCollectionsResponse>(
+      'index.json',
+      {
+        'iss.meta': 'off',
+        lang: 'ru',
+      },
+      signal
+    );
+
+    const table = data.securitycollections;
+    if (!table) return [];
+
+    return tableToObjects(table)
+      .map((row) => ({
+        id: toNumber(row.id ?? row.ID) ?? 0,
+        name: String(row.name ?? row.NAME ?? ''),
+        title: String(row.title ?? row.TITLE ?? row.name ?? ''),
+        securityGroupId: toNumber(
+          row.security_group_id ?? row.SECURITY_GROUP_ID
+        ),
+      }))
+      .filter(
+        (item) =>
+          item.name.length > 0 &&
+          item.securityGroupId === INDEX_SECURITY_GROUP_ID
+      );
+  }
+
+  async getIndexCollectionMemberships(
+    collections: Array<{ name: string }>,
+    signal?: AbortSignal
+  ): Promise<Record<string, string[]>> {
+    if (collections.length === 0) return {};
+
+    const responses = await Promise.all(
+      collections.map(async (collection) => {
+        const data = await this.request<MoexSecuritiesResponse>(
+          'engines/stock/markets/index/securities.json',
+          {
+            'iss.meta': 'off',
+            lang: 'ru',
+            security_collection: collection.name,
+            'securities.columns': 'SECID',
+          },
+          signal
+        );
+
+        const secids = tableToObjects(data.securities)
+          .map((row) => String(row.SECID ?? row.secid ?? '').toUpperCase())
+          .filter((value) => value.length > 0);
+
+        return { collection: collection.name, secids };
+      })
+    );
+
+    const membership: Record<string, string[]> = {};
+    responses.forEach(({ collection, secids }) => {
+      secids.forEach((secid) => {
+        const current = membership[secid] ?? [];
+        current.push(collection);
+        membership[secid] = current;
+      });
+    });
+
+    return membership;
   }
 
   async getIndexHistory(

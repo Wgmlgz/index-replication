@@ -10,7 +10,7 @@ import {
   type LineData,
 } from 'lightweight-charts';
 
-const CHART_HEIGHT = 360;
+const MIN_CHART_HEIGHT = 240;
 
 export type ChartPoint = LineData;
 
@@ -23,9 +23,15 @@ export function IndexChart({ data }: { data: ChartPoint[] }) {
     const container = containerRef.current;
     if (!container) return;
 
+    const getSize = () => ({
+      width: container.clientWidth || 0,
+      height: Math.max(container.clientHeight || 0, MIN_CHART_HEIGHT),
+    });
+
+    const size = getSize();
     const chart = createChart(container, {
-      width: container.clientWidth,
-      height: CHART_HEIGHT,
+      width: size.width,
+      height: size.height,
       layout: {
         textColor: '#64748b',
         background: { type: ColorType.Solid, color: 'transparent' },
@@ -51,10 +57,9 @@ export function IndexChart({ data }: { data: ChartPoint[] }) {
     seriesRef.current = series;
 
     const resizeObserver = new ResizeObserver(() => {
-      chart.applyOptions({
-        width: container.clientWidth,
-        height: CHART_HEIGHT,
-      });
+      const nextSize = getSize();
+      if (nextSize.width === 0 || nextSize.height === 0) return;
+      chart.applyOptions(nextSize);
     });
     resizeObserver.observe(container);
 
@@ -75,10 +80,6 @@ export function IndexChart({ data }: { data: ChartPoint[] }) {
   }, [data]);
 
   return (
-    <div
-      ref={containerRef}
-      className='w-full'
-      style={{ height: CHART_HEIGHT }}
-    />
+    <div ref={containerRef} className='h-full w-full' />
   );
 }

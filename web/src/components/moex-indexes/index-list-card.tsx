@@ -1,8 +1,18 @@
 ﻿'use client';
 
+import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -17,17 +27,62 @@ import type { MoexIndex } from '@/lib/moex-client';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50];
 
+type FilterOption = {
+  value: string;
+  label: string;
+  count?: number;
+};
+
+type SortOption = {
+  value: SortKey;
+  label: string;
+};
+
+type SortKey =
+  | 'name-asc'
+  | 'name-desc'
+  | 'secid-asc'
+  | 'secid-desc'
+  | 'currency-asc'
+  | 'board-asc'
+  | 'calc-asc';
+
+type IndexGroup = {
+  key: string;
+  title: string;
+  indexes: MoexIndex[];
+};
+
 type IndexListCardProps = {
   query: string;
   onQueryChange: (value: string) => void;
   indexesLoading: boolean;
+  collectionsLoading: boolean;
   showFavoritesOnly: boolean;
   onShowFavoritesOnlyChange: (value: boolean) => void;
+  collectionOptions: FilterOption[];
+  selectedCollections: string[];
+  onSelectedCollectionsChange: (value: string[]) => void;
+  currencyOptions: FilterOption[];
+  selectedCurrencies: string[];
+  onSelectedCurrenciesChange: (value: string[]) => void;
+  boardOptions: FilterOption[];
+  selectedBoards: string[];
+  onSelectedBoardsChange: (value: string[]) => void;
+  calcModeOptions: FilterOption[];
+  selectedCalcModes: string[];
+  onSelectedCalcModesChange: (value: string[]) => void;
+  sortKey: SortKey;
+  onSortKeyChange: (value: SortKey) => void;
+  sortOptions: SortOption[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
   foundCount: number;
   isEmpty: boolean;
   showNoFavoritesMessage: boolean;
   favoriteIndexes: MoexIndex[];
-  otherIndexes: MoexIndex[];
+  collectionGroups: IndexGroup[];
+  indexCollectionsMap: Record<string, string[]>;
   favoritesSet: Set<string>;
   selectedSecid: string | null;
   onSelect: (secid: string) => void;
@@ -44,6 +99,8 @@ type IndexListItemProps = {
   index: MoexIndex;
   isActive: boolean;
   isFavorite: boolean;
+  collectionTitles: string[];
+  showCollections: boolean;
   onSelect: (secid: string) => void;
   onToggleFavorite: (secid: string) => void;
 };
@@ -52,9 +109,19 @@ function IndexListItem({
   index,
   isActive,
   isFavorite,
+  collectionTitles,
+  showCollections,
   onSelect,
   onToggleFavorite,
 }: IndexListItemProps) {
+  const previewCollections = showCollections
+    ? collectionTitles.slice(0, 2)
+    : [];
+  const remainingCollections =
+    showCollections && collectionTitles.length > 2
+      ? collectionTitles.length - 2
+      : 0;
+
   return (
     <div
       role='button'
@@ -82,8 +149,26 @@ function IndexListItem({
             {index.shortName || index.name}
           </div>
           <div className='text-xs text-muted-foreground'>
-            {index.secid} · {index.name}
+            {index.secid}
+            {index.name ? ` · ${index.name}` : ''}
           </div>
+          <div className='mt-1 flex flex-wrap gap-1 text-[11px] text-muted-foreground'>
+            {index.currency && (
+              <Badge variant='secondary'>{index.currency}</Badge>
+            )}
+            {index.boardId && (
+              <Badge variant='outline'>Board {index.boardId}</Badge>
+            )}
+            {index.calcMode && (
+              <Badge variant='outline'>{index.calcMode}</Badge>
+            )}
+          </div>
+          {showCollections && previewCollections.length > 0 && (
+            <div className='mt-1 text-[11px] text-muted-foreground'>
+              {previewCollections.join(', ')}
+              {remainingCollections > 0 && ` +${remainingCollections}`}
+            </div>
+          )}
         </div>
         <button
           type='button'
@@ -106,6 +191,8 @@ function IndexListItem({
 type IndexListSectionProps = {
   title: string;
   indexes: MoexIndex[];
+  indexCollectionsMap: Record<string, string[]>;
+  showCollections: boolean;
   favoritesSet: Set<string>;
   selectedSecid: string | null;
   onSelect: (secid: string) => void;
@@ -115,6 +202,8 @@ type IndexListSectionProps = {
 function IndexListSection({
   title,
   indexes,
+  indexCollectionsMap,
+  showCollections,
   favoritesSet,
   selectedSecid,
   onSelect,
@@ -124,8 +213,9 @@ function IndexListSection({
 
   return (
     <div className='space-y-2'>
-      <div className='text-[11px] uppercase tracking-wide text-muted-foreground'>
-        {title}
+      <div className='flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground'>
+        <span>{title}</span>
+        <span>{indexes.length}</span>
       </div>
       <div className='space-y-2'>
         {indexes.map(index => (
@@ -134,6 +224,10 @@ function IndexListSection({
             index={index}
             isActive={index.secid === selectedSecid}
             isFavorite={favoritesSet.has(index.secid.toUpperCase())}
+            collectionTitles={
+              indexCollectionsMap[index.secid.toUpperCase()] ?? []
+            }
+            showCollections={showCollections}
             onSelect={onSelect}
             onToggleFavorite={onToggleFavorite}
           />
@@ -143,17 +237,107 @@ function IndexListSection({
   );
 }
 
+type FilterMenuProps = {
+  label: string;
+  options: FilterOption[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  disabled?: boolean;
+};
+
+function FilterMenu({
+  label,
+  options,
+  selected,
+  onChange,
+  disabled,
+}: FilterMenuProps) {
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+
+  const toggle = (value: string, checked: boolean) => {
+    const next = new Set(selectedSet);
+    if (checked) {
+      next.add(value);
+    } else {
+      next.delete(value);
+    }
+    onChange(Array.from(next));
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant='outline'
+          size='sm'
+          className='justify-between gap-2'
+          disabled={disabled}
+        >
+          <span>{label}</span>
+          {selected.length > 0 && (
+            <Badge variant='secondary'>{selected.length}</Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='start' className='w-64'>
+        <DropdownMenuLabel>{label}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {options.length === 0 && (
+          <div className='px-2 py-1.5 text-sm text-muted-foreground'>
+            Нет доступных значений
+          </div>
+        )}
+        {options.map((option) => (
+          <DropdownMenuCheckboxItem
+            key={option.value}
+            checked={selectedSet.has(option.value)}
+            onCheckedChange={(checked) => toggle(option.value, Boolean(checked))}
+          >
+            <span className='flex w-full items-center justify-between gap-3'>
+              <span className='truncate'>{option.label}</span>
+              {typeof option.count === 'number' && (
+                <span className='text-xs text-muted-foreground'>
+                  {option.count}
+                </span>
+              )}
+            </span>
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function IndexListCard({
   query,
   onQueryChange,
   indexesLoading,
+  collectionsLoading,
   showFavoritesOnly,
   onShowFavoritesOnlyChange,
+  collectionOptions,
+  selectedCollections,
+  onSelectedCollectionsChange,
+  currencyOptions,
+  selectedCurrencies,
+  onSelectedCurrenciesChange,
+  boardOptions,
+  selectedBoards,
+  onSelectedBoardsChange,
+  calcModeOptions,
+  selectedCalcModes,
+  onSelectedCalcModesChange,
+  sortKey,
+  onSortKeyChange,
+  sortOptions,
+  hasActiveFilters,
+  onClearFilters,
   foundCount,
   isEmpty,
   showNoFavoritesMessage,
   favoriteIndexes,
-  otherIndexes,
+  collectionGroups,
+  indexCollectionsMap,
   favoritesSet,
   selectedSecid,
   onSelect,
@@ -167,13 +351,15 @@ export function IndexListCard({
 }: IndexListCardProps) {
   const canPreviousPage = pageIndex > 0;
   const canNextPage = pageIndex < pageCount - 1;
+  const filtersDisabled = indexesLoading;
+  const groupsDisabled = indexesLoading || collectionsLoading;
 
   return (
-    <Card>
+    <Card className='flex h-full flex-col'>
       <CardHeader>
         <CardTitle>Список индексов</CardTitle>
       </CardHeader>
-      <CardContent className='space-y-3'>
+      <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         <Input
           value={query}
           onChange={event => onQueryChange(event.target.value)}
@@ -191,27 +377,97 @@ export function IndexListCard({
             />
           </label>
         </div>
-        <ScrollArea className='h-[420px] pr-3'>
+        <div className='flex flex-wrap items-center gap-2'>
+          <FilterMenu
+            label='Группы'
+            options={collectionOptions}
+            selected={selectedCollections}
+            onChange={onSelectedCollectionsChange}
+            disabled={groupsDisabled}
+          />
+          <FilterMenu
+            label='Валюта'
+            options={currencyOptions}
+            selected={selectedCurrencies}
+            onChange={onSelectedCurrenciesChange}
+            disabled={filtersDisabled}
+          />
+          <FilterMenu
+            label='Board'
+            options={boardOptions}
+            selected={selectedBoards}
+            onChange={onSelectedBoardsChange}
+            disabled={filtersDisabled}
+          />
+          <FilterMenu
+            label='Тип'
+            options={calcModeOptions}
+            selected={selectedCalcModes}
+            onChange={onSelectedCalcModesChange}
+            disabled={filtersDisabled}
+          />
+          <div className='flex items-center gap-2'>
+            <span className='text-xs text-muted-foreground'>Сортировка</span>
+            <Select
+              value={sortKey}
+              onValueChange={(value) => onSortKeyChange(value as SortKey)}
+            >
+              <SelectTrigger size='sm'>
+                <SelectValue placeholder='Сортировка' />
+              </SelectTrigger>
+              <SelectContent side='bottom'>
+                {sortOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {hasActiveFilters && (
+            <Button
+              variant='ghost'
+              size='sm'
+              className='text-muted-foreground'
+              onClick={onClearFilters}
+            >
+              Сбросить фильтры
+            </Button>
+          )}
+        </div>
+        {collectionsLoading && !indexesLoading && (
+          <div className='text-xs text-muted-foreground'>
+            Загружаем группы индексов...
+          </div>
+        )}
+        <ScrollArea className='min-h-0 flex-1 pr-3'>
           <div className='space-y-4'>
-            <IndexListSection
-              title='Избранное'
-              indexes={favoriteIndexes}
-              favoritesSet={favoritesSet}
-              selectedSecid={selectedSecid}
-              onSelect={onSelect}
-              onToggleFavorite={onToggleFavorite}
-            />
-
             {!showFavoritesOnly && (
               <IndexListSection
-                title='Все индексы'
-                indexes={otherIndexes}
+                title='Избранное'
+                indexes={favoriteIndexes}
+                indexCollectionsMap={indexCollectionsMap}
+                showCollections
                 favoritesSet={favoritesSet}
                 selectedSecid={selectedSecid}
                 onSelect={onSelect}
                 onToggleFavorite={onToggleFavorite}
               />
             )}
+
+            {collectionGroups.map((group) => (
+              <IndexListSection
+                key={group.key}
+                title={group.title}
+                indexes={group.indexes}
+                indexCollectionsMap={indexCollectionsMap}
+                showCollections={false}
+                favoritesSet={favoritesSet}
+                selectedSecid={selectedSecid}
+                onSelect={onSelect}
+                onToggleFavorite={onToggleFavorite}
+              />
+            ))}
 
             {!indexesLoading && isEmpty && (
               <div className='text-sm text-muted-foreground'>

@@ -1,11 +1,13 @@
 ﻿'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MoexIndex } from '@/lib/moex-client';
 import { IndexChart, type ChartPoint } from './index-chart';
 
 type IndexChartCardProps = {
   selectedIndex: MoexIndex | null;
+  selectedCollections: string[];
   latestValue: number | null;
   change: number | null;
   changePercent: number | null;
@@ -16,6 +18,7 @@ type IndexChartCardProps = {
 
 export function IndexChartCard({
   selectedIndex,
+  selectedCollections,
   latestValue,
   change,
   changePercent,
@@ -23,21 +26,54 @@ export function IndexChartCard({
   historyLoading,
   chartData,
 }: IndexChartCardProps) {
+  const collectionPreview = selectedCollections.slice(0, 3);
+  const remainingCollections =
+    selectedCollections.length > 3 ? selectedCollections.length - 3 : 0;
+
   return (
-    <Card>
+    <Card className='flex h-full flex-col'>
       <CardHeader>
         <CardTitle>График</CardTitle>
       </CardHeader>
-      <CardContent className='space-y-3'>
+      <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         {selectedIndex && (
-          <div className='space-y-1'>
-            <div className='text-lg font-semibold'>
-              {selectedIndex.name} ({selectedIndex.secid})
+          <div className='space-y-2'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <div className='text-lg font-semibold'>{selectedIndex.name}</div>
+              <Badge variant='outline'>{selectedIndex.secid}</Badge>
             </div>
             <div className='text-sm text-muted-foreground'>
               Период: последние 12 месяцев · Валюта:{' '}
               {selectedIndex.currency ?? '—'}
             </div>
+            <div className='flex flex-wrap gap-2'>
+              {selectedIndex.boardId && (
+                <Badge variant='secondary'>Board {selectedIndex.boardId}</Badge>
+              )}
+              {selectedIndex.calcMode && (
+                <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
+              )}
+              {selectedIndex.annualHigh !== null && (
+                <Badge variant='outline'>
+                  Макс {numberFormatter.format(selectedIndex.annualHigh)}
+                </Badge>
+              )}
+              {selectedIndex.annualLow !== null && (
+                <Badge variant='outline'>
+                  Мин {numberFormatter.format(selectedIndex.annualLow)}
+                </Badge>
+              )}
+            </div>
+            {selectedCollections.length > 0 ? (
+              <div className='text-xs text-muted-foreground'>
+                Группы: {collectionPreview.join(', ')}
+                {remainingCollections > 0 && ` +${remainingCollections}`}
+              </div>
+            ) : (
+              <div className='text-xs text-muted-foreground'>
+                Группы: Без категории
+              </div>
+            )}
             {latestValue !== null && (
               <div className='text-sm'>
                 <span className='font-medium'>
@@ -75,7 +111,9 @@ export function IndexChartCard({
           </div>
         )}
         {!historyLoading && chartData.length > 0 && (
-          <IndexChart data={chartData} />
+          <div className='min-h-[240px] flex-1'>
+            <IndexChart data={chartData} />
+          </div>
         )}
       </CardContent>
     </Card>
