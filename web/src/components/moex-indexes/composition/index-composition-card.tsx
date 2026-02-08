@@ -13,7 +13,12 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ChartData } from '../detail/index-chart';
-import { IndexCompositionChart, resolveCompositionSeriesColor } from './index-composition-chart';
+import {
+  IndexCompositionChart,
+  OTHER_SERIES_COLOR,
+  resolveCompositionSeriesColor,
+} from './index-composition-chart';
+import { IndexCompositionSnapshotChart } from './index-composition-snapshot-chart';
 import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
 import type { CompositionTab } from '../detail/moex-indexes-detail.types';
@@ -52,9 +57,8 @@ export function IndexCompositionCard() {
     compositionTab,
     setCompositionTab,
   } = useMoexIndexDetailContext();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [topCount, setTopCount] = useState<number | null>(DEFAULT_TOP_COUNT);
-  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const topCountForHook =
     topCount === null ? Number.MAX_SAFE_INTEGER : topCount;
 
@@ -105,15 +109,25 @@ export function IndexCompositionCard() {
     return Array.from(options).sort((a, b) => a - b);
   }, []);
 
-  const weightFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat(i18n.language || 'en', {
-        maximumFractionDigits: 2,
-      }),
-    [i18n.language]
-  );
-
   const snapshotTop = snapshotItems.slice(0, resolvedTopCount);
+  const snapshotOtherWeight = useMemo(() => {
+    if (snapshotTop.length === 0) return 0;
+    const total = snapshotTop.reduce((sum, item) => sum + (item.weight ?? 0), 0);
+    const other = Math.max(0, 100 - total);
+    return other;
+  }, [snapshotTop]);
+  const snapshotChartItems = useMemo(() => {
+    if (snapshotOtherWeight <= 0.01) return snapshotTop;
+    return [
+      ...snapshotTop,
+      {
+        ticker: t('moex.composition.other'),
+        name: t('moex.composition.other'),
+        weight: snapshotOtherWeight,
+        tradeDate: snapshotDate ?? '',
+      },
+    ];
+  }, [snapshotOtherWeight, snapshotDate, snapshotTop, t]);
   const effectiveTopCount =
     snapshotItems.length > 0
       ? Math.min(resolvedTopCount, snapshotItems.length)
@@ -125,6 +139,8 @@ export function IndexCompositionCard() {
     !trendLoading &&
     !trendError &&
     series.length > 0;
+  const showOtherLegend =
+    compositionTab === 'stacked' && snapshotOtherWeight > 0.01;
 
   return (
     <Card className='flex h-full flex-col'>
@@ -198,8 +214,6 @@ export function IndexCompositionCard() {
                   <div
                     key={item.id}
                     className='flex items-center gap-2'
-                    onMouseEnter={() => setHighlightedId(item.id)}
-                    onMouseLeave={() => setHighlightedId(null)}
                   >
                     <span
                       className='h-2.5 w-2.5 rounded-full'
@@ -213,6 +227,20 @@ export function IndexCompositionCard() {
                     <span className='hidden sm:inline'>{item.name}</span>
                   </div>
                 ))}
+                {showOtherLegend && (
+                  <div
+                    key='composition-other'
+                    className='flex items-center gap-2'
+                  >
+                    <span
+                      className='h-2.5 w-2.5 rounded-full'
+                      style={{ backgroundColor: OTHER_SERIES_COLOR }}
+                    />
+                    <span className='font-medium text-foreground'>
+                      {t('moex.composition.other')}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -234,35 +262,8 @@ export function IndexCompositionCard() {
                 </div>
               )}
               {!snapshotLoading && !snapshotError && snapshotTop.length > 0 && (
-                <div className='max-h-[360px] overflow-y-auto pr-2'>
-                  <div className='space-y-3'>
-                    {snapshotTop.map((item) => (
-                      <div
-                        key={`${item.ticker}-${item.tradeDate}`}
-                        className='grid grid-cols-[160px_1fr_auto] items-center gap-3'
-                      >
-                        <div className='flex min-w-0 flex-col'>
-                          <span className='text-xs font-semibold'>
-                            {item.ticker}
-                          </span>
-                          <span className='truncate text-[11px] text-muted-foreground'>
-                            {item.name}
-                          </span>
-                        </div>
-                        <div className='h-2 overflow-hidden rounded-full bg-muted'>
-                          <div
-                            className='h-full rounded-full bg-primary'
-                            style={{
-                              width: `${Math.min(Math.max(item.weight, 0), 100)}%`,
-                            }}
-                          />
-                        </div>
-                        <div className='text-xs tabular-nums text-muted-foreground'>
-                          {weightFormatter.format(item.weight)}%
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className='min-h-[240px] flex-1'>
+                  <IndexCompositionSnapshotChart items={snapshotChartItems} />
                 </div>
               )}
             </TabsContent>
@@ -287,7 +288,6 @@ export function IndexCompositionCard() {
                   <IndexCompositionChart
                     series={series}
                     variant='line'
-                    highlightedId={highlightedId}
                   />
                 </div>
               )}
@@ -313,7 +313,7 @@ export function IndexCompositionCard() {
                   <IndexCompositionChart
                     series={series}
                     variant='stacked'
-                    highlightedId={highlightedId}
+                    includeOther
                   />
                 </div>
               )}

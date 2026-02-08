@@ -100,10 +100,22 @@
       "topCount": "Top {{count}}",
       "topLabel": "Top",
       "all": "All",
+      "other": "Other",
       "loading": "Loading composition...",
       "noData": "No composition data to display.",
       "noSeries": "No weight history for the selected range.",
       "error": "Failed to load index composition."
+    },
+    "demo": {
+      "title": "Composition chart demo",
+      "description": "Test hover interactions and series density with sample data.",
+      "controls": "Demo controls",
+      "seriesCount": "Series count",
+      "variant": "Chart type",
+      "variantStacked": "Stacked area",
+      "variantLine": "Line",
+      "snapshot": "Snapshot (treemap)",
+      "series": "Series chart"
     },
     "errors": {
       "indexes": "Failed to load index list.",

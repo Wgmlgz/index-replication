@@ -8,13 +8,12 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import type { CompositionSeries } from './use-moex-indexes-composition';
@@ -26,6 +25,8 @@ const BASE_SERIES_COLORS = [
   'var(--chart-4)',
   'var(--chart-5)',
 ];
+
+export const OTHER_SERIES_COLOR = 'var(--muted-foreground)';
 
 export const resolveCompositionSeriesColor = (index: number) => {
   if (index < BASE_SERIES_COLORS.length) {
@@ -40,38 +41,27 @@ export const resolveCompositionSeriesColor = (index: number) => {
 type IndexCompositionChartProps = {
   series: CompositionSeries[];
   variant?: 'line' | 'stacked';
-  highlightedId?: string | null;
+  includeOther?: boolean;
 };
 
 export function IndexCompositionChart({
   series,
   variant = 'line',
-  highlightedId,
+  includeOther = false,
 }: IndexCompositionChartProps) {
-  const seriesMeta = useMemo(
+  const baseSeriesMeta = useMemo(
     () =>
       series.map((item, index) => ({
         key: `series_${index}`,
         id: item.id,
-        name: item.name,
         color: resolveCompositionSeriesColor(index),
       })),
     [series]
   );
 
-  const chartConfig = useMemo<ChartConfig>(() => {
-    return seriesMeta.reduce<ChartConfig>((acc, item) => {
-      acc[item.key] = {
-        label: item.id,
-        color: item.color,
-      };
-      return acc;
-    }, {});
-  }, [seriesMeta]);
-
-  const chartData = useMemo(() => {
+  const { chartData, seriesMeta } = useMemo(() => {
     const rows = new Map<string, Record<string, number | string>>();
-    seriesMeta.forEach((meta, index) => {
+    baseSeriesMeta.forEach((meta, index) => {
       const item = series[index];
       item?.data.forEach((point) => {
         const row = rows.get(point.time) ?? { time: point.time };
@@ -79,74 +69,114 @@ export function IndexCompositionChart({
         rows.set(point.time, row);
       });
     });
-    return Array.from(rows.values()).sort((a, b) =>
+
+    const data = Array.from(rows.values()).sort((a, b) =>
       String(a.time).localeCompare(String(b.time))
     );
-  }, [series, seriesMeta]);
 
-  const highlightedKey = useMemo(() => {
-    if (!highlightedId) return null;
-    return seriesMeta.find((item) => item.id === highlightedId)?.key ?? null;
-  }, [highlightedId, seriesMeta]);
+    if (!includeOther) {
+      return { chartData: data, seriesMeta: baseSeriesMeta };
+    }
 
-  const hasHighlight = Boolean(highlightedKey);
+    const otherKey = 'series_other';
+    let hasOther = false;
+    data.forEach((row) => {
+      const sum = baseSeriesMeta.reduce((total, meta) => {
+        const value =
+          typeof row[meta.key] === 'number' ? (row[meta.key] as number) : 0;
+        return total + value;
+      }, 0);
+      const otherValue = Math.max(0, 100 - sum);
+      if (otherValue > 0.01) {
+        row[otherKey] = otherValue;
+        hasOther = true;
+      } else {
+        row[otherKey] = 0;
+      }
+    });
+
+    if (!hasOther) {
+      data.forEach((row) => {
+        delete row[otherKey];
+      });
+      return { chartData: data, seriesMeta: baseSeriesMeta };
+    }
+
+    return {
+      chartData: data,
+      seriesMeta: [
+        ...baseSeriesMeta,
+        { key: otherKey, id: 'OTHER', color: OTHER_SERIES_COLOR },
+      ],
+    };
+  }, [baseSeriesMeta, includeOther, series]);
+
+  const chartConfig = useMemo<ChartConfig>(() => {
+    return seriesMeta.reduce<ChartConfig>((acc, item) => {
+      acc[item.key] = {
+        label: item.id === 'OTHER' ? 'Other' : item.id,
+        color: item.color,
+      };
+      return acc;
+    }, {});
+  }, [seriesMeta]);
 
   return (
     <ChartContainer config={chartConfig} className='min-h-[200px] h-full w-full'>
       <ResponsiveContainer width='100%' height='100%'>
         {variant === 'stacked' ? (
-          <AreaChart data={chartData} margin={{ left: 4, right: 4 }}>
+          <AreaChart
+            data={chartData}
+            margin={{ left: 4, right: 4 }}
+            accessibilityLayer
+          >
             <CartesianGrid vertical={false} />
             <XAxis dataKey='time' tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={36} />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent labelKey='time' indicator='line' />
-              }
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={40}
+              domain={[0, 100]}
+              tickFormatter={(value: number) => `${Math.round(value)}%`}
             />
-            {seriesMeta.map((item) => {
-              const isDimmed = hasHighlight && item.key !== highlightedKey;
-              return (
-                <Area
-                  key={item.key}
-                  dataKey={item.key}
-                  type='monotone'
-                  stackId='composition'
-                  stroke={`var(--color-${item.key})`}
-                  fill={`var(--color-${item.key})`}
-                  fillOpacity={isDimmed ? 0.08 : 0.35}
-                  strokeOpacity={isDimmed ? 0.2 : 0.9}
-                  strokeWidth={isDimmed ? 1 : 1.5}
-                  isAnimationActive={false}
-                />
-              );
-            })}
+            <Tooltip formatter={(value, name) => [value, chartConfig[name]?.label ?? name]} />
+            {seriesMeta.map((item) => (
+              <Area
+                key={item.key}
+                dataKey={item.key}
+                type='monotone'
+                stackId='composition'
+                stroke={`var(--color-${item.key})`}
+                fill={`var(--color-${item.key})`}
+                fillOpacity={0.35}
+                strokeOpacity={0.9}
+                strokeWidth={1.5}
+                isAnimationActive={false}
+              />
+            ))}
           </AreaChart>
         ) : (
-          <LineChart data={chartData} margin={{ left: 4, right: 4 }}>
+          <LineChart
+            data={chartData}
+            margin={{ left: 4, right: 4 }}
+            accessibilityLayer
+          >
             <CartesianGrid vertical={false} />
             <XAxis dataKey='time' tickLine={false} axisLine={false} />
             <YAxis tickLine={false} axisLine={false} width={36} />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent labelKey='time' indicator='line' />
-              }
-            />
-            {seriesMeta.map((item) => {
-              const isDimmed = hasHighlight && item.key !== highlightedKey;
-              return (
-                <Line
-                  key={item.key}
-                  dataKey={item.key}
-                  type='monotone'
-                  stroke={`var(--color-${item.key})`}
-                  strokeOpacity={isDimmed ? 0.2 : 0.9}
-                  strokeWidth={isDimmed ? 1.25 : 2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              );
-            })}
+            <Tooltip formatter={(value, name) => [value, chartConfig[name]?.label ?? name]} />
+            {seriesMeta.map((item) => (
+              <Line
+                key={item.key}
+                dataKey={item.key}
+                type='monotone'
+                stroke={`var(--color-${item.key})`}
+                strokeOpacity={0.9}
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ))}
           </LineChart>
         )}
       </ResponsiveContainer>

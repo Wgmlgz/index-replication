@@ -46,7 +46,7 @@ Hooks:
 - `useMoexIndexHistory` loads the 12-month history for the selected index and derives chart series and change metrics.
 - `useMoexIndexComposition` loads the latest composition snapshot and weight history for top constituents.
   The weight history series is downsampled using the same interval control as the price chart.
-  The composition card exposes Snapshot, Weight trend, and Stacked area tabs.
+  The composition card exposes Snapshot (treemap), Weight trend, and Stacked area tabs.
 
 **Data Flow**
 

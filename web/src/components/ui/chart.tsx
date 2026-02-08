@@ -114,6 +114,7 @@ type ChartTooltipContentProps = TooltipProps<number, string> & {
   indicator?: 'dot' | 'line' | 'dashed';
   nameKey?: string;
   labelKey?: string;
+  valueFormatter?: (value: number, dataKey: string) => React.ReactNode;
 };
 
 export function ChartTooltipContent({
@@ -125,6 +126,7 @@ export function ChartTooltipContent({
   indicator = 'dot',
   nameKey,
   labelKey,
+  valueFormatter,
 }: ChartTooltipContentProps) {
   const { config } = useChart();
 
@@ -152,6 +154,10 @@ export function ChartTooltipContent({
             item.color ??
             configItem?.color ??
             (configItem ? `var(--color-${dataKey})` : 'currentColor');
+          const formattedValue =
+            typeof item.value === 'number' && valueFormatter
+              ? valueFormatter(item.value, dataKey)
+              : item.value;
 
           return (
             <div
@@ -180,7 +186,7 @@ export function ChartTooltipContent({
                 {configItem?.label ?? nameValue}
               </span>
               <span className='ml-auto font-medium text-foreground'>
-                {item.value}
+                {formattedValue}
               </span>
             </div>
           );
