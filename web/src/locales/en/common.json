@@ -98,6 +98,8 @@
         "stacked": "Stacked area"
       },
       "topCount": "Top {{count}}",
+      "topLabel": "Top",
+      "all": "All",
       "loading": "Loading composition...",
       "noData": "No composition data to display.",
       "noSeries": "No weight history for the selected range.",

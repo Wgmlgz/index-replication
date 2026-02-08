@@ -1,18 +1,25 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ChartData } from '../detail/index-chart';
-import { IndexCompositionChart, COMPOSITION_SERIES_COLORS } from './index-composition-chart';
+import { IndexCompositionChart, resolveCompositionSeriesColor } from './index-composition-chart';
 import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
 import type { CompositionTab } from '../detail/moex-indexes-detail.types';
 
-const TOP_SERIES_COUNT = 8;
-const SNAPSHOT_COUNT = TOP_SERIES_COUNT;
+const DEFAULT_TOP_COUNT = 8;
+const TOP_COUNT_OPTIONS = [5, 8, 12, 20, 50];
 
 const resolveChartDate = (chartData: ChartData): string | null => {
   if (chartData.length === 0) return null;
@@ -46,6 +53,10 @@ export function IndexCompositionCard() {
     setCompositionTab,
   } = useMoexIndexDetailContext();
   const { t, i18n } = useTranslation();
+  const [topCount, setTopCount] = useState<number | null>(DEFAULT_TOP_COUNT);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const topCountForHook =
+    topCount === null ? Number.MAX_SAFE_INTEGER : topCount;
 
   const latestTradeDate = useMemo(
     () => resolveChartDate(chartData),
@@ -67,9 +78,32 @@ export function IndexCompositionCard() {
     customFrom,
     customTill,
     latestTradeDate,
-    topCount: TOP_SERIES_COUNT,
+    topCount: topCountForHook,
     compositionTab,
   });
+
+  const resolvedTopCount = useMemo(() => {
+    const maxCount = snapshotItems.length;
+    if (topCount === null) {
+      return maxCount > 0 ? maxCount : DEFAULT_TOP_COUNT;
+    }
+    if (maxCount > 0) return Math.min(topCount, maxCount);
+    return topCount;
+  }, [snapshotItems.length, topCount]);
+
+  useEffect(() => {
+    if (topCount === null) return;
+    if (snapshotItems.length === 0) return;
+    if (topCount > snapshotItems.length) {
+      setTopCount(snapshotItems.length);
+    }
+  }, [snapshotItems.length, topCount]);
+
+  const topCountOptions = useMemo(() => {
+    const options = new Set<number>(TOP_COUNT_OPTIONS);
+    options.add(DEFAULT_TOP_COUNT);
+    return Array.from(options).sort((a, b) => a - b);
+  }, []);
 
   const weightFormatter = useMemo(
     () =>
@@ -79,11 +113,11 @@ export function IndexCompositionCard() {
     [i18n.language]
   );
 
-  const snapshotTop = snapshotItems.slice(0, SNAPSHOT_COUNT);
+  const snapshotTop = snapshotItems.slice(0, resolvedTopCount);
   const effectiveTopCount =
     snapshotItems.length > 0
-      ? Math.min(TOP_SERIES_COUNT, snapshotItems.length)
-      : TOP_SERIES_COUNT;
+      ? Math.min(resolvedTopCount, snapshotItems.length)
+      : resolvedTopCount;
   const trendLoading = snapshotLoading || seriesLoading;
   const trendError = snapshotError || seriesError;
   const showLegend =
@@ -120,6 +154,36 @@ export function IndexCompositionCard() {
                 {t('moex.composition.tabs.stacked')}
               </TabsTrigger>
             </TabsList>
+            <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+              <span>{t('moex.composition.topLabel')}</span>
+              <Select
+                value={topCount === null ? 'all' : String(topCount)}
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setTopCount(null);
+                    return;
+                  }
+                  const parsed = Number.parseInt(value, 10);
+                  if (Number.isFinite(parsed)) setTopCount(parsed);
+                }}
+              >
+                <SelectTrigger size='sm' className='h-7 text-xs'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {topCountOptions.map((value) => (
+                    <SelectItem key={value} value={String(value)}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                  {snapshotItems.length > 0 && (
+                    <SelectItem value='all'>
+                      {t('moex.composition.all')}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
             <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
               {selectedIndex && (
                 <Badge variant='outline'>{selectedIndex.secid}</Badge>
@@ -129,16 +193,18 @@ export function IndexCompositionCard() {
               </Badge>
             </div>
             {showLegend && (
-              <div className='flex flex-col gap-2 text-xs text-muted-foreground'>
+              <div className='flex max-h-48 flex-col gap-2 overflow-y-auto pr-2 text-xs text-muted-foreground'>
                 {series.map((item, index) => (
-                  <div key={item.id} className='flex items-center gap-2'>
+                  <div
+                    key={item.id}
+                    className='flex items-center gap-2'
+                    onMouseEnter={() => setHighlightedId(item.id)}
+                    onMouseLeave={() => setHighlightedId(null)}
+                  >
                     <span
                       className='h-2.5 w-2.5 rounded-full'
                       style={{
-                        backgroundColor:
-                          COMPOSITION_SERIES_COLORS[
-                            index % COMPOSITION_SERIES_COLORS.length
-                          ],
+                        backgroundColor: resolveCompositionSeriesColor(index),
                       }}
                     />
                     <span className='font-medium text-foreground'>
@@ -168,33 +234,35 @@ export function IndexCompositionCard() {
                 </div>
               )}
               {!snapshotLoading && !snapshotError && snapshotTop.length > 0 && (
-                <div className='space-y-3'>
-                  {snapshotTop.map((item) => (
-                    <div
-                      key={`${item.ticker}-${item.tradeDate}`}
-                      className='grid grid-cols-[160px_1fr_auto] items-center gap-3'
-                    >
-                      <div className='flex min-w-0 flex-col'>
-                        <span className='text-xs font-semibold'>
-                          {item.ticker}
-                        </span>
-                        <span className='truncate text-[11px] text-muted-foreground'>
-                          {item.name}
-                        </span>
+                <div className='max-h-[360px] overflow-y-auto pr-2'>
+                  <div className='space-y-3'>
+                    {snapshotTop.map((item) => (
+                      <div
+                        key={`${item.ticker}-${item.tradeDate}`}
+                        className='grid grid-cols-[160px_1fr_auto] items-center gap-3'
+                      >
+                        <div className='flex min-w-0 flex-col'>
+                          <span className='text-xs font-semibold'>
+                            {item.ticker}
+                          </span>
+                          <span className='truncate text-[11px] text-muted-foreground'>
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className='h-2 overflow-hidden rounded-full bg-muted'>
+                          <div
+                            className='h-full rounded-full bg-primary'
+                            style={{
+                              width: `${Math.min(Math.max(item.weight, 0), 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <div className='text-xs tabular-nums text-muted-foreground'>
+                          {weightFormatter.format(item.weight)}%
+                        </div>
                       </div>
-                      <div className='h-2 overflow-hidden rounded-full bg-muted'>
-                        <div
-                          className='h-full rounded-full bg-primary'
-                          style={{
-                            width: `${Math.min(Math.max(item.weight, 0), 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className='text-xs tabular-nums text-muted-foreground'>
-                        {weightFormatter.format(item.weight)}%
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </TabsContent>
@@ -216,7 +284,11 @@ export function IndexCompositionCard() {
               )}
               {!trendLoading && !trendError && series.length > 0 && (
                 <div className='min-h-[200px] flex-1'>
-                  <IndexCompositionChart series={series} variant='line' />
+                  <IndexCompositionChart
+                    series={series}
+                    variant='line'
+                    highlightedId={highlightedId}
+                  />
                 </div>
               )}
             </TabsContent>
@@ -238,7 +310,11 @@ export function IndexCompositionCard() {
               )}
               {!trendLoading && !trendError && series.length > 0 && (
                 <div className='min-h-[200px] flex-1'>
-                  <IndexCompositionChart series={series} variant='stacked' />
+                  <IndexCompositionChart
+                    series={series}
+                    variant='stacked'
+                    highlightedId={highlightedId}
+                  />
                 </div>
               )}
             </TabsContent>
