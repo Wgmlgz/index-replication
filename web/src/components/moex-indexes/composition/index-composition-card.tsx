@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
+import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import {
   Select,
   SelectContent,
@@ -144,6 +147,14 @@ export function IndexCompositionCard() {
     series.length > 0;
   const showOtherLegend =
     compositionTab === 'stacked' && snapshotOtherWeight > 0.01;
+  const showSnapshotSkeleton = snapshotLoading && snapshotTop.length === 0;
+  const showTrendSkeleton = trendLoading && series.length === 0;
+  const compositionSourceLabel = selectedIndex
+    ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
+    : t('moex.sources.selectIndex');
+  const compositionHref = selectedIndex
+    ? moexSourceLinks.indexPage(selectedIndex.secid)
+    : undefined;
 
   return (
     <Card className='flex h-full flex-col'>
@@ -163,6 +174,13 @@ export function IndexCompositionCard() {
                   </div>
                 )}
               </div>
+              <MoexSourceButton
+                href={compositionHref}
+                label={compositionSourceLabel}
+                tooltip={compositionSourceLabel}
+                disabledTooltip={t('moex.sources.selectIndex')}
+                className='shrink-0'
+              />
             </div>
             <TabsList className='w-full justify-start'>
               <TabsTrigger value='snapshot'>
@@ -248,10 +266,8 @@ export function IndexCompositionCard() {
           </div>
           <div className='flex min-h-[200px] flex-1 flex-col'>
             <TabsContent value='snapshot' className='flex-1'>
-              {snapshotLoading && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.loading')}
-                </div>
+              {showSnapshotSkeleton && (
+                <Skeleton className='h-full min-h-[240px] w-full' />
               )}
               {!snapshotLoading && snapshotError && (
                 <div className='text-sm text-muted-foreground'>
@@ -272,10 +288,8 @@ export function IndexCompositionCard() {
               )}
             </TabsContent>
             <TabsContent value='trend' className='flex h-full flex-col'>
-              {trendLoading && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.loading')}
-                </div>
+              {showTrendSkeleton && (
+                <Skeleton className='h-full min-h-[200px] w-full' />
               )}
               {!trendLoading && trendError && (
                 <div className='text-sm text-muted-foreground'>
@@ -294,10 +308,8 @@ export function IndexCompositionCard() {
               )}
             </TabsContent>
             <TabsContent value='stacked' className='flex h-full flex-col'>
-              {trendLoading && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.loading')}
-                </div>
+              {showTrendSkeleton && (
+                <Skeleton className='h-full min-h-[200px] w-full' />
               )}
               {!trendLoading && trendError && (
                 <div className='text-sm text-muted-foreground'>

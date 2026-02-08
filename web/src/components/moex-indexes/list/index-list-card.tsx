@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { useMoexIndexListContext } from './moex-indexes-list-context';
@@ -32,6 +33,7 @@ export function IndexListCard() {
   } = useMoexIndexListContext();
   const { t } = useTranslation();
   const listSourceLabel = t('moex.sources.list');
+  const showListSkeleton = indexesLoading && listSections.length === 0;
 
   return (
     <Card className='flex h-full flex-col'>
@@ -52,11 +54,11 @@ export function IndexListCard() {
           placeholder={t('moex.list.searchPlaceholder')}
         />
         <div className='flex items-center justify-between text-xs text-muted-foreground'>
-          <span>
-            {indexesLoading
-              ? t('moex.list.loading')
-              : t('moex.list.found', { count: foundCount })}
-          </span>
+          {showListSkeleton ? (
+            <Skeleton className='h-4 w-28' />
+          ) : (
+            <span>{t('moex.list.found', { count: foundCount })}</span>
+          )}
           <label className='flex items-center gap-2'>
             <span>{t('moex.list.onlyFavorites')}</span>
             <Switch
@@ -67,27 +69,38 @@ export function IndexListCard() {
         </div>
         <IndexListFilters />
         <ScrollArea className='min-h-0 flex-1 pr-3'>
-          <div className='space-y-4'>
-            {listSections.map((section) => (
-              <IndexListSection
-                key={section.key}
-                title={section.title}
-                indexes={section.indexes}
-                showCollections={section.showCollections}
-              />
-            ))}
+          {showListSkeleton ? (
+            <div className='space-y-3'>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton
+                  key={`moex-list-skeleton-${index}`}
+                  className='h-8 w-full'
+                />
+              ))}
+            </div>
+          ) : (
+            <div className='space-y-4'>
+              {listSections.map((section) => (
+                <IndexListSection
+                  key={section.key}
+                  title={section.title}
+                  indexes={section.indexes}
+                  showCollections={section.showCollections}
+                />
+              ))}
 
-            {!indexesLoading && isEmpty && (
-              <div className='text-sm text-muted-foreground'>
-                {t('moex.list.empty')}
-              </div>
-            )}
-            {!indexesLoading && showNoFavoritesMessage && (
-              <div className='text-sm text-muted-foreground'>
-                {t('moex.list.noFavorites')}
-              </div>
-            )}
-          </div>
+              {!indexesLoading && isEmpty && (
+                <div className='text-sm text-muted-foreground'>
+                  {t('moex.list.empty')}
+                </div>
+              )}
+              {!indexesLoading && showNoFavoritesMessage && (
+                <div className='text-sm text-muted-foreground'>
+                  {t('moex.list.noFavorites')}
+                </div>
+              )}
+            </div>
+          )}
         </ScrollArea>
         <IndexListPagination />
       </CardContent>

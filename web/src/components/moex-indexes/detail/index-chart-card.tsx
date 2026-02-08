@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -106,6 +107,7 @@ export function IndexChartCard() {
   const historyHref = selectedIndex
     ? moexSourceLinks.indexPage(selectedIndex.secid)
     : undefined;
+  const showChartSkeleton = historyLoading && chartData.length === 0;
 
   return (
     <Card className='flex h-full flex-col'>
@@ -395,20 +397,30 @@ export function IndexChartCard() {
                 )}
               </>
             )}
+            {!selectedIndex && historyLoading && (
+              <div className='space-y-3'>
+                <Skeleton className='h-5 w-48' />
+                <Skeleton className='h-4 w-36' />
+                <Skeleton className='h-8 w-52' />
+                <div className='flex flex-wrap gap-2'>
+                  <Skeleton className='h-6 w-16' />
+                  <Skeleton className='h-6 w-20' />
+                  <Skeleton className='h-6 w-24' />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className='flex min-h-[200px] flex-1 items-stretch'>
-            {historyLoading && (
-              <div className='text-sm text-muted-foreground'>
-                {t('moex.chart.loading')}
-              </div>
+            {showChartSkeleton && (
+              <Skeleton className='h-full min-h-[200px] w-full' />
             )}
             {!historyLoading && chartData.length === 0 && (
               <div className='text-sm text-muted-foreground'>
                 {t('moex.chart.noData')}
               </div>
             )}
-            {!historyLoading && chartData.length > 0 && (
+            {!showChartSkeleton && chartData.length > 0 && (
               <IndexChart data={chartData} seriesType={chartType} />
             )}
           </div>
