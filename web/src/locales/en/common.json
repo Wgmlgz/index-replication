@@ -5,6 +5,12 @@
   "moex": {
     "title": "MOEX indexes",
     "description": "Select an index to review performance over time.",
+    "sources": {
+      "overview": "Open MOEX index values",
+      "list": "Open MOEX index list",
+      "indexPage": "Open MOEX index page for {{secid}}",
+      "selectIndex": "Select an index to open the source."
+    },
     "list": {
       "title": "Index list",
       "searchPlaceholder": "Search by name or code",

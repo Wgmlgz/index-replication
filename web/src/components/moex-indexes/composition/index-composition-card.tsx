@@ -64,7 +64,7 @@ export function IndexCompositionCard() {
 
   const latestTradeDate = useMemo(
     () => resolveChartDate(chartData),
-    [chartData]
+    [chartData],
   );
 
   const {
@@ -112,7 +112,10 @@ export function IndexCompositionCard() {
   const snapshotTop = snapshotItems.slice(0, resolvedTopCount);
   const snapshotOtherWeight = useMemo(() => {
     if (snapshotTop.length === 0) return 0;
-    const total = snapshotTop.reduce((sum, item) => sum + (item.weight ?? 0), 0);
+    const total = snapshotTop.reduce(
+      (sum, item) => sum + (item.weight ?? 0),
+      0,
+    );
     const other = Math.max(0, 100 - total);
     return other;
   }, [snapshotTop]);
@@ -146,18 +149,20 @@ export function IndexCompositionCard() {
     <Card className='flex h-full flex-col'>
       <Tabs
         value={compositionTab}
-        onValueChange={(next) => setCompositionTab(next as CompositionTab)}
+        onValueChange={next => setCompositionTab(next as CompositionTab)}
         className='flex h-full flex-col'
       >
         <CardContent className='flex h-full min-h-0 flex-col gap-4 pt-6 lg:flex-row'>
           <div className='flex w-full flex-col gap-4 lg:w-[320px]'>
-            <div className='space-y-1'>
-              <CardTitle>{t('moex.composition.title')}</CardTitle>
-              {snapshotDate && (
-                <div className='text-xs text-muted-foreground'>
-                  {t('moex.composition.asOf', { date: snapshotDate })}
-                </div>
-              )}
+            <div className='flex items-start justify-between gap-2'>
+              <div className='space-y-1'>
+                <CardTitle>{t('moex.composition.title')}</CardTitle>
+                {snapshotDate && (
+                  <div className='text-xs text-muted-foreground'>
+                    {t('moex.composition.asOf', { date: snapshotDate })}
+                  </div>
+                )}
+              </div>
             </div>
             <TabsList className='w-full justify-start'>
               <TabsTrigger value='snapshot'>
@@ -174,7 +179,7 @@ export function IndexCompositionCard() {
               <span>{t('moex.composition.topLabel')}</span>
               <Select
                 value={topCount === null ? 'all' : String(topCount)}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   if (value === 'all') {
                     setTopCount(null);
                     return;
@@ -187,7 +192,7 @@ export function IndexCompositionCard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {topCountOptions.map((value) => (
+                  {topCountOptions.map(value => (
                     <SelectItem key={value} value={String(value)}>
                       {value}
                     </SelectItem>
@@ -211,10 +216,7 @@ export function IndexCompositionCard() {
             {showLegend && (
               <div className='flex max-h-48 flex-col gap-2 overflow-y-auto pr-2 text-xs text-muted-foreground'>
                 {series.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className='flex items-center gap-2'
-                  >
+                  <div key={item.id} className='flex items-center gap-2'>
                     <span
                       className='h-2.5 w-2.5 rounded-full'
                       style={{
@@ -256,11 +258,13 @@ export function IndexCompositionCard() {
                   {t('moex.composition.error')}
                 </div>
               )}
-              {!snapshotLoading && !snapshotError && snapshotTop.length === 0 && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.noData')}
-                </div>
-              )}
+              {!snapshotLoading &&
+                !snapshotError &&
+                snapshotTop.length === 0 && (
+                  <div className='text-sm text-muted-foreground'>
+                    {t('moex.composition.noData')}
+                  </div>
+                )}
               {!snapshotLoading && !snapshotError && snapshotTop.length > 0 && (
                 <div className='min-h-[240px] flex-1'>
                   <IndexCompositionSnapshotChart items={snapshotChartItems} />
@@ -285,10 +289,7 @@ export function IndexCompositionCard() {
               )}
               {!trendLoading && !trendError && series.length > 0 && (
                 <div className='min-h-[200px] flex-1'>
-                  <IndexCompositionChart
-                    series={series}
-                    variant='line'
-                  />
+                  <IndexCompositionChart series={series} variant='line' />
                 </div>
               )}
             </TabsContent>

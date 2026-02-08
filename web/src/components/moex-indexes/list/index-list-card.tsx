@@ -1,10 +1,18 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
+import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { useMoexIndexListContext } from './moex-indexes-list-context';
 import { IndexListFilters } from './index-list-filters';
 import { IndexListPagination } from './index-list-pagination';
@@ -23,11 +31,19 @@ export function IndexListCard() {
     listSections,
   } = useMoexIndexListContext();
   const { t } = useTranslation();
+  const listSourceLabel = t('moex.sources.list');
 
   return (
     <Card className='flex h-full flex-col'>
       <CardHeader>
         <CardTitle>{t('moex.list.title')}</CardTitle>
+        <CardAction>
+          <MoexSourceButton
+            href={moexSourceLinks.indexList}
+            label={listSourceLabel}
+            tooltip={listSourceLabel}
+          />
+        </CardAction>
       </CardHeader>
       <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         <Input

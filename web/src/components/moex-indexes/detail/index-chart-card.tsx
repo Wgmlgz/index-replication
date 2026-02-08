@@ -4,7 +4,13 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -20,6 +26,8 @@ import {
   LineChart,
   Percent,
 } from 'lucide-react';
+import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
+import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { IndexChart } from './index-chart';
 import { useMoexIndexDetailContext } from './moex-indexes-detail-context';
 import {
@@ -92,11 +100,25 @@ export function IndexChartCard() {
 
   const isQuickRange = QUICK_RANGE_KEYS.includes(rangeKey);
   const isQuickInterval = QUICK_INTERVAL_KEYS.includes(intervalKey);
+  const historySourceLabel = selectedIndex
+    ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
+    : t('moex.sources.selectIndex');
+  const historyHref = selectedIndex
+    ? moexSourceLinks.indexPage(selectedIndex.secid)
+    : undefined;
 
   return (
     <Card className='flex h-full flex-col'>
       <CardHeader>
         <CardTitle>{t('moex.chart.title')}</CardTitle>
+        <CardAction>
+          <MoexSourceButton
+            href={historyHref}
+            label={historySourceLabel}
+            tooltip={historySourceLabel}
+            disabledTooltip={t('moex.sources.selectIndex')}
+          />
+        </CardAction>
       </CardHeader>
       <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>

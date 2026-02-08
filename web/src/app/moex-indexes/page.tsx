@@ -18,11 +18,11 @@ function MoexIndexesContent() {
 
   return (
     <div className='flex h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 flex-col gap-6 overflow-hidden'>
-      <div>
-        <h1 className='text-3xl font-bold'>{t('moex.title')}</h1>
-        <p className='text-muted-foreground mt-2'>
-          {t('moex.description')}
-        </p>
+      <div className='flex flex-wrap items-start justify-between gap-3'>
+        <div>
+          <h1 className='text-3xl font-bold'>{t('moex.title')}</h1>
+          <p className='text-muted-foreground mt-2'>{t('moex.description')}</p>
+        </div>
       </div>
 
       {error && (
