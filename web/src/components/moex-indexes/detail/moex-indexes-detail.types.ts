@@ -16,7 +16,7 @@ export type IntervalKey = 'auto' | '1d' | '2d' | '3d' | '1w' | '2w' | '1m';
 
 export type ChartViewMode = 'price' | 'percent';
 export type ChartType = ChartSeriesType;
-export type CompositionTab = 'snapshot' | 'trend';
+export type CompositionTab = 'snapshot' | 'trend' | 'stacked';
 
 export type MoexIndexDetailState = {
   selectedIndex: MoexIndex | null;

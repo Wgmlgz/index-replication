@@ -94,7 +94,8 @@
       "asOf": "As of {{date}}",
       "tabs": {
         "snapshot": "Snapshot",
-        "trend": "Weight trend"
+        "trend": "Weight trend",
+        "stacked": "Stacked area"
       },
       "topCount": "Top {{count}}",
       "loading": "Loading composition...",

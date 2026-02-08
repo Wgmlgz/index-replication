@@ -144,7 +144,7 @@ export function useMoexIndexComposition(options: {
         }
       ),
     enabled: Boolean(
-      options.compositionTab === 'trend' &&
+      options.compositionTab !== 'snapshot' &&
         options.selectedIndex?.secid &&
         topTickers.length > 0
     ),

@@ -93,7 +93,7 @@ const INTERVAL_KEYS: IntervalKey[] = [
 
 const CHART_VIEW_MODES: ChartViewMode[] = ['price', 'percent'];
 const CHART_TYPES: ChartType[] = ['line', 'candlestick'];
-const COMPOSITION_TABS: CompositionTab[] = ['snapshot', 'trend'];
+const COMPOSITION_TABS: CompositionTab[] = ['snapshot', 'trend', 'stacked'];
 
 const isOneOf = <T extends string>(value: string | null, options: T[]): value is T =>
   value !== null && options.includes(value as T);

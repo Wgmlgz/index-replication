@@ -46,6 +46,7 @@ Hooks:
 - `useMoexIndexHistory` loads the 12-month history for the selected index and derives chart series and change metrics.
 - `useMoexIndexComposition` loads the latest composition snapshot and weight history for top constituents.
   The weight history series is downsampled using the same interval control as the price chart.
+  The composition card exposes Snapshot, Weight trend, and Stacked area tabs.
 
 **Data Flow**
 
@@ -83,6 +84,7 @@ Hooks:
 - The list content uses `ScrollArea` and `min-h-0` on containers to avoid page scroll.
 - The right column is split into two equal-height cards: the price chart and composition analytics.
 - The chart card uses a two-column layout on larger screens (meta/controls left, chart right).
+- The composition card mirrors this layout, keeping metadata and legend on the left and the chart/content on the right.
 
 **Extending the Page**
 
