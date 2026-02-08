@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import {
   ChartContainer,
+  ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import type { CompositionSeries } from './use-moex-indexes-composition';
@@ -56,14 +57,14 @@ export function IndexCompositionChart({
         id: item.id,
         color: resolveCompositionSeriesColor(index),
       })),
-    [series]
+    [series],
   );
 
   const { chartData, seriesMeta } = useMemo(() => {
     const rows = new Map<string, Record<string, number | string>>();
     baseSeriesMeta.forEach((meta, index) => {
       const item = series[index];
-      item?.data.forEach((point) => {
+      item?.data.forEach(point => {
         const row = rows.get(point.time) ?? { time: point.time };
         row[meta.key] = point.value;
         rows.set(point.time, row);
@@ -71,7 +72,7 @@ export function IndexCompositionChart({
     });
 
     const data = Array.from(rows.values()).sort((a, b) =>
-      String(a.time).localeCompare(String(b.time))
+      String(a.time).localeCompare(String(b.time)),
     );
 
     if (!includeOther) {
@@ -80,13 +81,13 @@ export function IndexCompositionChart({
 
     const otherKey = 'series_other';
     let hasOther = false;
-    data.forEach((row) => {
+    data.forEach(row => {
       const sum = baseSeriesMeta.reduce((total, meta) => {
         const value =
           typeof row[meta.key] === 'number' ? (row[meta.key] as number) : 0;
         return total + value;
       }, 0);
-      const otherValue = Math.max(0, 100 - sum);
+      const otherValue = Number(Math.max(0, 100 - sum).toFixed(2));
       if (otherValue > 0.01) {
         row[otherKey] = otherValue;
         hasOther = true;
@@ -96,7 +97,7 @@ export function IndexCompositionChart({
     });
 
     if (!hasOther) {
-      data.forEach((row) => {
+      data.forEach(row => {
         delete row[otherKey];
       });
       return { chartData: data, seriesMeta: baseSeriesMeta };
@@ -122,7 +123,10 @@ export function IndexCompositionChart({
   }, [seriesMeta]);
 
   return (
-    <ChartContainer config={chartConfig} className='min-h-[200px] h-full w-full'>
+    <ChartContainer
+      config={chartConfig}
+      className='min-h-[200px] h-full w-full'
+    >
       <ResponsiveContainer width='100%' height='100%'>
         {variant === 'stacked' ? (
           <AreaChart
@@ -139,8 +143,14 @@ export function IndexCompositionChart({
               domain={[0, 100]}
               tickFormatter={(value: number) => `${Math.round(value)}%`}
             />
-            <Tooltip formatter={(value, name) => [value, chartConfig[name]?.label ?? name]} />
-            {seriesMeta.map((item) => (
+            <Tooltip
+              formatter={(value, name) => [
+                value,
+                chartConfig[name]?.label ?? name,
+              ]}
+              content={<ChartTooltipContent />}
+            />
+            {seriesMeta.map(item => (
               <Area
                 key={item.key}
                 dataKey={item.key}
@@ -164,8 +174,14 @@ export function IndexCompositionChart({
             <CartesianGrid vertical={false} />
             <XAxis dataKey='time' tickLine={false} axisLine={false} />
             <YAxis tickLine={false} axisLine={false} width={36} />
-            <Tooltip formatter={(value, name) => [value, chartConfig[name]?.label ?? name]} />
-            {seriesMeta.map((item) => (
+            <Tooltip
+              formatter={(value, name) => [
+                value,
+                chartConfig[name]?.label ?? name,
+              ]}
+              content={<ChartTooltipContent />}
+            />
+            {seriesMeta.map(item => (
               <Line
                 key={item.key}
                 dataKey={item.key}
