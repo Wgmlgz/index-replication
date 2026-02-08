@@ -240,9 +240,14 @@ export class MoexClient {
 
   async getIndexHistory(
     secid: string,
-    options?: { from?: string; till?: string; signal?: AbortSignal }
+    options?: {
+      from?: string;
+      till?: string;
+      pageSize?: number;
+      signal?: AbortSignal;
+    }
   ): Promise<MoexIndexHistoryPoint[]> {
-    const pageSize = 100;
+    const pageSize = options?.pageSize ?? 100;
     let start = 0;
     let total: number | null = null;
     let iterations = 0;
@@ -300,10 +305,11 @@ export class MoexClient {
       date?: string;
       tickers?: string[];
       tradingSession?: number;
+      pageSize?: number;
       signal?: AbortSignal;
     }
   ): Promise<MoexIndexCompositionEntry[]> {
-    const pageSize = 100;
+    const pageSize = options?.pageSize ?? 100;
     let start = 0;
     let total: number | null = null;
     let iterations = 0;
@@ -383,10 +389,11 @@ export class MoexClient {
       from?: string;
       till?: string;
       tradingSession?: number;
+      pageSize?: number;
       signal?: AbortSignal;
     }
   ): Promise<MoexIndexTickerAnalyticsPoint[]> {
-    const pageSize = 100;
+    const pageSize = options?.pageSize ?? 100;
     let start = 0;
     let total: number | null = null;
     let iterations = 0;
@@ -444,6 +451,7 @@ export class MoexClient {
       from?: string;
       till?: string;
       tradingSession?: number;
+      pageSize?: number;
       signal?: AbortSignal;
     }
   ): Promise<Record<string, MoexIndexTickerAnalyticsPoint[]>> {

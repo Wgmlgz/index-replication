@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import {
   moexClient,
@@ -8,8 +9,8 @@ import {
   type MoexIndexCompositionEntry,
   type MoexIndexTickerAnalyticsPoint,
 } from '@/lib/moex-client';
-import { resolveDateRange } from '../detail/use-moex-indexes-detail.utils';
-import type { RangeKey } from '../detail/moex-indexes-detail.types';
+import { resolveDateRange, resolveIntervalDays } from '../detail/use-moex-indexes-detail.utils';
+import type { CompositionTab, IntervalKey, RangeKey } from '../detail/moex-indexes-detail.types';
 
 export type CompositionSnapshotItem = {
   ticker: string;
@@ -37,10 +38,12 @@ type CompositionState = {
 export function useMoexIndexComposition(options: {
   selectedIndex: MoexIndex | null;
   rangeKey: RangeKey;
+  intervalKey: IntervalKey;
   customFrom: string;
   customTill: string;
   latestTradeDate: string | null;
   topCount: number;
+  compositionTab: CompositionTab;
 }): CompositionState {
   const dateRange = useMemo(
     () =>
@@ -49,6 +52,39 @@ export function useMoexIndexComposition(options: {
   );
 
   const snapshotDate = options.latestTradeDate ?? dateRange.till ?? null;
+
+  const intervalDays = useMemo(
+    () =>
+      resolveIntervalDays(
+        options.rangeKey,
+        options.customFrom,
+        options.customTill,
+        options.intervalKey,
+        300
+      ),
+    [
+      options.customFrom,
+      options.customTill,
+      options.intervalKey,
+      options.rangeKey,
+    ]
+  );
+
+  const rangeDays = useMemo(() => {
+    if (!dateRange.from || !dateRange.till) return null;
+    const parsedFrom = parseISO(dateRange.from);
+    const parsedTill = parseISO(dateRange.till);
+    if (Number.isNaN(parsedFrom.valueOf()) || Number.isNaN(parsedTill.valueOf())) {
+      return null;
+    }
+    return Math.abs(differenceInCalendarDays(parsedTill, parsedFrom));
+  }, [dateRange.from, dateRange.till]);
+
+  const pageSize = useMemo(() => {
+    if (!rangeDays || rangeDays <= 0) return 1000;
+    const estimate = Math.ceil(rangeDays / 2);
+    return Math.min(1000, Math.max(200, estimate));
+  }, [rangeDays]);
 
   const snapshotQuery = useQuery({
     queryKey: [
@@ -59,6 +95,7 @@ export function useMoexIndexComposition(options: {
     queryFn: () =>
       moexClient.getIndexComposition(options.selectedIndex!.secid, {
         date: snapshotDate ?? undefined,
+        pageSize,
       }),
     enabled: Boolean(options.selectedIndex?.secid),
     refetchOnWindowFocus: false,
@@ -103,9 +140,14 @@ export function useMoexIndexComposition(options: {
         {
           from: dateRange.from,
           till: dateRange.till,
+          pageSize,
         }
       ),
-    enabled: Boolean(options.selectedIndex?.secid && topTickers.length > 0),
+    enabled: Boolean(
+      options.compositionTab === 'trend' &&
+        options.selectedIndex?.secid &&
+        topTickers.length > 0
+    ),
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,
     retry: 1,
@@ -118,6 +160,41 @@ export function useMoexIndexComposition(options: {
     });
     return map;
   }, [snapshotItems]);
+
+  const downsampleSeries = (
+    points: Array<{ time: string; value: number }>
+  ) => {
+    if (intervalDays <= 1) return points;
+    const result: Array<{ time: string; value: number }> = [];
+    let bucketStart: Date | null = null;
+    let bucket: Array<{ time: string; value: number }> = [];
+
+    const flush = () => {
+      if (bucket.length === 0) return;
+      const last = bucket[bucket.length - 1];
+      if (last) result.push(last);
+    };
+
+    points.forEach((point) => {
+      const parsed = parseISO(point.time);
+      if (Number.isNaN(parsed.valueOf())) return;
+      if (!bucketStart) {
+        bucketStart = parsed;
+        bucket = [point];
+        return;
+      }
+      const diff = Math.abs(differenceInCalendarDays(parsed, bucketStart));
+      if (diff < intervalDays) {
+        bucket.push(point);
+        return;
+      }
+      flush();
+      bucketStart = parsed;
+      bucket = [point];
+    });
+    flush();
+    return result;
+  };
 
   const series = useMemo<CompositionSeries[]>(() => {
     const seriesData = seriesQuery.data ?? {};
@@ -136,11 +213,11 @@ export function useMoexIndexComposition(options: {
         return {
           id: ticker,
           name: nameMap.get(ticker) ?? ticker,
-          data: points,
+          data: downsampleSeries(points),
         };
       })
       .filter((item) => item.data.length > 0);
-  }, [nameMap, seriesQuery.data, topTickers]);
+  }, [intervalDays, nameMap, seriesQuery.data, topTickers]);
 
   return {
     snapshotLoading: snapshotQuery.isLoading,

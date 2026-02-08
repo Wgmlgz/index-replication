@@ -8,6 +8,7 @@ import type {
   ChartType,
   ChartViewMode,
   CompositionTab,
+  IntervalKey,
   MoexIndexDetailState,
   RangeKey,
 } from './moex-indexes-detail.types';
@@ -21,6 +22,7 @@ type DetailStateInput = {
   indexCollectionsMap: Record<string, string[]>;
   initial?: Partial<{
     rangeKey: RangeKey;
+    intervalKey: IntervalKey;
     customFrom: string;
     customTill: string;
     viewMode: ChartViewMode;
@@ -44,6 +46,9 @@ export function useMoexIndexDetailState({
 
   const [rangeKey, setRangeKey] = useState<RangeKey>(
     () => initial?.rangeKey ?? '1y'
+  );
+  const [intervalKey, setIntervalKey] = useState<IntervalKey>(
+    () => initial?.intervalKey ?? 'auto'
   );
   const [customFrom, setCustomFrom] = useState(
     () => initial?.customFrom ?? defaultFrom
@@ -93,6 +98,7 @@ export function useMoexIndexDetailState({
     numberFormatter,
   } = useMoexIndexHistory(selectedIndex, {
     rangeKey,
+    intervalKey,
     customFrom,
     customTill,
     viewMode,
@@ -118,6 +124,8 @@ export function useMoexIndexDetailState({
     error,
     rangeKey,
     setRangeKey,
+    intervalKey,
+    setIntervalKey,
     customFrom,
     customTill,
     setCustomFrom,

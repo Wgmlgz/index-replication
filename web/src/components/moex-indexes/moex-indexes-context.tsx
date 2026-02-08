@@ -15,7 +15,13 @@ import {
 } from './moex-indexes-url-state';
 import { DEFAULT_PAGE_SIZE } from './list/use-moex-indexes.utils';
 import type { FilterKey, SortKey } from './list/use-moex-indexes.types';
-import type { ChartType, ChartViewMode, CompositionTab, RangeKey } from './detail/moex-indexes-detail.types';
+import type {
+  ChartType,
+  ChartViewMode,
+  CompositionTab,
+  IntervalKey,
+  RangeKey,
+} from './detail/moex-indexes-detail.types';
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debounced, setDebounced] = useState(value);
@@ -120,6 +126,9 @@ export function MoexIndexesProvider({
     const nextRange = (next.detail?.rangeKey ?? '1y') as RangeKey;
     if (nextRange !== ds.rangeKey) ds.setRangeKey(nextRange);
 
+    const nextInterval = (next.detail?.intervalKey ?? 'auto') as IntervalKey;
+    if (nextInterval !== ds.intervalKey) ds.setIntervalKey(nextInterval);
+
     const nextFrom = next.detail?.customFrom;
     if (typeof nextFrom === 'string' && nextFrom !== ds.customFrom) {
       ds.setCustomFrom(nextFrom);
@@ -157,6 +166,7 @@ export function MoexIndexesProvider({
       },
       detail: {
         rangeKey: detailState.rangeKey,
+        intervalKey: detailState.intervalKey,
         customFrom: detailState.customFrom,
         customTill: detailState.customTill,
         viewMode: detailState.viewMode,
@@ -178,6 +188,7 @@ export function MoexIndexesProvider({
     detailState.compositionTab,
     detailState.customFrom,
     detailState.customTill,
+    detailState.intervalKey,
     detailState.rangeKey,
     detailState.viewMode,
     listState.filters,
@@ -237,6 +248,9 @@ export function MoexIndexesProvider({
 
       const nextRange = (next.detail?.rangeKey ?? '1y') as RangeKey;
       if (nextRange !== ds.rangeKey) ds.setRangeKey(nextRange);
+
+      const nextInterval = (next.detail?.intervalKey ?? 'auto') as IntervalKey;
+      if (nextInterval !== ds.intervalKey) ds.setIntervalKey(nextInterval);
 
       const nextFrom = next.detail?.customFrom;
       if (typeof nextFrom === 'string' && nextFrom !== ds.customFrom) {

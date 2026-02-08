@@ -24,10 +24,13 @@ import { IndexChart } from './index-chart';
 import { useMoexIndexDetailContext } from './moex-indexes-detail-context';
 import {
   EXTRA_RANGE_OPTIONS,
+  EXTRA_INTERVAL_OPTIONS,
+  INTERVAL_OPTIONS,
+  QUICK_INTERVAL_KEYS,
   QUICK_RANGE_KEYS,
   RANGE_OPTIONS,
 } from './use-moex-indexes-detail.utils';
-import type { RangeKey } from './moex-indexes-detail.types';
+import type { IntervalKey, RangeKey } from './moex-indexes-detail.types';
 
 export function IndexChartCard() {
   const {
@@ -41,6 +44,8 @@ export function IndexChartCard() {
     chartData,
     rangeKey,
     setRangeKey,
+    intervalKey,
+    setIntervalKey,
     customFrom,
     customTill,
     setCustomFrom,
@@ -86,6 +91,7 @@ export function IndexChartCard() {
   }, [customFrom, customTill, rangeKey, t]);
 
   const isQuickRange = QUICK_RANGE_KEYS.includes(rangeKey);
+  const isQuickInterval = QUICK_INTERVAL_KEYS.includes(intervalKey);
 
   return (
     <Card className='flex h-full flex-col'>
@@ -94,7 +100,7 @@ export function IndexChartCard() {
       </CardHeader>
       <CardContent className='flex h-full min-h-0 flex-col gap-3'>
         <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-          <div className='flex flex-col gap-3 lg:w-[320px]'>
+          <div className='flex flex-col gap-3 lg:w-[340px]'>
             {selectedIndex && (
               <>
                 <div className='space-y-2'>
@@ -220,6 +226,54 @@ export function IndexChartCard() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                <div className='space-y-3'>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <span className='text-xs text-muted-foreground'>
+                      {t('moex.chart.interval.label')}
+                    </span>
+                    <div className='flex flex-wrap gap-2'>
+                      {QUICK_INTERVAL_KEYS.map((key) => {
+                        const option = INTERVAL_OPTIONS.find(
+                          (item) => item.value === key
+                        );
+                        if (!option) return null;
+                        return (
+                          <Button
+                            key={key}
+                            type='button'
+                            size='sm'
+                            className='h-7 px-2 text-xs'
+                            variant={intervalKey === key ? 'secondary' : 'outline'}
+                            onClick={() => setIntervalKey(key)}
+                            aria-pressed={intervalKey === key}
+                          >
+                            {t(option.labelKey)}
+                          </Button>
+                        );
+                      })}
+                      <Select
+                        value={isQuickInterval ? undefined : intervalKey}
+                        onValueChange={(value) =>
+                          setIntervalKey(value as IntervalKey)
+                        }
+                      >
+                        <SelectTrigger size='sm' className='h-7 text-xs'>
+                          <SelectValue
+                            placeholder={t('moex.chart.interval.more')}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EXTRA_INTERVAL_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {t(option.labelKey)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
 
                 <div className='flex flex-wrap items-center gap-2'>

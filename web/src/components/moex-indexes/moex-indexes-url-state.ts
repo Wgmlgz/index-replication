@@ -6,6 +6,7 @@ import type {
   ChartType,
   ChartViewMode,
   CompositionTab,
+  IntervalKey,
   RangeKey,
 } from './detail/moex-indexes-detail.types';
 
@@ -28,6 +29,7 @@ export const MOEX_URL_KEYS = {
   listCalcMode: 'l_calc',
 
   detailRange: 'd_range',
+  detailInterval: 'd_interval',
   detailCustomFrom: 'd_from',
   detailCustomTill: 'd_till',
   detailView: 'd_view',
@@ -48,6 +50,7 @@ export type MoexIndexesUrlInitialState = {
   }>;
   detail?: Partial<{
     rangeKey: RangeKey;
+    intervalKey: IntervalKey;
     customFrom: string;
     customTill: string;
     viewMode: ChartViewMode;
@@ -76,6 +79,16 @@ const RANGE_KEYS: RangeKey[] = [
   '5y',
   'max',
   'custom',
+];
+
+const INTERVAL_KEYS: IntervalKey[] = [
+  'auto',
+  '1d',
+  '2d',
+  '3d',
+  '1w',
+  '2w',
+  '1m',
 ];
 
 const CHART_VIEW_MODES: ChartViewMode[] = ['price', 'percent'];
@@ -159,6 +172,9 @@ export function parseMoexIndexesUrlState(
   const rangeRaw = searchParams.get(MOEX_URL_KEYS.detailRange);
   const rangeKey = isOneOf(rangeRaw, RANGE_KEYS) ? rangeRaw : undefined;
 
+  const intervalRaw = searchParams.get(MOEX_URL_KEYS.detailInterval);
+  const intervalKey = isOneOf(intervalRaw, INTERVAL_KEYS) ? intervalRaw : undefined;
+
   const customFrom = searchParams.get(MOEX_URL_KEYS.detailCustomFrom) ?? undefined;
   const customTill = searchParams.get(MOEX_URL_KEYS.detailCustomTill) ?? undefined;
 
@@ -181,6 +197,7 @@ export function parseMoexIndexesUrlState(
 
   const detailState: MoexIndexesUrlInitialState['detail'] = {};
   if (rangeKey) detailState.rangeKey = rangeKey;
+  if (intervalKey) detailState.intervalKey = intervalKey;
   if (customFrom) detailState.customFrom = customFrom;
   if (customTill) detailState.customTill = customTill;
   if (viewMode) detailState.viewMode = viewMode;
@@ -213,6 +230,7 @@ export function applyMoexIndexesUrlState(
     };
     detail: {
       rangeKey: RangeKey;
+      intervalKey: IntervalKey;
       customFrom: string;
       customTill: string;
       viewMode: ChartViewMode;
@@ -233,6 +251,7 @@ export function applyMoexIndexesUrlState(
     MOEX_URL_KEYS.listBoard,
     MOEX_URL_KEYS.listCalcMode,
     MOEX_URL_KEYS.detailRange,
+    MOEX_URL_KEYS.detailInterval,
     MOEX_URL_KEYS.detailCustomFrom,
     MOEX_URL_KEYS.detailCustomTill,
     MOEX_URL_KEYS.detailView,
@@ -269,6 +288,9 @@ export function applyMoexIndexesUrlState(
 
   if (state.detail.rangeKey !== '1y') {
     params.set(MOEX_URL_KEYS.detailRange, state.detail.rangeKey);
+  }
+  if (state.detail.intervalKey !== 'auto') {
+    params.set(MOEX_URL_KEYS.detailInterval, state.detail.intervalKey);
   }
   if (state.detail.rangeKey === 'custom') {
     if (state.detail.customFrom.trim().length > 0) {

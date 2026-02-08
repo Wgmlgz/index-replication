@@ -1,3 +1,4 @@
 # Local agent cache
 .foxy-jumpscare-path
 web/tmp/
+.foxy

@@ -6,8 +6,8 @@ import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { moexClient, type MoexIndex } from '@/lib/moex-client';
 import type { ChartData } from './index-chart';
-import { resolveDateRange } from './use-moex-indexes-detail.utils';
-import type { ChartType, ChartViewMode, RangeKey } from './moex-indexes-detail.types';
+import { resolveDateRange, resolveIntervalDays } from './use-moex-indexes-detail.utils';
+import type { ChartType, ChartViewMode, IntervalKey, RangeKey } from './moex-indexes-detail.types';
 
 type NormalizedHistoryPoint = {
   tradeDate: string;
@@ -17,55 +17,40 @@ type NormalizedHistoryPoint = {
   low: number | null;
 };
 
-const DEFAULT_MAX_POINTS = 260;
-const MAX_POINTS_BY_RANGE: Record<Exclude<RangeKey, 'custom'>, number> = {
-  '1m': 60,
-  '3m': 120,
-  '6m': 180,
-  ytd: 260,
-  '1y': 260,
-  '3y': 360,
-  '5y': 520,
-  max: 600,
-};
+const TARGET_POINTS = 300;
+const MAX_PAGE_SIZE = 1000;
+const MIN_PAGE_SIZE = 200;
 
-const resolveMaxPoints = (
-  rangeKey: RangeKey,
-  from?: string,
-  till?: string
-) => {
-  if (rangeKey !== 'custom') {
-    return MAX_POINTS_BY_RANGE[rangeKey];
-  }
-  if (!from || !till) return DEFAULT_MAX_POINTS;
+const resolveRangeDays = (from?: string, till?: string) => {
+  if (!from || !till) return null;
   const parsedFrom = parseISO(from);
   const parsedTill = parseISO(till);
   if (Number.isNaN(parsedFrom.valueOf()) || Number.isNaN(parsedTill.valueOf())) {
-    return DEFAULT_MAX_POINTS;
+    return null;
   }
-  const days = Math.abs(differenceInCalendarDays(parsedTill, parsedFrom));
-  if (days <= 35) return 60;
-  if (days <= 120) return 120;
-  if (days <= 240) return 180;
-  if (days <= 400) return 260;
-  if (days <= 900) return 360;
-  if (days <= 1500) return 520;
-  return 600;
+  return Math.abs(differenceInCalendarDays(parsedTill, parsedFrom));
 };
 
-const downsampleHistory = (
-  points: NormalizedHistoryPoint[],
-  maxPoints: number
-): NormalizedHistoryPoint[] => {
-  if (points.length <= maxPoints) return points;
-  const bucketSize = Math.ceil(points.length / maxPoints);
-  const result: NormalizedHistoryPoint[] = [];
+const resolvePageSize = (rangeDays: number | null) => {
+  if (!rangeDays || rangeDays <= 0) return MAX_PAGE_SIZE;
+  const estimated = Math.ceil(rangeDays / 2);
+  return Math.min(MAX_PAGE_SIZE, Math.max(MIN_PAGE_SIZE, estimated));
+};
 
-  for (let index = 0; index < points.length; index += bucketSize) {
-    const bucket = points.slice(index, index + bucketSize);
+const downsampleHistoryByInterval = (
+  points: NormalizedHistoryPoint[],
+  intervalDays: number
+): NormalizedHistoryPoint[] => {
+  if (intervalDays <= 1) return points;
+  const result: NormalizedHistoryPoint[] = [];
+  let bucketStart: Date | null = null;
+  let bucket: NormalizedHistoryPoint[] = [];
+
+  const flush = () => {
+    if (bucket.length === 0) return;
     const first = bucket[0];
     const last = bucket[bucket.length - 1];
-    if (!first || !last) continue;
+    if (!first || !last) return;
 
     let high = Number.NEGATIVE_INFINITY;
     let low = Number.POSITIVE_INFINITY;
@@ -88,7 +73,26 @@ const downsampleHistory = (
       low,
       close: last.close,
     });
-  }
+  };
+
+  points.forEach((point) => {
+    const parsed = parseISO(point.tradeDate);
+    if (Number.isNaN(parsed.valueOf())) return;
+    if (!bucketStart) {
+      bucketStart = parsed;
+      bucket = [point];
+      return;
+    }
+    const diff = Math.abs(differenceInCalendarDays(parsed, bucketStart));
+    if (diff < intervalDays) {
+      bucket.push(point);
+      return;
+    }
+    flush();
+    bucketStart = parsed;
+    bucket = [point];
+  });
+  flush();
 
   return result;
 };
@@ -107,6 +111,7 @@ export function useMoexIndexHistory(
   selectedIndex: MoexIndex | null,
   options: {
     rangeKey: RangeKey;
+    intervalKey: IntervalKey;
     customFrom: string;
     customTill: string;
     viewMode: ChartViewMode;
@@ -122,6 +127,30 @@ export function useMoexIndexHistory(
     );
   }, [options.customFrom, options.customTill, options.rangeKey]);
 
+  const intervalDays = useMemo(
+    () =>
+      resolveIntervalDays(
+        options.rangeKey,
+        options.customFrom,
+        options.customTill,
+        options.intervalKey,
+        TARGET_POINTS
+      ),
+    [
+      options.customFrom,
+      options.customTill,
+      options.intervalKey,
+      options.rangeKey,
+    ]
+  );
+
+  const rangeDays = useMemo(
+    () => resolveRangeDays(dateRange.from, dateRange.till),
+    [dateRange.from, dateRange.till]
+  );
+
+  const pageSize = useMemo(() => resolvePageSize(rangeDays), [rangeDays]);
+
   const historyQuery = useQuery({
     queryKey: [
       'moex-index-history',
@@ -133,6 +162,7 @@ export function useMoexIndexHistory(
       moexClient.getIndexHistory(selectedIndex!.secid, {
         from: dateRange.from,
         till: dateRange.till,
+        pageSize,
       }),
     enabled: Boolean(selectedIndex?.secid),
     refetchOnWindowFocus: false,
@@ -157,14 +187,9 @@ export function useMoexIndexHistory(
       }));
   }, [history]);
 
-  const maxPoints = useMemo(
-    () => resolveMaxPoints(options.rangeKey, dateRange.from, dateRange.till),
-    [dateRange.from, dateRange.till, options.rangeKey]
-  );
-
   const sampledHistory = useMemo(
-    () => downsampleHistory(normalizedHistory, maxPoints),
-    [maxPoints, normalizedHistory]
+    () => downsampleHistoryByInterval(normalizedHistory, intervalDays),
+    [intervalDays, normalizedHistory]
   );
 
   const chartData = useMemo<ChartData>(() => {

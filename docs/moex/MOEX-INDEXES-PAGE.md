@@ -45,6 +45,7 @@ Hooks:
 - `useMoexIndexDetailState` resolves the selected index and wires chart metadata.
 - `useMoexIndexHistory` loads the 12-month history for the selected index and derives chart series and change metrics.
 - `useMoexIndexComposition` loads the latest composition snapshot and weight history for top constituents.
+  The weight history series is downsampled using the same interval control as the price chart.
 
 **Data Flow**
 
@@ -70,7 +71,9 @@ Hooks:
 **Chart Data**
 
 - History is fetched based on the selected time range (quick buttons + extra range selector, or custom dates).
-- Chart points are normalized, downsampled for long ranges, and ordered by date.
+- The interval control (Auto + fixed steps) determines how chart data is downsampled.
+- Auto targets ~300 points by selecting the closest interval step for the range length.
+- Chart points are normalized and ordered by date before sampling.
 - Latest value, change, and change percent are computed for the header meta.
 - The chart supports price vs percent-change view and line vs candlestick rendering.
 

@@ -12,6 +12,8 @@ export type RangeKey =
   | 'max'
   | 'custom';
 
+export type IntervalKey = 'auto' | '1d' | '2d' | '3d' | '1w' | '2w' | '1m';
+
 export type ChartViewMode = 'price' | 'percent';
 export type ChartType = ChartSeriesType;
 export type CompositionTab = 'snapshot' | 'trend';
@@ -28,6 +30,8 @@ export type MoexIndexDetailState = {
   error: string | null;
   rangeKey: RangeKey;
   setRangeKey: (next: RangeKey) => void;
+  intervalKey: IntervalKey;
+  setIntervalKey: (next: IntervalKey) => void;
   customFrom: string;
   customTill: string;
   setCustomFrom: (next: string) => void;

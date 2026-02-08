@@ -39,6 +39,7 @@ export function IndexCompositionCard() {
     selectedIndex,
     chartData,
     rangeKey,
+    intervalKey,
     customFrom,
     customTill,
     compositionTab,
@@ -62,10 +63,12 @@ export function IndexCompositionCard() {
   } = useMoexIndexComposition({
     selectedIndex,
     rangeKey,
+    intervalKey,
     customFrom,
     customTill,
     latestTradeDate,
     topCount: TOP_SERIES_COUNT,
+    compositionTab,
   });
 
   const weightFormatter = useMemo(
