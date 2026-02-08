@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import {
   moexClient,
@@ -161,38 +161,59 @@ export function useMoexIndexComposition(options: {
     return map;
   }, [snapshotItems]);
 
-  const downsampleSeries = (
+  const resampleBuckets = useMemo(() => {
+    if (!dateRange.from || !dateRange.till) return null;
+    if (intervalDays <= 1) return null;
+    const start = parseISO(dateRange.from);
+    const end = parseISO(dateRange.till);
+    if (Number.isNaN(start.valueOf()) || Number.isNaN(end.valueOf())) {
+      return null;
+    }
+    const buckets: Array<{ start: Date; end: Date; label: string }> = [];
+    let bucketStart = start;
+    while (bucketStart <= end) {
+      const bucketEnd = addDays(bucketStart, intervalDays - 1);
+      const endDate = bucketEnd > end ? end : bucketEnd;
+      buckets.push({
+        start: bucketStart,
+        end: endDate,
+        label: format(endDate, 'yyyy-MM-dd'),
+      });
+      bucketStart = addDays(bucketStart, intervalDays);
+    }
+    return buckets;
+  }, [dateRange.from, dateRange.till, intervalDays]);
+
+  const resampleSeries = (
     points: Array<{ time: string; value: number }>
   ) => {
-    if (intervalDays <= 1) return points;
+    if (!resampleBuckets) return points;
     const result: Array<{ time: string; value: number }> = [];
-    let bucketStart: Date | null = null;
-    let bucket: Array<{ time: string; value: number }> = [];
-
-    const flush = () => {
-      if (bucket.length === 0) return;
-      const last = bucket[bucket.length - 1];
-      if (last) result.push(last);
-    };
-
-    points.forEach((point) => {
-      const parsed = parseISO(point.time);
-      if (Number.isNaN(parsed.valueOf())) return;
-      if (!bucketStart) {
-        bucketStart = parsed;
-        bucket = [point];
-        return;
+    let index = 0;
+    while (index < points.length && Number.isNaN(parseISO(points[index].time).valueOf())) {
+      index += 1;
+    }
+    resampleBuckets.forEach((bucket) => {
+      let value: number | null = null;
+      while (index < points.length) {
+        const parsed = parseISO(points[index].time);
+        if (Number.isNaN(parsed.valueOf())) {
+          index += 1;
+          continue;
+        }
+        if (parsed < bucket.start) {
+          index += 1;
+          continue;
+        }
+        if (parsed <= bucket.end) {
+          value = points[index].value;
+          index += 1;
+          continue;
+        }
+        break;
       }
-      const diff = Math.abs(differenceInCalendarDays(parsed, bucketStart));
-      if (diff < intervalDays) {
-        bucket.push(point);
-        return;
-      }
-      flush();
-      bucketStart = parsed;
-      bucket = [point];
+      result.push({ time: bucket.label, value: value ?? 0 });
     });
-    flush();
     return result;
   };
 
@@ -213,11 +234,11 @@ export function useMoexIndexComposition(options: {
         return {
           id: ticker,
           name: nameMap.get(ticker) ?? ticker,
-          data: downsampleSeries(points),
+          data: resampleSeries(points),
         };
       })
       .filter((item) => item.data.length > 0);
-  }, [intervalDays, nameMap, seriesQuery.data, topTickers]);
+  }, [nameMap, resampleBuckets, seriesQuery.data, topTickers]);
 
   return {
     snapshotLoading: snapshotQuery.isLoading,

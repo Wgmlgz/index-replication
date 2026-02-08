@@ -74,6 +74,16 @@ export function IndexCompositionChart({
     const data = Array.from(rows.values()).sort((a, b) =>
       String(a.time).localeCompare(String(b.time)),
     );
+    const fillMissing = variant === 'stacked';
+    if (fillMissing) {
+      data.forEach(row => {
+        baseSeriesMeta.forEach(meta => {
+          if (typeof row[meta.key] !== 'number') {
+            row[meta.key] = 0;
+          }
+        });
+      });
+    }
 
     if (!includeOther) {
       return { chartData: data, seriesMeta: baseSeriesMeta };
@@ -110,7 +120,7 @@ export function IndexCompositionChart({
         { key: otherKey, id: 'OTHER', color: OTHER_SERIES_COLOR },
       ],
     };
-  }, [baseSeriesMeta, includeOther, series]);
+  }, [baseSeriesMeta, includeOther, series, variant]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return seriesMeta.reduce<ChartConfig>((acc, item) => {
