@@ -49,8 +49,6 @@ Many endpoints paginate. The response includes a cursor table, for example
 
 To fetch all rows, keep requesting with `start += PAGESIZE` until `start >= TOTAL`.
 
-
-
 ## Key Endpoint Families
 
 ### 1) Securities (Lists)
@@ -109,3 +107,4 @@ on what the market supports). Candles are often best for charting.
 - If data looks incomplete, confirm pagination (cursor table).
 - If the last date is older than expected, check trading calendar and holidays.
 - If the browser blocks requests, set `NEXT_PUBLIC_MOEX_BASE_URL` to a proxy.
+- If iss.moex.com is not avaliable, use proxy iss.amogos.pro

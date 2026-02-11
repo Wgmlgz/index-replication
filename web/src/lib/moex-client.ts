@@ -78,7 +78,7 @@ type RequestParams = Record<
 >;
 
 const resolveMoexBaseUrl = () =>
-  process.env.NEXT_PUBLIC_MOEX_BASE_URL || 'https://iss.moex.com/iss';
+  process.env.NEXT_PUBLIC_MOEX_BASE_URL || 'https://iss.amogos.pro/iss';
 
 const toNumber = (value: unknown): number | null => {
   if (value === null || value === undefined) return null;
