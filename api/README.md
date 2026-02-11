@@ -86,6 +86,7 @@ Environment variables live in `.env`. Key settings:
 - `DATABASE_URL` (preferred)
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
+- `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
 
 ## Tests
 

@@ -1,10 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import {
-  moexClient,
-  type MoexIndex,
-  type MoexIndexCollection,
+import type {
+  MoexIndex,
+  MoexIndexCollection,
 } from '@/lib/moex-client';
 import {
   compareStrings,
@@ -17,49 +15,19 @@ type CollectionsState = {
   collectionMemberships: Record<string, string[]>;
   indexCollectionsMap: Record<string, string[]>;
   collectionOptions: FilterOption[];
-  collectionsLoading: boolean;
-  collectionsError: boolean;
 };
 
 export function useMoexIndexCollections(
-  indexes: MoexIndex[]
+  indexes: MoexIndex[],
+  collections: MoexIndexCollection[],
+  collectionMemberships: Record<string, string[]>
 ): CollectionsState {
   const { t, i18n } = useTranslation();
-  const collectionsQuery = useQuery({
-    queryKey: ['moex-index-collections'],
-    queryFn: () => moexClient.getIndexCollections(),
-    refetchOnWindowFocus: false,
-    staleTime: 30 * 60 * 1000,
-    retry: 1,
-  });
 
-  const collections = collectionsQuery.data ?? [];
   const groupingCollections = useMemo(
-    () =>
-      collections.filter((collection) => collection.name !== 'stock_index_all'),
+    () => collections.filter((collection) => collection.name !== 'stock_index_all'),
     [collections]
   );
-
-  const collectionsKey = useMemo(
-    () =>
-      groupingCollections
-        .map((collection) => collection.name)
-        .sort()
-        .join('|'),
-    [groupingCollections]
-  );
-
-  const membershipsQuery = useQuery({
-    queryKey: ['moex-index-collection-memberships', collectionsKey],
-    queryFn: () =>
-      moexClient.getIndexCollectionMemberships(groupingCollections),
-    enabled: groupingCollections.length > 0,
-    refetchOnWindowFocus: false,
-    staleTime: 30 * 60 * 1000,
-    retry: 1,
-  });
-
-  const collectionMemberships = membershipsQuery.data ?? {};
 
   const collectionTitleByName = useMemo(() => {
     return new Map(
@@ -124,18 +92,10 @@ export function useMoexIndexCollections(
     return options;
   }, [collectionCounts, groupingCollections, i18n.language, t]);
 
-  const collectionsLoading =
-    collectionsQuery.isLoading || membershipsQuery.isLoading;
-  const collectionsError = Boolean(
-    collectionsQuery.error || membershipsQuery.error
-  );
-
   return {
     groupingCollections,
     collectionMemberships,
     indexCollectionsMap,
     collectionOptions,
-    collectionsLoading,
-    collectionsError,
   };
 }

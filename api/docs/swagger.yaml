@@ -75,6 +75,92 @@ definitions:
       username:
         type: string
     type: object
+  models.MoexIndex:
+    properties:
+      annualHigh:
+        type: number
+      annualLow:
+        type: number
+      boardId:
+        type: string
+      calcMode:
+        type: string
+      currency:
+        type: string
+      decimals:
+        type: integer
+      name:
+        type: string
+      secid:
+        type: string
+      shortName:
+        type: string
+    type: object
+  models.MoexIndexCollection:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      securityGroupId:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.MoexIndexCompositionEntry:
+    properties:
+      indexId:
+        type: string
+      secId:
+        type: string
+      shortName:
+        type: string
+      ticker:
+        type: string
+      tradeDate:
+        type: string
+      tradeSessionDate:
+        type: string
+      weight:
+        type: number
+    type: object
+  models.MoexIndexHistoryPoint:
+    properties:
+      close:
+        type: number
+      high:
+        type: number
+      low:
+        type: number
+      open:
+        type: number
+      tradeDate:
+        type: string
+    type: object
+  models.MoexIndexTickerAnalyticsPoint:
+    properties:
+      tradeDate:
+        type: string
+      weight:
+        type: number
+    type: object
+  models.MoexIndexesOverviewResponse:
+    properties:
+      collections:
+        items:
+          $ref: '#/definitions/models.MoexIndexCollection'
+        type: array
+      indexes:
+        items:
+          $ref: '#/definitions/models.MoexIndex'
+        type: array
+      memberships:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
   models.PasswordChangeRequest:
     properties:
       new_password:
@@ -474,6 +560,158 @@ paths:
       summary: Update current user settings
       tags:
       - settings
+  /moex/indexes/{secid}/composition:
+    get:
+      description: Returns index composition snapshot
+      parameters:
+      - description: Index SECID
+        in: path
+        name: secid
+        required: true
+        type: string
+      - description: Snapshot date (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      - description: Response language (ru/en)
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MoexIndexCompositionEntry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX index composition
+      tags:
+      - moex
+  /moex/indexes/{secid}/composition/series:
+    get:
+      description: Returns downsampled weight series for index tickers
+      parameters:
+      - description: Index SECID
+        in: path
+        name: secid
+        required: true
+        type: string
+      - description: Comma-separated list of tickers
+        in: query
+        name: tickers
+        required: true
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Downsample interval in days
+        in: query
+        name: intervalDays
+        type: integer
+      - description: Response language (ru/en)
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/models.MoexIndexTickerAnalyticsPoint'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX index composition series
+      tags:
+      - moex
+  /moex/indexes/{secid}/history:
+    get:
+      description: Returns downsampled history for a MOEX index
+      parameters:
+      - description: Index SECID
+        in: path
+        name: secid
+        required: true
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Downsample interval in days
+        in: query
+        name: intervalDays
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MoexIndexHistoryPoint'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX index history
+      tags:
+      - moex
+  /moex/indexes/overview:
+    get:
+      description: Returns indexes list, collections, and membership map
+      parameters:
+      - description: Response language (ru/en)
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MoexIndexesOverviewResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX indexes overview
+      tags:
+      - moex
   /users:
     get:
       description: Returns a paginated list of users

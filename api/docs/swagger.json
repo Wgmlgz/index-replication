@@ -396,6 +396,236 @@
                 }
             }
         },
+        "/moex/indexes/overview": {
+            "get": {
+                "description": "Returns indexes list, collections, and membership map",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX indexes overview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Response language (ru/en)",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MoexIndexesOverviewResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/moex/indexes/{secid}/composition": {
+            "get": {
+                "description": "Returns index composition snapshot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX index composition",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Index SECID",
+                        "name": "secid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Snapshot date (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Response language (ru/en)",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MoexIndexCompositionEntry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/moex/indexes/{secid}/composition/series": {
+            "get": {
+                "description": "Returns downsampled weight series for index tickers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX index composition series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Index SECID",
+                        "name": "secid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated list of tickers",
+                        "name": "tickers",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Downsample interval in days",
+                        "name": "intervalDays",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Response language (ru/en)",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/models.MoexIndexTickerAnalyticsPoint"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/moex/indexes/{secid}/history": {
+            "get": {
+                "description": "Returns downsampled history for a MOEX index",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX index history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Index SECID",
+                        "name": "secid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Downsample interval in days",
+                        "name": "intervalDays",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MoexIndexHistoryPoint"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Returns a paginated list of users",
@@ -850,6 +1080,138 @@
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "models.MoexIndex": {
+            "type": "object",
+            "properties": {
+                "annualHigh": {
+                    "type": "number"
+                },
+                "annualLow": {
+                    "type": "number"
+                },
+                "boardId": {
+                    "type": "string"
+                },
+                "calcMode": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "decimals": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "secid": {
+                    "type": "string"
+                },
+                "shortName": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MoexIndexCollection": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "securityGroupId": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MoexIndexCompositionEntry": {
+            "type": "object",
+            "properties": {
+                "indexId": {
+                    "type": "string"
+                },
+                "secId": {
+                    "type": "string"
+                },
+                "shortName": {
+                    "type": "string"
+                },
+                "ticker": {
+                    "type": "string"
+                },
+                "tradeDate": {
+                    "type": "string"
+                },
+                "tradeSessionDate": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.MoexIndexHistoryPoint": {
+            "type": "object",
+            "properties": {
+                "close": {
+                    "type": "number"
+                },
+                "high": {
+                    "type": "number"
+                },
+                "low": {
+                    "type": "number"
+                },
+                "open": {
+                    "type": "number"
+                },
+                "tradeDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MoexIndexTickerAnalyticsPoint": {
+            "type": "object",
+            "properties": {
+                "tradeDate": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.MoexIndexesOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "collections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MoexIndexCollection"
+                    }
+                },
+                "indexes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MoexIndex"
+                    }
+                },
+                "memberships": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },

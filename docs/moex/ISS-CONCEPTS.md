@@ -97,14 +97,16 @@ on what the market supports). Candles are often best for charting.
 
 ## Where This Repo Uses ISS
 
-- `web/src/lib/moex-client.ts` implements a small axios client that:
-  - Lists MOEX indexes.
-  - Fetches historical series and paginates using the cursor table.
-- `web/src/app/moex-indexes/page.tsx` visualizes the series in a line chart.
+- `api/internal/services/moex_service.go` calls ISS to:
+  - List MOEX indexes and collections.
+  - Fetch historical series and paginate using cursor tables.
+  - Fetch composition snapshots and ticker analytics.
+- `web/src/lib/moex-client.ts` calls the backend `/api/moex/*` endpoints.
+- `web/src/app/moex-indexes/page.tsx` visualizes the series in the UI.
 
 ## Troubleshooting
 
 - If data looks incomplete, confirm pagination (cursor table).
 - If the last date is older than expected, check trading calendar and holidays.
-- If the browser blocks requests, set `NEXT_PUBLIC_MOEX_BASE_URL` to a proxy.
+- If ISS is not available, set `MOEX_BASE_URL` on the backend to a proxy.
 - If iss.moex.com is not avaliable, use proxy iss.amogos.pro

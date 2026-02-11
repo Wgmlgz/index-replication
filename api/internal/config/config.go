@@ -20,6 +20,7 @@ type Config struct {
 	ServerPort    string
 	SessionSecret string
 	BotsToken     string
+	MoexBaseURL   string
 	RunMigrations bool
 	MigrationsDir string
 	GinLogFormat  string
@@ -39,6 +40,7 @@ func LoadConfig() *Config {
 		ServerPort:    getEnv("SERVER_PORT", "8080"),
 		SessionSecret: getEnv("SESSION_SECRET", "dev_secret"),
 		BotsToken:     getEnv("BOTS_TOKEN", "secret_token"),
+		MoexBaseURL:   getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),
 		RunMigrations: getEnvBool("RUN_MIGRATIONS", true),
 		MigrationsDir: getEnv("MIGRATIONS_DIR", ""),
 		GinLogFormat:  getEnv("GIN_LOG_FORMAT", ""),

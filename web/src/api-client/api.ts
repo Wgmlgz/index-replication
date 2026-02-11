@@ -57,6 +57,48 @@ export interface ModelsLoginRequest {
     'remember_me'?: boolean;
     'username'?: string;
 }
+export interface ModelsMoexIndex {
+    'annualHigh'?: number;
+    'annualLow'?: number;
+    'boardId'?: string;
+    'calcMode'?: string;
+    'currency'?: string;
+    'decimals'?: number;
+    'name'?: string;
+    'secid'?: string;
+    'shortName'?: string;
+}
+export interface ModelsMoexIndexCollection {
+    'id'?: number;
+    'name'?: string;
+    'securityGroupId'?: number;
+    'title'?: string;
+}
+export interface ModelsMoexIndexCompositionEntry {
+    'indexId'?: string;
+    'secId'?: string;
+    'shortName'?: string;
+    'ticker'?: string;
+    'tradeDate'?: string;
+    'tradeSessionDate'?: string;
+    'weight'?: number;
+}
+export interface ModelsMoexIndexHistoryPoint {
+    'close'?: number;
+    'high'?: number;
+    'low'?: number;
+    'open'?: number;
+    'tradeDate'?: string;
+}
+export interface ModelsMoexIndexTickerAnalyticsPoint {
+    'tradeDate'?: string;
+    'weight'?: number;
+}
+export interface ModelsMoexIndexesOverviewResponse {
+    'collections'?: Array<ModelsMoexIndexCollection>;
+    'indexes'?: Array<ModelsMoexIndex>;
+    'memberships'?: { [key: string]: Array<string>; };
+}
 export interface ModelsPasswordChangeRequest {
     'new_password'?: string;
     'old_password'?: string;
@@ -633,6 +675,394 @@ export class AuthApi extends BaseAPI {
      */
     public mePasswordPut(body: ModelsPasswordChangeRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).mePasswordPut(body, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * MoexApi - axios parameter creator
+ */
+export const MoexApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns indexes list, collections, and membership map
+         * @summary Get MOEX indexes overview
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesOverviewGet: async (lang?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/moex/indexes/overview`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (lang !== undefined) {
+                localVarQueryParameter['lang'] = lang;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns index composition snapshot
+         * @summary Get MOEX index composition
+         * @param {string} secid Index SECID
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesSecidCompositionGet: async (secid: string, date?: string, lang?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'secid' is not null or undefined
+            assertParamExists('moexIndexesSecidCompositionGet', 'secid', secid)
+            const localVarPath = `/moex/indexes/{secid}/composition`
+                .replace(`{${"secid"}}`, encodeURIComponent(String(secid)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (date !== undefined) {
+                localVarQueryParameter['date'] = date;
+            }
+
+            if (lang !== undefined) {
+                localVarQueryParameter['lang'] = lang;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns downsampled weight series for index tickers
+         * @summary Get MOEX index composition series
+         * @param {string} secid Index SECID
+         * @param {string} tickers Comma-separated list of tickers
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesSecidCompositionSeriesGet: async (secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'secid' is not null or undefined
+            assertParamExists('moexIndexesSecidCompositionSeriesGet', 'secid', secid)
+            // verify required parameter 'tickers' is not null or undefined
+            assertParamExists('moexIndexesSecidCompositionSeriesGet', 'tickers', tickers)
+            const localVarPath = `/moex/indexes/{secid}/composition/series`
+                .replace(`{${"secid"}}`, encodeURIComponent(String(secid)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (tickers !== undefined) {
+                localVarQueryParameter['tickers'] = tickers;
+            }
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (intervalDays !== undefined) {
+                localVarQueryParameter['intervalDays'] = intervalDays;
+            }
+
+            if (lang !== undefined) {
+                localVarQueryParameter['lang'] = lang;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns downsampled history for a MOEX index
+         * @summary Get MOEX index history
+         * @param {string} secid Index SECID
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesSecidHistoryGet: async (secid: string, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'secid' is not null or undefined
+            assertParamExists('moexIndexesSecidHistoryGet', 'secid', secid)
+            const localVarPath = `/moex/indexes/{secid}/history`
+                .replace(`{${"secid"}}`, encodeURIComponent(String(secid)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (intervalDays !== undefined) {
+                localVarQueryParameter['intervalDays'] = intervalDays;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * MoexApi - functional programming interface
+ */
+export const MoexApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = MoexApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns indexes list, collections, and membership map
+         * @summary Get MOEX indexes overview
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsMoexIndexesOverviewResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesOverviewGet(lang, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesOverviewGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns index composition snapshot
+         * @summary Get MOEX index composition
+         * @param {string} secid Index SECID
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ModelsMoexIndexCompositionEntry>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidCompositionGet(secid, date, lang, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidCompositionGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns downsampled weight series for index tickers
+         * @summary Get MOEX index composition series
+         * @param {string} secid Index SECID
+         * @param {string} tickers Comma-separated list of tickers
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexIndexesSecidCompositionSeriesGet(secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidCompositionSeriesGet(secid, tickers, from, till, intervalDays, lang, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidCompositionSeriesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns downsampled history for a MOEX index
+         * @summary Get MOEX index history
+         * @param {string} secid Index SECID
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ModelsMoexIndexHistoryPoint>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidHistoryGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * MoexApi - factory interface
+ */
+export const MoexApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = MoexApiFp(configuration)
+    return {
+        /**
+         * Returns indexes list, collections, and membership map
+         * @summary Get MOEX indexes overview
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsMoexIndexesOverviewResponse> {
+            return localVarFp.moexIndexesOverviewGet(lang, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns index composition snapshot
+         * @summary Get MOEX index composition
+         * @param {string} secid Index SECID
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<ModelsMoexIndexCompositionEntry>> {
+            return localVarFp.moexIndexesSecidCompositionGet(secid, date, lang, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns downsampled weight series for index tickers
+         * @summary Get MOEX index composition series
+         * @param {string} secid Index SECID
+         * @param {string} tickers Comma-separated list of tickers
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {string} [lang] Response language (ru/en)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesSecidCompositionSeriesGet(secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }> {
+            return localVarFp.moexIndexesSecidCompositionSeriesGet(secid, tickers, from, till, intervalDays, lang, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns downsampled history for a MOEX index
+         * @summary Get MOEX index history
+         * @param {string} secid Index SECID
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ModelsMoexIndexHistoryPoint>> {
+            return localVarFp.moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * MoexApi - object-oriented interface
+ */
+export class MoexApi extends BaseAPI {
+    /**
+     * Returns indexes list, collections, and membership map
+     * @summary Get MOEX indexes overview
+     * @param {string} [lang] Response language (ru/en)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexIndexesOverviewGet(lang, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns index composition snapshot
+     * @summary Get MOEX index composition
+     * @param {string} secid Index SECID
+     * @param {string} [date] Snapshot date (YYYY-MM-DD)
+     * @param {string} [lang] Response language (ru/en)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexIndexesSecidCompositionGet(secid, date, lang, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns downsampled weight series for index tickers
+     * @summary Get MOEX index composition series
+     * @param {string} secid Index SECID
+     * @param {string} tickers Comma-separated list of tickers
+     * @param {string} [from] Start date (YYYY-MM-DD)
+     * @param {string} [till] End date (YYYY-MM-DD)
+     * @param {number} [intervalDays] Downsample interval in days
+     * @param {string} [lang] Response language (ru/en)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexIndexesSecidCompositionSeriesGet(secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexIndexesSecidCompositionSeriesGet(secid, tickers, from, till, intervalDays, lang, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns downsampled history for a MOEX index
+     * @summary Get MOEX index history
+     * @param {string} secid Index SECID
+     * @param {string} [from] Start date (YYYY-MM-DD)
+     * @param {string} [till] End date (YYYY-MM-DD)
+     * @param {number} [intervalDays] Downsample interval in days
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

@@ -29,24 +29,25 @@ type MoexIndexesDataState = {
 export function useMoexIndexesData(): MoexIndexesDataState {
   const queryClient = useQueryClient();
 
-  const indexesQuery = useQuery({
-    queryKey: ['moex-indexes'],
-    queryFn: () => moexClient.getIndexes(),
+  const overviewQuery = useQuery({
+    queryKey: ['moex-indexes-overview', 'ru'],
+    queryFn: () => moexClient.getOverview('ru'),
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
-  const indexes = indexesQuery.data ?? [];
+  const overview = overviewQuery.data;
+  const indexes = overview?.indexes ?? [];
+  const collections = overview?.collections ?? [];
+  const memberships = overview?.memberships ?? {};
 
   const {
     groupingCollections,
     collectionMemberships,
     indexCollectionsMap,
     collectionOptions,
-    collectionsLoading,
-    collectionsError,
-  } = useMoexIndexCollections(indexes);
+  } = useMoexIndexCollections(indexes, collections, memberships);
 
   const settingsQuery = useQuery({
     queryKey: ['user-settings'],
@@ -104,8 +105,8 @@ export function useMoexIndexesData(): MoexIndexesDataState {
 
   return {
     indexes,
-    indexesLoading: indexesQuery.isLoading,
-    indexesError: Boolean(indexesQuery.error),
+    indexesLoading: overviewQuery.isLoading,
+    indexesError: Boolean(overviewQuery.error),
     favorites,
     favoritesSet,
     favoritesBySecid,
@@ -115,7 +116,7 @@ export function useMoexIndexesData(): MoexIndexesDataState {
     collectionMemberships,
     indexCollectionsMap,
     collectionOptions,
-    collectionsLoading,
-    collectionsError,
+    collectionsLoading: overviewQuery.isLoading,
+    collectionsError: Boolean(overviewQuery.error),
   };
 }

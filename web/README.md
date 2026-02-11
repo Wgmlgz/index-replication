@@ -37,7 +37,7 @@ Common tasks:
 - UI primitives live in `web/src/components/ui/` and follow shadcn/ui patterns.
 - Shared UI and features live in `web/src/components/`.
 - API access is centralized in `web/src/lib/api.ts` using a generated client.
-- MOEX ISS access is handled by `web/src/lib/moex-client.ts` (axios-based).
+- MOEX data access is handled by backend endpoints via `web/src/lib/moex-client.ts`.
 - Generated code in `web/src/api-client/` should not be edited manually.
 - Forms use React Hook Form with Zod schemas for validation.
 - Tailwind tokens and global styling are in `web/src/app/globals.css`.
@@ -64,7 +64,7 @@ MOEX indexes page docs:
 
 By default the frontend talks to the API at `http://localhost:8080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering. `web/src/lib/api.ts` also supports a local storage override.
 
-The MOEX ISS client uses `NEXT_PUBLIC_MOEX_BASE_URL` if set; otherwise it calls `https://iss.moex.com/iss` directly.
+MOEX data is fetched from the backend (`/api/moex/*`). The backend ISS base URL is configured via `MOEX_BASE_URL`.
 
 Before changing the MOEX client or screens, read `docs/moex/ISS-CONCEPTS.md`.
 

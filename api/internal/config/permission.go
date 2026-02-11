@@ -25,6 +25,7 @@ var (
 	// Other Permissions
 	AuditLogsView      = Permission{"audit_logs", "view"}
 	SystemMetadataView = Permission{"system_metadata", "view"}
+	MoexView           = Permission{"moex", "view"}
 	SelfView           = Permission{"self", "view"}
 	SelfUpdatePassword = Permission{"self", "update_password"}
 	SelfUpdateSettings = Permission{"self", "update_settings"}
@@ -47,6 +48,7 @@ var RolePermissions = map[string][]Permission{
 
 		// Basic roles
 		SystemMetadataView,
+		MoexView,
 		SelfView,
 		SelfUpdatePassword,
 		SelfUpdateSettings,
@@ -61,6 +63,7 @@ var RolePermissions = map[string][]Permission{
 
 		// Basic roles
 		SystemMetadataView,
+		MoexView,
 		SelfView,
 		SelfUpdatePassword,
 		SelfUpdateSettings,
@@ -69,6 +72,7 @@ var RolePermissions = map[string][]Permission{
 	"operator": {
 		// Basic roles
 		SystemMetadataView,
+		MoexView,
 		SelfView,
 		SelfUpdatePassword,
 		SelfUpdateSettings,
@@ -77,6 +81,7 @@ var RolePermissions = map[string][]Permission{
 	"observer": {
 		// Basic roles
 		SystemMetadataView,
+		MoexView,
 		SelfView,
 		SelfUpdatePassword,
 		SelfUpdateSettings,

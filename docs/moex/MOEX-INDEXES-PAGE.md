@@ -6,7 +6,7 @@ This doc describes the MOEX indexes page UI, its components, and the supporting 
 
 - Page: `web/src/app/moex-indexes/page.tsx`
 - Feature folder: `web/src/components/moex-indexes/` (split into `list/` and `detail/`)
-- Data sources: `web/src/lib/moex-client.ts` and user settings via `web/src/lib/user-settings-client.ts`
+- Data sources: backend MOEX endpoints via `web/src/lib/moex-client.ts` and user settings via `web/src/lib/user-settings-client.ts`
 - State orchestration: `web/src/components/moex-indexes/use-moex-indexes-data.ts` +
   `web/src/components/moex-indexes/list/use-moex-indexes-list-state.ts` +
   `web/src/components/moex-indexes/detail/use-moex-indexes-detail-state.ts`
@@ -38,20 +38,20 @@ This doc describes the MOEX indexes page UI, its components, and the supporting 
 
 Hooks:
 
-- `useMoexIndexesData` loads indexes, favorites, and collection metadata.
+- `useMoexIndexesData` loads the overview bundle (indexes + collections + memberships).
 - `useMoexIndexListState` owns list UI state (search, filters, pagination) and derived sections.
-- `useMoexIndexCollections` loads index collections and memberships, builds grouping metadata, and prepares filter options.
+- `useMoexIndexCollections` builds grouping metadata and filter options from the overview payload.
 - `useMoexIndexList` handles search, filters, sorting, grouping, pagination, and empty states.
 - `useMoexIndexDetailState` resolves the selected index and wires chart metadata.
 - `useMoexIndexHistory` loads the 12-month history for the selected index and derives chart series and change metrics.
 - `useMoexIndexComposition` loads the latest composition snapshot and weight history for top constituents.
-  The weight history series is downsampled using the same interval control as the price chart.
+  The weight history series is downsampled on the backend using the same interval control as the price chart.
   The composition card exposes Snapshot (treemap), Weight trend, and Stacked area tabs.
 
 **Data Flow**
 
-1. `useMoexIndexesData` loads the base index list (`moexClient.getIndexes()`).
-2. Collections and memberships are loaded to build grouping and filter options.
+1. `useMoexIndexesData` loads the overview payload from `GET /api/moex/indexes/overview`.
+2. Collections and memberships from the overview are used to build grouping and filter options.
 3. User favorites are loaded from user settings and stored as a set for fast lookup.
 4. `useMoexIndexListState` computes list sections, pagination, and filters.
 5. `useMoexIndexDetailState` resolves the selected index and triggers history fetch.
@@ -72,9 +72,9 @@ Hooks:
 **Chart Data**
 
 - History is fetched based on the selected time range (quick buttons + extra range selector, or custom dates).
-- The interval control (Auto + fixed steps) determines how chart data is downsampled.
-- Auto targets ~300 points by selecting the closest interval step for the range length.
-- Chart points are normalized and ordered by date before sampling.
+- The interval control (Auto + fixed steps) is sent to the backend, which returns downsampled points.
+- Auto targets ~300 points by selecting the closest interval step on the server.
+- Chart points are normalized and ordered by date after the server response.
 - Latest value, change, and change percent are computed for the header meta.
 - The chart supports price vs percent-change view and line vs candlestick rendering.
 

@@ -1,0 +1,222 @@
+package handlers
+
+import (
+	"errors"
+	"net/http"
+	"server/internal/models"
+	"server/internal/services"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+type MoexHandler struct {
+	service *services.MoexService
+}
+
+func NewMoexHandler(service *services.MoexService) *MoexHandler {
+	return &MoexHandler{service: service}
+}
+
+// GetMoexOverview godoc
+//
+//	@Summary		Get MOEX indexes overview
+//	@Description	Returns indexes list, collections, and membership map
+//	@Tags			moex
+//	@Produce		json
+//	@Param			lang	query		string	false	"Response language (ru/en)"
+//	@Success		200		{object}	models.MoexIndexesOverviewResponse
+//	@Failure		500		{object}	models.ErrorResponse
+//	@Router			/moex/indexes/overview [get]
+func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
+	lang := strings.TrimSpace(c.Query("lang"))
+	overview, err := h.service.GetIndexesOverview(c.Request.Context(), lang)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX overview"})
+		return
+	}
+	c.JSON(http.StatusOK, overview)
+}
+
+// GetMoexIndexHistory godoc
+//
+//	@Summary		Get MOEX index history
+//	@Description	Returns downsampled history for a MOEX index
+//	@Tags			moex
+//	@Produce		json
+//	@Param			secid			path		string	true	"Index SECID"
+//	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
+//	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
+//	@Param			intervalDays	query		int		false	"Downsample interval in days"
+//	@Success		200				{array}		models.MoexIndexHistoryPoint
+//	@Failure		400				{object}	models.ErrorResponse
+//	@Failure		500				{object}	models.ErrorResponse
+//	@Router			/moex/indexes/{secid}/history [get]
+func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
+	secid := strings.TrimSpace(c.Param("secid"))
+	if secid == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing secid"})
+		return
+	}
+
+	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	intervalDays, err := parseIntervalDays(c.Query("intervalDays"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	points, err := h.service.GetIndexHistory(c.Request.Context(), secid, from, till, intervalDays)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX history"})
+		return
+	}
+	c.JSON(http.StatusOK, points)
+}
+
+// GetMoexIndexComposition godoc
+//
+//	@Summary		Get MOEX index composition
+//	@Description	Returns index composition snapshot
+//	@Tags			moex
+//	@Produce		json
+//	@Param			secid	path		string	true	"Index SECID"
+//	@Param			date	query		string	false	"Snapshot date (YYYY-MM-DD)"
+//	@Param			lang	query		string	false	"Response language (ru/en)"
+//	@Success		200		{array}		models.MoexIndexCompositionEntry
+//	@Failure		400		{object}	models.ErrorResponse
+//	@Failure		500		{object}	models.ErrorResponse
+//	@Router			/moex/indexes/{secid}/composition [get]
+func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
+	secid := strings.TrimSpace(c.Param("secid"))
+	if secid == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing secid"})
+		return
+	}
+
+	date := strings.TrimSpace(c.Query("date"))
+	if date != "" && !isValidDate(date) {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid date format"})
+		return
+	}
+	lang := strings.TrimSpace(c.Query("lang"))
+
+	rows, err := h.service.GetIndexComposition(c.Request.Context(), secid, date, lang)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// GetMoexIndexCompositionSeries godoc
+//
+//	@Summary		Get MOEX index composition series
+//	@Description	Returns downsampled weight series for index tickers
+//	@Tags			moex
+//	@Produce		json
+//	@Param			secid			path		string	true	"Index SECID"
+//	@Param			tickers			query		string	true	"Comma-separated list of tickers"
+//	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
+//	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
+//	@Param			intervalDays	query		int		false	"Downsample interval in days"
+//	@Param			lang			query		string	false	"Response language (ru/en)"
+//	@Success		200				{object}	map[string][]models.MoexIndexTickerAnalyticsPoint
+//	@Failure		400				{object}	models.ErrorResponse
+//	@Failure		500				{object}	models.ErrorResponse
+//	@Router			/moex/indexes/{secid}/composition/series [get]
+func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
+	secid := strings.TrimSpace(c.Param("secid"))
+	if secid == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing secid"})
+		return
+	}
+
+	tickersParam := strings.TrimSpace(c.Query("tickers"))
+	if tickersParam == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing tickers"})
+		return
+	}
+	tickerParts := strings.Split(tickersParam, ",")
+	tickers := make([]string, 0, len(tickerParts))
+	for _, item := range tickerParts {
+		ticker := strings.TrimSpace(item)
+		if ticker == "" {
+			continue
+		}
+		tickers = append(tickers, ticker)
+	}
+	if len(tickers) == 0 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing tickers"})
+		return
+	}
+
+	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	intervalDays, err := parseIntervalDays(c.Query("intervalDays"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	lang := strings.TrimSpace(c.Query("lang"))
+
+	result, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, from, till, intervalDays, lang)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition series"})
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func parseIntervalDays(value string) (int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, nil
+	}
+	for i, r := range value {
+		if r < '0' || r > '9' {
+			value = value[:i]
+			break
+		}
+	}
+	if value == "" {
+		return 0, errors.New("Invalid intervalDays")
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return 0, errors.New("Invalid intervalDays")
+	}
+	return parsed, nil
+}
+
+func normalizeDateRange(from, till string) (string, string, error) {
+	from = strings.TrimSpace(from)
+	till = strings.TrimSpace(till)
+	if from != "" && !isValidDate(from) {
+		return "", "", errors.New("Invalid from date")
+	}
+	if till != "" && !isValidDate(till) {
+		return "", "", errors.New("Invalid till date")
+	}
+	if from != "" && till != "" && from > till {
+		return till, from, nil
+	}
+	return from, till, nil
+}
+
+func isValidDate(value string) bool {
+	_, err := time.Parse("2006-01-02", value)
+	return err == nil
+}

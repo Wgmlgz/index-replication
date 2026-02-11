@@ -52,6 +52,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 
 	userHandler := h.NewUserHandler(cfg, repoRegistry.UserRepo, cs, auditService)
 	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
+	moexService := services.NewMoexService(cfg.MoexBaseURL)
+	moexHandler := h.NewMoexHandler(moexService)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -77,6 +79,12 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.GET("/audit-logs", m.RPM(cs, config.AuditLogsView), auditHandler.ListAuditLogs)
 		a.GET("/audit-logs/actions", m.RPM(cs, config.AuditLogsView), auditHandler.GetAuditLogActions)
 		a.GET("/audit-logs/:id", m.RPM(cs, config.AuditLogsView), auditHandler.GetAuditLog)
+
+		// MOEX data
+		a.GET("/moex/indexes/overview", m.RPM(cs, config.MoexView), moexHandler.GetMoexOverview)
+		a.GET("/moex/indexes/:secid/history", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexHistory)
+		a.GET("/moex/indexes/:secid/composition", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexComposition)
+		a.GET("/moex/indexes/:secid/composition/series", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexCompositionSeries)
 	}
 	return router
 }
