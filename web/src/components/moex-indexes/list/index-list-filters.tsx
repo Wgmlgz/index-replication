@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useMoexIndexListContext } from './moex-indexes-list-context';
-import type { SortKey } from './use-moex-indexes.types';
+import type { LastActiveRange, SortKey } from './use-moex-indexes.types';
 import { FILTER_DEFS } from './use-moex-indexes.utils';
 
 type FilterMenuProps = {
@@ -104,6 +105,10 @@ export function IndexListFilters() {
     sortKey,
     setSortKey,
     sortOptions,
+    lastActiveRange,
+    setLastActiveRange,
+    compositionOnly,
+    setCompositionOnly,
     hasActiveFilters,
     clearFilters,
     indexesLoading,
@@ -128,6 +133,35 @@ export function IndexListFilters() {
             disabled={def.key === 'collections' ? groupsDisabled : filtersDisabled}
           />
         ))}
+        <div className='flex items-center gap-2'>
+          <span className='text-xs text-muted-foreground'>
+            {t('moex.filters.lastActive')}
+          </span>
+          <Select
+            value={lastActiveRange}
+            onValueChange={(value) => setLastActiveRange(value as LastActiveRange)}
+          >
+            <SelectTrigger size='sm'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent side='bottom'>
+              <SelectItem value='1m'>{t('moex.filters.lastActive1m')}</SelectItem>
+              <SelectItem value='3m'>{t('moex.filters.lastActive3m')}</SelectItem>
+              <SelectItem value='6m'>{t('moex.filters.lastActive6m')}</SelectItem>
+              <SelectItem value='1y'>{t('moex.filters.lastActive1y')}</SelectItem>
+              <SelectItem value='all'>{t('moex.filters.lastActiveAll')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className='flex items-center gap-2'>
+          <span className='text-xs text-muted-foreground'>
+            {t('moex.filters.compositionOnly')}
+          </span>
+          <Switch
+            checked={compositionOnly}
+            onCheckedChange={setCompositionOnly}
+          />
+        </div>
         <div className='flex items-center gap-2'>
           <span className='text-xs text-muted-foreground'>
             {t('moex.filters.sort')}

@@ -87,6 +87,30 @@ Retry behavior:
 - Backoff: starts at 2s, exponential up to 30s.
 - After retries are exhausted, that workflow run fails. Next schedule tick starts a new run.
 
+## Progress in Temporal UI
+
+`moex.daily_sync` now executes index sync as one activity per index (`moex.sync_index_activity`), so execution history advances index-by-index in UI.
+
+If `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=true`, workflow search attributes are updated during the run:
+
+- `MoexSecid`: current index being processed
+- `MoexProgress`: `starting|running|completed`
+- `MoexProcessed`: processed index count
+- `MoexTotal`: total index count
+
+This provides a simple progress bar model in UI (`MoexProcessed / MoexTotal`).
+
+Activities also emit heartbeats with per-dataset/ticker details while running; these are visible in pending activity details.
+
+## Logs: UI vs Worker
+
+- Temporal UI shows workflow/activity event history, retries, failures, and search attributes.
+- Worker `log.Printf(...)` output is not stored in Temporal history; view it from worker logs:
+
+```bash
+docker compose logs --tail=200 moex-worker
+```
+
 ## Sync State and Coverage
 
 `moex_sync_state` answers "latest known sync cursor/status" per `(dataset, entity_key)`:
@@ -102,6 +126,7 @@ Retry behavior:
 - range `[from_date, to_date]`
 - `is_complete=true|false` for that fetch window
 - regular runs process incomplete ranges first, then run incremental windows from `checked_through_date - overlap` (history: 7 days, composition: 2 days)
+- full-mode manual backfill checks complete coverage first and skips already-complete windows on rerun
 
 `moex_sync_runs` is execution history:
 

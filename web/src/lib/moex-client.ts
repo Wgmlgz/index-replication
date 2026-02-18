@@ -10,6 +10,8 @@ export type MoexIndex = {
   calcMode: string | null;
   annualHigh: number | null;
   annualLow: number | null;
+  lastActiveDate: string | null;
+  hasComposition: boolean;
 };
 
 export type MoexIndexCollection = {

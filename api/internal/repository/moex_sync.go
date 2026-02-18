@@ -301,6 +301,29 @@ func (r *MoexSyncRepository) ListIncompleteCoverage(ctx context.Context, dataset
 	return rows, err
 }
 
+func (r *MoexSyncRepository) HasCompleteCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate time.Time) (bool, error) {
+	fromDate = dateOnlyUTC(fromDate)
+	toDate = dateOnlyUTC(toDate)
+	if fromDate.After(toDate) {
+		fromDate, toDate = toDate, fromDate
+	}
+
+	var exists bool
+	err := r.db.WithContext(ctx).Raw(
+		`SELECT EXISTS (
+			SELECT 1
+			FROM moex_data_coverage
+			WHERE dataset = ?
+			  AND entity_key = ?
+			  AND is_complete = TRUE
+			  AND from_date <= ?
+			  AND to_date >= ?
+		)`,
+		dataset, entityKey, fromDate, toDate,
+	).Scan(&exists).Error
+	return exists, err
+}
+
 func (r *MoexSyncRepository) StartSyncRun(ctx context.Context, runID, workflowID, workflowRunID, dataset, entityKey string) error {
 	return r.db.WithContext(ctx).Exec(
 		`INSERT INTO moex_sync_runs(run_id, workflow_id, workflow_run_id, dataset, entity_key, status, started_at)

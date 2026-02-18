@@ -19,6 +19,12 @@ type MoexService struct {
 	client *moexISSClient
 }
 
+type MoexIndexTickerWindow struct {
+	Ticker string
+	From   string
+	Till   string
+}
+
 func NewMoexService(baseURL string) *MoexService {
 	return &MoexService{
 		client: newMoexISSClient(baseURL, 20*time.Second),
@@ -66,6 +72,17 @@ func (s *MoexService) GetIndexComposition(ctx context.Context, indexID, date, la
 		lang = "en"
 	}
 	return s.client.FetchComposition(ctx, indexID, date, lang)
+}
+
+func (s *MoexService) ListIndexCompositionTickers(ctx context.Context, indexID, date string) ([]MoexIndexTickerWindow, error) {
+	return s.client.FetchIndexTickerWindows(ctx, indexID, date)
+}
+
+func (s *MoexService) GetIndexTickerCompositionHistory(ctx context.Context, indexID, ticker, from, till, lang string) ([]models.MoexIndexCompositionEntry, error) {
+	if strings.TrimSpace(lang) == "" {
+		lang = "en"
+	}
+	return s.client.FetchTickerCompositionHistory(ctx, indexID, ticker, from, till, lang)
 }
 
 func (s *MoexService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, from, till string, intervalDays int, lang string) (map[string][]models.MoexIndexTickerAnalyticsPoint, error) {

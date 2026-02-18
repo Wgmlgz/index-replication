@@ -1,6 +1,10 @@
 'use client';
 
-import type { FilterState, SortKey } from './list/use-moex-indexes.types';
+import type {
+  FilterState,
+  LastActiveRange,
+  SortKey,
+} from './list/use-moex-indexes.types';
 import { createEmptyFilters, DEFAULT_PAGE_SIZE } from './list/use-moex-indexes.utils';
 import type {
   ChartType,
@@ -27,6 +31,8 @@ export const MOEX_URL_KEYS = {
   listCurrency: 'l_cur',
   listBoard: 'l_board',
   listCalcMode: 'l_calc',
+  listLastActive: 'l_act',
+  listComposition: 'l_comp',
 
   detailRange: 'd_range',
   detailInterval: 'd_interval',
@@ -47,6 +53,8 @@ export type MoexIndexesUrlInitialState = {
     pageSize: number;
     sortKey: SortKey;
     filters: FilterState;
+    lastActiveRange: LastActiveRange;
+    compositionOnly: boolean;
   }>;
   detail?: Partial<{
     rangeKey: RangeKey;
@@ -68,6 +76,8 @@ const SORT_KEYS: SortKey[] = [
   'board-asc',
   'calc-asc',
 ];
+
+const LAST_ACTIVE_RANGES: LastActiveRange[] = ['1m', '3m', '6m', '1y', 'all'];
 
 const RANGE_KEYS: RangeKey[] = [
   '1m',
@@ -156,6 +166,21 @@ export function parseMoexIndexesUrlState(
   const currency = normalizeList(searchParams.getAll(MOEX_URL_KEYS.listCurrency));
   const board = normalizeList(searchParams.getAll(MOEX_URL_KEYS.listBoard));
   const calcMode = normalizeList(searchParams.getAll(MOEX_URL_KEYS.listCalcMode));
+  const lastActiveRaw = searchParams.get(MOEX_URL_KEYS.listLastActive);
+  const lastActiveRange = isOneOf(lastActiveRaw, LAST_ACTIVE_RANGES)
+    ? lastActiveRaw
+    : undefined;
+  const compositionRaw = searchParams.get(MOEX_URL_KEYS.listComposition);
+  const compositionNormalized = compositionRaw?.toLowerCase();
+  const compositionParsed = parseBoolean(compositionRaw);
+  const compositionOnly =
+    compositionParsed !== undefined
+      ? compositionParsed
+      : compositionNormalized === 'with'
+        ? true
+        : compositionNormalized === 'all' || compositionNormalized === 'without'
+          ? false
+          : undefined;
 
   const hasAnyFilters =
     collections.length > 0 || currency.length > 0 || board.length > 0 || calcMode.length > 0;
@@ -194,6 +219,10 @@ export function parseMoexIndexesUrlState(
   if (typeof pageSize === 'number' && pageSize > 0) listState.pageSize = pageSize;
   if (sortKey) listState.sortKey = sortKey;
   if (filters) listState.filters = filters;
+  if (lastActiveRange) listState.lastActiveRange = lastActiveRange;
+  if (typeof compositionOnly === 'boolean') {
+    listState.compositionOnly = compositionOnly;
+  }
 
   const detailState: MoexIndexesUrlInitialState['detail'] = {};
   if (rangeKey) detailState.rangeKey = rangeKey;
@@ -227,6 +256,8 @@ export function applyMoexIndexesUrlState(
       pageSize: number;
       sortKey: SortKey;
       filters: FilterState;
+      lastActiveRange: LastActiveRange;
+      compositionOnly: boolean;
     };
     detail: {
       rangeKey: RangeKey;
@@ -250,6 +281,8 @@ export function applyMoexIndexesUrlState(
     MOEX_URL_KEYS.listCurrency,
     MOEX_URL_KEYS.listBoard,
     MOEX_URL_KEYS.listCalcMode,
+    MOEX_URL_KEYS.listLastActive,
+    MOEX_URL_KEYS.listComposition,
     MOEX_URL_KEYS.detailRange,
     MOEX_URL_KEYS.detailInterval,
     MOEX_URL_KEYS.detailCustomFrom,
@@ -285,6 +318,12 @@ export function applyMoexIndexesUrlState(
   appendSorted(params, MOEX_URL_KEYS.listCurrency, state.list.filters.currency);
   appendSorted(params, MOEX_URL_KEYS.listBoard, state.list.filters.board);
   appendSorted(params, MOEX_URL_KEYS.listCalcMode, state.list.filters.calcMode);
+  if (state.list.lastActiveRange !== '1m') {
+    params.set(MOEX_URL_KEYS.listLastActive, state.list.lastActiveRange);
+  }
+  if (state.list.compositionOnly) {
+    params.set(MOEX_URL_KEYS.listComposition, '1');
+  }
 
   if (state.detail.rangeKey !== '1y') {
     params.set(MOEX_URL_KEYS.detailRange, state.detail.rangeKey);

@@ -23,6 +23,8 @@ import type {
   RangeKey,
 } from './detail/moex-indexes-detail.types';
 
+const LIST_FILTER_KEYS = ['collections', 'currency', 'board', 'calcMode'] as const satisfies FilterKey[];
+
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -102,13 +104,25 @@ export function MoexIndexesProvider({
     const nextSortKey = (next.list?.sortKey ?? 'name-asc') as SortKey;
     if (nextSortKey !== ls.sortKey) ls.setSortKey(nextSortKey);
 
+    const nextLastActiveRange = next.list?.lastActiveRange ?? '1m';
+    if (nextLastActiveRange !== ls.lastActiveRange) {
+      ls.setLastActiveRange(nextLastActiveRange);
+    }
+
+    const nextCompositionOnly = next.list?.compositionOnly ?? false;
+    if (nextCompositionOnly !== ls.compositionOnly) {
+      ls.setCompositionOnly(nextCompositionOnly);
+    }
+
     const nextPageSize = next.list?.pageSize ?? DEFAULT_PAGE_SIZE;
     if (nextPageSize !== ls.pageSize) ls.setPageSize(nextPageSize);
 
     if (!next.list?.filters) {
-      if (ls.hasActiveFilters) ls.clearFilters();
+      LIST_FILTER_KEYS.forEach((key) => {
+        if (ls.filters[key].length > 0) ls.setFilter(key, []);
+      });
     } else {
-      (['collections', 'currency', 'board', 'calcMode'] as const satisfies FilterKey[]).forEach((key) => {
+      LIST_FILTER_KEYS.forEach((key) => {
         const nextValues = next.list?.filters?.[key] ?? [];
         const currentValues = ls.filters[key] ?? [];
         const sortedNext = [...nextValues].sort();
@@ -163,6 +177,8 @@ export function MoexIndexesProvider({
         pageSize: listState.pageSize,
         sortKey: listState.sortKey,
         filters: listState.filters,
+        lastActiveRange: listState.lastActiveRange,
+        compositionOnly: listState.compositionOnly,
       },
       detail: {
         rangeKey: detailState.rangeKey,
@@ -197,6 +213,8 @@ export function MoexIndexesProvider({
     listState.selectedSecid,
     listState.showFavoritesOnly,
     listState.sortKey,
+    listState.lastActiveRange,
+    listState.compositionOnly,
     pathname,
   ]);
 
@@ -225,13 +243,25 @@ export function MoexIndexesProvider({
       const nextSortKey = (next.list?.sortKey ?? 'name-asc') as SortKey;
       if (nextSortKey !== ls.sortKey) ls.setSortKey(nextSortKey);
 
+      const nextLastActiveRange = next.list?.lastActiveRange ?? '1m';
+      if (nextLastActiveRange !== ls.lastActiveRange) {
+        ls.setLastActiveRange(nextLastActiveRange);
+      }
+
+      const nextCompositionOnly = next.list?.compositionOnly ?? false;
+      if (nextCompositionOnly !== ls.compositionOnly) {
+        ls.setCompositionOnly(nextCompositionOnly);
+      }
+
       const nextPageSize = next.list?.pageSize ?? DEFAULT_PAGE_SIZE;
       if (nextPageSize !== ls.pageSize) ls.setPageSize(nextPageSize);
 
       if (!next.list?.filters) {
-        if (ls.hasActiveFilters) ls.clearFilters();
+        LIST_FILTER_KEYS.forEach((key) => {
+          if (ls.filters[key].length > 0) ls.setFilter(key, []);
+        });
       } else {
-        (['collections', 'currency', 'board', 'calcMode'] as const satisfies FilterKey[]).forEach((key) => {
+        LIST_FILTER_KEYS.forEach((key) => {
           const nextValues = next.list?.filters?.[key] ?? [];
           const currentValues = ls.filters[key] ?? [];
           const sortedNext = [...nextValues].sort();

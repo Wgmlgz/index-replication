@@ -19,6 +19,8 @@ export type FilterDefinition = {
   getValue?: (index: MoexIndex) => string | null | undefined;
 };
 
+export type LastActiveRange = '1m' | '3m' | '6m' | '1y' | 'all';
+
 export type SortKey =
   | 'name-asc'
   | 'name-desc'
@@ -59,6 +61,10 @@ export type MoexIndexListState = {
   sortKey: SortKey;
   setSortKey: (value: SortKey) => void;
   sortOptions: SortOption[];
+  lastActiveRange: LastActiveRange;
+  setLastActiveRange: (value: LastActiveRange) => void;
+  compositionOnly: boolean;
+  setCompositionOnly: (value: boolean) => void;
   hasActiveFilters: boolean;
   clearFilters: () => void;
   foundCount: number;

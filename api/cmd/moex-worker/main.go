@@ -34,6 +34,8 @@ func main() {
 
 	w.RegisterActivityWithOptions(acts.MetaRefresh, activity.RegisterOptions{Name: workflows.MetaRefreshActivityName})
 	w.RegisterActivityWithOptions(acts.DailySync, activity.RegisterOptions{Name: workflows.DailySyncActivityName})
+	w.RegisterActivityWithOptions(acts.ListIndexSecids, activity.RegisterOptions{Name: workflows.ListIndexSecidsActivityName})
+	w.RegisterActivityWithOptions(acts.SyncIndex, activity.RegisterOptions{Name: workflows.SyncIndexActivityName})
 	w.RegisterActivityWithOptions(acts.DailySync, activity.RegisterOptions{Name: "moex.daily_sync_legacy_activity"})
 
 	log.Printf("Temporal worker started address=%s namespace=%s taskQueue=%s", cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue)

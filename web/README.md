@@ -62,7 +62,7 @@ MOEX indexes page docs:
 
 ## API Configuration
 
-By default the frontend talks to the API at `http://localhost:8080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering. `web/src/lib/api.ts` also supports a local storage override.
+By default in dev mode the frontend talks to the API at `http://localhost:18080`. You can change it in the Settings page inside the app, or set `NEXT_PUBLIC_API_BASE_URL` for server-side rendering. `web/src/lib/api.ts` also supports a local storage override.
 
 MOEX data is fetched from the backend (`/api/moex/*`). The backend ISS base URL is configured via `MOEX_BASE_URL`.
 

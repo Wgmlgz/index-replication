@@ -53,6 +53,7 @@ tasks:
     desc: Run the API locally
     env:
       GIN_LOG_FORMAT: short
+      SERVER_PORT: 18080
     cmds:
       - go run github.com/air-verse/air@latest
 

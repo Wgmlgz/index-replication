@@ -1,10 +1,12 @@
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MoexIndex, MoexIndexCollection } from '@/lib/moex-client';
+import { matchesLastActiveRange } from '@/components/moex-indexes/moex-indexes-activity';
 import type {
   FilterKey,
   FilterState,
   IndexSection,
+  LastActiveRange,
   SortKey,
 } from './use-moex-indexes.types';
 import {
@@ -26,6 +28,8 @@ type IndexListInput = {
   pageSize: number;
   filters: FilterState;
   sortKey: SortKey;
+  lastActiveRange: LastActiveRange;
+  compositionOnly: boolean;
   indexesLoading: boolean;
   setPageIndex: Dispatch<SetStateAction<number>>;
 };
@@ -50,6 +54,8 @@ export function useMoexIndexList({
   pageSize,
   filters,
   sortKey,
+  lastActiveRange,
+  compositionOnly,
   indexesLoading,
   setPageIndex,
 }: IndexListInput): IndexListState {
@@ -98,9 +104,23 @@ export function useMoexIndexList({
         }
       }
 
+      if (!matchesLastActiveRange(index.lastActiveDate, lastActiveRange)) {
+        return false;
+      }
+      if (compositionOnly && !index.hasComposition) {
+        return false;
+      }
+
       return true;
     });
-  }, [collectionMemberships, filterSets, indexes, normalizedQuery]);
+  }, [
+    collectionMemberships,
+    compositionOnly,
+    filterSets,
+    indexes,
+    lastActiveRange,
+    normalizedQuery,
+  ]);
 
   const sortedIndexes = useMemo(() => {
     const comparator = sortComparators[sortKey];

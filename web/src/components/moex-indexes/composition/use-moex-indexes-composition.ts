@@ -67,7 +67,7 @@ export function useMoexIndexComposition(options: {
       moexClient.getIndexComposition(options.selectedIndex!.secid, {
         date: snapshotDate ?? undefined,
       }),
-    enabled: Boolean(options.selectedIndex?.secid),
+    enabled: Boolean(options.selectedIndex?.secid && options.selectedIndex?.hasComposition),
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,
     retry: 1,
@@ -117,6 +117,7 @@ export function useMoexIndexComposition(options: {
     enabled: Boolean(
       options.compositionTab !== 'snapshot' &&
         options.selectedIndex?.secid &&
+        options.selectedIndex?.hasComposition &&
         topTickers.length > 0
     ),
     refetchOnWindowFocus: false,

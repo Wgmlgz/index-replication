@@ -15,10 +15,11 @@ import { MoexIndexesProvider } from '@/components/moex-indexes/moex-indexes-cont
 
 function MoexIndexesContent() {
   const { error: listError } = useMoexIndexListContext();
-  const { error: detailError } = useMoexIndexDetailContext();
+  const { error: detailError, selectedIndex } = useMoexIndexDetailContext();
   const error = listError ?? detailError;
   const { t } = useTranslation();
   const overviewLabel = t('moex.sources.overview');
+  const showCompositionCard = selectedIndex ? selectedIndex.hasComposition : true;
 
   return (
     <div className='flex h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 flex-col gap-6 overflow-hidden'>
@@ -43,9 +44,15 @@ function MoexIndexesContent() {
 
       <div className='grid flex-1 min-h-0 grid-cols-1 gap-6 grid-rows-[minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[480px_minmax(0,1fr)]'>
         <IndexListCard />
-        <div className='grid min-h-0 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-6'>
+        <div
+          className={`grid min-h-0 gap-6 ${
+            showCompositionCard
+              ? 'grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'
+              : 'grid-rows-[minmax(0,1fr)]'
+          }`}
+        >
           <IndexChartCard />
-          <IndexCompositionCard />
+          {showCompositionCard && <IndexCompositionCard />}
         </div>
       </div>
     </div>

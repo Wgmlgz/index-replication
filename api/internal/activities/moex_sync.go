@@ -18,11 +18,11 @@ import (
 )
 
 const (
-	moexDefaultMutableDays      = 30
-	moexDefaultHistoryLookback  = 120
-	moexDefaultCompositionRange = 30
-	moexHistoryOverlapDays      = 7
-	moexCompositionOverlapDays  = 2
+	moexDefaultMutableDays           = 30
+	moexDefaultHistoryWindowDays     = 120
+	moexDefaultCompositionWindowDays = 30
+	moexHistoryOverlapDays           = 7
+	moexCompositionOverlapDays       = 2
 )
 
 type MoexSyncActivities struct {
@@ -30,6 +30,22 @@ type MoexSyncActivities struct {
 	repo                *repository.MoexSyncRepository
 	mutableDays         int
 	immutableBeforeDate *time.Time
+}
+
+type moexDatasetWindowSyncFn func(context.Context, string, time.Time, time.Time) (int, int, error)
+
+type moexSyncHeartbeat struct {
+	Secid        string `json:"secid"`
+	Dataset      string `json:"dataset"`
+	Mode         string `json:"mode,omitempty"`
+	Stage        string `json:"stage"`
+	Current      int    `json:"current,omitempty"`
+	Total        int    `json:"total,omitempty"`
+	From         string `json:"from,omitempty"`
+	Till         string `json:"till,omitempty"`
+	FetchedRows  int    `json:"fetchedRows,omitempty"`
+	UpsertedRows int    `json:"upsertedRows,omitempty"`
+	Message      string `json:"message,omitempty"`
 }
 
 func NewMoexSyncActivities(db *gorm.DB, moexBaseURL string, mutableDays int, immutableBeforeDate string) *MoexSyncActivities {
@@ -100,10 +116,10 @@ func (a *MoexSyncActivities) DailySync(ctx context.Context, params workflows.Dai
 		if secid == "" {
 			continue
 		}
-		if err := a.syncHistoryRange(ctx, secid, mode, from, till); err != nil {
+		if _, _, err := a.syncHistoryRange(ctx, secid, mode, from, till); err != nil {
 			return err
 		}
-		if err := a.syncCompositionRange(ctx, secid, mode, from, till); err != nil {
+		if _, _, err := a.syncCompositionRange(ctx, secid, mode, from, till); err != nil {
 			return err
 		}
 		synced++
@@ -112,123 +128,157 @@ func (a *MoexSyncActivities) DailySync(ctx context.Context, params workflows.Dai
 	return nil
 }
 
-func (a *MoexSyncActivities) syncHistoryRange(ctx context.Context, secid, mode, fromRaw, tillRaw string) error {
-	const dataset = "history"
-
-	secid = strings.TrimSpace(secid)
+func (a *MoexSyncActivities) SyncIndex(ctx context.Context, params workflows.SyncIndexParams) (workflows.IndexSyncResult, error) {
+	secid := strings.TrimSpace(params.Secid)
+	mode := normalizeMode(params.Mode)
+	from := strings.TrimSpace(params.From)
+	till := strings.TrimSpace(params.Till)
 	if secid == "" {
-		return fmt.Errorf("empty secid for history sync")
+		return workflows.IndexSyncResult{}, fmt.Errorf("empty secid in sync index activity")
 	}
 
-	fromDate, tillDate, mutableSince, immutableBefore, err := a.resolveEffectiveRange(ctx, dataset, secid, mode, fromRaw, tillRaw, moexDefaultHistoryLookback, moexHistoryOverlapDays)
+	recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+		Secid:   secid,
+		Mode:    mode,
+		Stage:   "index_started",
+		Current: params.Index,
+		Total:   params.Total,
+		From:    from,
+		Till:    till,
+	})
+
+	historyFetched, historyUpserted, err := a.syncHistoryRange(ctx, secid, mode, from, till)
 	if err != nil {
-		return err
+		return workflows.IndexSyncResult{}, err
+	}
+	compositionFetched, compositionUpserted, err := a.syncCompositionRange(ctx, secid, mode, from, till)
+	if err != nil {
+		return workflows.IndexSyncResult{}, err
 	}
 
-	info := activity.GetInfo(ctx)
-	runID := uuid.NewString()
-	if err := a.repo.StartSyncRun(ctx, runID, info.WorkflowExecution.ID, info.WorkflowExecution.RunID, dataset, secid); err != nil {
-		return fmt.Errorf("start history sync run: %w", err)
-	}
-	if err := a.repo.MarkSyncRunning(ctx, dataset, secid); err != nil {
-		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, 0, 0, err.Error(), "mark running failed")
-		return err
-	}
+	recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+		Secid:        secid,
+		Mode:         mode,
+		Stage:        "index_completed",
+		Current:      params.Index,
+		Total:        params.Total,
+		From:         from,
+		Till:         till,
+		FetchedRows:  historyFetched + compositionFetched,
+		UpsertedRows: historyUpserted + compositionUpserted,
+	})
 
-	fetchedRows := 0
-	upsertedRows := 0
-	repairedRanges := 0
-	details := fmt.Sprintf("mode=%s from=%s till=%s", mode, fromDate.Format("2006-01-02"), tillDate.Format("2006-01-02"))
-
-	if mode != "full" {
-		incomplete, listErr := a.repo.ListIncompleteCoverage(ctx, dataset, secid, fromDate, tillDate)
-		if listErr != nil {
-			_ = a.repo.MarkSyncError(ctx, dataset, secid, listErr.Error())
-			_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, listErr.Error(), details)
-			return fmt.Errorf("list incomplete history coverage: %w", listErr)
-		}
-		for _, candidate := range incomplete {
-			windowFrom, windowTo, ok := clipRange(candidate.FromDate, candidate.ToDate, fromDate, tillDate)
-			if !ok {
-				continue
-			}
-			minMutable := immutableBefore.AddDate(0, 0, 1)
-			if windowTo.Before(minMutable) {
-				continue
-			}
-			if windowFrom.Before(minMutable) {
-				windowFrom = minMutable
-			}
-			fetched, upserted, windowErr := a.syncHistoryWindow(ctx, secid, windowFrom, windowTo)
-			fetchedRows += fetched
-			upsertedRows += upserted
-			if windowErr != nil {
-				_ = a.repo.MarkSyncError(ctx, dataset, secid, windowErr.Error())
-				_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, windowErr.Error(), details)
-				return fmt.Errorf("repair history range %s..%s: %w", windowFrom.Format("2006-01-02"), windowTo.Format("2006-01-02"), windowErr)
-			}
-			repairedRanges++
-		}
-	}
-
-	mainFetched, mainUpserted, mainErr := a.syncHistoryWindow(ctx, secid, fromDate, tillDate)
-	fetchedRows += mainFetched
-	upsertedRows += mainUpserted
-	if mainErr != nil {
-		_ = a.repo.MarkSyncError(ctx, dataset, secid, mainErr.Error())
-		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, mainErr.Error(), details)
-		return mainErr
-	}
-
-	if repairedRanges > 0 {
-		details = details + fmt.Sprintf(" repaired_ranges=%d", repairedRanges)
-	}
-
-	if err := a.repo.MarkSyncSuccessWithState(ctx, dataset, secid, &tillDate, &immutableBefore, &mutableSince); err != nil {
-		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, err.Error(), details)
-		return fmt.Errorf("mark history sync success: %w", err)
-	}
-	if err := a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusOK, fetchedRows, upsertedRows, "", details); err != nil {
-		return fmt.Errorf("finish history sync run: %w", err)
-	}
-
-	return nil
+	return workflows.IndexSyncResult{
+		Secid:                   secid,
+		HistoryFetchedRows:      historyFetched,
+		HistoryUpsertedRows:     historyUpserted,
+		CompositionFetchedRows:  compositionFetched,
+		CompositionUpsertedRows: compositionUpserted,
+	}, nil
 }
 
-func (a *MoexSyncActivities) syncCompositionRange(ctx context.Context, secid, mode, fromRaw, tillRaw string) error {
-	const dataset = "composition"
+func (a *MoexSyncActivities) syncHistoryRange(ctx context.Context, secid, mode, fromRaw, tillRaw string) (int, int, error) {
+	return a.syncDatasetRange(
+		ctx,
+		"history",
+		secid,
+		mode,
+		fromRaw,
+		tillRaw,
+		moexDefaultHistoryWindowDays,
+		moexHistoryOverlapDays,
+		a.syncHistoryWindow,
+	)
+}
 
+func (a *MoexSyncActivities) syncCompositionRange(ctx context.Context, secid, mode, fromRaw, tillRaw string) (int, int, error) {
+	return a.syncDatasetRange(
+		ctx,
+		"composition",
+		secid,
+		mode,
+		fromRaw,
+		tillRaw,
+		moexDefaultCompositionWindowDays,
+		moexCompositionOverlapDays,
+		a.syncCompositionWindow,
+	)
+}
+
+func (a *MoexSyncActivities) syncDatasetRange(
+	ctx context.Context,
+	dataset, secid, mode, fromRaw, tillRaw string,
+	defaultWindowDays, overlapDays int,
+	syncWindow moexDatasetWindowSyncFn,
+) (int, int, error) {
 	secid = strings.TrimSpace(secid)
 	if secid == "" {
-		return fmt.Errorf("empty secid for composition sync")
+		return 0, 0, fmt.Errorf("empty secid for %s sync", dataset)
 	}
 
-	fromDate, tillDate, mutableSince, immutableBefore, err := a.resolveEffectiveRange(ctx, dataset, secid, mode, fromRaw, tillRaw, moexDefaultCompositionRange, moexCompositionOverlapDays)
+	fromDate, tillDate, mutableSince, immutableBefore, err := a.resolveEffectiveRange(ctx, dataset, secid, mode, fromRaw, tillRaw, defaultWindowDays, overlapDays)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	info := activity.GetInfo(ctx)
 	runID := uuid.NewString()
 	if err := a.repo.StartSyncRun(ctx, runID, info.WorkflowExecution.ID, info.WorkflowExecution.RunID, dataset, secid); err != nil {
-		return fmt.Errorf("start composition sync run: %w", err)
+		return 0, 0, fmt.Errorf("start %s sync run: %w", dataset, err)
 	}
 	if err := a.repo.MarkSyncRunning(ctx, dataset, secid); err != nil {
 		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, 0, 0, err.Error(), "mark running failed")
-		return err
+		return 0, 0, err
 	}
 
 	fetchedRows := 0
 	upsertedRows := 0
 	repairedRanges := 0
 	details := fmt.Sprintf("mode=%s from=%s till=%s", mode, fromDate.Format("2006-01-02"), tillDate.Format("2006-01-02"))
+	recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+		Secid:   secid,
+		Dataset: dataset,
+		Mode:    mode,
+		Stage:   "dataset_started",
+		From:    fromDate.Format("2006-01-02"),
+		Till:    tillDate.Format("2006-01-02"),
+	})
+
+	if mode == "full" {
+		hasCompleteCoverage, coverageErr := a.repo.HasCompleteCoverage(ctx, dataset, secid, fromDate, tillDate)
+		if coverageErr != nil {
+			_ = a.repo.MarkSyncError(ctx, dataset, secid, coverageErr.Error())
+			_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, coverageErr.Error(), details)
+			return fetchedRows, upsertedRows, fmt.Errorf("check %s coverage: %w", dataset, coverageErr)
+		}
+		if hasCompleteCoverage {
+			details = details + " skipped=already_complete"
+			if err := a.repo.MarkSyncSuccessWithState(ctx, dataset, secid, &tillDate, &immutableBefore, &mutableSince); err != nil {
+				_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, err.Error(), details)
+				return fetchedRows, upsertedRows, fmt.Errorf("mark %s sync success on skip: %w", dataset, err)
+			}
+			if err := a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusOK, fetchedRows, upsertedRows, "", details); err != nil {
+				return fetchedRows, upsertedRows, fmt.Errorf("finish %s sync run on skip: %w", dataset, err)
+			}
+			recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+				Secid:   secid,
+				Dataset: dataset,
+				Mode:    mode,
+				Stage:   "dataset_skipped",
+				From:    fromDate.Format("2006-01-02"),
+				Till:    tillDate.Format("2006-01-02"),
+				Message: "already complete coverage",
+			})
+			return fetchedRows, upsertedRows, nil
+		}
+	}
 
 	if mode != "full" {
 		incomplete, listErr := a.repo.ListIncompleteCoverage(ctx, dataset, secid, fromDate, tillDate)
 		if listErr != nil {
 			_ = a.repo.MarkSyncError(ctx, dataset, secid, listErr.Error())
 			_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, listErr.Error(), details)
-			return fmt.Errorf("list incomplete composition coverage: %w", listErr)
+			return fetchedRows, upsertedRows, fmt.Errorf("list incomplete %s coverage: %w", dataset, listErr)
 		}
 		for _, candidate := range incomplete {
 			windowFrom, windowTo, ok := clipRange(candidate.FromDate, candidate.ToDate, fromDate, tillDate)
@@ -242,25 +292,45 @@ func (a *MoexSyncActivities) syncCompositionRange(ctx context.Context, secid, mo
 			if windowFrom.Before(minMutable) {
 				windowFrom = minMutable
 			}
-			fetched, upserted, windowErr := a.syncCompositionWindow(ctx, secid, windowFrom, windowTo)
+			fetched, upserted, windowErr := syncWindow(ctx, secid, windowFrom, windowTo)
 			fetchedRows += fetched
 			upsertedRows += upserted
+			recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+				Secid:        secid,
+				Dataset:      dataset,
+				Mode:         mode,
+				Stage:        "repair_window",
+				From:         windowFrom.Format("2006-01-02"),
+				Till:         windowTo.Format("2006-01-02"),
+				FetchedRows:  fetchedRows,
+				UpsertedRows: upsertedRows,
+			})
 			if windowErr != nil {
 				_ = a.repo.MarkSyncError(ctx, dataset, secid, windowErr.Error())
 				_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, windowErr.Error(), details)
-				return fmt.Errorf("repair composition range %s..%s: %w", windowFrom.Format("2006-01-02"), windowTo.Format("2006-01-02"), windowErr)
+				return fetchedRows, upsertedRows, fmt.Errorf("repair %s range %s..%s: %w", dataset, windowFrom.Format("2006-01-02"), windowTo.Format("2006-01-02"), windowErr)
 			}
 			repairedRanges++
 		}
 	}
 
-	mainFetched, mainUpserted, mainErr := a.syncCompositionWindow(ctx, secid, fromDate, tillDate)
+	mainFetched, mainUpserted, mainErr := syncWindow(ctx, secid, fromDate, tillDate)
 	fetchedRows += mainFetched
 	upsertedRows += mainUpserted
+	recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+		Secid:        secid,
+		Dataset:      dataset,
+		Mode:         mode,
+		Stage:        "main_window",
+		From:         fromDate.Format("2006-01-02"),
+		Till:         tillDate.Format("2006-01-02"),
+		FetchedRows:  fetchedRows,
+		UpsertedRows: upsertedRows,
+	})
 	if mainErr != nil {
 		_ = a.repo.MarkSyncError(ctx, dataset, secid, mainErr.Error())
 		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, mainErr.Error(), details)
-		return mainErr
+		return fetchedRows, upsertedRows, mainErr
 	}
 
 	if repairedRanges > 0 {
@@ -269,13 +339,23 @@ func (a *MoexSyncActivities) syncCompositionRange(ctx context.Context, secid, mo
 
 	if err := a.repo.MarkSyncSuccessWithState(ctx, dataset, secid, &tillDate, &immutableBefore, &mutableSince); err != nil {
 		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, err.Error(), details)
-		return fmt.Errorf("mark composition sync success: %w", err)
+		return fetchedRows, upsertedRows, fmt.Errorf("mark %s sync success: %w", dataset, err)
 	}
 	if err := a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusOK, fetchedRows, upsertedRows, "", details); err != nil {
-		return fmt.Errorf("finish composition sync run: %w", err)
+		return fetchedRows, upsertedRows, fmt.Errorf("finish %s sync run: %w", dataset, err)
 	}
+	recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+		Secid:        secid,
+		Dataset:      dataset,
+		Mode:         mode,
+		Stage:        "dataset_completed",
+		From:         fromDate.Format("2006-01-02"),
+		Till:         tillDate.Format("2006-01-02"),
+		FetchedRows:  fetchedRows,
+		UpsertedRows: upsertedRows,
+	})
 
-	return nil
+	return fetchedRows, upsertedRows, nil
 }
 
 func (a *MoexSyncActivities) resolveEffectiveRange(ctx context.Context, dataset, secid, mode, fromRaw, tillRaw string, defaultLookback, overlapDays int) (time.Time, time.Time, time.Time, time.Time, error) {
@@ -358,31 +438,77 @@ func (a *MoexSyncActivities) syncHistoryWindow(ctx context.Context, secid string
 }
 
 func (a *MoexSyncActivities) syncCompositionWindow(ctx context.Context, secid string, fromDate, tillDate time.Time) (int, int, error) {
+	return a.syncCompositionWindowByTicker(ctx, secid, fromDate, tillDate)
+}
+
+func (a *MoexSyncActivities) syncCompositionWindowByTicker(ctx context.Context, secid string, fromDate, tillDate time.Time) (int, int, error) {
+	tickers, err := a.moexService.ListIndexCompositionTickers(ctx, secid, "")
+	if err != nil {
+		_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
+		return 0, 0, fmt.Errorf("list composition tickers: %w", err)
+	}
+
+	fromStr := fromDate.Format("2006-01-02")
+	tillStr := tillDate.Format("2006-01-02")
 	fetchedRows := 0
 	upsertedRows := 0
 
-	for day := fromDate; !day.After(tillDate); day = day.AddDate(0, 0, 1) {
-		dateStr := day.Format("2006-01-02")
-		rows, err := a.moexService.GetIndexComposition(ctx, secid, dateStr, "en")
-		if err != nil {
+	for _, tickerWindow := range tickers {
+		ticker := strings.TrimSpace(tickerWindow.Ticker)
+		if ticker == "" {
+			continue
+		}
+
+		tickerFrom := fromStr
+		tickerTill := tillStr
+		candidateFrom := strings.TrimSpace(tickerWindow.From)
+		if candidateFrom != "" && candidateFrom > tickerFrom {
+			tickerFrom = candidateFrom
+		}
+		candidateTill := strings.TrimSpace(tickerWindow.Till)
+		if candidateTill != "" && candidateTill < tickerTill {
+			tickerTill = candidateTill
+		}
+		if tickerFrom > tickerTill {
+			continue
+		}
+
+		rows, fetchErr := a.moexService.GetIndexTickerCompositionHistory(ctx, secid, ticker, tickerFrom, tickerTill, "en")
+		if fetchErr != nil {
 			_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
-			return fetchedRows, upsertedRows, fmt.Errorf("fetch composition for %s: %w", dateStr, err)
+			return fetchedRows, upsertedRows, fmt.Errorf("fetch composition ticker=%s range=%s..%s: %w", ticker, tickerFrom, tickerTill, fetchErr)
 		}
 		fetchedRows += len(rows)
 		if len(rows) == 0 {
 			continue
 		}
-		upserted, err := a.repo.UpsertCompositionEntries(ctx, secid, normalizeCompositionRows(secid, rows))
-		if err != nil {
+
+		upserted, upsertErr := a.repo.UpsertCompositionEntries(ctx, secid, normalizeCompositionRows(secid, rows))
+		if upsertErr != nil {
 			_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
-			return fetchedRows, upsertedRows, fmt.Errorf("upsert composition for %s: %w", dateStr, err)
+			return fetchedRows, upsertedRows, fmt.Errorf("upsert composition ticker=%s range=%s..%s: %w", ticker, tickerFrom, tickerTill, upsertErr)
 		}
 		upsertedRows += upserted
+		recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+			Secid:        secid,
+			Dataset:      "composition",
+			Stage:        "ticker_processed",
+			From:         tickerFrom,
+			Till:         tickerTill,
+			FetchedRows:  fetchedRows,
+			UpsertedRows: upsertedRows,
+			Message:      ticker,
+		})
 	}
+
 	if err := a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, true); err != nil {
 		return fetchedRows, upsertedRows, fmt.Errorf("upsert composition coverage: %w", err)
 	}
 	return fetchedRows, upsertedRows, nil
+}
+
+func recordSyncHeartbeat(ctx context.Context, heartbeat moexSyncHeartbeat) {
+	activity.RecordHeartbeat(ctx, heartbeat)
 }
 
 func normalizeCompositionRows(indexID string, rows []models.MoexIndexCompositionEntry) []models.MoexIndexCompositionEntry {

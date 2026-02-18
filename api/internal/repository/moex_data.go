@@ -66,6 +66,20 @@ type moexCoverageScanRow struct {
 	IsComplete bool      `gorm:"column:is_complete"`
 }
 
+type moexOverviewIndexRow struct {
+	Secid          string     `gorm:"column:secid"`
+	ShortName      string     `gorm:"column:short_name"`
+	Name           string     `gorm:"column:name"`
+	Currency       *string    `gorm:"column:currency"`
+	Decimals       *int       `gorm:"column:decimals"`
+	BoardID        *string    `gorm:"column:board_id"`
+	CalcMode       *string    `gorm:"column:calc_mode"`
+	AnnualHigh     *float64   `gorm:"column:annual_high"`
+	AnnualLow      *float64   `gorm:"column:annual_low"`
+	LastActiveDate *time.Time `gorm:"column:last_active_date"`
+	HasComposition bool       `gorm:"column:has_composition"`
+}
+
 type MoexDataRepository struct {
 	db *gorm.DB
 }
@@ -75,8 +89,37 @@ func NewMoexDataRepository(db *gorm.DB) *MoexDataRepository {
 }
 
 func (r *MoexDataRepository) GetOverview(ctx context.Context) (models.MoexIndexesOverviewResponse, error) {
-	var indexRows []models.MoexIndexDB
-	if err := r.db.WithContext(ctx).Order("secid ASC").Find(&indexRows).Error; err != nil {
+	var indexRows []moexOverviewIndexRow
+	if err := r.db.WithContext(ctx).
+		Table("moex_indexes AS i").
+		Select(`
+			i.secid,
+			i.short_name,
+			i.name,
+			i.currency,
+			i.decimals,
+			i.board_id,
+			i.calc_mode,
+			i.annual_high,
+			i.annual_low,
+			h.last_active_date,
+			CASE WHEN c.index_id IS NOT NULL THEN TRUE ELSE FALSE END AS has_composition
+		`).
+		Joins(`
+			LEFT JOIN (
+				SELECT secid, MAX(trade_date) AS last_active_date
+				FROM moex_index_history_daily
+				GROUP BY secid
+			) AS h ON h.secid = i.secid
+		`).
+		Joins(`
+			LEFT JOIN (
+				SELECT DISTINCT index_id
+				FROM moex_index_composition_daily
+			) AS c ON c.index_id = i.secid
+		`).
+		Order("i.secid ASC").
+		Find(&indexRows).Error; err != nil {
 		return models.MoexIndexesOverviewResponse{}, err
 	}
 
@@ -92,16 +135,23 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (models.MoexIndexe
 
 	indexes := make([]models.MoexIndex, 0, len(indexRows))
 	for _, row := range indexRows {
+		var lastActiveDate *string
+		if row.LastActiveDate != nil {
+			formatted := row.LastActiveDate.UTC().Format("2006-01-02")
+			lastActiveDate = &formatted
+		}
 		indexes = append(indexes, models.MoexIndex{
-			Secid:      row.Secid,
-			ShortName:  row.ShortName,
-			Name:       row.Name,
-			Currency:   row.Currency,
-			Decimals:   row.Decimals,
-			BoardID:    row.BoardID,
-			CalcMode:   row.CalcMode,
-			AnnualHigh: row.AnnualHigh,
-			AnnualLow:  row.AnnualLow,
+			Secid:          row.Secid,
+			ShortName:      row.ShortName,
+			Name:           row.Name,
+			Currency:       row.Currency,
+			Decimals:       row.Decimals,
+			BoardID:        row.BoardID,
+			CalcMode:       row.CalcMode,
+			AnnualHigh:     row.AnnualHigh,
+			AnnualLow:      row.AnnualLow,
+			LastActiveDate: lastActiveDate,
+			HasComposition: row.HasComposition,
 		})
 	}
 

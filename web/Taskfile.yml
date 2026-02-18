@@ -13,6 +13,8 @@ tasks:
 
   dev:
     desc: Run the app in dev mode
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:18080
     cmds:
       - npm run dev
 

@@ -30,6 +30,11 @@ tasks:
     cmds:
       - docker compose run --rm --entrypoint ./moex-backfill moex-worker --mode {{.MODE}} --from {{.FROM}}{{if .TILL}} --till {{.TILL}}{{end}}
 
+  worker:rebuild:
+    desc: Rebuild MOEX worker image
+    cmds:
+      - docker compose build --no-cache moex-worker
+
   dev:
     desc: Run API and web in dev mode
     deps:

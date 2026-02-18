@@ -3,9 +3,11 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"server/internal/models"
@@ -20,6 +22,10 @@ const (
 	moexIndexGroupID    = 12
 	moexDefaultPageSize = 1000
 	moexMaxIterations   = 100
+
+	moexRequestMaxAttempts  = 5
+	moexRetryInitialBackoff = 500 * time.Millisecond
+	moexRetryMaximumBackoff = 10 * time.Second
 )
 
 type moexISSClient struct {
@@ -55,6 +61,41 @@ func (c *moexISSClient) get(ctx context.Context, path string, params url.Values,
 	if params != nil && len(params) > 0 {
 		urlStr = fmt.Sprintf("%s?%s", urlStr, params.Encode())
 	}
+
+	var lastErr error
+	for attempt := 1; attempt <= moexRequestMaxAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		lastErr = c.getOnce(ctx, urlStr, target)
+		if lastErr == nil {
+			return nil
+		}
+		if attempt == moexRequestMaxAttempts || !isRetryableMoexError(lastErr) {
+			return lastErr
+		}
+
+		backoff := moexBackoffForAttempt(attempt)
+		log.Printf(
+			"[MOEX] request retry method=%s url=%s next_attempt=%d/%d backoff=%s err=%v",
+			http.MethodGet,
+			urlStr,
+			attempt+1,
+			moexRequestMaxAttempts,
+			backoff,
+			lastErr,
+		)
+
+		if err := waitForRetry(ctx, backoff); err != nil {
+			return err
+		}
+	}
+
+	return lastErr
+}
+
+func (c *moexISSClient) getOnce(ctx context.Context, urlStr string, target interface{}) error {
 	startedAt := time.Now()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
@@ -90,6 +131,60 @@ func (c *moexISSClient) get(ctx context.Context, path string, params url.Values,
 	return nil
 }
 
+func isRetryableMoexError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.Canceled) {
+		return false
+	}
+
+	var httpErr *moexHTTPError
+	if errors.As(err, &httpErr) {
+		return isRetryableMoexStatus(httpErr.Status)
+	}
+
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
+	}
+	return errors.Is(err, context.DeadlineExceeded)
+}
+
+func isRetryableMoexStatus(status int) bool {
+	if status == http.StatusRequestTimeout || status == http.StatusTooManyRequests {
+		return true
+	}
+	return status >= http.StatusInternalServerError
+}
+
+func moexBackoffForAttempt(attempt int) time.Duration {
+	if attempt <= 1 {
+		return moexRetryInitialBackoff
+	}
+
+	backoff := moexRetryInitialBackoff
+	for i := 1; i < attempt; i++ {
+		backoff *= 2
+		if backoff >= moexRetryMaximumBackoff {
+			return moexRetryMaximumBackoff
+		}
+	}
+	return backoff
+}
+
+func waitForRetry(ctx context.Context, backoff time.Duration) error {
+	timer := time.NewTimer(backoff)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 type moexTable struct {
 	Columns []string        `json:"columns"`
 	Data    [][]interface{} `json:"data"`
@@ -116,6 +211,10 @@ type moexIndexAnalyticsResponse struct {
 type moexIndexTickerAnalyticsResponse struct {
 	Ticker       moexTable  `json:"ticker"`
 	TickerCursor *moexTable `json:"ticker.cursor"`
+}
+
+type moexIndexTickersResponse struct {
+	Tickers moexTable `json:"tickers"`
 }
 
 func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]models.MoexIndex, error) {
@@ -335,10 +434,88 @@ func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lan
 	return results, nil
 }
 
+func (c *moexISSClient) FetchIndexTickerWindows(ctx context.Context, indexID, date string) ([]MoexIndexTickerWindow, error) {
+	params := url.Values{}
+	params.Set("iss.meta", "off")
+	params.Set("tradingsession", "3")
+	if strings.TrimSpace(date) != "" {
+		params.Set("date", strings.TrimSpace(date))
+	}
+
+	var payload moexIndexTickersResponse
+	if err := c.get(ctx, fmt.Sprintf("statistics/engines/stock/markets/index/analytics/%s/tickers.json", url.PathEscape(indexID)), params, &payload); err != nil {
+		return nil, err
+	}
+
+	rows := tableToObjects(payload.Tickers)
+	result := make([]MoexIndexTickerWindow, 0, len(rows))
+	for _, row := range rows {
+		ticker := strings.TrimSpace(asString(getValue(row, "TICKER", "ticker")))
+		if ticker == "" {
+			continue
+		}
+		result = append(result, MoexIndexTickerWindow{
+			Ticker: ticker,
+			From:   strings.TrimSpace(asString(getValue(row, "FROM", "from"))),
+			Till:   strings.TrimSpace(asString(getValue(row, "TILL", "till"))),
+		})
+	}
+	return result, nil
+}
+
+func (c *moexISSClient) FetchTickerCompositionHistory(ctx context.Context, indexID, ticker, from, till, lang string) ([]models.MoexIndexCompositionEntry, error) {
+	rows, err := c.fetchTickerAnalyticsRows(ctx, indexID, ticker, from, till, lang)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]models.MoexIndexCompositionEntry, 0, len(rows))
+	for _, row := range rows {
+		tradeDate := asString(getValue(row, "TRADEDATE", "tradedate"))
+		tickerCode := asString(getValue(row, "TICKER", "ticker"))
+		if tradeDate == "" || tickerCode == "" {
+			continue
+		}
+		entry := models.MoexIndexCompositionEntry{
+			IndexID:          asString(getValue(row, "INDEXID", "indexid")),
+			TradeDate:        tradeDate,
+			Ticker:           tickerCode,
+			ShortName:        asString(getValue(row, "SHORTNAMES", "shortnames", "SHORTNAME", "shortname")),
+			SecID:            asString(getValue(row, "SECIDS", "secids", "SECID", "secid")),
+			Weight:           asFloatPtr(getValue(row, "WEIGHT", "weight")),
+			TradeSessionDate: asStringPtr(getValue(row, "TRADE_SESSION_DATE", "trade_session_date", "TRADESESSIONDATE", "tradeSessionDate")),
+		}
+		if entry.ShortName == "" {
+			entry.ShortName = entry.Ticker
+		}
+		result = append(result, entry)
+	}
+	return result, nil
+}
+
 func (c *moexISSClient) FetchTickerAnalytics(ctx context.Context, indexID, ticker, from, till, lang string) ([]models.MoexIndexTickerAnalyticsPoint, error) {
+	rows, err := c.fetchTickerAnalyticsRows(ctx, indexID, ticker, from, till, lang)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]models.MoexIndexTickerAnalyticsPoint, 0, len(rows))
+	for _, row := range rows {
+		point := models.MoexIndexTickerAnalyticsPoint{
+			TradeDate: asString(getValue(row, "TRADEDATE", "tradedate")),
+			Weight:    asFloatPtr(getValue(row, "WEIGHT", "weight")),
+		}
+		if point.TradeDate == "" {
+			continue
+		}
+		results = append(results, point)
+	}
+	return results, nil
+}
+
+func (c *moexISSClient) fetchTickerAnalyticsRows(ctx context.Context, indexID, ticker, from, till, lang string) ([]map[string]interface{}, error) {
 	start := 0
 	iterations := 0
-	results := make([]models.MoexIndexTickerAnalyticsPoint, 0)
+	results := make([]map[string]interface{}, 0)
 
 	for iterations < moexMaxIterations {
 		iterations++
@@ -361,16 +538,7 @@ func (c *moexISSClient) FetchTickerAnalytics(ctx context.Context, indexID, ticke
 		}
 
 		rows := tableToObjects(payload.Ticker)
-		for _, row := range rows {
-			point := models.MoexIndexTickerAnalyticsPoint{
-				TradeDate: asString(getValue(row, "TRADEDATE", "tradedate")),
-				Weight:    asFloatPtr(getValue(row, "WEIGHT", "weight")),
-			}
-			if point.TradeDate == "" {
-				continue
-			}
-			results = append(results, point)
-		}
+		results = append(results, rows...)
 
 		total, pageSize, ok := readCursor(payload.TickerCursor)
 		if !ok {

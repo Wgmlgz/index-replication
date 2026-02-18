@@ -29,6 +29,13 @@
       "currency": "Currency",
       "board": "Board",
       "type": "Type",
+      "lastActive": "Last active",
+      "lastActive1m": "Within 1M",
+      "lastActive3m": "Within 3M",
+      "lastActive6m": "Within 6M",
+      "lastActive1y": "Within 1Y",
+      "lastActiveAll": "Any time",
+      "compositionOnly": "With composition only",
       "sort": "Sort",
       "clear": "Clear filters",
       "emptyValues": "No values available",
@@ -42,6 +49,9 @@
       "list": "Groups: {{groups}}",
       "more": "Groups: {{groups}} +{{count}}",
       "none": "Groups: Uncategorized"
+    },
+    "status": {
+      "inactiveSince": "Inactive since {{date}}"
     },
     "pagination": {
       "rowsPerPage": "Rows per page",

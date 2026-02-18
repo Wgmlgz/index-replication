@@ -17,12 +17,21 @@ until timeout 5 tctl --address "$TEMPORAL_ADDRESS" admin cluster describe >/dev/
 done
 
 echo "Registering custom search attributes..."
-for attr in MoexDataset MoexSecid MoexMode; do
+for pair in \
+  "MoexDataset Keyword" \
+  "MoexSecid Keyword" \
+  "MoexMode Keyword" \
+  "MoexProgress Keyword" \
+  "MoexProcessed Int" \
+  "MoexTotal Int"
+do
+  attr="$(echo "$pair" | awk '{print $1}')"
+  attr_type="$(echo "$pair" | awk '{print $2}')"
   if tctl --address "$TEMPORAL_ADDRESS" admin cluster get-search-attributes 2>/dev/null | grep -q "$attr"; then
     echo "Search attribute '$attr' already exists"
     continue
   fi
-  if tctl --address "$TEMPORAL_ADDRESS" admin cluster add-search-attributes --name "$attr" --type Keyword >/dev/null 2>&1; then
+  if tctl --address "$TEMPORAL_ADDRESS" admin cluster add-search-attributes --name "$attr" --type "$attr_type" >/dev/null 2>&1; then
     echo "Search attribute '$attr' registered"
   else
     echo "Search attribute '$attr' registration skipped (already exists or unsupported)"

@@ -83,24 +83,29 @@ if (isTauri()) {
 }
 
 export const LOCAL_STORAGE_BASE_URL = 'settings-api-url'
+const DEFAULT_DEV_API_BASE_URL = 'http://localhost:18080';
 // Determine the base URL based on environment
 const getBaseUrl = () => {
+  const envBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   if (typeof window !== 'undefined') {
     const localStorageBase = localStorage.getItem(LOCAL_STORAGE_BASE_URL)
     if (localStorageBase && localStorageBase.length > 3) {
       if (localStorageBase[0] == '"') return JSON.parse(localStorageBase)
       return localStorageBase
     }
+    if (envBaseUrl && envBaseUrl.length > 3) {
+      return envBaseUrl;
+    }
     // Client-side: use current host in production, localhost in development
     if (process.env.NODE_ENV === 'production') {
       return window.location.origin;
     } else {
-      // return 'http://192.168.31.243:8080';
-      return 'http://localhost:8080';
+      return DEFAULT_DEV_API_BASE_URL;
     }
   } else {
     // Server-side: use environment variable or default to localhost
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+    return envBaseUrl || DEFAULT_DEV_API_BASE_URL;
   }
 };
 

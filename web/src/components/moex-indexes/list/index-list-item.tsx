@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { MoexIndex } from '@/lib/moex-client';
+import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
 import { useMoexIndexListContext } from './moex-indexes-list-context';
 
 type IndexListItemProps = {
@@ -27,6 +28,7 @@ export function IndexListItem({
   const secidKey = index.secid.toUpperCase();
   const isActive = index.secid === selectedSecid;
   const isFavorite = favoritesSet.has(secidKey);
+  const isInactive = isIndexInactive(index.lastActiveDate);
   const collectionTitles = showCollections
     ? indexCollectionsMap[secidKey] ?? []
     : [];
@@ -82,6 +84,14 @@ export function IndexListItem({
             )}
             {index.calcMode && (
               <Badge variant='outline'>{index.calcMode}</Badge>
+            )}
+            {isInactive && index.lastActiveDate && (
+              <Badge
+                variant='outline'
+                className='border-amber-300/80 text-amber-700'
+              >
+                {t('moex.status.inactiveSince', { date: index.lastActiveDate })}
+              </Badge>
             )}
           </div>
           {showCollections && previewCollections.length > 0 && (

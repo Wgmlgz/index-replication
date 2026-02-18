@@ -2,15 +2,17 @@ package models
 
 // MoexIndex represents a single MOEX index entry.
 type MoexIndex struct {
-	Secid      string   `json:"secid"`
-	ShortName  string   `json:"shortName"`
-	Name       string   `json:"name"`
-	Currency   *string  `json:"currency"`
-	Decimals   *int     `json:"decimals"`
-	BoardID    *string  `json:"boardId"`
-	CalcMode   *string  `json:"calcMode"`
-	AnnualHigh *float64 `json:"annualHigh"`
-	AnnualLow  *float64 `json:"annualLow"`
+	Secid          string   `json:"secid"`
+	ShortName      string   `json:"shortName"`
+	Name           string   `json:"name"`
+	Currency       *string  `json:"currency"`
+	Decimals       *int     `json:"decimals"`
+	BoardID        *string  `json:"boardId"`
+	CalcMode       *string  `json:"calcMode"`
+	AnnualHigh     *float64 `json:"annualHigh"`
+	AnnualLow      *float64 `json:"annualLow"`
+	LastActiveDate *string  `json:"lastActiveDate"`
+	HasComposition bool     `json:"hasComposition"`
 }
 
 // MoexIndexCollection represents a MOEX index collection.

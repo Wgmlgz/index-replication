@@ -8,6 +8,7 @@ import type {
   FilterOptions,
   FilterOption,
   FilterState,
+  LastActiveRange,
   MoexIndexListState,
   SortKey,
 } from './use-moex-indexes.types';
@@ -41,6 +42,8 @@ type ListStateInput = {
     pageSize: number;
     filters: FilterState;
     sortKey: SortKey;
+    lastActiveRange: LastActiveRange;
+    compositionOnly: boolean;
   }>;
 };
 
@@ -76,6 +79,12 @@ export function useMoexIndexListState({
   );
   const [sortKey, setSortKeyState] = useState<SortKey>(
     () => initial?.sortKey ?? 'name-asc'
+  );
+  const [lastActiveRange, setLastActiveRangeState] = useState<LastActiveRange>(
+    () => initial?.lastActiveRange ?? '1m'
+  );
+  const [compositionOnly, setCompositionOnlyState] = useState(
+    () => initial?.compositionOnly ?? false
   );
 
   const filterOptions = useMemo<FilterOptions>(() => {
@@ -125,6 +134,16 @@ export function useMoexIndexListState({
     setPageIndex(0);
   };
 
+  const setLastActiveRange = (value: LastActiveRange) => {
+    setLastActiveRangeState(value);
+    setPageIndex(0);
+  };
+
+  const setCompositionOnly = (value: boolean) => {
+    setCompositionOnlyState(value);
+    setPageIndex(0);
+  };
+
   const {
     sections,
     foundCount,
@@ -143,16 +162,21 @@ export function useMoexIndexListState({
     pageSize,
     filters,
     sortKey,
+    lastActiveRange,
+    compositionOnly,
     indexesLoading,
     setPageIndex,
   });
 
-  const hasActiveFilters = Object.values(filters).some(
-    (values) => values.length > 0
-  );
+  const hasActiveFilters =
+    Object.values(filters).some((values) => values.length > 0) ||
+    lastActiveRange !== '1m' ||
+    compositionOnly;
 
   const clearFilters = () => {
     setFilters(createEmptyFilters());
+    setLastActiveRangeState('1m');
+    setCompositionOnlyState(false);
     setPageIndex(0);
   };
 
@@ -183,6 +207,10 @@ export function useMoexIndexListState({
     sortKey,
     setSortKey,
     sortOptions: SORT_OPTIONS,
+    lastActiveRange,
+    setLastActiveRange,
+    compositionOnly,
+    setCompositionOnly,
     hasActiveFilters,
     clearFilters,
     foundCount,

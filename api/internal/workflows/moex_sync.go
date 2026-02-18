@@ -12,8 +12,12 @@ const (
 	MetaRefreshWorkflowName = "moex.meta_refresh"
 	DailySyncWorkflowName   = "moex.daily_sync"
 
-	MetaRefreshActivityName = "moex.meta_refresh_activity"
-	DailySyncActivityName   = "moex.daily_sync_activity"
+	MetaRefreshActivityName     = "moex.meta_refresh_activity"
+	DailySyncActivityName       = "moex.daily_sync_activity"
+	ListIndexSecidsActivityName = "moex.list_index_secids_activity"
+	SyncIndexActivityName       = "moex.sync_index_activity"
+
+	dailySyncPerIndexChangeID = "moex-daily-sync-per-index-v1"
 )
 
 type MetaRefreshParams struct {
@@ -28,6 +32,23 @@ type DailySyncParams struct {
 	EnableSearchAttributes bool   `json:"enableSearchAttributes,omitempty"`
 }
 
+type SyncIndexParams struct {
+	Mode  string `json:"mode"`
+	From  string `json:"from,omitempty"`
+	Till  string `json:"till,omitempty"`
+	Secid string `json:"secid"`
+	Index int    `json:"index"`
+	Total int    `json:"total"`
+}
+
+type IndexSyncResult struct {
+	Secid                   string `json:"secid"`
+	HistoryFetchedRows      int    `json:"historyFetchedRows"`
+	HistoryUpsertedRows     int    `json:"historyUpsertedRows"`
+	CompositionFetchedRows  int    `json:"compositionFetchedRows"`
+	CompositionUpsertedRows int    `json:"compositionUpsertedRows"`
+}
+
 func MetaRefreshWorkflow(ctx workflow.Context, params MetaRefreshParams) error {
 	params.Mode = normalizeMode(params.Mode)
 	if params.EnableSearchAttributes {
@@ -39,17 +60,93 @@ func MetaRefreshWorkflow(ctx workflow.Context, params MetaRefreshParams) error {
 
 func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 	params.Mode = normalizeMode(params.Mode)
+	logger := workflow.GetLogger(ctx)
 	if params.EnableSearchAttributes {
 		upsertMoexSearchAttributes(ctx, "daily", "", params.Mode)
+		upsertMoexProgressSearchAttributes(ctx, 0, 0, "", "starting")
 	}
 
-	ctx = workflow.WithActivityOptions(ctx, defaultActivityOptions(6*time.Hour))
-
-	if err := workflow.ExecuteActivity(ctx, MetaRefreshActivityName, params.Mode).Get(ctx, nil); err != nil {
+	metaCtx := workflow.WithActivityOptions(ctx, defaultActivityOptions(5*time.Minute))
+	if err := workflow.ExecuteActivity(metaCtx, MetaRefreshActivityName, params.Mode).Get(metaCtx, nil); err != nil {
 		return err
 	}
 
-	return workflow.ExecuteActivity(ctx, DailySyncActivityName, params).Get(ctx, nil)
+	version := workflow.GetVersion(ctx, dailySyncPerIndexChangeID, workflow.DefaultVersion, 1)
+	if version == workflow.DefaultVersion {
+		legacyCtx := workflow.WithActivityOptions(ctx, defaultActivityOptions(6*time.Hour))
+		return workflow.ExecuteActivity(legacyCtx, DailySyncActivityName, params).Get(legacyCtx, nil)
+	}
+
+	listCtx := workflow.WithActivityOptions(ctx, defaultActivityOptions(2*time.Minute))
+	var secids []string
+	if err := workflow.ExecuteActivity(listCtx, ListIndexSecidsActivityName).Get(listCtx, &secids); err != nil {
+		return err
+	}
+
+	indexes := make([]string, 0, len(secids))
+	for _, secid := range secids {
+		trimmed := strings.TrimSpace(secid)
+		if trimmed == "" {
+			continue
+		}
+		indexes = append(indexes, trimmed)
+	}
+
+	totalIndexes := len(indexes)
+	if params.EnableSearchAttributes {
+		upsertMoexProgressSearchAttributes(ctx, 0, totalIndexes, "", "running")
+	}
+
+	syncCtx := workflow.WithActivityOptions(ctx, defaultActivityOptions(6*time.Hour))
+	totalFetchedRows := 0
+	totalUpsertedRows := 0
+	for i, secid := range indexes {
+		if params.EnableSearchAttributes {
+			upsertMoexSearchAttributes(ctx, "daily", secid, params.Mode)
+			upsertMoexProgressSearchAttributes(ctx, i, totalIndexes, secid, "running")
+		}
+
+		var result IndexSyncResult
+		if err := workflow.ExecuteActivity(syncCtx, SyncIndexActivityName, SyncIndexParams{
+			Mode:  params.Mode,
+			From:  params.From,
+			Till:  params.Till,
+			Secid: secid,
+			Index: i + 1,
+			Total: totalIndexes,
+		}).Get(syncCtx, &result); err != nil {
+			return err
+		}
+
+		totalFetchedRows += result.HistoryFetchedRows + result.CompositionFetchedRows
+		totalUpsertedRows += result.HistoryUpsertedRows + result.CompositionUpsertedRows
+		if params.EnableSearchAttributes {
+			upsertMoexProgressSearchAttributes(ctx, i+1, totalIndexes, secid, "running")
+		}
+		logger.Info(
+			"MOEX index sync completed",
+			"secid", secid,
+			"index", i+1,
+			"total", totalIndexes,
+			"historyFetchedRows", result.HistoryFetchedRows,
+			"historyUpsertedRows", result.HistoryUpsertedRows,
+			"compositionFetchedRows", result.CompositionFetchedRows,
+			"compositionUpsertedRows", result.CompositionUpsertedRows,
+		)
+	}
+
+	if params.EnableSearchAttributes {
+		upsertMoexSearchAttributes(ctx, "daily", "", params.Mode)
+		upsertMoexProgressSearchAttributes(ctx, totalIndexes, totalIndexes, "", "completed")
+	}
+	logger.Info(
+		"MOEX daily sync workflow completed",
+		"mode", params.Mode,
+		"indexes", totalIndexes,
+		"fetchedRows", totalFetchedRows,
+		"upsertedRows", totalUpsertedRows,
+	)
+	return nil
 }
 
 func defaultActivityOptions(timeout time.Duration) workflow.ActivityOptions {
@@ -88,5 +185,18 @@ func upsertMoexSearchAttributes(ctx workflow.Context, dataset, secid, mode strin
 	}
 	if err := workflow.UpsertSearchAttributes(ctx, attrs); err != nil {
 		workflow.GetLogger(ctx).Warn("failed to upsert MOEX search attributes", "error", err)
+	}
+}
+
+func upsertMoexProgressSearchAttributes(ctx workflow.Context, processed, total int, secid, state string) {
+	attrs := map[string]interface{}{}
+	attrs["MoexProcessed"] = int64(processed)
+	attrs["MoexTotal"] = int64(total)
+	attrs["MoexProgress"] = strings.TrimSpace(state)
+	if strings.TrimSpace(secid) != "" {
+		attrs["MoexSecid"] = strings.TrimSpace(secid)
+	}
+	if err := workflow.UpsertSearchAttributes(ctx, attrs); err != nil {
+		workflow.GetLogger(ctx).Warn("failed to upsert MOEX progress search attributes", "error", err)
 	}
 }

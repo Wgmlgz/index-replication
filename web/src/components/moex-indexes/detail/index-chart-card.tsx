@@ -21,12 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  CandlestickChart,
-  DollarSign,
-  LineChart,
-  Percent,
-} from 'lucide-react';
+import { CandlestickChart, DollarSign, LineChart, Percent } from 'lucide-react';
+import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { IndexChart } from './index-chart';
@@ -86,7 +82,7 @@ export function IndexChartCard() {
     : '';
 
   const rangeLabel = useMemo(() => {
-    const option = RANGE_OPTIONS.find((item) => item.value === rangeKey);
+    const option = RANGE_OPTIONS.find(item => item.value === rangeKey);
     if (rangeKey !== 'custom') {
       return option ? t(option.labelKey) : rangeKey;
     }
@@ -104,6 +100,14 @@ export function IndexChartCard() {
   const historySourceLabel = selectedIndex
     ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
     : t('moex.sources.selectIndex');
+  const chartTitle = selectedIndex
+    ? `${selectedIndex.name || selectedIndex.shortName || selectedIndex.secid}${
+        selectedIndex.currency ? ` ${selectedIndex.currency}` : ''
+      }`
+    : t('moex.chart.title');
+  const isInactive = selectedIndex
+    ? isIndexInactive(selectedIndex.lastActiveDate)
+    : false;
   const historyHref = selectedIndex
     ? moexSourceLinks.indexPage(selectedIndex.secid)
     : undefined;
@@ -112,7 +116,9 @@ export function IndexChartCard() {
   return (
     <Card className='flex h-full flex-col'>
       <CardHeader>
-        <CardTitle>{t('moex.chart.title')}</CardTitle>
+        <CardTitle>
+          {selectedIndex && selectedIndex.secid} - {chartTitle}
+        </CardTitle>
         <CardAction>
           <MoexSourceButton
             href={historyHref}
@@ -128,18 +134,6 @@ export function IndexChartCard() {
             {selectedIndex && (
               <>
                 <div className='space-y-2'>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <div className='text-lg font-semibold'>
-                      {selectedIndex.name}
-                    </div>
-                    <Badge variant='outline'>{selectedIndex.secid}</Badge>
-                  </div>
-                  <div className='text-sm text-muted-foreground'>
-                    {t('moex.chart.period', {
-                      range: rangeLabel,
-                      currency: selectedIndex.currency ?? '?',
-                    })}
-                  </div>
                   {latestValue !== null && (
                     <div className='text-sm'>
                       <span className='font-medium'>
@@ -174,9 +168,9 @@ export function IndexChartCard() {
                       {t('moex.chart.range.label')}
                     </span>
                     <div className='flex flex-wrap gap-2'>
-                      {QUICK_RANGE_KEYS.map((key) => {
+                      {QUICK_RANGE_KEYS.map(key => {
                         const option = RANGE_OPTIONS.find(
-                          (item) => item.value === key
+                          item => item.value === key,
                         );
                         if (!option) return null;
                         return (
@@ -195,9 +189,7 @@ export function IndexChartCard() {
                       })}
                       <Select
                         value={isQuickRange ? undefined : rangeKey}
-                        onValueChange={(value) =>
-                          setRangeKey(value as RangeKey)
-                        }
+                        onValueChange={value => setRangeKey(value as RangeKey)}
                       >
                         <SelectTrigger size='sm' className='h-7 text-xs'>
                           <SelectValue
@@ -205,7 +197,7 @@ export function IndexChartCard() {
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {EXTRA_RANGE_OPTIONS.map((option) => (
+                          {EXTRA_RANGE_OPTIONS.map(option => (
                             <SelectItem key={option.value} value={option.value}>
                               {t(option.labelKey)}
                             </SelectItem>
@@ -227,9 +219,7 @@ export function IndexChartCard() {
                           id='moex-chart-from'
                           type='date'
                           value={customFrom}
-                          onChange={(event) =>
-                            setCustomFrom(event.target.value)
-                          }
+                          onChange={event => setCustomFrom(event.target.value)}
                         />
                       </div>
                       <div className='space-y-1'>
@@ -243,9 +233,7 @@ export function IndexChartCard() {
                           id='moex-chart-to'
                           type='date'
                           value={customTill}
-                          onChange={(event) =>
-                            setCustomTill(event.target.value)
-                          }
+                          onChange={event => setCustomTill(event.target.value)}
                         />
                       </div>
                     </div>
@@ -258,9 +246,9 @@ export function IndexChartCard() {
                       {t('moex.chart.interval.label')}
                     </span>
                     <div className='flex flex-wrap gap-2'>
-                      {QUICK_INTERVAL_KEYS.map((key) => {
+                      {QUICK_INTERVAL_KEYS.map(key => {
                         const option = INTERVAL_OPTIONS.find(
-                          (item) => item.value === key
+                          item => item.value === key,
                         );
                         if (!option) return null;
                         return (
@@ -269,7 +257,9 @@ export function IndexChartCard() {
                             type='button'
                             size='sm'
                             className='h-7 px-2 text-xs'
-                            variant={intervalKey === key ? 'secondary' : 'outline'}
+                            variant={
+                              intervalKey === key ? 'secondary' : 'outline'
+                            }
                             onClick={() => setIntervalKey(key)}
                             aria-pressed={intervalKey === key}
                           >
@@ -279,7 +269,7 @@ export function IndexChartCard() {
                       })}
                       <Select
                         value={isQuickInterval ? undefined : intervalKey}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setIntervalKey(value as IntervalKey)
                         }
                       >
@@ -289,7 +279,7 @@ export function IndexChartCard() {
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {EXTRA_INTERVAL_OPTIONS.map((option) => (
+                          {EXTRA_INTERVAL_OPTIONS.map(option => (
                             <SelectItem key={option.value} value={option.value}>
                               {t(option.labelKey)}
                             </SelectItem>
@@ -367,6 +357,9 @@ export function IndexChartCard() {
                 </div>
 
                 <div className='flex flex-wrap gap-2'>
+                  {selectedIndex.currency && (
+                    <Badge variant='secondary'>{selectedIndex.currency}</Badge>
+                  )}
                   {selectedIndex.boardId && (
                     <Badge variant='secondary'>
                       {t('moex.chart.board', { board: selectedIndex.boardId })}
@@ -374,6 +367,16 @@ export function IndexChartCard() {
                   )}
                   {selectedIndex.calcMode && (
                     <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
+                  )}
+                  {isInactive && selectedIndex.lastActiveDate && (
+                    <Badge
+                      variant='outline'
+                      className='border-amber-300/80 text-amber-700'
+                    >
+                      {t('moex.status.inactiveSince', {
+                        date: selectedIndex.lastActiveDate,
+                      })}
+                    </Badge>
                   )}
                   {selectedIndex.annualHigh !== null && (
                     <Badge variant='outline'>
