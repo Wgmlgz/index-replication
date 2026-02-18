@@ -1,6 +1,6 @@
 'use client';
 
-import type { MoexIndex } from '@/lib/moex-client';
+import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
 import { IndexListItem } from './index-list-item';
 
 type IndexListSectionProps = {

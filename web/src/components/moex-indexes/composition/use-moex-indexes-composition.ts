@@ -3,11 +3,11 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  moexClient,
-  type MoexIndex,
-  type MoexIndexCompositionEntry,
-  type MoexIndexTickerAnalyticsPoint,
-} from '@/lib/moex-client';
+  type ModelsMoexIndex as MoexIndex,
+  type ModelsMoexIndexCompositionEntry as MoexIndexCompositionEntry,
+  type ModelsMoexIndexTickerAnalyticsPoint as MoexIndexTickerAnalyticsPoint,
+} from '@/api-client';
+import { moexApi } from '@/lib/api';
 import { resolveDateRange, resolveIntervalDays } from '../detail/use-moex-indexes-detail.utils';
 import type { CompositionTab, IntervalKey, RangeKey } from '../detail/moex-indexes-detail.types';
 
@@ -63,10 +63,13 @@ export function useMoexIndexComposition(options: {
       options.selectedIndex?.secid,
       snapshotDate,
     ],
-    queryFn: () =>
-      moexClient.getIndexComposition(options.selectedIndex!.secid, {
-        date: snapshotDate ?? undefined,
-      }),
+    queryFn: async () => {
+      const response = await moexApi.moexIndexesSecidCompositionGet(
+        options.selectedIndex!.secid ?? '',
+        snapshotDate ?? undefined
+      );
+      return response.data;
+    },
     enabled: Boolean(options.selectedIndex?.secid && options.selectedIndex?.hasComposition),
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,
@@ -104,16 +107,16 @@ export function useMoexIndexComposition(options: {
       dateRange.till,
       intervalDays ?? 'auto',
     ],
-    queryFn: () =>
-      moexClient.getIndexTickerAnalyticsSeries(
-        options.selectedIndex!.secid,
-        topTickers,
-        {
-          from: dateRange.from,
-          till: dateRange.till,
-          intervalDays,
-        }
-      ),
+    queryFn: async () => {
+      const response = await moexApi.moexIndexesSecidCompositionSeriesGet(
+        options.selectedIndex!.secid ?? '',
+        topTickers.join(','),
+        dateRange.from,
+        dateRange.till,
+        intervalDays
+      );
+      return response.data;
+    },
     enabled: Boolean(
       options.compositionTab !== 'snapshot' &&
         options.selectedIndex?.secid &&

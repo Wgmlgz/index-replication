@@ -4,6 +4,7 @@ import {
   AuditLogsApi,
   AuthApi,
   Configuration,
+  MoexApi,
   SettingsApi,
   UsersApi,
 } from "@/api-client";
@@ -122,3 +123,4 @@ export const auditLogsApi = new AuditLogsApi(config, config.basePath, axiosClien
 export const authApi = new AuthApi(config, config.basePath, axiosClient);
 export const settingsApi = new SettingsApi(config, config.basePath, axiosClient);
 export const usersApi = new UsersApi(config, config.basePath, axiosClient);
+export const moexApi = new MoexApi(config, config.basePath, axiosClient);

@@ -3,7 +3,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { moexClient, type MoexIndex } from '@/lib/moex-client';
+import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import { moexApi } from '@/lib/api';
 import type { ChartData } from './index-chart';
 import { resolveDateRange, resolveIntervalDays } from './use-moex-indexes-detail.utils';
 import type { ChartType, ChartViewMode, IntervalKey, RangeKey } from './moex-indexes-detail.types';
@@ -59,12 +60,15 @@ export function useMoexIndexHistory(
       dateRange.till,
       intervalDays ?? 'auto',
     ],
-    queryFn: () =>
-      moexClient.getIndexHistory(selectedIndex!.secid, {
-        from: dateRange.from,
-        till: dateRange.till,
-        intervalDays,
-      }),
+    queryFn: async () => {
+      const response = await moexApi.moexIndexesSecidHistoryGet(
+        selectedIndex!.secid ?? '',
+        dateRange.from,
+        dateRange.till,
+        intervalDays
+      );
+      return response.data;
+    },
     enabled: Boolean(selectedIndex?.secid),
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,

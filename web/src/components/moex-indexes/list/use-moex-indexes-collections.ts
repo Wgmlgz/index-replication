@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
-  MoexIndex,
-  MoexIndexCollection,
-} from '@/lib/moex-client';
+  ModelsMoexIndex as MoexIndex,
+  ModelsMoexIndexCollection as MoexIndexCollection,
+} from '@/api-client';
 import {
   compareStrings,
   UNCATEGORIZED_COLLECTION,

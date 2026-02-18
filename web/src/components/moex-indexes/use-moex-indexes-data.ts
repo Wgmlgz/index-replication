@@ -2,7 +2,8 @@
 
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { moexClient, type MoexIndex } from '@/lib/moex-client';
+import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import { moexApi } from '@/lib/api';
 import {
   userSettingsClient,
   type UserSettings,
@@ -31,7 +32,10 @@ export function useMoexIndexesData(): MoexIndexesDataState {
 
   const overviewQuery = useQuery({
     queryKey: ['moex-indexes-overview', 'ru'],
-    queryFn: () => moexClient.getOverview('ru'),
+    queryFn: async () => {
+      const response = await moexApi.moexIndexesOverviewGet('ru');
+      return response.data;
+    },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
     retry: 1,

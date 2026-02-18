@@ -1,6 +1,9 @@
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { MoexIndex, MoexIndexCollection } from '@/lib/moex-client';
+import type {
+  ModelsMoexIndex as MoexIndex,
+  ModelsMoexIndexCollection as MoexIndexCollection,
+} from '@/api-client';
 import { matchesLastActiveRange } from '@/components/moex-indexes/moex-indexes-activity';
 import type {
   FilterKey,
