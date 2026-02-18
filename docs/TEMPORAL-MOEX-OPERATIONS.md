@@ -50,7 +50,7 @@ Cron expressions are interpreted in `MOEX_SCHEDULE_TIMEZONE` (default `Europe/Mo
 | --- | --- | --- | --- |
 | `moex-meta-refresh-6h` | `0 */6 * * *` | `moex.meta_refresh` | Refresh index metadata (index list + memberships) |
 | `moex-daily-sync` | `15 20 * * 1-5` | `moex.daily_sync` | Metadata refresh + sync all indexes history/composition |
-| `moex-monthly-deep-resync` | `30 21 1 * *` | `moex.daily_sync` | Optional deep resync of mutable horizon (`MOEX_ENABLE_MONTHLY_DEEP_RESYNC=true`) |
+| `moex-monthly-deep-resync` | `30 21 1 * *` | `moex.daily_sync` | Optional deep resync of mutable horizon only (`MOEX_ENABLE_MONTHLY_DEEP_RESYNC=true`) |
 
 Expected behavior:
 
@@ -101,11 +101,17 @@ Retry behavior:
 
 - range `[from_date, to_date]`
 - `is_complete=true|false` for that fetch window
-- regular runs process incomplete ranges first, then run normal incremental windows
+- regular runs process incomplete ranges first, then run incremental windows from `checked_through_date - overlap` (history: 7 days, composition: 2 days)
 
 `moex_sync_runs` is execution history:
 
 - one row per run with `started_at`, `finished_at`, `status`, row counters, and error/details
+
+## Backfill All History
+
+- Full-history backfill is supported as a manual workflow start (not scheduled by default).
+- Use `mode=full` with explicit `from` (for example `1997-01-01`).
+- Monthly deep resync does not perform full-history backfill; it only rechecks mutable horizon.
 
 ## Why "No Runs Yet" Can Be Correct
 
@@ -144,4 +150,16 @@ Check worker and scheduler logs:
 ```bash
 docker compose logs --tail=200 moex-worker
 docker compose logs --tail=200 temporal-apply-schedules
+```
+
+Start full backfill manually:
+
+```bash
+task temporal:backfill
+```
+
+Optional bounded backfill (example):
+
+```bash
+task temporal:backfill FROM=2020-01-01 TILL=2020-12-31
 ```

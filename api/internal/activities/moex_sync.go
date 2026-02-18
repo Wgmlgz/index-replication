@@ -307,12 +307,18 @@ func (a *MoexSyncActivities) resolveEffectiveRange(ctx context.Context, dataset,
 			fromDate = *fromDateOverride
 		}
 	} else {
-		fromDate = tillDate.AddDate(0, 0, -defaultLookback)
+		// Regular mode should be incremental: only mutable horizon by default,
+		// and if we have a sync watermark, continue from checked_through-overlap.
+		fromDate = immutableBefore.AddDate(0, 0, 1)
+		defaultFrom := tillDate.AddDate(0, 0, -defaultLookback)
+		if defaultFrom.After(fromDate) {
+			fromDate = defaultFrom
+		}
 		if state, stateErr := a.repo.GetSyncState(ctx, dataset, secid); stateErr != nil {
 			return time.Time{}, time.Time{}, time.Time{}, time.Time{}, stateErr
 		} else if state != nil && state.CheckedThroughDate != nil {
 			candidate := dateOnlyUTC(*state.CheckedThroughDate).AddDate(0, 0, -overlapDays)
-			if candidate.Before(fromDate) {
+			if candidate.After(fromDate) {
 				fromDate = candidate
 			}
 		}

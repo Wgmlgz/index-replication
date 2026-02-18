@@ -132,6 +132,8 @@ For Temporal startup/runtime timing, schedule behavior, sync-state semantics, an
 
 - `docs/TEMPORAL-MOEX-OPERATIONS.md`
 
+Manual full-history backfill is triggered via `DailySyncWorkflow` with input `{"mode":"full","from":"1997-01-01"}` (example command is in the runbook).
+
 ## MOEX Sync Admin Endpoints
 
 The API now exposes DB-backed sync state endpoints:
