@@ -11,6 +11,8 @@ Name | Type | Description | Notes
 **calcMode** | **string** |  | [optional] [default to undefined]
 **currency** | **string** |  | [optional] [default to undefined]
 **decimals** | **number** |  | [optional] [default to undefined]
+**hasComposition** | **boolean** |  | [optional] [default to undefined]
+**lastActiveDate** | **string** |  | [optional] [default to undefined]
 **name** | **string** |  | [optional] [default to undefined]
 **secid** | **string** |  | [optional] [default to undefined]
 **shortName** | **string** |  | [optional] [default to undefined]
@@ -27,6 +29,8 @@ const instance: ModelsMoexIndex = {
     calcMode,
     currency,
     decimals,
+    hasComposition,
+    lastActiveDate,
     name,
     secid,
     shortName,

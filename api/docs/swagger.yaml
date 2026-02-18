@@ -89,6 +89,10 @@ definitions:
         type: string
       decimals:
         type: integer
+      hasComposition:
+        type: boolean
+      lastActiveDate:
+        type: string
       name:
         type: string
       secid:
@@ -292,6 +296,73 @@ definitions:
     - full_name
     - id
     - username
+    type: object
+  repository.MoexCoverageRow:
+    properties:
+      dataset:
+        type: string
+      entityKey:
+        type: string
+      fromDate:
+        type: string
+      isComplete:
+        type: boolean
+      toDate:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  repository.MoexSyncRunRow:
+    properties:
+      dataset:
+        type: string
+      details:
+        type: string
+      entityKey:
+        type: string
+      errorText:
+        type: string
+      fetchedRows:
+        type: integer
+      finishedAt:
+        type: string
+      runId:
+        type: string
+      startedAt:
+        type: string
+      status:
+        type: string
+      upsertedRows:
+        type: integer
+      workflowId:
+        type: string
+      workflowRunId:
+        type: string
+    type: object
+  repository.MoexSyncStateRow:
+    properties:
+      checkedThroughDate:
+        type: string
+      dataset:
+        type: string
+      entityKey:
+        type: string
+      immutableBeforeDate:
+        type: string
+      lastAttemptAt:
+        type: string
+      lastError:
+        type: string
+      lastSuccessAt:
+        type: string
+      mutableSinceDate:
+        type: string
+      retryCount:
+        type: integer
+      status:
+        type: string
+      updatedAt:
+        type: string
     type: object
 externalDocs:
   description: OpenAPI
@@ -710,6 +781,118 @@ paths:
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Get MOEX indexes overview
+      tags:
+      - moex
+  /moex/sync/coverage:
+    get:
+      description: Returns rows from moex_data_coverage with optional filters
+      parameters:
+      - description: Dataset filter
+        in: query
+        name: dataset
+        type: string
+      - description: Entity key filter
+        in: query
+        name: entityKey
+        type: string
+      - description: From date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: Till date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Result limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.MoexCoverageRow'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX coverage rows
+      tags:
+      - moex
+  /moex/sync/runs:
+    get:
+      description: Returns rows from moex_sync_runs with optional filters
+      parameters:
+      - description: Dataset filter
+        in: query
+        name: dataset
+        type: string
+      - description: Entity key filter
+        in: query
+        name: entityKey
+        type: string
+      - description: Status filter
+        in: query
+        name: status
+        type: string
+      - description: Result limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.MoexSyncRunRow'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX sync run history
+      tags:
+      - moex
+  /moex/sync/state:
+    get:
+      description: Returns rows from moex_sync_state with optional filters
+      parameters:
+      - description: Dataset filter
+        in: query
+        name: dataset
+        type: string
+      - description: Entity key filter
+        in: query
+        name: entityKey
+        type: string
+      - description: Result limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.MoexSyncStateRow'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get MOEX sync state rows
       tags:
       - moex
   /users:

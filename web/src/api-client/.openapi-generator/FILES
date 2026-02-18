@@ -27,6 +27,9 @@ docs/ModelsUserSettingsPatchRequest.md
 docs/ModelsUserSettingsResponse.md
 docs/ModelsUserShort.md
 docs/MoexApi.md
+docs/RepositoryMoexCoverageRow.md
+docs/RepositoryMoexSyncRunRow.md
+docs/RepositoryMoexSyncStateRow.md
 docs/SettingsApi.md
 docs/UsersApi.md
 git_push.sh

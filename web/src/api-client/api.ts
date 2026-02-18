@@ -64,6 +64,8 @@ export interface ModelsMoexIndex {
     'calcMode'?: string;
     'currency'?: string;
     'decimals'?: number;
+    'hasComposition'?: boolean;
+    'lastActiveDate'?: string;
     'name'?: string;
     'secid'?: string;
     'shortName'?: string;
@@ -151,6 +153,41 @@ export interface ModelsUserShort {
     'full_name': string;
     'id': number;
     'username': string;
+}
+export interface RepositoryMoexCoverageRow {
+    'dataset'?: string;
+    'entityKey'?: string;
+    'fromDate'?: string;
+    'isComplete'?: boolean;
+    'toDate'?: string;
+    'updatedAt'?: string;
+}
+export interface RepositoryMoexSyncRunRow {
+    'dataset'?: string;
+    'details'?: string;
+    'entityKey'?: string;
+    'errorText'?: string;
+    'fetchedRows'?: number;
+    'finishedAt'?: string;
+    'runId'?: string;
+    'startedAt'?: string;
+    'status'?: string;
+    'upsertedRows'?: number;
+    'workflowId'?: string;
+    'workflowRunId'?: string;
+}
+export interface RepositoryMoexSyncStateRow {
+    'checkedThroughDate'?: string;
+    'dataset'?: string;
+    'entityKey'?: string;
+    'immutableBeforeDate'?: string;
+    'lastAttemptAt'?: string;
+    'lastError'?: string;
+    'lastSuccessAt'?: string;
+    'mutableSinceDate'?: string;
+    'retryCount'?: number;
+    'status'?: string;
+    'updatedAt'?: string;
 }
 
 /**
@@ -874,6 +911,156 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * Returns rows from moex_data_coverage with optional filters
+         * @summary Get MOEX coverage rows
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {string} [from] From date (YYYY-MM-DD)
+         * @param {string} [till] Till date (YYYY-MM-DD)
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexSyncCoverageGet: async (dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/moex/sync/coverage`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (dataset !== undefined) {
+                localVarQueryParameter['dataset'] = dataset;
+            }
+
+            if (entityKey !== undefined) {
+                localVarQueryParameter['entityKey'] = entityKey;
+            }
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns rows from moex_sync_runs with optional filters
+         * @summary Get MOEX sync run history
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {string} [status] Status filter
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexSyncRunsGet: async (dataset?: string, entityKey?: string, status?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/moex/sync/runs`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (dataset !== undefined) {
+                localVarQueryParameter['dataset'] = dataset;
+            }
+
+            if (entityKey !== undefined) {
+                localVarQueryParameter['entityKey'] = entityKey;
+            }
+
+            if (status !== undefined) {
+                localVarQueryParameter['status'] = status;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns rows from moex_sync_state with optional filters
+         * @summary Get MOEX sync state rows
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexSyncStateGet: async (dataset?: string, entityKey?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/moex/sync/state`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (dataset !== undefined) {
+                localVarQueryParameter['dataset'] = dataset;
+            }
+
+            if (entityKey !== undefined) {
+                localVarQueryParameter['entityKey'] = entityKey;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -945,6 +1132,54 @@ export const MoexApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidHistoryGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Returns rows from moex_data_coverage with optional filters
+         * @summary Get MOEX coverage rows
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {string} [from] From date (YYYY-MM-DD)
+         * @param {string} [till] Till date (YYYY-MM-DD)
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<RepositoryMoexCoverageRow>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexSyncCoverageGet(dataset, entityKey, from, till, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexSyncCoverageGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns rows from moex_sync_runs with optional filters
+         * @summary Get MOEX sync run history
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {string} [status] Status filter
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<RepositoryMoexSyncRunRow>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexSyncRunsGet(dataset, entityKey, status, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexSyncRunsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns rows from moex_sync_state with optional filters
+         * @summary Get MOEX sync state rows
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<RepositoryMoexSyncStateRow>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexSyncStateGet(dataset, entityKey, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MoexApi.moexSyncStateGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -1003,6 +1238,45 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          */
         moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ModelsMoexIndexHistoryPoint>> {
             return localVarFp.moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns rows from moex_data_coverage with optional filters
+         * @summary Get MOEX coverage rows
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {string} [from] From date (YYYY-MM-DD)
+         * @param {string} [till] Till date (YYYY-MM-DD)
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<RepositoryMoexCoverageRow>> {
+            return localVarFp.moexSyncCoverageGet(dataset, entityKey, from, till, limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns rows from moex_sync_runs with optional filters
+         * @summary Get MOEX sync run history
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {string} [status] Status filter
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<RepositoryMoexSyncRunRow>> {
+            return localVarFp.moexSyncRunsGet(dataset, entityKey, status, limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns rows from moex_sync_state with optional filters
+         * @summary Get MOEX sync state rows
+         * @param {string} [dataset] Dataset filter
+         * @param {string} [entityKey] Entity key filter
+         * @param {number} [limit] Result limit
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<RepositoryMoexSyncStateRow>> {
+            return localVarFp.moexSyncStateGet(dataset, entityKey, limit, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1063,6 +1337,48 @@ export class MoexApi extends BaseAPI {
      */
     public moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
         return MoexApiFp(this.configuration).moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns rows from moex_data_coverage with optional filters
+     * @summary Get MOEX coverage rows
+     * @param {string} [dataset] Dataset filter
+     * @param {string} [entityKey] Entity key filter
+     * @param {string} [from] From date (YYYY-MM-DD)
+     * @param {string} [till] Till date (YYYY-MM-DD)
+     * @param {number} [limit] Result limit
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexSyncCoverageGet(dataset, entityKey, from, till, limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns rows from moex_sync_runs with optional filters
+     * @summary Get MOEX sync run history
+     * @param {string} [dataset] Dataset filter
+     * @param {string} [entityKey] Entity key filter
+     * @param {string} [status] Status filter
+     * @param {number} [limit] Result limit
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexSyncRunsGet(dataset, entityKey, status, limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns rows from moex_sync_state with optional filters
+     * @summary Get MOEX sync state rows
+     * @param {string} [dataset] Dataset filter
+     * @param {string} [entityKey] Entity key filter
+     * @param {number} [limit] Result limit
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexSyncStateGet(dataset, entityKey, limit, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

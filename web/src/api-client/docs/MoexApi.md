@@ -8,6 +8,9 @@ All URIs are relative to *http://localhost:8080/api*
 |[**moexIndexesSecidCompositionGet**](#moexindexessecidcompositionget) | **GET** /moex/indexes/{secid}/composition | Get MOEX index composition|
 |[**moexIndexesSecidCompositionSeriesGet**](#moexindexessecidcompositionseriesget) | **GET** /moex/indexes/{secid}/composition/series | Get MOEX index composition series|
 |[**moexIndexesSecidHistoryGet**](#moexindexessecidhistoryget) | **GET** /moex/indexes/{secid}/history | Get MOEX index history|
+|[**moexSyncCoverageGet**](#moexsynccoverageget) | **GET** /moex/sync/coverage | Get MOEX coverage rows|
+|[**moexSyncRunsGet**](#moexsyncrunsget) | **GET** /moex/sync/runs | Get MOEX sync run history|
+|[**moexSyncStateGet**](#moexsyncstateget) | **GET** /moex/sync/state | Get MOEX sync state rows|
 
 # **moexIndexesOverviewGet**
 > ModelsMoexIndexesOverviewResponse moexIndexesOverviewGet()
@@ -246,6 +249,190 @@ No authorization required
 |-------------|-------------|------------------|
 |**200** | OK |  -  |
 |**400** | Bad Request |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **moexSyncCoverageGet**
+> Array<RepositoryMoexCoverageRow> moexSyncCoverageGet()
+
+Returns rows from moex_data_coverage with optional filters
+
+### Example
+
+```typescript
+import {
+    MoexApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new MoexApi(configuration);
+
+let dataset: string; //Dataset filter (optional) (default to undefined)
+let entityKey: string; //Entity key filter (optional) (default to undefined)
+let from: string; //From date (YYYY-MM-DD) (optional) (default to undefined)
+let till: string; //Till date (YYYY-MM-DD) (optional) (default to undefined)
+let limit: number; //Result limit (optional) (default to undefined)
+
+const { status, data } = await apiInstance.moexSyncCoverageGet(
+    dataset,
+    entityKey,
+    from,
+    till,
+    limit
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **dataset** | [**string**] | Dataset filter | (optional) defaults to undefined|
+| **entityKey** | [**string**] | Entity key filter | (optional) defaults to undefined|
+| **from** | [**string**] | From date (YYYY-MM-DD) | (optional) defaults to undefined|
+| **till** | [**string**] | Till date (YYYY-MM-DD) | (optional) defaults to undefined|
+| **limit** | [**number**] | Result limit | (optional) defaults to undefined|
+
+
+### Return type
+
+**Array<RepositoryMoexCoverageRow>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **moexSyncRunsGet**
+> Array<RepositoryMoexSyncRunRow> moexSyncRunsGet()
+
+Returns rows from moex_sync_runs with optional filters
+
+### Example
+
+```typescript
+import {
+    MoexApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new MoexApi(configuration);
+
+let dataset: string; //Dataset filter (optional) (default to undefined)
+let entityKey: string; //Entity key filter (optional) (default to undefined)
+let status: string; //Status filter (optional) (default to undefined)
+let limit: number; //Result limit (optional) (default to undefined)
+
+const { status, data } = await apiInstance.moexSyncRunsGet(
+    dataset,
+    entityKey,
+    status,
+    limit
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **dataset** | [**string**] | Dataset filter | (optional) defaults to undefined|
+| **entityKey** | [**string**] | Entity key filter | (optional) defaults to undefined|
+| **status** | [**string**] | Status filter | (optional) defaults to undefined|
+| **limit** | [**number**] | Result limit | (optional) defaults to undefined|
+
+
+### Return type
+
+**Array<RepositoryMoexSyncRunRow>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **moexSyncStateGet**
+> Array<RepositoryMoexSyncStateRow> moexSyncStateGet()
+
+Returns rows from moex_sync_state with optional filters
+
+### Example
+
+```typescript
+import {
+    MoexApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new MoexApi(configuration);
+
+let dataset: string; //Dataset filter (optional) (default to undefined)
+let entityKey: string; //Entity key filter (optional) (default to undefined)
+let limit: number; //Result limit (optional) (default to undefined)
+
+const { status, data } = await apiInstance.moexSyncStateGet(
+    dataset,
+    entityKey,
+    limit
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **dataset** | [**string**] | Dataset filter | (optional) defaults to undefined|
+| **entityKey** | [**string**] | Entity key filter | (optional) defaults to undefined|
+| **limit** | [**number**] | Result limit | (optional) defaults to undefined|
+
+
+### Return type
+
+**Array<RepositoryMoexSyncStateRow>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
 |**500** | Internal Server Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

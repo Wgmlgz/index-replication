@@ -632,6 +632,177 @@ const docTemplate = `{
                 }
             }
         },
+        "/moex/sync/coverage": {
+            "get": {
+                "description": "Returns rows from moex_data_coverage with optional filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX coverage rows",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dataset filter",
+                        "name": "dataset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entity key filter",
+                        "name": "entityKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Till date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Result limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.MoexCoverageRow"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/moex/sync/runs": {
+            "get": {
+                "description": "Returns rows from moex_sync_runs with optional filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX sync run history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dataset filter",
+                        "name": "dataset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entity key filter",
+                        "name": "entityKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Status filter",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Result limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.MoexSyncRunRow"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/moex/sync/state": {
+            "get": {
+                "description": "Returns rows from moex_sync_state with optional filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moex"
+                ],
+                "summary": "Get MOEX sync state rows",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dataset filter",
+                        "name": "dataset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entity key filter",
+                        "name": "entityKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Result limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.MoexSyncStateRow"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Returns a paginated list of users",
@@ -1110,6 +1281,12 @@ const docTemplate = `{
                 "decimals": {
                     "type": "integer"
                 },
+                "hasComposition": {
+                    "type": "boolean"
+                },
+                "lastActiveDate": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1412,6 +1589,108 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.MoexCoverageRow": {
+            "type": "object",
+            "properties": {
+                "dataset": {
+                    "type": "string"
+                },
+                "entityKey": {
+                    "type": "string"
+                },
+                "fromDate": {
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "toDate": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.MoexSyncRunRow": {
+            "type": "object",
+            "properties": {
+                "dataset": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "entityKey": {
+                    "type": "string"
+                },
+                "errorText": {
+                    "type": "string"
+                },
+                "fetchedRows": {
+                    "type": "integer"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
+                "runId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "upsertedRows": {
+                    "type": "integer"
+                },
+                "workflowId": {
+                    "type": "string"
+                },
+                "workflowRunId": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.MoexSyncStateRow": {
+            "type": "object",
+            "properties": {
+                "checkedThroughDate": {
+                    "type": "string"
+                },
+                "dataset": {
+                    "type": "string"
+                },
+                "entityKey": {
+                    "type": "string"
+                },
+                "immutableBeforeDate": {
+                    "type": "string"
+                },
+                "lastAttemptAt": {
+                    "type": "string"
+                },
+                "lastError": {
+                    "type": "string"
+                },
+                "lastSuccessAt": {
+                    "type": "string"
+                },
+                "mutableSinceDate": {
+                    "type": "string"
+                },
+                "retryCount": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }
