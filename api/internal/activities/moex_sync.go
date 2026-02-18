@@ -23,6 +23,8 @@ const (
 	moexDefaultCompositionWindowDays = 30
 	moexHistoryOverlapDays           = 7
 	moexCompositionOverlapDays       = 2
+
+	moexTickerCompositionCoverageDataset = "composition_ticker"
 )
 
 type MoexSyncActivities struct {
@@ -46,6 +48,11 @@ type moexSyncHeartbeat struct {
 	FetchedRows  int    `json:"fetchedRows,omitempty"`
 	UpsertedRows int    `json:"upsertedRows,omitempty"`
 	Message      string `json:"message,omitempty"`
+}
+
+type moexDateWindow struct {
+	From time.Time
+	To   time.Time
 }
 
 func NewMoexSyncActivities(db *gorm.DB, moexBaseURL string, mutableDays int, immutableBeforeDate string) *MoexSyncActivities {
@@ -244,35 +251,6 @@ func (a *MoexSyncActivities) syncDatasetRange(
 		Till:    tillDate.Format("2006-01-02"),
 	})
 
-	if mode == "full" {
-		hasCompleteCoverage, coverageErr := a.repo.HasCompleteCoverage(ctx, dataset, secid, fromDate, tillDate)
-		if coverageErr != nil {
-			_ = a.repo.MarkSyncError(ctx, dataset, secid, coverageErr.Error())
-			_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, coverageErr.Error(), details)
-			return fetchedRows, upsertedRows, fmt.Errorf("check %s coverage: %w", dataset, coverageErr)
-		}
-		if hasCompleteCoverage {
-			details = details + " skipped=already_complete"
-			if err := a.repo.MarkSyncSuccessWithState(ctx, dataset, secid, &tillDate, &immutableBefore, &mutableSince); err != nil {
-				_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, err.Error(), details)
-				return fetchedRows, upsertedRows, fmt.Errorf("mark %s sync success on skip: %w", dataset, err)
-			}
-			if err := a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusOK, fetchedRows, upsertedRows, "", details); err != nil {
-				return fetchedRows, upsertedRows, fmt.Errorf("finish %s sync run on skip: %w", dataset, err)
-			}
-			recordSyncHeartbeat(ctx, moexSyncHeartbeat{
-				Secid:   secid,
-				Dataset: dataset,
-				Mode:    mode,
-				Stage:   "dataset_skipped",
-				From:    fromDate.Format("2006-01-02"),
-				Till:    tillDate.Format("2006-01-02"),
-				Message: "already complete coverage",
-			})
-			return fetchedRows, upsertedRows, nil
-		}
-	}
-
 	if mode != "full" {
 		incomplete, listErr := a.repo.ListIncompleteCoverage(ctx, dataset, secid, fromDate, tillDate)
 		if listErr != nil {
@@ -314,27 +292,60 @@ func (a *MoexSyncActivities) syncDatasetRange(
 		}
 	}
 
-	mainFetched, mainUpserted, mainErr := syncWindow(ctx, secid, fromDate, tillDate)
-	fetchedRows += mainFetched
-	upsertedRows += mainUpserted
-	recordSyncHeartbeat(ctx, moexSyncHeartbeat{
-		Secid:        secid,
-		Dataset:      dataset,
-		Mode:         mode,
-		Stage:        "main_window",
-		From:         fromDate.Format("2006-01-02"),
-		Till:         tillDate.Format("2006-01-02"),
-		FetchedRows:  fetchedRows,
-		UpsertedRows: upsertedRows,
-	})
-	if mainErr != nil {
-		_ = a.repo.MarkSyncError(ctx, dataset, secid, mainErr.Error())
-		_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, mainErr.Error(), details)
-		return fetchedRows, upsertedRows, mainErr
+	windows := []moexDateWindow{{From: fromDate, To: tillDate}}
+	if mode == "full" {
+		windows = splitRangeByYear(fromDate, tillDate)
+		details = details + fmt.Sprintf(" chunks=%d", len(windows))
+	}
+	skippedWindows := 0
+	for _, window := range windows {
+		if mode == "full" {
+			hasCompleteCoverage, coverageErr := a.repo.HasCompleteCoverage(ctx, dataset, secid, window.From, window.To)
+			if coverageErr != nil {
+				_ = a.repo.MarkSyncError(ctx, dataset, secid, coverageErr.Error())
+				_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, coverageErr.Error(), details)
+				return fetchedRows, upsertedRows, fmt.Errorf("check %s coverage %s..%s: %w", dataset, window.From.Format("2006-01-02"), window.To.Format("2006-01-02"), coverageErr)
+			}
+			if hasCompleteCoverage {
+				skippedWindows++
+				recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+					Secid:   secid,
+					Dataset: dataset,
+					Mode:    mode,
+					Stage:   "chunk_skipped",
+					From:    window.From.Format("2006-01-02"),
+					Till:    window.To.Format("2006-01-02"),
+					Message: "already complete coverage",
+				})
+				continue
+			}
+		}
+
+		windowFetched, windowUpserted, windowErr := syncWindow(ctx, secid, window.From, window.To)
+		fetchedRows += windowFetched
+		upsertedRows += windowUpserted
+		recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+			Secid:        secid,
+			Dataset:      dataset,
+			Mode:         mode,
+			Stage:        "window_processed",
+			From:         window.From.Format("2006-01-02"),
+			Till:         window.To.Format("2006-01-02"),
+			FetchedRows:  fetchedRows,
+			UpsertedRows: upsertedRows,
+		})
+		if windowErr != nil {
+			_ = a.repo.MarkSyncError(ctx, dataset, secid, windowErr.Error())
+			_ = a.repo.FinishSyncRun(ctx, runID, repository.MoexSyncStatusError, fetchedRows, upsertedRows, windowErr.Error(), details)
+			return fetchedRows, upsertedRows, windowErr
+		}
 	}
 
 	if repairedRanges > 0 {
 		details = details + fmt.Sprintf(" repaired_ranges=%d", repairedRanges)
+	}
+	if skippedWindows > 0 {
+		details = details + fmt.Sprintf(" skipped_windows=%d", skippedWindows)
 	}
 
 	if err := a.repo.MarkSyncSuccessWithState(ctx, dataset, secid, &tillDate, &immutableBefore, &mutableSince); err != nil {
@@ -458,6 +469,7 @@ func (a *MoexSyncActivities) syncCompositionWindowByTicker(ctx context.Context, 
 		if ticker == "" {
 			continue
 		}
+		tickerCoverageKey := buildTickerCoverageEntityKey(secid, ticker)
 
 		tickerFrom := fromStr
 		tickerTill := tillStr
@@ -473,32 +485,74 @@ func (a *MoexSyncActivities) syncCompositionWindowByTicker(ctx context.Context, 
 			continue
 		}
 
-		rows, fetchErr := a.moexService.GetIndexTickerCompositionHistory(ctx, secid, ticker, tickerFrom, tickerTill, "en")
-		if fetchErr != nil {
+		tickerFromDate, fromErr := time.Parse("2006-01-02", tickerFrom)
+		if fromErr != nil {
 			_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
-			return fetchedRows, upsertedRows, fmt.Errorf("fetch composition ticker=%s range=%s..%s: %w", ticker, tickerFrom, tickerTill, fetchErr)
+			return fetchedRows, upsertedRows, fmt.Errorf("invalid ticker from date %s for ticker=%s: %w", tickerFrom, ticker, fromErr)
 		}
-		fetchedRows += len(rows)
-		if len(rows) == 0 {
-			continue
+		tickerTillDate, tillErr := time.Parse("2006-01-02", tickerTill)
+		if tillErr != nil {
+			_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
+			return fetchedRows, upsertedRows, fmt.Errorf("invalid ticker till date %s for ticker=%s: %w", tickerTill, ticker, tillErr)
 		}
 
-		upserted, upsertErr := a.repo.UpsertCompositionEntries(ctx, secid, normalizeCompositionRows(secid, rows))
-		if upsertErr != nil {
-			_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
-			return fetchedRows, upsertedRows, fmt.Errorf("upsert composition ticker=%s range=%s..%s: %w", ticker, tickerFrom, tickerTill, upsertErr)
+		for _, chunk := range splitRangeByYear(dateOnlyUTC(tickerFromDate), dateOnlyUTC(tickerTillDate)) {
+			chunkFrom := chunk.From.Format("2006-01-02")
+			chunkTill := chunk.To.Format("2006-01-02")
+
+			hasCoverage, coverageErr := a.repo.HasCompleteCoverage(ctx, moexTickerCompositionCoverageDataset, tickerCoverageKey, chunk.From, chunk.To)
+			if coverageErr != nil {
+				_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
+				return fetchedRows, upsertedRows, fmt.Errorf("check composition coverage ticker=%s range=%s..%s: %w", ticker, chunkFrom, chunkTill, coverageErr)
+			}
+			if hasCoverage {
+				recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+					Secid:   secid,
+					Dataset: moexTickerCompositionCoverageDataset,
+					Stage:   "ticker_chunk_skipped",
+					From:    chunkFrom,
+					Till:    chunkTill,
+					Message: ticker,
+				})
+				continue
+			}
+
+			rows, fetchErr := a.moexService.GetIndexTickerCompositionHistory(ctx, secid, ticker, chunkFrom, chunkTill, "en")
+			if fetchErr != nil {
+				_ = a.repo.UpsertCoverage(ctx, moexTickerCompositionCoverageDataset, tickerCoverageKey, chunk.From, chunk.To, false)
+				_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
+				return fetchedRows, upsertedRows, fmt.Errorf("fetch composition ticker=%s range=%s..%s: %w", ticker, chunkFrom, chunkTill, fetchErr)
+			}
+			fetchedRows += len(rows)
+
+			upserted := 0
+			if len(rows) > 0 {
+				var upsertErr error
+				upserted, upsertErr = a.repo.UpsertCompositionEntries(ctx, secid, normalizeCompositionRows(secid, rows))
+				if upsertErr != nil {
+					_ = a.repo.UpsertCoverage(ctx, moexTickerCompositionCoverageDataset, tickerCoverageKey, chunk.From, chunk.To, false)
+					_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
+					return fetchedRows, upsertedRows, fmt.Errorf("upsert composition ticker=%s range=%s..%s: %w", ticker, chunkFrom, chunkTill, upsertErr)
+				}
+				upsertedRows += upserted
+			}
+
+			if err := a.repo.UpsertCoverage(ctx, moexTickerCompositionCoverageDataset, tickerCoverageKey, chunk.From, chunk.To, true); err != nil {
+				_ = a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, false)
+				return fetchedRows, upsertedRows, fmt.Errorf("upsert composition ticker coverage ticker=%s range=%s..%s: %w", ticker, chunkFrom, chunkTill, err)
+			}
+
+			recordSyncHeartbeat(ctx, moexSyncHeartbeat{
+				Secid:        secid,
+				Dataset:      moexTickerCompositionCoverageDataset,
+				Stage:        "ticker_chunk_processed",
+				From:         chunkFrom,
+				Till:         chunkTill,
+				FetchedRows:  fetchedRows,
+				UpsertedRows: upsertedRows,
+				Message:      ticker,
+			})
 		}
-		upsertedRows += upserted
-		recordSyncHeartbeat(ctx, moexSyncHeartbeat{
-			Secid:        secid,
-			Dataset:      "composition",
-			Stage:        "ticker_processed",
-			From:         tickerFrom,
-			Till:         tickerTill,
-			FetchedRows:  fetchedRows,
-			UpsertedRows: upsertedRows,
-			Message:      ticker,
-		})
 	}
 
 	if err := a.repo.UpsertCoverage(ctx, "composition", secid, fromDate, tillDate, true); err != nil {
@@ -568,4 +622,31 @@ func clipRange(fromDate, toDate, minDate, maxDate time.Time) (time.Time, time.Ti
 		return time.Time{}, time.Time{}, false
 	}
 	return fromDate, toDate, true
+}
+
+func splitRangeByYear(fromDate, toDate time.Time) []moexDateWindow {
+	fromDate = dateOnlyUTC(fromDate)
+	toDate = dateOnlyUTC(toDate)
+	if fromDate.After(toDate) {
+		fromDate, toDate = toDate, fromDate
+	}
+
+	windows := make([]moexDateWindow, 0)
+	current := fromDate
+	for !current.After(toDate) {
+		yearEnd := time.Date(current.Year(), 12, 31, 0, 0, 0, 0, time.UTC)
+		if yearEnd.After(toDate) {
+			yearEnd = toDate
+		}
+		windows = append(windows, moexDateWindow{
+			From: current,
+			To:   yearEnd,
+		})
+		current = yearEnd.AddDate(0, 0, 1)
+	}
+	return windows
+}
+
+func buildTickerCoverageEntityKey(secid, ticker string) string {
+	return strings.ToUpper(strings.TrimSpace(secid)) + "|" + strings.ToUpper(strings.TrimSpace(ticker))
 }

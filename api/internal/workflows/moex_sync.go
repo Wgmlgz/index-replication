@@ -18,6 +18,9 @@ const (
 	SyncIndexActivityName       = "moex.sync_index_activity"
 
 	dailySyncPerIndexChangeID = "moex-daily-sync-per-index-v1"
+
+	defaultFullSyncParallelism    = 4
+	defaultRegularSyncParallelism = 1
 )
 
 type MetaRefreshParams struct {
@@ -29,6 +32,7 @@ type DailySyncParams struct {
 	Mode                   string `json:"mode"`
 	From                   string `json:"from,omitempty"`
 	Till                   string `json:"till,omitempty"`
+	Parallelism            int    `json:"parallelism,omitempty"`
 	EnableSearchAttributes bool   `json:"enableSearchAttributes,omitempty"`
 }
 
@@ -93,6 +97,7 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 	}
 
 	totalIndexes := len(indexes)
+	parallelism := resolveSyncParallelism(params.Mode, params.Parallelism, totalIndexes)
 	if params.EnableSearchAttributes {
 		upsertMoexProgressSearchAttributes(ctx, 0, totalIndexes, "", "running")
 	}
@@ -100,39 +105,74 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 	syncCtx := workflow.WithActivityOptions(ctx, defaultActivityOptions(6*time.Hour))
 	totalFetchedRows := 0
 	totalUpsertedRows := 0
-	for i, secid := range indexes {
+
+	completed := 0
+	nextIndex := 0
+	inFlight := 0
+	var activityErr error
+	selector := workflow.NewSelector(syncCtx)
+
+	scheduleIndex := func(i int) {
+		secid := indexes[i]
 		if params.EnableSearchAttributes {
 			upsertMoexSearchAttributes(ctx, "daily", secid, params.Mode)
-			upsertMoexProgressSearchAttributes(ctx, i, totalIndexes, secid, "running")
+			upsertMoexProgressSearchAttributes(ctx, completed, totalIndexes, secid, "running")
 		}
 
-		var result IndexSyncResult
-		if err := workflow.ExecuteActivity(syncCtx, SyncIndexActivityName, SyncIndexParams{
+		future := workflow.ExecuteActivity(syncCtx, SyncIndexActivityName, SyncIndexParams{
 			Mode:  params.Mode,
 			From:  params.From,
 			Till:  params.Till,
 			Secid: secid,
 			Index: i + 1,
 			Total: totalIndexes,
-		}).Get(syncCtx, &result); err != nil {
-			return err
-		}
+		})
+		inFlight++
+		selector.AddFuture(future, func(f workflow.Future) {
+			inFlight--
+			if activityErr != nil {
+				return
+			}
 
-		totalFetchedRows += result.HistoryFetchedRows + result.CompositionFetchedRows
-		totalUpsertedRows += result.HistoryUpsertedRows + result.CompositionUpsertedRows
-		if params.EnableSearchAttributes {
-			upsertMoexProgressSearchAttributes(ctx, i+1, totalIndexes, secid, "running")
+			var result IndexSyncResult
+			if err := f.Get(syncCtx, &result); err != nil {
+				activityErr = err
+				return
+			}
+
+			completed++
+			totalFetchedRows += result.HistoryFetchedRows + result.CompositionFetchedRows
+			totalUpsertedRows += result.HistoryUpsertedRows + result.CompositionUpsertedRows
+			if params.EnableSearchAttributes {
+				upsertMoexProgressSearchAttributes(ctx, completed, totalIndexes, secid, "running")
+			}
+			logger.Info(
+				"MOEX index sync completed",
+				"secid", secid,
+				"index", i+1,
+				"total", totalIndexes,
+				"historyFetchedRows", result.HistoryFetchedRows,
+				"historyUpsertedRows", result.HistoryUpsertedRows,
+				"compositionFetchedRows", result.CompositionFetchedRows,
+				"compositionUpsertedRows", result.CompositionUpsertedRows,
+			)
+		})
+	}
+
+	for nextIndex < totalIndexes && inFlight < parallelism {
+		scheduleIndex(nextIndex)
+		nextIndex++
+	}
+
+	for completed < totalIndexes {
+		selector.Select(syncCtx)
+		if activityErr != nil {
+			return activityErr
 		}
-		logger.Info(
-			"MOEX index sync completed",
-			"secid", secid,
-			"index", i+1,
-			"total", totalIndexes,
-			"historyFetchedRows", result.HistoryFetchedRows,
-			"historyUpsertedRows", result.HistoryUpsertedRows,
-			"compositionFetchedRows", result.CompositionFetchedRows,
-			"compositionUpsertedRows", result.CompositionUpsertedRows,
-		)
+		for nextIndex < totalIndexes && inFlight < parallelism {
+			scheduleIndex(nextIndex)
+			nextIndex++
+		}
 	}
 
 	if params.EnableSearchAttributes {
@@ -143,6 +183,7 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		"MOEX daily sync workflow completed",
 		"mode", params.Mode,
 		"indexes", totalIndexes,
+		"parallelism", parallelism,
 		"fetchedRows", totalFetchedRows,
 		"upsertedRows", totalUpsertedRows,
 	)
@@ -167,6 +208,24 @@ func normalizeMode(mode string) string {
 		return "full"
 	}
 	return "regular"
+}
+
+func resolveSyncParallelism(mode string, requested, total int) int {
+	parallelism := requested
+	if parallelism <= 0 {
+		if normalizeMode(mode) == "full" {
+			parallelism = defaultFullSyncParallelism
+		} else {
+			parallelism = defaultRegularSyncParallelism
+		}
+	}
+	if parallelism < 1 {
+		parallelism = 1
+	}
+	if total > 0 && parallelism > total {
+		return total
+	}
+	return parallelism
 }
 
 func upsertMoexSearchAttributes(ctx workflow.Context, dataset, secid, mode string) {

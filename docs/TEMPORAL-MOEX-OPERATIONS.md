@@ -91,6 +91,8 @@ Retry behavior:
 
 `moex.daily_sync` now executes index sync as one activity per index (`moex.sync_index_activity`), so execution history advances index-by-index in UI.
 
+Full backfill (`mode=full`) runs indexes in parallel by default (4 workers) unless a custom `parallelism` is provided in workflow input.
+
 If `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=true`, workflow search attributes are updated during the run:
 
 - `MoexSecid`: current index being processed
@@ -126,7 +128,8 @@ docker compose logs --tail=200 moex-worker
 - range `[from_date, to_date]`
 - `is_complete=true|false` for that fetch window
 - regular runs process incomplete ranges first, then run incremental windows from `checked_through_date - overlap` (history: 7 days, composition: 2 days)
-- full-mode manual backfill checks complete coverage first and skips already-complete windows on rerun
+- full-mode manual backfill is chunked year-by-year and skips already-complete chunks on rerun
+- composition ticker progress is tracked in the same table via `dataset=composition_ticker` and `entity_key=<secid>|<ticker>`
 
 `moex_sync_runs` is execution history:
 
@@ -187,4 +190,10 @@ Optional bounded backfill (example):
 
 ```bash
 task temporal:backfill FROM=2020-01-01 TILL=2020-12-31
+```
+
+Backfill with custom parallelism:
+
+```bash
+task temporal:backfill FROM=1997-01-01 PARALLELISM=6
 ```

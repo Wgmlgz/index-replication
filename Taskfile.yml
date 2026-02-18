@@ -27,8 +27,9 @@ tasks:
       MODE: '{{.MODE | default "full"}}'
       FROM: '{{.FROM | default "1997-01-01"}}'
       TILL: '{{.TILL | default ""}}'
+      PARALLELISM: '{{.PARALLELISM | default "4"}}'
     cmds:
-      - docker compose run --rm --entrypoint ./moex-backfill moex-worker --mode {{.MODE}} --from {{.FROM}}{{if .TILL}} --till {{.TILL}}{{end}}
+      - docker compose run --rm --entrypoint ./moex-backfill moex-worker --mode {{.MODE}} --from {{.FROM}} --parallelism {{.PARALLELISM}}{{if .TILL}} --till {{.TILL}}{{end}}
 
   worker:rebuild:
     desc: Rebuild MOEX worker image
