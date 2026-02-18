@@ -25,6 +25,8 @@ task --list
 Common tasks:
 
 - `task dev`
+- `task worker:dev`
+- `task schedules:apply` (manual/local; Docker startup auto-applies schedules)
 - `task lint`
 - `task test`
 - `task migrate:up`
@@ -87,6 +89,15 @@ Environment variables live in `.env`. Key settings:
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
 - `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
+- `MOEX_MUTABLE_DAYS` (default `30`)
+- `MOEX_IMMUTABLE_BEFORE_DATE` (optional `YYYY-MM-DD`, immutable boundary)
+- `MOEX_LIVE_CURRENT_DAY_ENABLED` (default `false`, optional current-day live overlay)
+- `MOEX_ENABLE_MONTHLY_DEEP_RESYNC` (default `false`)
+- `MOEX_SCHEDULE_TIMEZONE` (default `Europe/Moscow`)
+- `TEMPORAL_ADDRESS` (default `localhost:7233`)
+- `TEMPORAL_NAMESPACE` (default `moex-sync`)
+- `TEMPORAL_TASK_QUEUE` (default `moex-sync`)
+- `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES` (default `false`, enable only if cluster supports custom search attrs)
 
 ## Tests
 
@@ -114,3 +125,17 @@ task api:gen
 ```
 
 Generated files are written to `api/docs/`. The frontend API client consumes this spec.
+
+## Temporal Runbook
+
+For Temporal startup/runtime timing, schedule behavior, sync-state semantics, and monitoring commands, see:
+
+- `docs/TEMPORAL-MOEX-OPERATIONS.md`
+
+## MOEX Sync Admin Endpoints
+
+The API now exposes DB-backed sync state endpoints:
+
+- `GET /api/moex/sync/state`
+- `GET /api/moex/sync/coverage`
+- `GET /api/moex/sync/runs`

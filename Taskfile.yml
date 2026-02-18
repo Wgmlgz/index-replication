@@ -11,6 +11,16 @@ tasks:
     cmds:
       - docker compose up --build --force-recreate
 
+  temporal:up:
+    desc: Start Temporal stack and auto-apply MOEX schedules
+    cmds:
+      - docker compose up postgres temporal-admin-tools temporal temporal-create-namespace temporal-register-search-attributes temporal-apply-schedules temporal-ui
+
+  temporal:cli:
+    desc: Open Temporal admin-tools shell
+    cmds:
+      - docker compose run --rm --entrypoint /bin/sh temporal-admin-tools
+
   dev:
     desc: Run API and web in dev mode
     deps:

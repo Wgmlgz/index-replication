@@ -1,0 +1,78 @@
+services:
+  temporal-admin-tools:
+    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+    restart: on-failure:6
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=postgres
+      - SQL_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./scripts/temporal:/scripts
+    entrypoint: ["/bin/sh"]
+    command: /scripts/setup-postgres.sh
+
+  temporal:
+    image: temporalio/server:${TEMPORAL_VERSION:-1.28.1}
+    depends_on:
+      temporal-admin-tools:
+        condition: service_completed_successfully
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=postgres
+      - BIND_ON_IP=0.0.0.0
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/docker.yaml
+    ports:
+      - "${TEMPORAL_GRPC_PORT:-7233}:7233"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7233"]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 60
+
+  temporal-create-namespace:
+    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+    restart: on-failure:5
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - DEFAULT_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
+    volumes:
+      - ./scripts/temporal:/scripts
+    entrypoint: ["/bin/sh"]
+    command: /scripts/create-namespace.sh
+
+  temporal-register-search-attributes:
+    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+    restart: on-failure:5
+    depends_on:
+      temporal-create-namespace:
+        condition: service_completed_successfully
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    volumes:
+      - ./scripts/temporal:/scripts
+    entrypoint: ["/bin/sh"]
+    command: /scripts/register-search-attributes.sh
+
+  temporal-ui:
+    image: temporalio/ui:${TEMPORAL_UI_VERSION:-2.40.0}
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_UI_PORT=8082
+    ports:
+      - "${TEMPORAL_UI_PORT:-8233}:8082"

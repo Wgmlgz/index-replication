@@ -52,8 +52,10 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 
 	userHandler := h.NewUserHandler(cfg, repoRegistry.UserRepo, cs, auditService)
 	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
-	moexService := services.NewMoexService(cfg.MoexBaseURL)
-	moexHandler := h.NewMoexHandler(moexService)
+	moexLiveService := services.NewMoexService(cfg.MoexBaseURL)
+	moexReadService := services.NewMoexReadService(repoRegistry.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
+	moexHandler := h.NewMoexHandler(moexReadService)
+	moexSyncAdminHandler := h.NewMoexSyncAdminHandler(repoRegistry.MoexDataRepo)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -85,6 +87,9 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.GET("/moex/indexes/:secid/history", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexHistory)
 		a.GET("/moex/indexes/:secid/composition", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexComposition)
 		a.GET("/moex/indexes/:secid/composition/series", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexCompositionSeries)
+		a.GET("/moex/sync/state", m.RPM(cs, config.MoexView), moexSyncAdminHandler.GetMoexSyncState)
+		a.GET("/moex/sync/coverage", m.RPM(cs, config.MoexView), moexSyncAdminHandler.GetMoexCoverage)
+		a.GET("/moex/sync/runs", m.RPM(cs, config.MoexView), moexSyncAdminHandler.GetMoexSyncRuns)
 	}
 	return router
 }

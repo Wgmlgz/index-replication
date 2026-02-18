@@ -56,6 +56,16 @@ tasks:
     cmds:
       - go run github.com/air-verse/air@latest
 
+  worker:dev:
+    desc: Run MOEX Temporal worker locally
+    cmds:
+      - go run ./cmd/moex-worker
+
+  schedules:apply:
+    desc: Create/update Temporal schedules for MOEX sync workflows
+    cmds:
+      - go run ./cmd/moex-scheduler
+
   migrate:status:
     desc: Show migration status (Postgres)
     cmds:

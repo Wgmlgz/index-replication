@@ -49,6 +49,16 @@ cd api && task dev
 cd web && task dev
 ```
 
+Temporal stack can be started separately with:
+
+```bash
+task temporal:up
+```
+Temporal services are based on the official `samples-server` postgres compose pattern and reuse the existing `postgres` service.
+MOEX schedules are applied automatically on startup by the one-shot `temporal-apply-schedules` service (no manual schedule bootstrapping needed in Docker).
+Operational timeline and monitoring details are documented in `docs/TEMPORAL-MOEX-OPERATIONS.md`.
+Historical MOEX API reads are DB-backed; coverage status is exposed via response headers and sync admin endpoints.
+
 ## Repo Layout
 
 - `api/` Go REST API
@@ -73,7 +83,7 @@ Cached docs are stored in `docs/moex/`.
 
 If you are working on the MOEX client or related UI, read `docs/moex/ISS-CONCEPTS.md` first.
 
-## API Client Generation (Backend → Frontend)
+## API Client Generation (Backend -> Frontend)
 
 The frontend API client is generated from the backend OpenAPI spec.
 

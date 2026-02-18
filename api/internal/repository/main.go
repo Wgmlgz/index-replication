@@ -4,6 +4,8 @@ import "gorm.io/gorm"
 
 type RepositoryRegistry struct {
 	AuditLogRepo     *AuditLogRepository
+	MoexDataRepo     *MoexDataRepository
+	MoexSyncRepo     *MoexSyncRepository
 	UserRepo         *UserRepository
 	UserSettingsRepo *UserSettingsRepository
 }
@@ -11,6 +13,8 @@ type RepositoryRegistry struct {
 func NewRepositoryRegistry(db *gorm.DB) *RepositoryRegistry {
 	return &RepositoryRegistry{
 		AuditLogRepo:     NewAuditLogRepository(db),
+		MoexDataRepo:     NewMoexDataRepository(db),
+		MoexSyncRepo:     NewMoexSyncRepository(db),
 		UserRepo:         NewUserRepository(db),
 		UserSettingsRepo: NewUserSettingsRepository(db),
 	}

@@ -1,4 +1,5 @@
-version: "3.9"
+include:
+  - docker-compose.temporal.yml
 
 services:
   traefik:
@@ -41,6 +42,7 @@ services:
       - COOKIE_DOMAIN=${COOKIE_DOMAIN}
       - CORS_ORIGINS=http://${WEB_HOST}
       - RUN_MIGRATIONS=true
+      - MOEX_LIVE_CURRENT_DAY_ENABLED=${MOEX_LIVE_CURRENT_DAY_ENABLED:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,6 +51,44 @@ services:
       - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.routers.api.priority=100"
+
+  moex-worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.worker
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - MOEX_BASE_URL=${MOEX_BASE_URL:-https://iss.amogos.pro/iss}
+      - MOEX_MUTABLE_DAYS=${MOEX_MUTABLE_DAYS:-30}
+      - MOEX_IMMUTABLE_BEFORE_DATE=${MOEX_IMMUTABLE_BEFORE_DATE:-}
+      - MOEX_SCHEDULE_TIMEZONE=${MOEX_SCHEDULE_TIMEZONE:-Europe/Moscow}
+      - MOEX_ENABLE_MONTHLY_DEEP_RESYNC=${MOEX_ENABLE_MONTHLY_DEEP_RESYNC:-false}
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
+      - TEMPORAL_TASK_QUEUE=${TEMPORAL_TASK_QUEUE:-moex-sync}
+      - TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=${TEMPORAL_ENABLE_SEARCH_ATTRIBUTES:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      temporal-apply-schedules:
+        condition: service_completed_successfully
+
+  temporal-apply-schedules:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.worker
+    command: ["./moex-scheduler"]
+    restart: on-failure
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
+      - TEMPORAL_TASK_QUEUE=${TEMPORAL_TASK_QUEUE:-moex-sync}
+      - TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=${TEMPORAL_ENABLE_SEARCH_ATTRIBUTES:-false}
+      - MOEX_SCHEDULE_TIMEZONE=${MOEX_SCHEDULE_TIMEZONE:-Europe/Moscow}
+      - MOEX_ENABLE_MONTHLY_DEEP_RESYNC=${MOEX_ENABLE_MONTHLY_DEEP_RESYNC:-false}
+    depends_on:
+      temporal-register-search-attributes:
+        condition: service_completed_successfully
 
   web:
     build:

@@ -2,3 +2,4 @@
 .foxy-jumpscare-path
 web/tmp/
 .foxy
+*.exe

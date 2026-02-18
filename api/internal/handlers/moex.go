@@ -13,10 +13,10 @@ import (
 )
 
 type MoexHandler struct {
-	service *services.MoexService
+	service *services.MoexReadService
 }
 
-func NewMoexHandler(service *services.MoexService) *MoexHandler {
+func NewMoexHandler(service *services.MoexReadService) *MoexHandler {
 	return &MoexHandler{service: service}
 }
 
@@ -73,11 +73,12 @@ func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 		return
 	}
 
-	points, err := h.service.GetIndexHistory(c.Request.Context(), secid, from, till, intervalDays)
+	points, coverage, err := h.service.GetIndexHistory(c.Request.Context(), secid, from, till, intervalDays)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX history"})
 		return
 	}
+	applyCoverageHeaders(c, coverage)
 	c.JSON(http.StatusOK, points)
 }
 
@@ -108,11 +109,12 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 	}
 	lang := strings.TrimSpace(c.Query("lang"))
 
-	rows, err := h.service.GetIndexComposition(c.Request.Context(), secid, date, lang)
+	rows, coverage, err := h.service.GetIndexComposition(c.Request.Context(), secid, date, lang)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition"})
 		return
 	}
+	applyCoverageHeaders(c, coverage)
 	c.JSON(http.StatusOK, rows)
 }
 
@@ -172,11 +174,12 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 
 	lang := strings.TrimSpace(c.Query("lang"))
 
-	result, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, from, till, intervalDays, lang)
+	result, coverage, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, from, till, intervalDays, lang)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition series"})
 		return
 	}
+	applyCoverageHeaders(c, coverage)
 	c.JSON(http.StatusOK, result)
 }
 
@@ -219,4 +222,26 @@ func normalizeDateRange(from, till string) (string, string, error) {
 func isValidDate(value string) bool {
 	_, err := time.Parse("2006-01-02", value)
 	return err == nil
+}
+
+func applyCoverageHeaders(c *gin.Context, coverage *services.MoexCoverageMeta) {
+	if coverage == nil {
+		return
+	}
+	c.Header("X-MOEX-Coverage-Status", coverage.Status)
+	c.Header("X-MOEX-Coverage-Dataset", coverage.Dataset)
+	c.Header("X-MOEX-Coverage-Entity", coverage.EntityKey)
+	if coverage.RequestedFrom != "" {
+		c.Header("X-MOEX-Coverage-From", coverage.RequestedFrom)
+	}
+	if coverage.RequestedTill != "" {
+		c.Header("X-MOEX-Coverage-Till", coverage.RequestedTill)
+	}
+	if len(coverage.MissingRanges) > 0 {
+		parts := make([]string, 0, len(coverage.MissingRanges))
+		for _, rng := range coverage.MissingRanges {
+			parts = append(parts, rng.FromDate.UTC().Format("2006-01-02")+":"+rng.ToDate.UTC().Format("2006-01-02"))
+		}
+		c.Header("X-MOEX-Coverage-Missing", strings.Join(parts, ","))
+	}
 }

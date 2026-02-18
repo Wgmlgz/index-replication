@@ -11,19 +11,28 @@ import (
 )
 
 type Config struct {
-	DatabaseURL   string
-	DBUser        string
-	DBPassword    string
-	DBHost        string
-	DBPort        string
-	DBName        string
-	ServerPort    string
-	SessionSecret string
-	BotsToken     string
-	MoexBaseURL   string
-	RunMigrations bool
-	MigrationsDir string
-	GinLogFormat  string
+	DatabaseURL                 string
+	DBUser                      string
+	DBPassword                  string
+	DBHost                      string
+	DBPort                      string
+	DBName                      string
+	ServerPort                  string
+	SessionSecret               string
+	BotsToken                   string
+	MoexBaseURL                 string
+	MoexMutableDays             int
+	MoexImmutableBeforeDate     string
+	MoexLiveCurrentDayEnabled   bool
+	MoexScheduleTimezone        string
+	MoexEnableMonthlyDeepResync bool
+	TemporalEnableSearchAttrs   bool
+	TemporalAddr                string
+	TemporalNS                  string
+	TemporalQueue               string
+	RunMigrations               bool
+	MigrationsDir               string
+	GinLogFormat                string
 }
 
 func LoadConfig() *Config {
@@ -37,13 +46,22 @@ func LoadConfig() *Config {
 		DBPort:      getEnv("DB_PORT", "5432"),
 		DBName:      getEnv("DB_NAME", "postgres"),
 
-		ServerPort:    getEnv("SERVER_PORT", "8080"),
-		SessionSecret: getEnv("SESSION_SECRET", "dev_secret"),
-		BotsToken:     getEnv("BOTS_TOKEN", "secret_token"),
-		MoexBaseURL:   getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),
-		RunMigrations: getEnvBool("RUN_MIGRATIONS", true),
-		MigrationsDir: getEnv("MIGRATIONS_DIR", ""),
-		GinLogFormat:  getEnv("GIN_LOG_FORMAT", ""),
+		ServerPort:                  getEnv("SERVER_PORT", "8080"),
+		SessionSecret:               getEnv("SESSION_SECRET", "dev_secret"),
+		BotsToken:                   getEnv("BOTS_TOKEN", "secret_token"),
+		MoexBaseURL:                 getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),
+		MoexMutableDays:             getEnvInt("MOEX_MUTABLE_DAYS", 30),
+		MoexImmutableBeforeDate:     getEnv("MOEX_IMMUTABLE_BEFORE_DATE", ""),
+		MoexLiveCurrentDayEnabled:   getEnvBool("MOEX_LIVE_CURRENT_DAY_ENABLED", false),
+		MoexScheduleTimezone:        getEnv("MOEX_SCHEDULE_TIMEZONE", "Europe/Moscow"),
+		MoexEnableMonthlyDeepResync: getEnvBool("MOEX_ENABLE_MONTHLY_DEEP_RESYNC", false),
+		TemporalEnableSearchAttrs:   getEnvBool("TEMPORAL_ENABLE_SEARCH_ATTRIBUTES", false),
+		TemporalAddr:                getEnv("TEMPORAL_ADDRESS", "localhost:7233"),
+		TemporalNS:                  getEnv("TEMPORAL_NAMESPACE", "moex-sync"),
+		TemporalQueue:               getEnv("TEMPORAL_TASK_QUEUE", "moex-sync"),
+		RunMigrations:               getEnvBool("RUN_MIGRATIONS", true),
+		MigrationsDir:               getEnv("MIGRATIONS_DIR", ""),
+		GinLogFormat:                getEnv("GIN_LOG_FORMAT", ""),
 	}
 }
 
@@ -95,4 +113,17 @@ func getEnvBool(key string, defaultValue bool) bool {
 	default:
 		return defaultValue
 	}
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	value, exists := os.LookupEnv(key)
+	if !exists || value == "" {
+		return defaultValue
+	}
+
+	parsed := defaultValue
+	if _, err := fmt.Sscanf(value, "%d", &parsed); err != nil {
+		return defaultValue
+	}
+	return parsed
 }
