@@ -7,7 +7,6 @@ import {
   Tooltip,
   type TooltipProps,
 } from 'recharts';
-import { ChartContainer } from '@/components/ui/chart';
 import type { CompositionSnapshotItem } from './use-moex-indexes-composition';
 import { resolveCompositionSeriesColor } from './index-composition-chart';
 
@@ -102,18 +101,16 @@ export function IndexCompositionSnapshotChart({ items }: SnapshotChartProps) {
   }, [items]);
 
   return (
-    <ChartContainer config={{}} className='min-h-[240px] h-full w-full'>
-      <ResponsiveContainer width='100%' height='100%'>
-        <Treemap
-          data={data}
-          dataKey='value'
-          stroke='var(--border)'
-          content={renderTreemapContent}
-          isAnimationActive={false}
-        >
-          <Tooltip content={<TreemapTooltip />} />
-        </Treemap>
-      </ResponsiveContainer>
-    </ChartContainer>
+    <ResponsiveContainer width='100%' height='100%'>
+      <Treemap
+        data={data}
+        dataKey='value'
+        stroke='var(--border)'
+        content={renderTreemapContent}
+        isAnimationActive={false}
+      >
+        <Tooltip content={<TreemapTooltip />} />
+      </Treemap>
+    </ResponsiveContainer>
   );
 }

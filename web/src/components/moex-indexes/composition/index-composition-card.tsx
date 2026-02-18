@@ -26,8 +26,8 @@ import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
 import type { CompositionTab } from '../detail/moex-indexes-detail.types';
 
-const DEFAULT_TOP_COUNT = 8;
-const TOP_COUNT_OPTIONS = [5, 8, 12, 20, 50];
+const DEFAULT_TOP_COUNT = 10;
+const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
 
 const resolveChartDate = (chartData: ChartData): string | null => {
   if (chartData.length === 0) return null;
@@ -98,14 +98,6 @@ export function IndexCompositionCard() {
     return topCount;
   }, [snapshotItems.length, topCount]);
 
-  useEffect(() => {
-    if (topCount === null) return;
-    if (snapshotItems.length === 0) return;
-    if (topCount > snapshotItems.length) {
-      setTopCount(snapshotItems.length);
-    }
-  }, [snapshotItems.length, topCount]);
-
   const topCountOptions = useMemo(() => {
     const options = new Set<number>(TOP_COUNT_OPTIONS);
     options.add(DEFAULT_TOP_COUNT);
@@ -140,13 +132,13 @@ export function IndexCompositionCard() {
       : resolvedTopCount;
   const trendLoading = snapshotLoading || seriesLoading;
   const trendError = snapshotError || seriesError;
-  const showLegend =
-    compositionTab !== 'snapshot' &&
-    !trendLoading &&
-    !trendError &&
-    series.length > 0;
+  const showLegend = true
+  // compositionTab !== 'snapshot' &&
+  // !trendLoading &&
+  // !trendError &&
+  // series.length > 0;
   const showOtherLegend =
-    compositionTab === 'stacked' && snapshotOtherWeight > 0.01;
+    (compositionTab === 'stacked' || compositionTab === 'snapshot') && snapshotOtherWeight > 0.01;
   const showSnapshotSkeleton = snapshotLoading && snapshotTop.length === 0;
   const showTrendSkeleton = trendLoading && series.length === 0;
   const compositionSourceLabel = selectedIndex
@@ -163,7 +155,7 @@ export function IndexCompositionCard() {
         onValueChange={next => setCompositionTab(next as CompositionTab)}
         className='flex h-full flex-col'
       >
-        <CardContent className='flex h-full min-h-0 flex-col gap-4 pt-6 lg:flex-row'>
+        <CardContent className='flex h-full min-h-0 flex-col gap-4 lg:flex-row'>
           <div className='flex w-full flex-col gap-4 lg:w-[320px]'>
             <div className='flex items-start justify-between gap-2'>
               <div className='space-y-1'>
@@ -232,39 +224,43 @@ export function IndexCompositionCard() {
               </Badge>
             </div>
             {showLegend && (
-              <div className='flex max-h-48 flex-col gap-2 overflow-y-auto pr-2 text-xs text-muted-foreground'>
-                {series.map((item, index) => (
-                  <div key={item.id} className='flex items-center gap-2'>
-                    <span
-                      className='h-2.5 w-2.5 rounded-full'
-                      style={{
-                        backgroundColor: resolveCompositionSeriesColor(index),
-                      }}
-                    />
-                    <span className='font-medium text-foreground'>
-                      {item.id}
-                    </span>
-                    <span className='hidden sm:inline'>{item.name}</span>
+              <div className='flex h-full flex-col gap-2 overflow-y-auto pr-2 text-xs text-muted-foreground'>
+                <div className='h-full w-full relative'>
+                  <div className='absolute'>
+                    {series.map((item, index) => (
+                      <div key={item.id} className='flex items-center gap-2'>
+                        <span
+                          className='h-2.5 w-2.5 rounded-full'
+                          style={{
+                            backgroundColor: resolveCompositionSeriesColor(index),
+                          }}
+                        />
+                        <span className='font-medium text-foreground'>
+                          {item.id}
+                        </span>
+                        <span className='hidden sm:inline'>{item.name}</span>
+                      </div>
+                    ))}
+                    {showOtherLegend && (
+                      <div
+                        key='composition-other'
+                        className='flex items-center gap-2'
+                      >
+                        <span
+                          className='h-2.5 w-2.5 rounded-full'
+                          style={{ backgroundColor: OTHER_SERIES_COLOR }}
+                        />
+                        <span className='font-medium text-foreground'>
+                          {t('moex.composition.other')}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ))}
-                {showOtherLegend && (
-                  <div
-                    key='composition-other'
-                    className='flex items-center gap-2'
-                  >
-                    <span
-                      className='h-2.5 w-2.5 rounded-full'
-                      style={{ backgroundColor: OTHER_SERIES_COLOR }}
-                    />
-                    <span className='font-medium text-foreground'>
-                      {t('moex.composition.other')}
-                    </span>
-                  </div>
-                )}
+                </div>
               </div>
             )}
           </div>
-          <div className='flex min-h-[200px] flex-1 flex-col'>
+          <div className='col-span-3 flex min-h-[200px] flex-1 flex-col'>
             <TabsContent value='snapshot' className='flex-1'>
               {showSnapshotSkeleton && (
                 <Skeleton className='h-full min-h-[240px] w-full' />
@@ -282,9 +278,7 @@ export function IndexCompositionCard() {
                   </div>
                 )}
               {!snapshotLoading && !snapshotError && snapshotTop.length > 0 && (
-                <div className='min-h-[240px] flex-1'>
-                  <IndexCompositionSnapshotChart items={snapshotChartItems} />
-                </div>
+                <IndexCompositionSnapshotChart items={snapshotChartItems} />
               )}
             </TabsContent>
             <TabsContent value='trend' className='flex h-full flex-col'>
