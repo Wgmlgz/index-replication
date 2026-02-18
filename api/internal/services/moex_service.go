@@ -267,8 +267,20 @@ func downsampleHistory(points []models.MoexIndexHistoryPoint, intervalDays int) 
 
 func downsampleTickerSeries(points []models.MoexIndexTickerAnalyticsPoint, from, till string, intervalDays int) []models.MoexIndexTickerAnalyticsPoint {
 	normalized := make([]models.MoexIndexTickerAnalyticsPoint, 0, len(points))
+	startDate, okStart := parseDate(from)
+	endDate, okEnd := parseDate(till)
 	for _, point := range points {
 		if point.TradeDate == "" || point.Weight == nil {
+			continue
+		}
+		pointDate, ok := parseDate(point.TradeDate)
+		if !ok {
+			continue
+		}
+		if okStart && pointDate.Before(startDate) {
+			continue
+		}
+		if okEnd && pointDate.After(endDate) {
 			continue
 		}
 		normalized = append(normalized, point)
@@ -281,8 +293,6 @@ func downsampleTickerSeries(points []models.MoexIndexTickerAnalyticsPoint, from,
 		return []models.MoexIndexTickerAnalyticsPoint{}
 	}
 
-	startDate, okStart := parseDate(from)
-	endDate, okEnd := parseDate(till)
 	if !okStart {
 		if parsed, ok := parseDate(normalized[0].TradeDate); ok {
 			startDate = parsed
@@ -320,43 +330,32 @@ func downsampleTickerSeries(points []models.MoexIndexTickerAnalyticsPoint, from,
 		return normalized
 	}
 
-	result := make([]models.MoexIndexTickerAnalyticsPoint, 0)
-	index := 0
-	for startDate.Before(endDate) || startDate.Equal(endDate) {
-		bucketEnd := startDate.AddDate(0, 0, intervalDays-1)
-		if bucketEnd.After(endDate) {
-			bucketEnd = endDate
+	// Sample by actual trading dates only to avoid synthetic weekend buckets and chart gaps.
+	result := make([]models.MoexIndexTickerAnalyticsPoint, 0, len(normalized))
+	var lastSelectedDate time.Time
+	haveLastSelected := false
+	for _, point := range normalized {
+		pointDate, ok := parseDate(point.TradeDate)
+		if !ok {
+			continue
 		}
-		label := bucketEnd.Format("2006-01-02")
+		if !haveLastSelected {
+			result = append(result, point)
+			lastSelectedDate = pointDate
+			haveLastSelected = true
+			continue
+		}
+		diff := int(math.Abs(pointDate.Sub(lastSelectedDate).Hours() / 24))
+		if diff < intervalDays {
+			continue
+		}
+		result = append(result, point)
+		lastSelectedDate = pointDate
+	}
 
-		var value *float64
-		for index < len(normalized) {
-			pointDate, ok := parseDate(normalized[index].TradeDate)
-			if !ok {
-				index++
-				continue
-			}
-			if pointDate.Before(startDate) {
-				index++
-				continue
-			}
-			if !pointDate.After(bucketEnd) {
-				value = normalized[index].Weight
-				index++
-				continue
-			}
-			break
-		}
-		if value == nil {
-			zero := 0.0
-			value = &zero
-		}
-		result = append(result, models.MoexIndexTickerAnalyticsPoint{
-			TradeDate: label,
-			Weight:    value,
-		})
-
-		startDate = startDate.AddDate(0, 0, intervalDays)
+	lastPoint := normalized[len(normalized)-1]
+	if len(result) == 0 || result[len(result)-1].TradeDate != lastPoint.TradeDate {
+		result = append(result, lastPoint)
 	}
 	return result
 }

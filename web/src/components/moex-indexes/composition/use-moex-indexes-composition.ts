@@ -91,18 +91,18 @@ export function useMoexIndexComposition(options: {
 
   const snapshotDateValue = snapshotItems[0]?.tradeDate ?? snapshotDate;
 
-  const topTickers = useMemo(() => {
-    return snapshotItems
-      .slice(0, options.topCount)
-      .map((item) => item.ticker)
-      .filter((value) => value.length > 0);
-  }, [options.topCount, snapshotItems]);
+  const topCountParam = useMemo(() => {
+    if (!Number.isFinite(options.topCount)) return 10;
+    if (options.topCount >= Number.MAX_SAFE_INTEGER) return 0;
+    if (options.topCount < 0) return 0;
+    return Math.floor(options.topCount);
+  }, [options.topCount]);
 
   const seriesQuery = useQuery({
     queryKey: [
       'moex-index-composition-series',
       options.selectedIndex?.secid,
-      topTickers.join(','),
+      topCountParam,
       dateRange.from,
       dateRange.till,
       intervalDays ?? 'auto',
@@ -110,10 +110,14 @@ export function useMoexIndexComposition(options: {
     queryFn: async () => {
       const response = await moexApi.moexIndexesSecidCompositionSeriesGet(
         options.selectedIndex!.secid ?? '',
-        topTickers.join(','),
+        '',
         dateRange.from,
         dateRange.till,
-        intervalDays
+        intervalDays,
+        undefined,
+        {
+          params: { topCount: topCountParam },
+        }
       );
       return response.data;
     },
@@ -121,7 +125,7 @@ export function useMoexIndexComposition(options: {
       options.compositionTab !== 'snapshot' &&
         options.selectedIndex?.secid &&
         options.selectedIndex?.hasComposition &&
-        topTickers.length > 0
+        topCountParam >= 0
     ),
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,
@@ -138,7 +142,15 @@ export function useMoexIndexComposition(options: {
 
   const series = useMemo<CompositionSeries[]>(() => {
     const seriesData = seriesQuery.data ?? {};
-    return topTickers
+    const keys = new Set(Object.keys(seriesData));
+    const orderedTickers = snapshotItems
+      .map((item) => item.ticker)
+      .filter((ticker): ticker is string => keys.has(ticker));
+    const leftovers = Object.keys(seriesData)
+      .filter((ticker) => !orderedTickers.includes(ticker))
+      .sort((a, b) => a.localeCompare(b));
+
+    return [...orderedTickers, ...leftovers]
       .map((ticker) => {
         const points = (seriesData[ticker] ?? [])
           .filter(
@@ -157,7 +169,7 @@ export function useMoexIndexComposition(options: {
         };
       })
       .filter((item) => item.data.length > 0);
-  }, [nameMap, seriesQuery.data, topTickers]);
+  }, [nameMap, seriesQuery.data, snapshotItems]);
 
   return {
     snapshotLoading: snapshotQuery.isLoading,

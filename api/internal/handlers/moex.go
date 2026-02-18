@@ -125,7 +125,8 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 //	@Tags			moex
 //	@Produce		json
 //	@Param			secid			path		string	true	"Index SECID"
-//	@Param			tickers			query		string	true	"Comma-separated list of tickers"
+//	@Param			tickers			query		string	false	"Comma-separated list of tickers (optional; backend can pick top constituents)"
+//	@Param			topCount		query		int		false	"When tickers are omitted: number of top constituents by latest snapshot (0 = all, default 10)"
 //	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
@@ -142,10 +143,6 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 	}
 
 	tickersParam := strings.TrimSpace(c.Query("tickers"))
-	if tickersParam == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing tickers"})
-		return
-	}
 	tickerParts := strings.Split(tickersParam, ",")
 	tickers := make([]string, 0, len(tickerParts))
 	for _, item := range tickerParts {
@@ -155,8 +152,10 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 		}
 		tickers = append(tickers, ticker)
 	}
-	if len(tickers) == 0 {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing tickers"})
+
+	topCount, err := parseTopCount(c.Query("topCount"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -174,7 +173,7 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 
 	lang := strings.TrimSpace(c.Query("lang"))
 
-	result, coverage, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, from, till, intervalDays, lang)
+	result, coverage, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, topCount, from, till, intervalDays, lang)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition series"})
 		return
@@ -200,6 +199,27 @@ func parseIntervalDays(value string) (int, error) {
 	parsed, err := strconv.Atoi(value)
 	if err != nil || parsed <= 0 {
 		return 0, errors.New("Invalid intervalDays")
+	}
+	return parsed, nil
+}
+
+func parseTopCount(value string) (int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 10, nil
+	}
+	for i, r := range value {
+		if r < '0' || r > '9' {
+			value = value[:i]
+			break
+		}
+	}
+	if value == "" {
+		return 0, errors.New("Invalid topCount")
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 0 {
+		return 0, errors.New("Invalid topCount")
 	}
 	return parsed, nil
 }

@@ -39,6 +39,8 @@ export const resolveCompositionSeriesColor = (index: number) => {
   return `hsl(${Math.round(hue)} ${saturation}% ${lightness}%)`;
 };
 
+const formatPercentTooltipValue = (value: number) => `${value.toFixed(2)}%`;
+
 type IndexCompositionChartProps = {
   series: CompositionSeries[];
   variant?: 'line' | 'stacked';
@@ -154,11 +156,11 @@ export function IndexCompositionChart({
               tickFormatter={(value: number) => `${Math.round(value)}%`}
             />
             <Tooltip
-              formatter={(value, name) => [
-                value,
-                chartConfig[name]?.label ?? name,
-              ]}
-              content={<ChartTooltipContent />}
+              content={(
+                <ChartTooltipContent
+                  valueFormatter={(value) => formatPercentTooltipValue(value)}
+                />
+              )}
             />
             {seriesMeta.map(item => (
               <Area
@@ -185,11 +187,11 @@ export function IndexCompositionChart({
             <XAxis dataKey='time' tickLine={false} axisLine={false} />
             <YAxis tickLine={false} axisLine={false} width={36} />
             <Tooltip
-              formatter={(value, name) => [
-                value,
-                chartConfig[name]?.label ?? name,
-              ]}
-              content={<ChartTooltipContent />}
+              content={(
+                <ChartTooltipContent
+                  valueFormatter={(value) => formatPercentTooltipValue(value)}
+                />
+              )}
             />
             {seriesMeta.map(item => (
               <Line
