@@ -302,6 +302,47 @@ func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, inde
 	return rows, nil
 }
 
+func (r *MoexDataRepository) ListCompositionSeriesTopRows(ctx context.Context, indexID string, topCount int, fromDate, toDate *time.Time) ([]MoexCompositionSeriesRow, error) {
+	if topCount < 0 {
+		topCount = 0
+	}
+
+	query := `
+WITH ranked AS (
+	SELECT
+		ticker,
+		trade_date,
+		weight,
+		ROW_NUMBER() OVER (
+			PARTITION BY trade_date
+			ORDER BY COALESCE(weight, -1e9) DESC, ticker ASC
+		) AS rn
+	FROM moex_index_composition_daily
+	WHERE index_id = ?
+`
+	args := []any{strings.TrimSpace(indexID)}
+	if fromDate != nil {
+		query += " AND trade_date >= ?\n"
+		args = append(args, dateOnlyUTCDay(*fromDate))
+	}
+	if toDate != nil {
+		query += " AND trade_date <= ?\n"
+		args = append(args, dateOnlyUTCDay(*toDate))
+	}
+	query += ")\nSELECT ticker, trade_date, weight\nFROM ranked\n"
+	if topCount > 0 {
+		query += "WHERE rn <= ?\n"
+		args = append(args, topCount)
+	}
+	query += "ORDER BY ticker ASC, trade_date ASC"
+
+	var rows []MoexCompositionSeriesRow
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 func (r *MoexDataRepository) EvaluateCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate time.Time) (string, []MoexCoverageRange, error) {
 	fromDate = dateOnlyUTCDay(fromDate)
 	toDate = dateOnlyUTCDay(toDate)

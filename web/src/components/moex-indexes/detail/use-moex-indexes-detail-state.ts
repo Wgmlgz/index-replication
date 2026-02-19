@@ -8,6 +8,7 @@ import type {
   ChartType,
   ChartViewMode,
   CompositionTab,
+  CompositionSelectionMode,
   IntervalKey,
   MoexIndexDetailState,
   RangeKey,
@@ -28,6 +29,9 @@ type DetailStateInput = {
     viewMode: ChartViewMode;
     chartType: ChartType;
     compositionTab: CompositionTab;
+    compositionSelectionMode: CompositionSelectionMode;
+    compositionSelectionDate: string;
+    compositionTopCount: number | null;
   }>;
 };
 
@@ -65,13 +69,23 @@ export function useMoexIndexDetailState({
   const [compositionTab, setCompositionTab] = useState<CompositionTab>(
     () => initial?.compositionTab ?? 'snapshot'
   );
+  const [compositionSelectionMode, setCompositionSelectionMode] =
+    useState<CompositionSelectionMode>(
+      () => initial?.compositionSelectionMode ?? 'fixed'
+    );
+  const [compositionSelectionDate, setCompositionSelectionDate] = useState(
+    () => initial?.compositionSelectionDate ?? ''
+  );
+  const [compositionTopCount, setCompositionTopCount] = useState<number | null>(
+    () => initial?.compositionTopCount ?? 10
+  );
 
   const selectedIndex = useMemo<MoexIndex | null>(() => {
     const findIndex = (secid: string) => {
       const key = secid.toUpperCase();
       return (
-        favoritesBySecid.find((item) => item.secid.toUpperCase() === key) ??
-        indexes.find((item) => item.secid.toUpperCase() === key) ??
+        favoritesBySecid.find((item) => (item.secid ?? '').toUpperCase() === key) ??
+        indexes.find((item) => (item.secid ?? '').toUpperCase() === key) ??
         null
       );
     };
@@ -85,7 +99,9 @@ export function useMoexIndexDetailState({
       return findIndex(favoriteMatch);
     }
 
-    return findIndex('IMOEX') ?? favoritesBySecid[0] ?? indexes[0] ?? null;
+    const fallbackFavorite = favoritesBySecid.find((item) => Boolean(item.secid));
+    const fallbackIndex = indexes.find((item) => Boolean(item.secid));
+    return findIndex('IMOEX') ?? fallbackFavorite ?? fallbackIndex ?? null;
   }, [favorites, favoritesBySecid, indexes, selectedSecid]);
 
   const {
@@ -106,8 +122,9 @@ export function useMoexIndexDetailState({
   });
 
   const selectedIndexCollections = useMemo(() => {
-    if (!selectedIndex) return [];
-    return indexCollectionsMap[selectedIndex.secid.toUpperCase()] ?? [];
+    const selectedSecid = selectedIndex?.secid?.toUpperCase();
+    if (!selectedSecid) return [];
+    return indexCollectionsMap[selectedSecid] ?? [];
   }, [indexCollectionsMap, selectedIndex?.secid]);
 
   const error = historyError ? t('moex.errors.history') : null;
@@ -136,5 +153,11 @@ export function useMoexIndexDetailState({
     setChartType,
     compositionTab,
     setCompositionTab,
+    compositionSelectionMode,
+    setCompositionSelectionMode,
+    compositionSelectionDate,
+    setCompositionSelectionDate,
+    compositionTopCount,
+    setCompositionTopCount,
   };
 }

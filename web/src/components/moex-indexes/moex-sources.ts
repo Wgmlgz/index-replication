@@ -10,4 +10,10 @@ export const moexSourceLinks = {
   indexList: buildMoexSiteUrl('/en/indices'),
   indexPage: (secid: string) =>
     buildMoexSiteUrl(`/en/index/${encodeURIComponent(secid)}`),
+  indexConstituents: (secid: string) =>
+    buildMoexSiteUrl(`/en/index/${encodeURIComponent(secid)}/constituents`),
+  issuePage: (ticker: string, board = 'EQWY') =>
+    buildMoexSiteUrl(
+      `/en/issue.aspx?board=${encodeURIComponent(board)}&code=${encodeURIComponent(ticker)}`
+    ),
 };

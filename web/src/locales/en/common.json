@@ -9,6 +9,7 @@
       "overview": "Open MOEX index values",
       "list": "Open MOEX index list",
       "indexPage": "Open MOEX index page for {{secid}}",
+      "indexConstituents": "Open MOEX constituents page for {{secid}}",
       "selectIndex": "Select an index to open the source."
     },
     "list": {
@@ -115,6 +116,18 @@
       },
       "topCount": "Top {{count}}",
       "topLabel": "Top",
+      "selectionDate": "Fixed date",
+      "selectionMode": {
+        "label": "Selection",
+        "fixed": "Fixed date",
+        "rolling": "Rolling Top N"
+      },
+      "legend": {
+        "openTicker": "Open ticker page",
+        "latestWeight": "Latest weight: {{value}}%",
+        "snapshotWeight": "Snapshot weight: {{value}}%",
+        "asOf": "As of {{date}}"
+      },
       "all": "All",
       "other": "Other",
       "loading": "Loading composition...",

@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import {
@@ -24,10 +27,14 @@ import {
 import { IndexCompositionSnapshotChart } from './index-composition-snapshot-chart';
 import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
-import type { CompositionTab } from '../detail/moex-indexes-detail.types';
+import type {
+  CompositionSelectionMode,
+  CompositionTab,
+} from '../detail/moex-indexes-detail.types';
 
 const DEFAULT_TOP_COUNT = 10;
 const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
+const DEFAULT_ISSUE_BOARD = 'EQWY';
 
 const resolveChartDate = (chartData: ChartData): string | null => {
   if (chartData.length === 0) return null;
@@ -59,9 +66,15 @@ export function IndexCompositionCard() {
     customTill,
     compositionTab,
     setCompositionTab,
+    compositionSelectionMode,
+    setCompositionSelectionMode,
+    compositionSelectionDate,
+    setCompositionSelectionDate,
+    compositionTopCount,
+    setCompositionTopCount,
   } = useMoexIndexDetailContext();
   const { t } = useTranslation();
-  const [topCount, setTopCount] = useState<number | null>(DEFAULT_TOP_COUNT);
+  const topCount = compositionTopCount;
   const topCountForHook =
     topCount === null ? Number.MAX_SAFE_INTEGER : topCount;
 
@@ -69,6 +82,11 @@ export function IndexCompositionCard() {
     () => resolveChartDate(chartData),
     [chartData],
   );
+  useEffect(() => {
+    if (compositionSelectionDate.trim().length > 0) return;
+    if (!latestTradeDate) return;
+    setCompositionSelectionDate(latestTradeDate);
+  }, [compositionSelectionDate, latestTradeDate, setCompositionSelectionDate]);
 
   const {
     snapshotLoading,
@@ -85,6 +103,8 @@ export function IndexCompositionCard() {
     customFrom,
     customTill,
     latestTradeDate,
+    compositionSelectionMode,
+    compositionSelectionDate,
     topCount: topCountForHook,
     compositionTab,
   });
@@ -120,12 +140,17 @@ export function IndexCompositionCard() {
       ...snapshotTop,
       {
         ticker: t('moex.composition.other'),
+        secId: '',
         name: t('moex.composition.other'),
         weight: snapshotOtherWeight,
         tradeDate: snapshotDate ?? '',
       },
     ];
   }, [snapshotOtherWeight, snapshotDate, snapshotTop, t]);
+  const snapshotByTicker = useMemo(() => {
+    const map = new Map(snapshotItems.map(item => [item.ticker, item]));
+    return map;
+  }, [snapshotItems]);
   const effectiveTopCount =
     snapshotItems.length > 0
       ? Math.min(resolvedTopCount, snapshotItems.length)
@@ -141,11 +166,12 @@ export function IndexCompositionCard() {
     (compositionTab === 'stacked' || compositionTab === 'snapshot') && snapshotOtherWeight > 0.01;
   const showSnapshotSkeleton = snapshotLoading && snapshotTop.length === 0;
   const showTrendSkeleton = trendLoading && series.length === 0;
-  const compositionSourceLabel = selectedIndex
-    ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
+  const selectedSecid = selectedIndex?.secid ?? '';
+  const compositionSourceLabel = selectedSecid
+    ? t('moex.sources.indexConstituents', { secid: selectedSecid })
     : t('moex.sources.selectIndex');
-  const compositionHref = selectedIndex
-    ? moexSourceLinks.indexPage(selectedIndex.secid)
+  const compositionHref = selectedSecid
+    ? moexSourceLinks.indexConstituents(selectedSecid)
     : undefined;
 
   return (
@@ -191,11 +217,11 @@ export function IndexCompositionCard() {
                 value={topCount === null ? 'all' : String(topCount)}
                 onValueChange={value => {
                   if (value === 'all') {
-                    setTopCount(null);
+                    setCompositionTopCount(null);
                     return;
                   }
                   const parsed = Number.parseInt(value, 10);
-                  if (Number.isFinite(parsed)) setTopCount(parsed);
+                  if (Number.isFinite(parsed)) setCompositionTopCount(parsed);
                 }}
               >
                 <SelectTrigger size='sm' className='h-7 text-xs'>
@@ -207,14 +233,52 @@ export function IndexCompositionCard() {
                       {value}
                     </SelectItem>
                   ))}
-                  {snapshotItems.length > 0 && (
-                    <SelectItem value='all'>
-                      {t('moex.composition.all')}
-                    </SelectItem>
-                  )}
+                  <SelectItem value='all'>
+                    {t('moex.composition.all')}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+              <span>{t('moex.composition.selectionMode.label')}</span>
+              <Select
+                value={compositionSelectionMode}
+                onValueChange={value =>
+                  setCompositionSelectionMode(value as CompositionSelectionMode)
+                }
+              >
+                <SelectTrigger size='sm' className='h-7 text-xs'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='fixed'>
+                    {t('moex.composition.selectionMode.fixed')}
+                  </SelectItem>
+                  <SelectItem value='rolling'>
+                    {t('moex.composition.selectionMode.rolling')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {compositionSelectionMode === 'fixed' && (
+              <div className='space-y-1'>
+                <Label
+                  htmlFor='moex-composition-selection-date'
+                  className='text-xs text-muted-foreground'
+                >
+                  {t('moex.composition.selectionDate')}
+                </Label>
+                <Input
+                  id='moex-composition-selection-date'
+                  type='date'
+                  value={compositionSelectionDate}
+                  max={latestTradeDate ?? undefined}
+                  onChange={event =>
+                    setCompositionSelectionDate(event.target.value)
+                  }
+                />
+              </div>
+            )}
             <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
               {selectedIndex && (
                 <Badge variant='outline'>{selectedIndex.secid}</Badge>
@@ -227,20 +291,68 @@ export function IndexCompositionCard() {
               <div className='flex h-full flex-col gap-2 overflow-y-auto pr-2 text-xs text-muted-foreground'>
                 <div className='h-full w-full relative'>
                   <div className='absolute'>
-                    {series.map((item, index) => (
-                      <div key={item.id} className='flex items-center gap-2'>
-                        <span
-                          className='h-2.5 w-2.5 rounded-full'
-                          style={{
-                            backgroundColor: resolveCompositionSeriesColor(index),
-                          }}
-                        />
-                        <span className='font-medium text-foreground'>
-                          {item.id}
-                        </span>
-                        <span className='hidden sm:inline'>{item.name}</span>
-                      </div>
-                    ))}
+                    {series.map((item, index) => {
+                      const latestPoint = item.data[item.data.length - 1];
+                      const snapshotPoint = snapshotByTicker.get(item.id);
+                      return (
+                        <div key={item.id} className='flex items-center gap-2'>
+                          <span
+                            className='h-2.5 w-2.5 rounded-full'
+                            style={{
+                              backgroundColor: resolveCompositionSeriesColor(index),
+                            }}
+                          />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <a
+                                href={moexSourceLinks.issuePage(
+                                  item.id,
+                                  DEFAULT_ISSUE_BOARD
+                                )}
+                                target='_blank'
+                                rel='noreferrer noopener'
+                                className='inline-flex items-center gap-2 hover:underline'
+                                aria-label={t('moex.composition.legend.openTicker')}
+                              >
+                                <span className='font-medium text-foreground'>
+                                  {item.id}
+                                </span>
+                                <span className='hidden sm:inline'>
+                                  {item.name}
+                                </span>
+                              </a>
+                            </TooltipTrigger>
+                            <TooltipContent side='right' className='max-w-[260px]'>
+                              <div className='grid gap-1'>
+                                <div className='font-semibold'>{item.id}</div>
+                                {item.name !== item.id && <div>{item.name}</div>}
+                                {latestPoint && (
+                                  <>
+                                    <div>
+                                      {t('moex.composition.legend.latestWeight', {
+                                        value: latestPoint.value.toFixed(2),
+                                      })}
+                                    </div>
+                                    <div>
+                                      {t('moex.composition.legend.asOf', {
+                                        date: latestPoint.time,
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                                {snapshotPoint && (
+                                  <div>
+                                    {t('moex.composition.legend.snapshotWeight', {
+                                      value: snapshotPoint.weight.toFixed(2),
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      );
+                    })}
                     {showOtherLegend && (
                       <div
                         key='composition-other'

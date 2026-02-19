@@ -19,6 +19,7 @@ import type {
   ChartType,
   ChartViewMode,
   CompositionTab,
+  CompositionSelectionMode,
   IntervalKey,
   RangeKey,
 } from './detail/moex-indexes-detail.types';
@@ -160,6 +161,20 @@ export function MoexIndexesProvider({
 
     const nextTab = (next.detail?.compositionTab ?? 'snapshot') as CompositionTab;
     if (nextTab !== ds.compositionTab) ds.setCompositionTab(nextTab);
+    const nextSelectionMode = (next.detail?.compositionSelectionMode ??
+      'fixed') as CompositionSelectionMode;
+    if (nextSelectionMode !== ds.compositionSelectionMode) {
+      ds.setCompositionSelectionMode(nextSelectionMode);
+    }
+    const nextSelectionDate = next.detail?.compositionSelectionDate ?? '';
+    if (nextSelectionDate !== ds.compositionSelectionDate) {
+      ds.setCompositionSelectionDate(nextSelectionDate);
+    }
+    const parsedTopCount = next.detail?.compositionTopCount;
+    const nextTopCount = parsedTopCount === undefined ? 10 : parsedTopCount;
+    if (nextTopCount !== ds.compositionTopCount) {
+      ds.setCompositionTopCount(nextTopCount);
+    }
   }, [urlKey, searchParams]);
 
   // local state -> URL (debounced for query typing).
@@ -188,6 +203,9 @@ export function MoexIndexesProvider({
         viewMode: detailState.viewMode,
         chartType: detailState.chartType,
         compositionTab: detailState.compositionTab,
+        compositionSelectionMode: detailState.compositionSelectionMode,
+        compositionSelectionDate: detailState.compositionSelectionDate,
+        compositionTopCount: detailState.compositionTopCount,
       },
     });
 
@@ -207,6 +225,9 @@ export function MoexIndexesProvider({
     detailState.intervalKey,
     detailState.rangeKey,
     detailState.viewMode,
+    detailState.compositionSelectionMode,
+    detailState.compositionSelectionDate,
+    detailState.compositionTopCount,
     listState.filters,
     listState.pageIndex,
     listState.pageSize,
@@ -299,6 +320,20 @@ export function MoexIndexesProvider({
 
       const nextTab = (next.detail?.compositionTab ?? 'snapshot') as CompositionTab;
       if (nextTab !== ds.compositionTab) ds.setCompositionTab(nextTab);
+      const nextSelectionMode = (next.detail?.compositionSelectionMode ??
+        'fixed') as CompositionSelectionMode;
+      if (nextSelectionMode !== ds.compositionSelectionMode) {
+        ds.setCompositionSelectionMode(nextSelectionMode);
+      }
+      const nextSelectionDate = next.detail?.compositionSelectionDate ?? '';
+      if (nextSelectionDate !== ds.compositionSelectionDate) {
+        ds.setCompositionSelectionDate(nextSelectionDate);
+      }
+      const parsedTopCount = next.detail?.compositionTopCount;
+      const nextTopCount = parsedTopCount === undefined ? 10 : parsedTopCount;
+      if (nextTopCount !== ds.compositionTopCount) {
+        ds.setCompositionTopCount(nextTopCount);
+      }
     };
 
     window.addEventListener('popstate', handler);

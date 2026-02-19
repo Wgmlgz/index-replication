@@ -127,6 +127,8 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 //	@Param			secid			path		string	true	"Index SECID"
 //	@Param			tickers			query		string	false	"Comma-separated list of tickers (optional; backend can pick top constituents)"
 //	@Param			topCount		query		int		false	"When tickers are omitted: number of top constituents by latest snapshot (0 = all, default 10)"
+//	@Param			selectionMode	query		string	false	"Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed)"
+//	@Param			selectionDate	query		string	false	"Top selection date for fixed mode (YYYY-MM-DD, default till/today)"
 //	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
@@ -158,6 +160,16 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
+	selectionMode, err := parseCompositionSelectionMode(c.Query("selectionMode"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+	selectionDate := strings.TrimSpace(c.Query("selectionDate"))
+	if selectionDate != "" && !isValidDate(selectionDate) {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid selectionDate"})
+		return
+	}
 
 	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
 	if err != nil {
@@ -173,7 +185,7 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 
 	lang := strings.TrimSpace(c.Query("lang"))
 
-	result, coverage, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, topCount, from, till, intervalDays, lang)
+	result, coverage, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition series"})
 		return
@@ -222,6 +234,19 @@ func parseTopCount(value string) (int, error) {
 		return 0, errors.New("Invalid topCount")
 	}
 	return parsed, nil
+}
+
+func parseCompositionSelectionMode(value string) (string, error) {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	if normalized == "" {
+		return "fixed", nil
+	}
+	switch normalized {
+	case "fixed", "rolling":
+		return normalized, nil
+	default:
+		return "", errors.New("Invalid selectionMode")
+	}
 }
 
 func normalizeDateRange(from, till string) (string, string, error) {

@@ -17,6 +17,7 @@ export type IntervalKey = 'auto' | '1d' | '2d' | '3d' | '1w' | '2w' | '1m';
 export type ChartViewMode = 'price' | 'percent';
 export type ChartType = ChartSeriesType;
 export type CompositionTab = 'snapshot' | 'trend' | 'stacked';
+export type CompositionSelectionMode = 'fixed' | 'rolling';
 
 export type MoexIndexDetailState = {
   selectedIndex: MoexIndex | null;
@@ -42,4 +43,10 @@ export type MoexIndexDetailState = {
   setChartType: (next: ChartType) => void;
   compositionTab: CompositionTab;
   setCompositionTab: (next: CompositionTab) => void;
+  compositionSelectionMode: CompositionSelectionMode;
+  setCompositionSelectionMode: (next: CompositionSelectionMode) => void;
+  compositionSelectionDate: string;
+  setCompositionSelectionDate: (next: string) => void;
+  compositionTopCount: number | null;
+  setCompositionTopCount: (next: number | null) => void;
 };

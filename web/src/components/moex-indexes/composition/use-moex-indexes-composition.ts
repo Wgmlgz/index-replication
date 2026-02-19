@@ -9,10 +9,16 @@ import {
 } from '@/api-client';
 import { moexApi } from '@/lib/api';
 import { resolveDateRange, resolveIntervalDays } from '../detail/use-moex-indexes-detail.utils';
-import type { CompositionTab, IntervalKey, RangeKey } from '../detail/moex-indexes-detail.types';
+import type {
+  CompositionSelectionMode,
+  CompositionTab,
+  IntervalKey,
+  RangeKey,
+} from '../detail/moex-indexes-detail.types';
 
 export type CompositionSnapshotItem = {
   ticker: string;
+  secId: string;
   name: string;
   weight: number;
   tradeDate: string;
@@ -34,6 +40,13 @@ type CompositionState = {
   series: CompositionSeries[];
 };
 
+const normalizeIsoDate = (value: string | null | undefined): string | undefined => {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return undefined;
+  return normalized;
+};
+
 export function useMoexIndexComposition(options: {
   selectedIndex: MoexIndex | null;
   rangeKey: RangeKey;
@@ -41,6 +54,8 @@ export function useMoexIndexComposition(options: {
   customFrom: string;
   customTill: string;
   latestTradeDate: string | null;
+  compositionSelectionMode: CompositionSelectionMode;
+  compositionSelectionDate: string;
   topCount: number;
   compositionTab: CompositionTab;
 }): CompositionState {
@@ -50,7 +65,14 @@ export function useMoexIndexComposition(options: {
     [options.customFrom, options.customTill, options.rangeKey]
   );
 
-  const snapshotDate = options.latestTradeDate ?? dateRange.till ?? null;
+  const effectiveSelectionDate = useMemo(() => {
+    return (
+      normalizeIsoDate(options.compositionSelectionDate) ??
+      normalizeIsoDate(options.latestTradeDate) ??
+      normalizeIsoDate(dateRange.till) ??
+      undefined
+    );
+  }, [dateRange.till, options.compositionSelectionDate, options.latestTradeDate]);
 
   const intervalDays = useMemo(
     () => resolveIntervalDays(options.intervalKey),
@@ -61,12 +83,12 @@ export function useMoexIndexComposition(options: {
     queryKey: [
       'moex-index-composition',
       options.selectedIndex?.secid,
-      snapshotDate,
+      effectiveSelectionDate ?? 'latest',
     ],
     queryFn: async () => {
       const response = await moexApi.moexIndexesSecidCompositionGet(
         options.selectedIndex!.secid ?? '',
-        snapshotDate ?? undefined
+        effectiveSelectionDate
       );
       return response.data;
     },
@@ -80,16 +102,17 @@ export function useMoexIndexComposition(options: {
     const rows = snapshotQuery.data ?? [];
     return rows
       .map((row: MoexIndexCompositionEntry) => ({
-        ticker: row.ticker,
-        name: row.shortName || row.ticker,
+        ticker: row.ticker ?? '',
+        secId: row.secId ?? '',
+        name: row.shortName || row.ticker || '',
         weight: row.weight ?? 0,
-        tradeDate: row.tradeDate,
+        tradeDate: row.tradeDate ?? '',
       }))
       .filter((row) => row.ticker.length > 0 && row.tradeDate.length > 0)
       .sort((a, b) => b.weight - a.weight);
   }, [snapshotQuery.data]);
 
-  const snapshotDateValue = snapshotItems[0]?.tradeDate ?? snapshotDate;
+  const snapshotDateValue = snapshotItems[0]?.tradeDate ?? effectiveSelectionDate;
 
   const topCountParam = useMemo(() => {
     if (!Number.isFinite(options.topCount)) return 10;
@@ -98,10 +121,25 @@ export function useMoexIndexComposition(options: {
     return Math.floor(options.topCount);
   }, [options.topCount]);
 
+  const fixedModeTickers = useMemo(() => {
+    if (options.compositionSelectionMode !== 'fixed') return [] as string[];
+    if (topCountParam === 0) {
+      return snapshotItems.map((item) => item.ticker);
+    }
+    return snapshotItems.slice(0, topCountParam).map((item) => item.ticker);
+  }, [options.compositionSelectionMode, snapshotItems, topCountParam]);
+  const fixedModeTickersParam = useMemo(
+    () => fixedModeTickers.join(','),
+    [fixedModeTickers]
+  );
+
   const seriesQuery = useQuery({
     queryKey: [
       'moex-index-composition-series',
       options.selectedIndex?.secid,
+      options.compositionSelectionMode,
+      effectiveSelectionDate ?? '',
+      fixedModeTickersParam,
       topCountParam,
       dateRange.from,
       dateRange.till,
@@ -110,13 +148,20 @@ export function useMoexIndexComposition(options: {
     queryFn: async () => {
       const response = await moexApi.moexIndexesSecidCompositionSeriesGet(
         options.selectedIndex!.secid ?? '',
-        '',
+        options.compositionSelectionMode === 'fixed' ? fixedModeTickersParam : '',
         dateRange.from,
         dateRange.till,
         intervalDays,
         undefined,
         {
-          params: { topCount: topCountParam },
+          params: {
+            topCount: topCountParam,
+            selectionMode: options.compositionSelectionMode,
+            selectionDate:
+              options.compositionSelectionMode === 'fixed'
+                ? effectiveSelectionDate
+                : undefined,
+          },
         }
       );
       return response.data;
@@ -125,6 +170,8 @@ export function useMoexIndexComposition(options: {
       options.compositionTab !== 'snapshot' &&
         options.selectedIndex?.secid &&
         options.selectedIndex?.hasComposition &&
+        (options.compositionSelectionMode === 'rolling' ||
+          fixedModeTickers.length > 0) &&
         topCountParam >= 0
     ),
     refetchOnWindowFocus: false,
@@ -143,9 +190,13 @@ export function useMoexIndexComposition(options: {
   const series = useMemo<CompositionSeries[]>(() => {
     const seriesData = seriesQuery.data ?? {};
     const keys = new Set(Object.keys(seriesData));
-    const orderedTickers = snapshotItems
-      .map((item) => item.ticker)
-      .filter((ticker): ticker is string => keys.has(ticker));
+    const baseOrder =
+      options.compositionSelectionMode === 'fixed'
+        ? fixedModeTickers
+        : snapshotItems.map((item) => item.ticker);
+    const orderedTickers = baseOrder.filter(
+      (ticker): ticker is string => keys.has(ticker)
+    );
     const leftovers = Object.keys(seriesData)
       .filter((ticker) => !orderedTickers.includes(ticker))
       .sort((a, b) => a.localeCompare(b));
@@ -153,15 +204,17 @@ export function useMoexIndexComposition(options: {
     return [...orderedTickers, ...leftovers]
       .map((ticker) => {
         const points = (seriesData[ticker] ?? [])
+          .map((point: MoexIndexTickerAnalyticsPoint) => {
+            const time = point.tradeDate;
+            const value = point.weight;
+            if (typeof time !== 'string' || time.length === 0) return null;
+            if (typeof value !== 'number') return null;
+            return { time, value };
+          })
           .filter(
-            (point: MoexIndexTickerAnalyticsPoint) =>
-              point.tradeDate && point.weight !== null
+            (point): point is { time: string; value: number } => point !== null
           )
-          .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate))
-          .map((point) => ({
-            time: point.tradeDate,
-            value: point.weight as number,
-          }));
+          .sort((a, b) => a.time.localeCompare(b.time));
         return {
           id: ticker,
           name: nameMap.get(ticker) ?? ticker,
@@ -169,7 +222,13 @@ export function useMoexIndexComposition(options: {
         };
       })
       .filter((item) => item.data.length > 0);
-  }, [nameMap, seriesQuery.data, snapshotItems]);
+  }, [
+    fixedModeTickers,
+    nameMap,
+    options.compositionSelectionMode,
+    seriesQuery.data,
+    snapshotItems,
+  ]);
 
   return {
     snapshotLoading: snapshotQuery.isLoading,

@@ -113,17 +113,57 @@ func (s *MoexReadService) GetIndexComposition(ctx context.Context, indexID, date
 	return rows, meta, nil
 }
 
-func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, topCount int, from, till string, intervalDays int, _ string) (map[string][]models.MoexIndexTickerAnalyticsPoint, *MoexCoverageMeta, error) {
+func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, topCount int, selectionMode, selectionDate, from, till string, intervalDays int, _ string) (map[string][]models.MoexIndexTickerAnalyticsPoint, *MoexCoverageMeta, error) {
 	fromDate, tillDate, err := parseRangePointers(from, till)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	tickers, err = s.resolveSeriesTickers(ctx, indexID, tickers, topCount, tillDate)
-	if err != nil {
-		return nil, nil, err
+	mode := strings.ToLower(strings.TrimSpace(selectionMode))
+	if mode == "" {
+		mode = "fixed"
 	}
-	if len(tickers) == 0 {
+
+	var topSelectionDate *time.Time
+	if strings.TrimSpace(selectionDate) != "" {
+		parsed, parseErr := time.Parse("2006-01-02", strings.TrimSpace(selectionDate))
+		if parseErr != nil {
+			return nil, nil, fmt.Errorf("invalid selection date: %w", parseErr)
+		}
+		value := dateOnlyUTC(parsed)
+		topSelectionDate = &value
+	}
+
+	var rows []repository.MoexCompositionSeriesRow
+	resolvedTickers := normalizeTickers(tickers)
+
+	// Rolling mode keeps top-N membership dynamic by date.
+	if len(resolvedTickers) == 0 && mode == "rolling" {
+		if topCount < 0 {
+			topCount = 0
+		}
+		rows, err = s.repo.ListCompositionSeriesTopRows(ctx, indexID, topCount, fromDate, tillDate)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		resolvedTickers, err = s.resolveSeriesTickers(ctx, indexID, resolvedTickers, topCount, topSelectionDate, tillDate)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(resolvedTickers) == 0 {
+			meta, err := s.buildCoverageMeta(ctx, "composition", indexID, fromDate, tillDate, nil)
+			if err != nil {
+				return nil, nil, err
+			}
+			return map[string][]models.MoexIndexTickerAnalyticsPoint{}, meta, nil
+		}
+		rows, err = s.repo.ListCompositionSeriesRows(ctx, indexID, resolvedTickers, fromDate, tillDate)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	if len(rows) == 0 {
 		meta, err := s.buildCoverageMeta(ctx, "composition", indexID, fromDate, tillDate, nil)
 		if err != nil {
 			return nil, nil, err
@@ -131,17 +171,27 @@ func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID
 		return map[string][]models.MoexIndexTickerAnalyticsPoint{}, meta, nil
 	}
 
-	rows, err := s.repo.ListCompositionSeriesRows(ctx, indexID, tickers, fromDate, tillDate)
-	if err != nil {
-		return nil, nil, err
+	if len(resolvedTickers) == 0 {
+		seen := make(map[string]struct{}, len(rows))
+		for _, row := range rows {
+			ticker := strings.TrimSpace(row.Ticker)
+			if ticker == "" {
+				continue
+			}
+			if _, exists := seen[ticker]; exists {
+				continue
+			}
+			seen[ticker] = struct{}{}
+			resolvedTickers = append(resolvedTickers, ticker)
+		}
+		sort.Strings(resolvedTickers)
 	}
-
-	series := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(tickers))
-	for _, ticker := range tickers {
+	series := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(resolvedTickers))
+	for _, ticker := range resolvedTickers {
 		series[ticker] = []models.MoexIndexTickerAnalyticsPoint{}
 	}
 
-	grouped := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(tickers))
+	grouped := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(resolvedTickers))
 	var inferredFrom *time.Time
 	var inferredTill *time.Time
 	for _, row := range rows {
@@ -180,7 +230,7 @@ func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID
 	}
 
 	anchors := downsampleDateLabels(extractSortedTradeDates(rows, fromStr, tillStr), intervalDays)
-	for _, ticker := range tickers {
+	for _, ticker := range resolvedTickers {
 		series[ticker] = alignTickerSeriesByDates(grouped[ticker], anchors)
 	}
 
@@ -279,7 +329,7 @@ func alignTickerSeriesByDates(points []models.MoexIndexTickerAnalyticsPoint, dat
 	return result
 }
 
-func (s *MoexReadService) resolveSeriesTickers(ctx context.Context, indexID string, tickers []string, topCount int, tillDate *time.Time) ([]string, error) {
+func (s *MoexReadService) resolveSeriesTickers(ctx context.Context, indexID string, tickers []string, topCount int, selectionDate, tillDate *time.Time) ([]string, error) {
 	normalized := normalizeTickers(tickers)
 	if len(normalized) > 0 {
 		return normalized, nil
@@ -290,7 +340,9 @@ func (s *MoexReadService) resolveSeriesTickers(ctx context.Context, indexID stri
 	}
 
 	preferredDate := todayUTC()
-	if tillDate != nil {
+	if selectionDate != nil {
+		preferredDate = dateOnlyUTC(*selectionDate)
+	} else if tillDate != nil {
 		preferredDate = dateOnlyUTC(*tillDate)
 	}
 

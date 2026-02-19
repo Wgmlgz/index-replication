@@ -10,6 +10,7 @@ import type {
   ChartType,
   ChartViewMode,
   CompositionTab,
+  CompositionSelectionMode,
   IntervalKey,
   RangeKey,
 } from './detail/moex-indexes-detail.types';
@@ -42,6 +43,9 @@ export const MOEX_URL_KEYS = {
   detailType: 'd_type',
 
   compositionTab: 'c_tab',
+  compositionSelectionMode: 'c_mode',
+  compositionSelectionDate: 'c_date',
+  compositionTopN: 'topN',
 } as const;
 
 export type MoexIndexesUrlInitialState = {
@@ -64,6 +68,9 @@ export type MoexIndexesUrlInitialState = {
     viewMode: ChartViewMode;
     chartType: ChartType;
     compositionTab: CompositionTab;
+    compositionSelectionMode: CompositionSelectionMode;
+    compositionSelectionDate: string;
+    compositionTopCount: number | null;
   }>;
 };
 
@@ -104,6 +111,10 @@ const INTERVAL_KEYS: IntervalKey[] = [
 const CHART_VIEW_MODES: ChartViewMode[] = ['price', 'percent'];
 const CHART_TYPES: ChartType[] = ['line', 'candlestick'];
 const COMPOSITION_TABS: CompositionTab[] = ['snapshot', 'trend', 'stacked'];
+const COMPOSITION_SELECTION_MODES: CompositionSelectionMode[] = [
+  'fixed',
+  'rolling',
+];
 
 const isOneOf = <T extends string>(value: string | null, options: T[]): value is T =>
   value !== null && options.includes(value as T);
@@ -211,6 +222,21 @@ export function parseMoexIndexesUrlState(
 
   const tabRaw = searchParams.get(MOEX_URL_KEYS.compositionTab);
   const compositionTab = isOneOf(tabRaw, COMPOSITION_TABS) ? tabRaw : undefined;
+  const selectionModeRaw = searchParams.get(MOEX_URL_KEYS.compositionSelectionMode);
+  const compositionSelectionMode = isOneOf(
+    selectionModeRaw,
+    COMPOSITION_SELECTION_MODES
+  )
+    ? selectionModeRaw
+    : undefined;
+  const compositionSelectionDate =
+    searchParams.get(MOEX_URL_KEYS.compositionSelectionDate) ?? undefined;
+  const compositionTopNRaw = searchParams.get(MOEX_URL_KEYS.compositionTopN);
+  const compositionTopNNormalized = compositionTopNRaw?.trim().toLowerCase();
+  const compositionTopCount =
+    compositionTopNNormalized === 'all' || compositionTopNNormalized === '0'
+      ? null
+      : parsePositiveInt(compositionTopNRaw);
 
   const listState: MoexIndexesUrlInitialState['list'] = {};
   if (typeof query === 'string' && query.length > 0) listState.query = query;
@@ -232,6 +258,15 @@ export function parseMoexIndexesUrlState(
   if (viewMode) detailState.viewMode = viewMode;
   if (chartType) detailState.chartType = chartType;
   if (compositionTab) detailState.compositionTab = compositionTab;
+  if (compositionSelectionMode) {
+    detailState.compositionSelectionMode = compositionSelectionMode;
+  }
+  if (compositionSelectionDate) {
+    detailState.compositionSelectionDate = compositionSelectionDate;
+  }
+  if (compositionTopCount === null || typeof compositionTopCount === 'number') {
+    detailState.compositionTopCount = compositionTopCount;
+  }
 
   return {
     selectedSecid: selectedSecid ?? null,
@@ -267,6 +302,9 @@ export function applyMoexIndexesUrlState(
       viewMode: ChartViewMode;
       chartType: ChartType;
       compositionTab: CompositionTab;
+      compositionSelectionMode: CompositionSelectionMode;
+      compositionSelectionDate: string;
+      compositionTopCount: number | null;
     };
   }
 ) {
@@ -290,6 +328,9 @@ export function applyMoexIndexesUrlState(
     MOEX_URL_KEYS.detailView,
     MOEX_URL_KEYS.detailType,
     MOEX_URL_KEYS.compositionTab,
+    MOEX_URL_KEYS.compositionSelectionMode,
+    MOEX_URL_KEYS.compositionSelectionDate,
+    MOEX_URL_KEYS.compositionTopN,
   ];
   deleteKeys.forEach((key) => params.delete(key));
 
@@ -347,6 +388,23 @@ export function applyMoexIndexesUrlState(
   }
   if (state.detail.compositionTab !== 'snapshot') {
     params.set(MOEX_URL_KEYS.compositionTab, state.detail.compositionTab);
+  }
+  if (state.detail.compositionSelectionMode !== 'fixed') {
+    params.set(
+      MOEX_URL_KEYS.compositionSelectionMode,
+      state.detail.compositionSelectionMode
+    );
+  }
+  if (state.detail.compositionSelectionDate.trim().length > 0) {
+    params.set(
+      MOEX_URL_KEYS.compositionSelectionDate,
+      state.detail.compositionSelectionDate.trim()
+    );
+  }
+  if (state.detail.compositionTopCount === null) {
+    params.set(MOEX_URL_KEYS.compositionTopN, 'all');
+  } else if (state.detail.compositionTopCount !== 10) {
+    params.set(MOEX_URL_KEYS.compositionTopN, String(state.detail.compositionTopCount));
   }
 }
 
