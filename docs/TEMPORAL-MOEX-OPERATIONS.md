@@ -85,7 +85,10 @@ Retry behavior:
 
 - Both workflows retry activity failures up to 5 attempts.
 - Backoff: starts at 2s, exponential up to 30s.
-- After retries are exhausted, that workflow run fails. Next schedule tick starts a new run.
+- In `moex.daily_sync`, each index sync runs as a separate activity. If one index still fails after all retries in a pass, that index is skipped for that pass and the workflow continues with the remaining indexes.
+- For `mode=full` (manual backfill), if a pass finishes with failures, the workflow continues-as-new and runs another pass for failed indexes only.
+- In `mode=full`, this loop continues until a pass completes with zero failed indexes.
+- Failed index/dataset rows stay in error or incomplete coverage state (not marked complete), so a later run can retry them.
 
 ## Progress in Temporal UI
 
@@ -103,6 +106,8 @@ If `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=true`, workflow search attributes are upda
 This provides a simple progress bar model in UI (`MoexProcessed / MoexTotal`).
 
 Activities also emit heartbeats with per-dataset/ticker details while running; these are visible in pending activity details.
+
+Worker logs also include per-pass progress counters (`processed`, `completedIndexes`, `failedIndexes`, `progressPercent`) for `moex.daily_sync`.
 
 ## Logs: UI vs Worker
 

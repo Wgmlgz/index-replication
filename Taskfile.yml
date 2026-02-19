@@ -27,7 +27,7 @@ tasks:
       MODE: '{{.MODE | default "full"}}'
       FROM: '{{.FROM | default "1997-01-01"}}'
       TILL: '{{.TILL | default ""}}'
-      PARALLELISM: '{{.PARALLELISM | default "4"}}'
+      PARALLELISM: '{{.PARALLELISM | default "16"}}'
     cmds:
       - docker compose run --rm --entrypoint ./moex-backfill moex-worker --mode {{.MODE}} --from {{.FROM}} --parallelism {{.PARALLELISM}}{{if .TILL}} --till {{.TILL}}{{end}}
 

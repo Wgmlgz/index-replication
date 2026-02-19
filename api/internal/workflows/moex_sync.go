@@ -29,11 +29,13 @@ type MetaRefreshParams struct {
 }
 
 type DailySyncParams struct {
-	Mode                   string `json:"mode"`
-	From                   string `json:"from,omitempty"`
-	Till                   string `json:"till,omitempty"`
-	Parallelism            int    `json:"parallelism,omitempty"`
-	EnableSearchAttributes bool   `json:"enableSearchAttributes,omitempty"`
+	Mode                   string   `json:"mode"`
+	From                   string   `json:"from,omitempty"`
+	Till                   string   `json:"till,omitempty"`
+	Parallelism            int      `json:"parallelism,omitempty"`
+	RetrySecids            []string `json:"retrySecids,omitempty"`
+	RetryPass              int      `json:"retryPass,omitempty"`
+	EnableSearchAttributes bool     `json:"enableSearchAttributes,omitempty"`
 }
 
 type SyncIndexParams struct {
@@ -65,6 +67,10 @@ func MetaRefreshWorkflow(ctx workflow.Context, params MetaRefreshParams) error {
 func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 	params.Mode = normalizeMode(params.Mode)
 	logger := workflow.GetLogger(ctx)
+	retryPass := params.RetryPass
+	if retryPass < 1 {
+		retryPass = 1
+	}
 	if params.EnableSearchAttributes {
 		upsertMoexSearchAttributes(ctx, "daily", "", params.Mode)
 		upsertMoexProgressSearchAttributes(ctx, 0, 0, "", "starting")
@@ -95,6 +101,7 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		}
 		indexes = append(indexes, trimmed)
 	}
+	indexes = resolveRetryIndexes(indexes, params.RetrySecids)
 
 	totalIndexes := len(indexes)
 	parallelism := resolveSyncParallelism(params.Mode, params.Parallelism, totalIndexes)
@@ -107,16 +114,25 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 	totalUpsertedRows := 0
 
 	completed := 0
+	failed := 0
+	failedIndexes := make([]string, 0)
 	nextIndex := 0
 	inFlight := 0
-	var activityErr error
 	selector := workflow.NewSelector(syncCtx)
+	logger.Info(
+		"MOEX daily sync pass started",
+		"mode", params.Mode,
+		"retryPass", retryPass,
+		"indexes", totalIndexes,
+		"parallelism", parallelism,
+	)
 
 	scheduleIndex := func(i int) {
 		secid := indexes[i]
+		processed := completed + failed
 		if params.EnableSearchAttributes {
 			upsertMoexSearchAttributes(ctx, "daily", secid, params.Mode)
-			upsertMoexProgressSearchAttributes(ctx, completed, totalIndexes, secid, "running")
+			upsertMoexProgressSearchAttributes(ctx, processed, totalIndexes, secid, "running")
 		}
 
 		future := workflow.ExecuteActivity(syncCtx, SyncIndexActivityName, SyncIndexParams{
@@ -130,27 +146,46 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		inFlight++
 		selector.AddFuture(future, func(f workflow.Future) {
 			inFlight--
-			if activityErr != nil {
-				return
-			}
-
 			var result IndexSyncResult
 			if err := f.Get(syncCtx, &result); err != nil {
-				activityErr = err
+				failed++
+				failedIndexes = append(failedIndexes, secid)
+				processed := completed + failed
+				if params.EnableSearchAttributes {
+					upsertMoexProgressSearchAttributes(ctx, processed, totalIndexes, secid, "running")
+				}
+				logger.Error(
+					"MOEX index sync failed after retries; skipping index",
+					"secid", secid,
+					"index", i+1,
+					"total", totalIndexes,
+					"retryPass", retryPass,
+					"processed", processed,
+					"completedIndexes", completed,
+					"failedIndexes", failed,
+					"progressPercent", progressPercent(processed, totalIndexes),
+					"error", err,
+				)
 				return
 			}
 
 			completed++
+			processed := completed + failed
 			totalFetchedRows += result.HistoryFetchedRows + result.CompositionFetchedRows
 			totalUpsertedRows += result.HistoryUpsertedRows + result.CompositionUpsertedRows
 			if params.EnableSearchAttributes {
-				upsertMoexProgressSearchAttributes(ctx, completed, totalIndexes, secid, "running")
+				upsertMoexProgressSearchAttributes(ctx, processed, totalIndexes, secid, "running")
 			}
 			logger.Info(
 				"MOEX index sync completed",
 				"secid", secid,
 				"index", i+1,
 				"total", totalIndexes,
+				"retryPass", retryPass,
+				"processed", processed,
+				"completedIndexes", completed,
+				"failedIndexes", failed,
+				"progressPercent", progressPercent(processed, totalIndexes),
 				"historyFetchedRows", result.HistoryFetchedRows,
 				"historyUpsertedRows", result.HistoryUpsertedRows,
 				"compositionFetchedRows", result.CompositionFetchedRows,
@@ -164,11 +199,8 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		nextIndex++
 	}
 
-	for completed < totalIndexes {
+	for completed+failed < totalIndexes {
 		selector.Select(syncCtx)
-		if activityErr != nil {
-			return activityErr
-		}
 		for nextIndex < totalIndexes && inFlight < parallelism {
 			scheduleIndex(nextIndex)
 			nextIndex++
@@ -179,13 +211,41 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		upsertMoexSearchAttributes(ctx, "daily", "", params.Mode)
 		upsertMoexProgressSearchAttributes(ctx, totalIndexes, totalIndexes, "", "completed")
 	}
+	failedSample := sampleSecids(failedIndexes, 20)
+
+	if failed > 0 && params.Mode == "full" {
+		logger.Info(
+			"MOEX daily sync pass completed with failed indexes; continuing as new for retry pass",
+			"mode", params.Mode,
+			"retryPass", retryPass,
+			"indexes", totalIndexes,
+			"completedIndexes", completed,
+			"failedIndexes", failed,
+			"parallelism", parallelism,
+			"fetchedRows", totalFetchedRows,
+			"upsertedRows", totalUpsertedRows,
+			"failedSecidsSample", failedSample,
+			"failedSecidsOmitted", len(failedIndexes)-len(failedSample),
+		)
+
+		nextParams := params
+		nextParams.RetrySecids = failedIndexes
+		nextParams.RetryPass = retryPass + 1
+		return workflow.NewContinueAsNewError(ctx, DailySyncWorkflow, nextParams)
+	}
+
 	logger.Info(
 		"MOEX daily sync workflow completed",
 		"mode", params.Mode,
+		"retryPass", retryPass,
 		"indexes", totalIndexes,
+		"completedIndexes", completed,
+		"failedIndexes", failed,
 		"parallelism", parallelism,
 		"fetchedRows", totalFetchedRows,
 		"upsertedRows", totalUpsertedRows,
+		"failedSecidsSample", failedSample,
+		"failedSecidsOmitted", len(failedIndexes)-len(failedSample),
 	)
 	return nil
 }
@@ -226,6 +286,53 @@ func resolveSyncParallelism(mode string, requested, total int) int {
 		return total
 	}
 	return parallelism
+}
+
+func resolveRetryIndexes(allIndexes, retrySecids []string) []string {
+	if len(retrySecids) == 0 {
+		return allIndexes
+	}
+
+	retrySet := make(map[string]struct{}, len(retrySecids))
+	for _, secid := range retrySecids {
+		trimmed := strings.TrimSpace(secid)
+		if trimmed == "" {
+			continue
+		}
+		retrySet[trimmed] = struct{}{}
+	}
+	if len(retrySet) == 0 {
+		return []string{}
+	}
+
+	filtered := make([]string, 0, len(retrySet))
+	for _, secid := range allIndexes {
+		if _, ok := retrySet[secid]; ok {
+			filtered = append(filtered, secid)
+		}
+	}
+	return filtered
+}
+
+func sampleSecids(secids []string, max int) []string {
+	if max <= 0 || len(secids) == 0 {
+		return []string{}
+	}
+	if len(secids) <= max {
+		copied := make([]string, len(secids))
+		copy(copied, secids)
+		return copied
+	}
+	copied := make([]string, max)
+	copy(copied, secids[:max])
+	return copied
+}
+
+func progressPercent(processed, total int) float64 {
+	if total <= 0 {
+		return 100
+	}
+	return (float64(processed) * 100.0) / float64(total)
 }
 
 func upsertMoexSearchAttributes(ctx workflow.Context, dataset, secid, mode string) {
