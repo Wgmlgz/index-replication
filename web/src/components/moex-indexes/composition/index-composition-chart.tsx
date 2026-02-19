@@ -9,6 +9,7 @@ import {
   LineChart,
   ResponsiveContainer,
   Tooltip,
+  type TooltipProps,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -40,6 +41,7 @@ export const resolveCompositionSeriesColor = (index: number) => {
 };
 
 const formatPercentTooltipValue = (value: number) => `${value.toFixed(2)}%`;
+const TOOLTIP_MIN_VALUE = 0.0001;
 
 type IndexCompositionChartProps = {
   series: CompositionSeries[];
@@ -134,6 +136,24 @@ export function IndexCompositionChart({
     }, {});
   }, [seriesMeta]);
 
+  const renderTooltipContent = (props: TooltipProps<number, string>) => {
+    const filteredPayload = (props.payload ?? [])
+      .filter(
+        item =>
+          typeof item.value === 'number' &&
+          Math.abs(item.value) >= TOOLTIP_MIN_VALUE
+      )
+      .sort((a, b) => Number(b.value ?? 0) - Number(a.value ?? 0));
+
+    return (
+      <ChartTooltipContent
+        {...props}
+        payload={filteredPayload}
+        valueFormatter={(value) => formatPercentTooltipValue(value)}
+      />
+    );
+  };
+
   return (
     <ChartContainer
       config={chartConfig}
@@ -156,11 +176,7 @@ export function IndexCompositionChart({
               tickFormatter={(value: number) => `${Math.round(value)}%`}
             />
             <Tooltip
-              content={(
-                <ChartTooltipContent
-                  valueFormatter={(value) => formatPercentTooltipValue(value)}
-                />
-              )}
+              content={renderTooltipContent}
             />
             {seriesMeta.map(item => (
               <Area
@@ -187,11 +203,7 @@ export function IndexCompositionChart({
             <XAxis dataKey='time' tickLine={false} axisLine={false} />
             <YAxis tickLine={false} axisLine={false} width={36} />
             <Tooltip
-              content={(
-                <ChartTooltipContent
-                  valueFormatter={(value) => formatPercentTooltipValue(value)}
-                />
-              )}
+              content={renderTooltipContent}
             />
             {seriesMeta.map(item => (
               <Line

@@ -167,6 +167,13 @@ export function IndexCompositionCard() {
   const showSnapshotSkeleton = snapshotLoading && snapshotTop.length === 0;
   const showTrendSkeleton = trendLoading && series.length === 0;
   const selectedSecid = selectedIndex?.secid ?? '';
+  const shouldShowAsOf = useMemo(() => {
+    if (!snapshotDate) return false;
+    if (compositionSelectionMode === 'rolling') return true;
+    const selectedDate = compositionSelectionDate.trim();
+    if (!selectedDate) return true;
+    return snapshotDate !== selectedDate;
+  }, [compositionSelectionDate, compositionSelectionMode, snapshotDate]);
   const compositionSourceLabel = selectedSecid
     ? t('moex.sources.indexConstituents', { secid: selectedSecid })
     : t('moex.sources.selectIndex');
@@ -186,7 +193,7 @@ export function IndexCompositionCard() {
             <div className='flex items-start justify-between gap-2'>
               <div className='space-y-1'>
                 <CardTitle>{t('moex.composition.title')}</CardTitle>
-                {snapshotDate && (
+                {shouldShowAsOf && (
                   <div className='text-xs text-muted-foreground'>
                     {t('moex.composition.asOf', { date: snapshotDate })}
                   </div>
