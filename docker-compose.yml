@@ -169,10 +169,6 @@ services:
   web:
     build:
       context: ./web
-      args:
-        - NEXT_PUBLIC_API_BASE_URL=http://${WEB_HOST}
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://${WEB_HOST}
     depends_on:
       - api
     labels:

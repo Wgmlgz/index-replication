@@ -85,33 +85,54 @@ if (isTauri()) {
 
 export const LOCAL_STORAGE_BASE_URL = 'settings-api-url'
 const DEFAULT_DEV_API_BASE_URL = 'http://localhost:18080';
-// Determine the base URL based on environment
+
+const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "");
+
+const readLocalStorageBaseUrl = () => {
+  const localStorageBase = localStorage.getItem(LOCAL_STORAGE_BASE_URL);
+  if (!localStorageBase || localStorageBase.length <= 3) {
+    return null;
+  }
+  if (localStorageBase[0] === '"') {
+    try {
+      return normalizeBaseUrl(JSON.parse(localStorageBase));
+    } catch {
+      return normalizeBaseUrl(localStorageBase);
+    }
+  }
+  return normalizeBaseUrl(localStorageBase);
+};
+
 const getBaseUrl = () => {
-  const envBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const envBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    ? normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL)
+    : "";
 
   if (typeof window !== 'undefined') {
-    const localStorageBase = localStorage.getItem(LOCAL_STORAGE_BASE_URL)
-    if (localStorageBase && localStorageBase.length > 3) {
-      if (localStorageBase[0] == '"') return JSON.parse(localStorageBase)
-      return localStorageBase
+    const localStorageBase = readLocalStorageBaseUrl();
+    if (localStorageBase) {
+      return localStorageBase;
     }
-    if (envBaseUrl && envBaseUrl.length > 3) {
+
+    // In browser production, use same origin to keep scheme (https/http) in sync.
+    if (process.env.NODE_ENV === 'production') {
+      return "";
+    }
+
+    if (envBaseUrl.length > 3) {
       return envBaseUrl;
     }
-    // Client-side: use current host in production, localhost in development
-    if (process.env.NODE_ENV === 'production') {
-      return window.location.origin;
-    } else {
-      return DEFAULT_DEV_API_BASE_URL;
-    }
-  } else {
-    // Server-side: use environment variable or default to localhost
-    return envBaseUrl || DEFAULT_DEV_API_BASE_URL;
+
+    return DEFAULT_DEV_API_BASE_URL;
   }
+
+  // Server-side fallback
+  return envBaseUrl || DEFAULT_DEV_API_BASE_URL;
 };
 
 export const getApiUrl = () => {
-  return getBaseUrl() + '/api'
+  const baseUrl = getBaseUrl();
+  return baseUrl ? `${baseUrl}/api` : '/api';
 }
 
 const config = new Configuration({
