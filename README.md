@@ -55,6 +55,7 @@ Temporal stack can be started separately with:
 task temporal:up
 ```
 Temporal services are based on the official `samples-server` postgres compose pattern and reuse the existing `postgres` service.
+Temporal admin-tools bootstrap scripts are baked into a custom image during compose build (instead of runtime bind mounts) to keep remote deployments consistent.
 MOEX schedules are applied automatically on startup by the one-shot `temporal-apply-schedules` service (no manual schedule bootstrapping needed in Docker).
 Operational timeline and monitoring details are documented in `docs/TEMPORAL-MOEX-OPERATIONS.md`.
 Historical MOEX API reads are DB-backed; coverage status is exposed via response headers and sync admin endpoints.

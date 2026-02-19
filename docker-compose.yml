@@ -1,6 +1,13 @@
+x-temporal-admin-tools-build: &temporal_admin_tools_build
+  build:
+    context: .
+    dockerfile: scripts/temporal/admin-tools.Dockerfile
+    args:
+      TEMPORAL_ADMINTOOLS_VERSION: ${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+
 services:
   temporal-admin-tools:
-    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+    <<: *temporal_admin_tools_build
     restart: on-failure:6
     depends_on:
       postgres:
@@ -12,8 +19,6 @@ services:
       - POSTGRES_PWD=${POSTGRES_PASSWORD}
       - POSTGRES_SEEDS=postgres
       - SQL_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - ./scripts/temporal:/scripts
     entrypoint: ["/bin/sh"]
     command: /scripts/setup-postgres.sh
 
@@ -40,7 +45,7 @@ services:
       retries: 60
 
   temporal-create-namespace:
-    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+    <<: *temporal_admin_tools_build
     restart: on-failure:5
     depends_on:
       temporal:
@@ -48,21 +53,17 @@ services:
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - DEFAULT_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
-    volumes:
-      - ./scripts/temporal:/scripts
     entrypoint: ["/bin/sh"]
     command: /scripts/create-namespace.sh
 
   temporal-register-search-attributes:
-    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+    <<: *temporal_admin_tools_build
     restart: on-failure:5
     depends_on:
       temporal-create-namespace:
         condition: service_completed_successfully
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
-    volumes:
-      - ./scripts/temporal:/scripts
     entrypoint: ["/bin/sh"]
     command: /scripts/register-search-attributes.sh
 
