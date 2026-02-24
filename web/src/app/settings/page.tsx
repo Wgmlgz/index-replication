@@ -5,9 +5,9 @@ import { Time } from "@/components/ui/time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { H2, H3 } from "@/components/ui/typography";
 import { ChangePasswordForm } from "@/components/change-password-form";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { TelegramVerificationCard } from "@/components/telegram-verification-card";
 import { useLocalStorage } from 'react-use';
 import { LOCAL_STORAGE_BASE_URL } from "@/lib/api";
 import { LOCAL_STORAGE_DEFAULT_THRESHOLD, LOCAL_STORAGE_ONE_OTHER_THRESHOLD, LOCAL_STORAGE_ONE_THRESHOLD } from "@/lib/utils";
@@ -129,6 +129,10 @@ export default function SettingsPage() {
             {user &&
               <div className="col-span-2 lg:col-span-1">
                 <ChangePasswordForm />
+              </div>}
+            {user &&
+              <div className="col-span-3">
+                <TelegramVerificationCard />
               </div>}
           </div>
         </div >}

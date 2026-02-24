@@ -140,7 +140,10 @@ const configuration = new Configuration();
 const apiInstance = new MoexApi(configuration);
 
 let secid: string; //Index SECID (default to undefined)
-let tickers: string; //Comma-separated list of tickers (default to undefined)
+let tickers: string; //Comma-separated list of tickers (optional; backend can pick top constituents) (optional) (default to undefined)
+let topCount: number; //When tickers are omitted: number of top constituents by latest snapshot (0 = all, default 10) (optional) (default to undefined)
+let selectionMode: string; //Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed) (optional) (default to undefined)
+let selectionDate: string; //Top selection date for fixed mode (YYYY-MM-DD, default till/today) (optional) (default to undefined)
 let from: string; //Start date (YYYY-MM-DD) (optional) (default to undefined)
 let till: string; //End date (YYYY-MM-DD) (optional) (default to undefined)
 let intervalDays: number; //Downsample interval in days (optional) (default to undefined)
@@ -149,6 +152,9 @@ let lang: string; //Response language (ru/en) (optional) (default to undefined)
 const { status, data } = await apiInstance.moexIndexesSecidCompositionSeriesGet(
     secid,
     tickers,
+    topCount,
+    selectionMode,
+    selectionDate,
     from,
     till,
     intervalDays,
@@ -161,7 +167,10 @@ const { status, data } = await apiInstance.moexIndexesSecidCompositionSeriesGet(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **secid** | [**string**] | Index SECID | defaults to undefined|
-| **tickers** | [**string**] | Comma-separated list of tickers | defaults to undefined|
+| **tickers** | [**string**] | Comma-separated list of tickers (optional; backend can pick top constituents) | (optional) defaults to undefined|
+| **topCount** | [**number**] | When tickers are omitted: number of top constituents by latest snapshot (0 &#x3D; all, default 10) | (optional) defaults to undefined|
+| **selectionMode** | [**string**] | Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed) | (optional) defaults to undefined|
+| **selectionDate** | [**string**] | Top selection date for fixed mode (YYYY-MM-DD, default till/today) | (optional) defaults to undefined|
 | **from** | [**string**] | Start date (YYYY-MM-DD) | (optional) defaults to undefined|
 | **till** | [**string**] | End date (YYYY-MM-DD) | (optional) defaults to undefined|
 | **intervalDays** | [**number**] | Downsample interval in days | (optional) defaults to undefined|

@@ -56,6 +56,10 @@ Feature routes (App Router):
 - `web/src/app/settings/page.tsx`
 - `web/src/app/dashboard/page.tsx`
 - `web/src/app/moex-indexes/page.tsx`
+- `web/src/app/tbank-test/page.tsx`
+
+Telegram verification user flow is available in the Settings page. Backend/setup details are in:
+- `docs/TELEGRAM-VERIFICATION.md`
 
 MOEX indexes page docs:
 - `docs/moex/MOEX-INDEXES-PAGE.md`

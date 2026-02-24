@@ -221,6 +221,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/login/verify": {
+            "post": {
+                "description": "Checks Telegram challenge status and completes login when approved",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Complete login verification",
+                "parameters": [
+                    {
+                        "description": "Verification challenge",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.LoginVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/models.LoginVerifyStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/logout": {
             "post": {
                 "description": "Logs out the current user and clears the session",
@@ -402,6 +461,291 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/tbank": {
+            "get": {
+                "description": "Returns current user T-Bank connection state and available accounts",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Get T-Bank integration status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankConnectionStatusResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/connect": {
+            "post": {
+                "description": "Saves user token/environment and verifies access by loading accounts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Connect T-Bank account",
+                "parameters": [
+                    {
+                        "description": "T-Bank connect payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankConnectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankConnectionStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/disconnect": {
+            "post": {
+                "description": "Removes saved T-Bank credentials for the current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Disconnect T-Bank account",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/test-buy": {
+            "post": {
+                "description": "Places a market buy order using the connected user T-Bank account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Create T-Bank test buy order",
+                "parameters": [
+                    {
+                        "description": "T-Bank test buy payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankTestBuyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankTestBuyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/verification/telegram": {
+            "get": {
+                "description": "Returns Telegram connection status and whether login verification is enabled",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification"
+                ],
+                "summary": "Get Telegram verification status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TelegramStatusResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes Telegram connection and disables Telegram login verification for the current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification"
+                ],
+                "summary": "Unlink Telegram verification",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TelegramStatusResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Updates Telegram login verification settings for the current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification"
+                ],
+                "summary": "Update Telegram verification settings",
+                "parameters": [
+                    {
+                        "description": "Telegram verification settings",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TelegramPatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TelegramStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/verification/telegram/connect": {
+            "post": {
+                "description": "Generates a one-time Telegram connect link for the current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification"
+                ],
+                "summary": "Create Telegram connect link",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TelegramConnectResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/moex/indexes/overview": {
             "get": {
                 "description": "Returns indexes list, collections, and membership map",
@@ -512,10 +856,27 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Comma-separated list of tickers",
+                        "description": "Comma-separated list of tickers (optional; backend can pick top constituents)",
                         "name": "tickers",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "When tickers are omitted: number of top constituents by latest snapshot (0 = all, default 10)",
+                        "name": "topCount",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed)",
+                        "name": "selectionMode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Top selection date for fixed mode (YYYY-MM-DD, default till/today)",
+                        "name": "selectionDate",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -1260,6 +1621,22 @@ const docTemplate = `{
                 }
             }
         },
+        "models.LoginVerifyRequest": {
+            "type": "object",
+            "properties": {
+                "challenge_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LoginVerifyStatusResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "models.MoexIndex": {
             "type": "object",
             "properties": {
@@ -1439,6 +1816,162 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserResponse"
+                }
+            }
+        },
+        "models.TBankAccount": {
+            "type": "object",
+            "properties": {
+                "access_level": {
+                    "type": "string"
+                },
+                "closed_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "opened_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankConnectRequest": {
+            "type": "object",
+            "required": [
+                "environment",
+                "token"
+            ],
+            "properties": {
+                "default_account_id": {
+                    "type": "string"
+                },
+                "environment": {
+                    "type": "string",
+                    "enum": [
+                        "sandbox",
+                        "production"
+                    ]
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankConnectionStatusResponse": {
+            "type": "object",
+            "properties": {
+                "accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TBankAccount"
+                    }
+                },
+                "connected": {
+                    "type": "boolean"
+                },
+                "connection_error": {
+                    "type": "string"
+                },
+                "default_account_id": {
+                    "type": "string"
+                },
+                "environment": {
+                    "type": "string"
+                },
+                "token_masked": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankTestBuyRequest": {
+            "type": "object",
+            "required": [
+                "instrument_id",
+                "quantity"
+            ],
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "models.TBankTestBuyResponse": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "environment": {
+                    "type": "string"
+                },
+                "execution_report_status": {
+                    "type": "string"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "response": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "models.TelegramConnectResponse": {
+            "type": "object",
+            "properties": {
+                "connect_url": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TelegramPatchRequest": {
+            "type": "object",
+            "properties": {
+                "login_2fa_enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "models.TelegramStatusResponse": {
+            "type": "object",
+            "properties": {
+                "bot_username": {
+                    "type": "string"
+                },
+                "connected": {
+                    "type": "boolean"
+                },
+                "login_2fa_enabled": {
+                    "type": "boolean"
+                },
+                "telegram_username": {
+                    "type": "string"
                 }
             }
         },

@@ -1,0 +1,143 @@
+package services
+
+import (
+	"context"
+	"crypto/tls"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+
+	"server/internal/models"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+func (s *TBankService) withConnection(
+	parentCtx context.Context,
+	environment string,
+	token string,
+	call func(context.Context, *grpc.ClientConn) error,
+) error {
+	endpoint, err := s.endpointByEnvironment(environment)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(parentCtx, 15*time.Second)
+	defer cancel()
+
+	conn, err := grpc.DialContext(
+		ctx,
+		endpoint,
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to connect to T-Bank gRPC endpoint: %w", err)
+	}
+	defer conn.Close()
+
+	callCtx := metadata.AppendToOutgoingContext(
+		ctx,
+		"authorization", "Bearer "+token,
+		"x-app-name", tbankAppName,
+	)
+
+	if err := call(callCtx, conn); err != nil {
+		return normalizeTBankError(err)
+	}
+	return nil
+}
+
+func (s *TBankService) endpointByEnvironment(environment string) (string, error) {
+	switch normalizeTBankEnvironment(environment) {
+	case models.TBankEnvironmentSandbox:
+		return s.cfg.TBankInvestSandboxGrpcEndpoint, nil
+	case models.TBankEnvironmentProduction:
+		return s.cfg.TBankInvestGrpcEndpoint, nil
+	default:
+		return "", ErrTBankInvalidEnv
+	}
+}
+
+func normalizeTBankEnvironment(environment string) string {
+	switch strings.ToLower(strings.TrimSpace(environment)) {
+	case models.TBankEnvironmentProduction:
+		return models.TBankEnvironmentProduction
+	default:
+		return models.TBankEnvironmentSandbox
+	}
+}
+
+func normalizeTBankError(err error) error {
+	if err == nil {
+		return nil
+	}
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	msg := strings.TrimSpace(st.Message())
+	if msg == "" {
+		msg = "T-Bank request failed"
+	}
+	if st.Code() == codes.Unauthenticated || st.Code() == codes.PermissionDenied {
+		return fmt.Errorf("%w: %s", ErrTBankAuthFailed, msg)
+	}
+	return fmt.Errorf("T-Bank API error (%s): %s", st.Code().String(), msg)
+}
+
+func toTimePtr(ts *timestamppb.Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+	t := ts.AsTime().UTC()
+	return &t
+}
+
+func maskToken(token string) string {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return ""
+	}
+	if len(token) <= 8 {
+		return strings.Repeat("*", len(token))
+	}
+	return token[:4] + strings.Repeat("*", len(token)-8) + token[len(token)-4:]
+}
+
+func containsAccount(accounts []models.TBankAccount, accountID string) bool {
+	for _, account := range accounts {
+		if account.ID == accountID {
+			return true
+		}
+	}
+	return false
+}
+
+func protoToMap(msg proto.Message) map[string]interface{} {
+	if msg == nil {
+		return nil
+	}
+	raw, err := protojson.MarshalOptions{
+		UseProtoNames:   true,
+		EmitUnpopulated: false,
+	}.Marshal(msg)
+	if err != nil {
+		return nil
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil
+	}
+	return result
+}

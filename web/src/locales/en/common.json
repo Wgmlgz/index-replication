@@ -2,6 +2,60 @@
   "common": {
     "error": "Error"
   },
+  "auth": {
+    "login": {
+      "title": "Sign in to your account",
+      "description": "Enter your credentials to continue.",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Enter username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter password",
+      "rememberMe": "Remember me",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "genericError": "Unable to sign in. Please try again.",
+      "sessionNotReady": "Login was approved, but session is not ready yet. Please try again.",
+      "verification": {
+        "description": "Approve sign-in in Telegram to finish login.",
+        "waiting": "Waiting for Telegram approval.",
+        "expiresAt": "Expires at {{time}}",
+        "checkNow": "Check approval now",
+        "checking": "Checking...",
+        "back": "Back to login",
+        "genericError": "Verification failed. Please try again."
+      }
+    }
+  },
+  "settings": {
+    "telegram": {
+      "title": "Telegram verification",
+      "loading": "Loading Telegram verification settings...",
+      "connectionLabel": "Connection:",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "username": "Telegram account: @{{username}}",
+      "instructions": {
+        "step1": "1. Generate a one-time connect link.",
+        "step2": "2. Open it and press Start in Telegram bot chat.",
+        "step3": "3. In Telegram, press the Connect account button.",
+        "step4": "4. Return here and enable login verification."
+      },
+      "generateLink": "Generate connect link",
+      "openBot": "Open bot chat",
+      "unlink": "Unlink Telegram",
+      "unlinkConfirm": "Unlink Telegram from your account? This will disable Telegram login verification.",
+      "connectLinkReady": "Open this one-time connect link:",
+      "expiresAt": "Link expires at {{time}}",
+      "enableLogin2FA": "Enable Telegram login verification",
+      "enableLogin2FADescription": "When enabled, sign-in requires Telegram approval after password.",
+      "errors": {
+        "load": "Failed to load Telegram verification settings.",
+        "connectLink": "Failed to create Telegram connect link.",
+        "update": "Failed to update Telegram verification settings.",
+        "unlink": "Failed to unlink Telegram."
+      }
+    }
+  },
   "moex": {
     "title": "MOEX indexes",
     "description": "Select an index to review performance over time.",
@@ -160,6 +214,67 @@
       "currencyAsc": "Currency",
       "boardAsc": "Board",
       "calcAsc": "Calculation type"
+    }
+  },
+  "tbankTest": {
+    "title": "T-Bank buy test",
+    "description": "Connect a T-Bank token and place a small test buy order.",
+    "menu": {
+      "title": "T-Bank test buy",
+      "button": "Open T-Bank tester"
+    },
+    "loading": "Loading integration status...",
+    "instructions": {
+      "title": "How to set this up",
+      "description": "Follow this once, then use Connect + Place test buy.",
+      "step1": "Open T-Bank Invest settings and create an API token.",
+      "step2": "Start with Sandbox environment for testing and use a sandbox token.",
+      "step3": "Paste token in API token field, optionally set default account id, then click Connect.",
+      "step4": "After connection, verify account ids in Available accounts.",
+      "step5": "Enter instrument id (FIGI/UID), quantity, and optional account id, then submit test buy.",
+      "step6": "Do not mix sandbox token with production environment.",
+      "tokenDocs": "Token docs",
+      "sandboxDocs": "Sandbox docs",
+      "settingsLink": "T-Bank Invest settings"
+    },
+    "errors": {
+      "status": "Failed to load T-Bank integration status.",
+      "connect": "Failed to connect T-Bank account.",
+      "disconnect": "Failed to disconnect T-Bank account.",
+      "buy": "Failed to place test buy order."
+    },
+    "connect": {
+      "title": "Connect account",
+      "description": "Token is stored in user settings and used only for your requests.",
+      "statusLabel": "Connection:",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "maskedToken": "Token: {{token}}",
+      "environmentLabel": "Environment",
+      "environmentSandbox": "Sandbox",
+      "environmentProduction": "Production",
+      "tokenLabel": "API token",
+      "tokenPlaceholder": "Paste T-Bank token",
+      "defaultAccountLabel": "Default account id (optional)",
+      "defaultAccountPlaceholder": "Leave empty to auto-pick first account",
+      "connectButton": "Connect",
+      "disconnectButton": "Disconnect",
+      "refreshButton": "Refresh status",
+      "accountsTitle": "Available accounts",
+      "accountsEmpty": "No accounts returned.",
+      "accountNoName": "Unnamed account"
+    },
+    "buy": {
+      "title": "Place test buy",
+      "description": "Uses market order with BUY direction.",
+      "instrumentLabel": "Instrument id (FIGI / UID)",
+      "instrumentPlaceholder": "BBG004730N88",
+      "accountLabel": "Account id (optional)",
+      "accountPlaceholder": "Leave empty to use default account",
+      "quantityLabel": "Quantity (lots)",
+      "submitButton": "Place test buy order",
+      "resultOrderId": "Order id:",
+      "resultStatus": "Execution status:"
     }
   }
 }

@@ -8,6 +8,7 @@ type RepositoryRegistry struct {
 	MoexSyncRepo     *MoexSyncRepository
 	UserRepo         *UserRepository
 	UserSettingsRepo *UserSettingsRepository
+	VerificationRepo *VerificationRepository
 }
 
 func NewRepositoryRegistry(db *gorm.DB) *RepositoryRegistry {
@@ -17,5 +18,6 @@ func NewRepositoryRegistry(db *gorm.DB) *RepositoryRegistry {
 		MoexSyncRepo:     NewMoexSyncRepository(db),
 		UserRepo:         NewUserRepository(db),
 		UserSettingsRepo: NewUserSettingsRepository(db),
+		VerificationRepo: NewVerificationRepository(db),
 	}
 }

@@ -2,14 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Building2, History, ArrowRight, Satellite, Map, NotebookPen, Camera } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { PermissionStr, useUser } from "@/components/user-context"
+import { useUser } from "@/components/user-context"
 import { DashboardCards } from "@/lib/menu"
+import { useTranslation } from "react-i18next"
 
 
 export default function DashboardPage() {
   const { hasPermission } = useUser()
+  const { t } = useTranslation()
   return (
     <div className="container mx-auto py-6">
       <div className="mb-8">
@@ -29,13 +31,13 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Icon className="h-5 w-5" />
-                  {card.title}
+                  {card.titleKey ? t(card.titleKey) : card.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Link href={card.href}>
                   <Button className="w-full">
-                    {card.buttonText}
+                    {card.buttonTextKey ? t(card.buttonTextKey) : card.buttonText}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>

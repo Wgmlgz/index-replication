@@ -5,6 +5,7 @@ This repo contains a Go REST API and a Next.js web app. New contributors should 
 - `README.md` (this file)
 - `api/README.md` (backend)
 - `web/README.md` (frontend)
+- `docs/TELEGRAM-VERIFICATION.md` (Telegram two-step login setup and flow)
 
 ## Tech Overview
 

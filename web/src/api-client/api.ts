@@ -57,6 +57,12 @@ export interface ModelsLoginRequest {
     'remember_me'?: boolean;
     'username'?: string;
 }
+export interface ModelsLoginVerifyRequest {
+    'challenge_id'?: string;
+}
+export interface ModelsLoginVerifyStatusResponse {
+    'status'?: string;
+}
 export interface ModelsMoexIndex {
     'annualHigh'?: number;
     'annualLow'?: number;
@@ -112,6 +118,19 @@ export interface ModelsPermission {
 export interface ModelsPermissionsResponse {
     'permissions': Array<ModelsPermission>;
     'user': ModelsUserResponse;
+}
+export interface ModelsTelegramConnectResponse {
+    'connect_url'?: string;
+    'expires_at'?: string;
+}
+export interface ModelsTelegramPatchRequest {
+    'login_2fa_enabled'?: boolean;
+}
+export interface ModelsTelegramStatusResponse {
+    'bot_username'?: string;
+    'connected'?: boolean;
+    'login_2fa_enabled'?: boolean;
+    'telegram_username'?: string;
 }
 export interface ModelsUpdateUserRequest {
     'comment'?: string;
@@ -526,6 +545,41 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
+         * Checks Telegram challenge status and completes login when approved
+         * @summary Complete login verification
+         * @param {ModelsLoginVerifyRequest} body Verification challenge
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        loginVerifyPost: async (body: ModelsLoginVerifyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('loginVerifyPost', 'body', body)
+            const localVarPath = `/login/verify`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Logs out the current user and clears the session
          * @summary Logout
          * @param {*} [options] Override http request option.
@@ -613,6 +667,19 @@ export const AuthApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Checks Telegram challenge status and completes login when approved
+         * @summary Complete login verification
+         * @param {ModelsLoginVerifyRequest} body Verification challenge
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async loginVerifyPost(body: ModelsLoginVerifyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.loginVerifyPost(body, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.loginVerifyPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Logs out the current user and clears the session
          * @summary Logout
          * @param {*} [options] Override http request option.
@@ -657,6 +724,16 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.loginPost(body, options).then((request) => request(axios, basePath));
         },
         /**
+         * Checks Telegram challenge status and completes login when approved
+         * @summary Complete login verification
+         * @param {ModelsLoginVerifyRequest} body Verification challenge
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        loginVerifyPost(body: ModelsLoginVerifyRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
+            return localVarFp.loginVerifyPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Logs out the current user and clears the session
          * @summary Logout
          * @param {*} [options] Override http request option.
@@ -691,6 +768,17 @@ export class AuthApi extends BaseAPI {
      */
     public loginPost(body: ModelsLoginRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).loginPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Checks Telegram challenge status and completes login when approved
+     * @summary Complete login verification
+     * @param {ModelsLoginVerifyRequest} body Verification challenge
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public loginVerifyPost(body: ModelsLoginVerifyRequest, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).loginVerifyPost(body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -805,7 +893,10 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
          * Returns downsampled weight series for index tickers
          * @summary Get MOEX index composition series
          * @param {string} secid Index SECID
-         * @param {string} tickers Comma-separated list of tickers
+         * @param {string} [tickers] Comma-separated list of tickers (optional; backend can pick top constituents)
+         * @param {number} [topCount] When tickers are omitted: number of top constituents by latest snapshot (0 &#x3D; all, default 10)
+         * @param {string} [selectionMode] Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed)
+         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD, default till/today)
          * @param {string} [from] Start date (YYYY-MM-DD)
          * @param {string} [till] End date (YYYY-MM-DD)
          * @param {number} [intervalDays] Downsample interval in days
@@ -813,11 +904,9 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexIndexesSecidCompositionSeriesGet: async (secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        moexIndexesSecidCompositionSeriesGet: async (secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'secid' is not null or undefined
             assertParamExists('moexIndexesSecidCompositionSeriesGet', 'secid', secid)
-            // verify required parameter 'tickers' is not null or undefined
-            assertParamExists('moexIndexesSecidCompositionSeriesGet', 'tickers', tickers)
             const localVarPath = `/moex/indexes/{secid}/composition/series`
                 .replace(`{${"secid"}}`, encodeURIComponent(String(secid)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -833,6 +922,18 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
 
             if (tickers !== undefined) {
                 localVarQueryParameter['tickers'] = tickers;
+            }
+
+            if (topCount !== undefined) {
+                localVarQueryParameter['topCount'] = topCount;
+            }
+
+            if (selectionMode !== undefined) {
+                localVarQueryParameter['selectionMode'] = selectionMode;
+            }
+
+            if (selectionDate !== undefined) {
+                localVarQueryParameter['selectionDate'] = selectionDate;
             }
 
             if (from !== undefined) {
@@ -1102,7 +1203,10 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * Returns downsampled weight series for index tickers
          * @summary Get MOEX index composition series
          * @param {string} secid Index SECID
-         * @param {string} tickers Comma-separated list of tickers
+         * @param {string} [tickers] Comma-separated list of tickers (optional; backend can pick top constituents)
+         * @param {number} [topCount] When tickers are omitted: number of top constituents by latest snapshot (0 &#x3D; all, default 10)
+         * @param {string} [selectionMode] Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed)
+         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD, default till/today)
          * @param {string} [from] Start date (YYYY-MM-DD)
          * @param {string} [till] End date (YYYY-MM-DD)
          * @param {number} [intervalDays] Downsample interval in days
@@ -1110,8 +1214,8 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexIndexesSecidCompositionSeriesGet(secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidCompositionSeriesGet(secid, tickers, from, till, intervalDays, lang, options);
+        async moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidCompositionSeriesGet(secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidCompositionSeriesGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1215,7 +1319,10 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * Returns downsampled weight series for index tickers
          * @summary Get MOEX index composition series
          * @param {string} secid Index SECID
-         * @param {string} tickers Comma-separated list of tickers
+         * @param {string} [tickers] Comma-separated list of tickers (optional; backend can pick top constituents)
+         * @param {number} [topCount] When tickers are omitted: number of top constituents by latest snapshot (0 &#x3D; all, default 10)
+         * @param {string} [selectionMode] Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed)
+         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD, default till/today)
          * @param {string} [from] Start date (YYYY-MM-DD)
          * @param {string} [till] End date (YYYY-MM-DD)
          * @param {number} [intervalDays] Downsample interval in days
@@ -1223,8 +1330,8 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexIndexesSecidCompositionSeriesGet(secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }> {
-            return localVarFp.moexIndexesSecidCompositionSeriesGet(secid, tickers, from, till, intervalDays, lang, options).then((request) => request(axios, basePath));
+        moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }> {
+            return localVarFp.moexIndexesSecidCompositionSeriesGet(secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang, options).then((request) => request(axios, basePath));
         },
         /**
          * Returns downsampled history for a MOEX index
@@ -1313,7 +1420,10 @@ export class MoexApi extends BaseAPI {
      * Returns downsampled weight series for index tickers
      * @summary Get MOEX index composition series
      * @param {string} secid Index SECID
-     * @param {string} tickers Comma-separated list of tickers
+     * @param {string} [tickers] Comma-separated list of tickers (optional; backend can pick top constituents)
+     * @param {number} [topCount] When tickers are omitted: number of top constituents by latest snapshot (0 &#x3D; all, default 10)
+     * @param {string} [selectionMode] Ticker auto-selection mode when tickers are omitted: fixed|rolling (default fixed)
+     * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD, default till/today)
      * @param {string} [from] Start date (YYYY-MM-DD)
      * @param {string} [till] End date (YYYY-MM-DD)
      * @param {number} [intervalDays] Downsample interval in days
@@ -1321,8 +1431,8 @@ export class MoexApi extends BaseAPI {
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public moexIndexesSecidCompositionSeriesGet(secid: string, tickers: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig) {
-        return MoexApiFp(this.configuration).moexIndexesSecidCompositionSeriesGet(secid, tickers, from, till, intervalDays, lang, options).then((request) => request(this.axios, this.basePath));
+    public moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig) {
+        return MoexApiFp(this.configuration).moexIndexesSecidCompositionSeriesGet(secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2154,6 +2264,230 @@ export class UsersApi extends BaseAPI {
      */
     public usersPost(body: ModelsCreateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * VerificationApi - axios parameter creator
+ */
+export const VerificationApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Generates a one-time Telegram connect link for the current user
+         * @summary Create Telegram connect link
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramConnectPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/verification/telegram/connect`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns Telegram connection status and whether login verification is enabled
+         * @summary Get Telegram verification status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/verification/telegram`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Updates Telegram login verification settings for the current user
+         * @summary Update Telegram verification settings
+         * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramPatch: async (payload: ModelsTelegramPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meVerificationTelegramPatch', 'payload', payload)
+            const localVarPath = `/me/verification/telegram`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * VerificationApi - functional programming interface
+ */
+export const VerificationApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = VerificationApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Generates a one-time Telegram connect link for the current user
+         * @summary Create Telegram connect link
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsTelegramConnectResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramConnectPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramConnectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns Telegram connection status and whether login verification is enabled
+         * @summary Get Telegram verification status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meVerificationTelegramGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsTelegramStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Updates Telegram login verification settings for the current user
+         * @summary Update Telegram verification settings
+         * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meVerificationTelegramPatch(payload: ModelsTelegramPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsTelegramStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramPatch(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramPatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * VerificationApi - factory interface
+ */
+export const VerificationApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = VerificationApiFp(configuration)
+    return {
+        /**
+         * Generates a one-time Telegram connect link for the current user
+         * @summary Create Telegram connect link
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): AxiosPromise<ModelsTelegramConnectResponse> {
+            return localVarFp.meVerificationTelegramConnectPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns Telegram connection status and whether login verification is enabled
+         * @summary Get Telegram verification status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsTelegramStatusResponse> {
+            return localVarFp.meVerificationTelegramGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates Telegram login verification settings for the current user
+         * @summary Update Telegram verification settings
+         * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramPatch(payload: ModelsTelegramPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsTelegramStatusResponse> {
+            return localVarFp.meVerificationTelegramPatch(payload, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * VerificationApi - object-oriented interface
+ */
+export class VerificationApi extends BaseAPI {
+    /**
+     * Generates a one-time Telegram connect link for the current user
+     * @summary Create Telegram connect link
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig) {
+        return VerificationApiFp(this.configuration).meVerificationTelegramConnectPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns Telegram connection status and whether login verification is enabled
+     * @summary Get Telegram verification status
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meVerificationTelegramGet(options?: RawAxiosRequestConfig) {
+        return VerificationApiFp(this.configuration).meVerificationTelegramGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates Telegram login verification settings for the current user
+     * @summary Update Telegram verification settings
+     * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meVerificationTelegramPatch(payload: ModelsTelegramPatchRequest, options?: RawAxiosRequestConfig) {
+        return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

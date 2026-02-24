@@ -1,10 +1,12 @@
 import { PermissionStr } from "@/components/user-context";
-import { History, Camera, Users, LineChart } from "lucide-react";
+import { History, Users, LineChart, Wallet } from "lucide-react";
 
 export type DashboardCard = {
   title: string;
+  titleKey?: string;
   icon: React.ComponentType<{ className?: string }>;
   buttonText: string;
+  buttonTextKey?: string;
   href: string;
   permission: PermissionStr | null;
 }
@@ -37,6 +39,15 @@ export const DashboardCards: DashboardCard[] = [
     icon: History,
     buttonText: 'Перейти к настройкам',
     href: '/settings',
+    permission: null,
+  },
+  {
+    title: 'T-Bank test buy',
+    titleKey: 'tbankTest.menu.title',
+    icon: Wallet,
+    buttonText: 'Open T-Bank tester',
+    buttonTextKey: 'tbankTest.menu.button',
+    href: '/tbank-test',
     permission: null,
   },
 ];

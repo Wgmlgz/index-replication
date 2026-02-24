@@ -5,6 +5,7 @@ All URIs are relative to *http://localhost:8080/api*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**loginPost**](#loginpost) | **POST** /login | Login|
+|[**loginVerifyPost**](#loginverifypost) | **POST** /login/verify | Complete login verification|
 |[**logoutPost**](#logoutpost) | **POST** /logout | Logout|
 |[**mePasswordPut**](#mepasswordput) | **PUT** /me/password | Change Password|
 
@@ -60,6 +61,62 @@ No authorization required
 |**400** | Bad Request |  -  |
 |**401** | Unauthorized |  -  |
 |**403** | Forbidden |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **loginVerifyPost**
+> { [key: string]: any; } loginVerifyPost(body)
+
+Checks Telegram challenge status and completes login when approved
+
+### Example
+
+```typescript
+import {
+    AuthApi,
+    Configuration,
+    ModelsLoginVerifyRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AuthApi(configuration);
+
+let body: ModelsLoginVerifyRequest; //Verification challenge
+
+const { status, data } = await apiInstance.loginVerifyPost(
+    body
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **body** | **ModelsLoginVerifyRequest**| Verification challenge | |
+
+
+### Return type
+
+**{ [key: string]: any; }**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**202** | Accepted |  -  |
+|**400** | Bad Request |  -  |
+|**401** | Unauthorized |  -  |
 |**500** | Internal Server Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"server/internal/config"
 	h "server/internal/handlers"
 	m "server/internal/middleware"
@@ -40,8 +42,26 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	// Auth routes
 	cs := services.NewCasbinService(db)
 	cs.InitializePolicies()
-	authHandler := h.NewAuthHandler(db, cfg, repoRegistry.UserRepo, auditService, cs)
+	telegramService := services.NewTelegramService(cfg)
+	log.Printf(
+		"telegram config: enabled=%t bot_username_set=%t poll_timeout_sec=%d",
+		telegramService.Enabled(),
+		cfg.TelegramBotUsername != "",
+		cfg.TelegramPollTimeoutSec,
+	)
+	verificationService := services.NewVerificationService(
+		cfg,
+		repoRegistry.UserRepo,
+		repoRegistry.UserSettingsRepo,
+		repoRegistry.VerificationRepo,
+		auditService,
+		telegramService,
+	)
+	verificationService.StartTelegramPolling(context.Background())
+
+	authHandler := h.NewAuthHandler(db, cfg, repoRegistry.UserRepo, auditService, cs, verificationService)
 	settingsHandler := h.NewUserSettingsHandler(repoRegistry.UserSettingsRepo)
+	verificationHandler := h.NewVerificationHandler(verificationService)
 	store := gormsessions.NewStore(db, true, []byte(cfg.SessionSecret))
 	router.Use(sessions.Sessions("auth_session", store))
 
@@ -49,6 +69,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	api := router.Group("/api")
 
 	api.POST("/login", authHandler.Login)
+	api.POST("/login-verify", authHandler.VerifyLogin)
+	api.POST("/login/verify", authHandler.VerifyLogin)
 
 	userHandler := h.NewUserHandler(cfg, repoRegistry.UserRepo, cs, auditService)
 	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
@@ -56,6 +78,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	moexReadService := services.NewMoexReadService(repoRegistry.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
 	moexHandler := h.NewMoexHandler(moexReadService)
 	moexSyncAdminHandler := h.NewMoexSyncAdminHandler(repoRegistry.MoexDataRepo)
+	tbankService := services.NewTBankService(cfg, repoRegistry.UserSettingsRepo, auditService)
+	tbankHandler := h.NewTBankHandler(tbankService)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -67,6 +91,14 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.GET("/me", m.RPM(cs, config.SelfView), userHandler.GetCurrentUser)
 		a.GET("/me/settings", m.RPM(cs, config.SelfView), settingsHandler.GetSettings)
 		a.PATCH("/me/settings", m.RPM(cs, config.SelfUpdateSettings), settingsHandler.PatchSettings)
+		a.GET("/me/tbank", m.RPM(cs, config.SelfView), tbankHandler.GetStatus)
+		a.POST("/me/tbank/connect", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.Connect)
+		a.POST("/me/tbank/disconnect", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.Disconnect)
+		a.POST("/me/tbank/test-buy", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.CreateTestBuyOrder)
+		a.GET("/me/verification/telegram", m.RPM(cs, config.SelfView), verificationHandler.GetTelegramStatus)
+		a.POST("/me/verification/telegram/connect", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.CreateTelegramConnectLink)
+		a.PATCH("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.PatchTelegramSettings)
+		a.DELETE("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.UnlinkTelegram)
 		a.PUT("/me/password", m.RPM(cs, config.SelfUpdatePassword), authHandler.ChangePassword)
 
 		a.GET("/users", m.RPM(cs, config.UsersView), userHandler.ListUsers)

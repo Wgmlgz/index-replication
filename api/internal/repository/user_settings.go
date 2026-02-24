@@ -64,6 +64,26 @@ func (r *UserSettingsRepository) UpsertSettings(userID int, values map[string]st
 	return tx.Commit().Error
 }
 
+func (r *UserSettingsRepository) DeleteSettings(userID int, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+
+	normalized := make([]string, 0, len(keys))
+	for _, key := range keys {
+		trimmed := strings.TrimSpace(key)
+		if trimmed == "" {
+			continue
+		}
+		normalized = append(normalized, trimmed)
+	}
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	return r.db.Exec("DELETE FROM user_settings WHERE user_id = ? AND key IN ?", userID, normalized).Error
+}
+
 func (r *UserSettingsRepository) GetFavoriteIndexes(userID int) ([]string, error) {
 	type row struct {
 		SecID string `gorm:"column:secid"`

@@ -19,15 +19,24 @@ type AuditLog struct {
 
 // AuditLogAction constants
 const (
-	ActionUserCreated                               = "user_created"
-	ActionUserUpdated                               = "user_updated"
-	ActionUserDeleted                               = "user_deleted"
-	ActionUserBlocked                               = "user_blocked"
-	ActionUserUnblocked                             = "user_unblocked"
-	ActionPasswordReset                             = "password_reset"
-	ActionPasswordChanged                           = "password_changed"
-	ActionUserLogin                                 = "user_login"
-	ActionUserLogout                                = "user_logout"
+	ActionUserCreated                = "user_created"
+	ActionUserUpdated                = "user_updated"
+	ActionUserDeleted                = "user_deleted"
+	ActionUserBlocked                = "user_blocked"
+	ActionUserUnblocked              = "user_unblocked"
+	ActionPasswordReset              = "password_reset"
+	ActionPasswordChanged            = "password_changed"
+	ActionUserLogin                  = "user_login"
+	ActionUserLogout                 = "user_logout"
+	ActionLoginVerificationRequested = "login_verification_requested"
+	ActionLoginVerificationApproved  = "login_verification_approved"
+	ActionLoginVerificationDenied    = "login_verification_denied"
+	ActionTelegramConnected          = "telegram_connected"
+	ActionTelegramDisconnected       = "telegram_disconnected"
+	ActionTelegram2FAUpdated         = "telegram_2fa_updated"
+	ActionTBankConnected             = "tbank_connected"
+	ActionTBankDisconnected          = "tbank_disconnected"
+	ActionTBankTestBuyCreated        = "tbank_test_buy_created"
 )
 
 // AuditLogEntityType constants

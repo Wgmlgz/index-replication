@@ -63,6 +63,7 @@ Use this mapping to locate the right layer quickly:
 - Add middleware or request/response behavior: `internal/middleware/`
 - Auth and session flow: `internal/handlers/auth.go`, `internal/middleware/session.go`
 - User management endpoints: `internal/handlers/users.go`, `internal/repository/users.go`
+- T-Bank integration/test trading: `internal/handlers/tbank.go`, `internal/services/tbank_service.go`
 - Audit log endpoints and behavior: `internal/handlers/audit_log.go`, `internal/services/audit_service.go`
 - Bot/token auth: `internal/middleware/token.go`
 - Add or change permissions: `internal/config/permission.go`, `internal/config/model.conf`
@@ -89,11 +90,17 @@ Environment variables live in `.env`. Key settings:
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
 - `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
+- `TELEGRAM_BOT_TOKEN` (optional; enables Telegram login verification transport)
+- `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)
+- `TELEGRAM_POLL_TIMEOUT_SEC` (default `30`, Telegram long-poll timeout)
+- `LOGIN_VERIFICATION_TTL_SECONDS` (default `300`, login challenge expiration)
 - `MOEX_MUTABLE_DAYS` (default `30`)
 - `MOEX_IMMUTABLE_BEFORE_DATE` (optional `YYYY-MM-DD`, immutable boundary)
 - `MOEX_LIVE_CURRENT_DAY_ENABLED` (default `false`, optional current-day live overlay)
 - `MOEX_ENABLE_MONTHLY_DEEP_RESYNC` (default `false`)
 - `MOEX_SCHEDULE_TIMEZONE` (default `Europe/Moscow`)
+- `TBANK_INVEST_GRPC_ENDPOINT` (default `invest-public-api.tbank.ru:443`)
+- `TBANK_INVEST_SANDBOX_GRPC_ENDPOINT` (default `sandbox-invest-public-api.tbank.ru:443`)
 - `TEMPORAL_ADDRESS` (default `localhost:7233`)
 - `TEMPORAL_NAMESPACE` (default `moex-sync`)
 - `TEMPORAL_TASK_QUEUE` (default `moex-sync`)
@@ -141,3 +148,18 @@ The API now exposes DB-backed sync state endpoints:
 - `GET /api/moex/sync/state`
 - `GET /api/moex/sync/coverage`
 - `GET /api/moex/sync/runs`
+
+## T-Bank Test Trading Endpoints
+
+Authenticated user endpoints for token connect + test buy flow:
+
+- `GET /api/me/tbank`
+- `POST /api/me/tbank/connect`
+- `POST /api/me/tbank/disconnect`
+- `POST /api/me/tbank/test-buy`
+
+## Telegram Verification
+
+For setup and flow details, see:
+
+- `docs/TELEGRAM-VERIFICATION.md`

@@ -13,6 +13,7 @@ import { LogOut, Package } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTranslation } from 'react-i18next';
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +37,7 @@ import { DashboardCards } from '@/lib/menu';
 // ];
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logoutUser, hasPermission } = useUser();
+  const { t } = useTranslation();
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -54,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuButton asChild>
                       <a href={item.href}>
                         <item.icon />
-                        <span>{item.title}</span>
+                        <span>{item.titleKey ? t(item.titleKey) : item.title}</span>
                       </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -103,6 +105,7 @@ function NavLink({ href, children }: NavLinkProps) {
 
 export default function UserStuff({ }) {
   const { user, logoutUser, hasPermission } = useUser();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const isMobile = useIsMobile()
@@ -148,7 +151,7 @@ export default function UserStuff({ }) {
 
                       return (
                         <NavigationMenuItem key={item.href}>
-                          <NavLink href={item.href}>{item.title}</NavLink>
+                          <NavLink href={item.href}>{item.titleKey ? t(item.titleKey) : item.title}</NavLink>
                         </NavigationMenuItem>
                       );
                     })}

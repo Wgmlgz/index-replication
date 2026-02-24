@@ -11,6 +11,8 @@ docs/ModelsAuditLogResponse.md
 docs/ModelsCreateUserRequest.md
 docs/ModelsErrorResponse.md
 docs/ModelsLoginRequest.md
+docs/ModelsLoginVerifyRequest.md
+docs/ModelsLoginVerifyStatusResponse.md
 docs/ModelsMoexIndex.md
 docs/ModelsMoexIndexCollection.md
 docs/ModelsMoexIndexCompositionEntry.md
@@ -20,6 +22,9 @@ docs/ModelsMoexIndexesOverviewResponse.md
 docs/ModelsPasswordChangeRequest.md
 docs/ModelsPermission.md
 docs/ModelsPermissionsResponse.md
+docs/ModelsTelegramConnectResponse.md
+docs/ModelsTelegramPatchRequest.md
+docs/ModelsTelegramStatusResponse.md
 docs/ModelsUpdateUserRequest.md
 docs/ModelsUserListResponse.md
 docs/ModelsUserResponse.md
@@ -32,5 +37,6 @@ docs/RepositoryMoexSyncRunRow.md
 docs/RepositoryMoexSyncStateRow.md
 docs/SettingsApi.md
 docs/UsersApi.md
+docs/VerificationApi.md
 git_push.sh
 index.ts

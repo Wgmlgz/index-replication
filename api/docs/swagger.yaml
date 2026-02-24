@@ -75,6 +75,16 @@ definitions:
       username:
         type: string
     type: object
+  models.LoginVerifyRequest:
+    properties:
+      challenge_id:
+        type: string
+    type: object
+  models.LoginVerifyStatusResponse:
+    properties:
+      status:
+        type: string
+    type: object
   models.MoexIndex:
     properties:
       annualHigh:
@@ -193,6 +203,109 @@ definitions:
     required:
     - permissions
     - user
+    type: object
+  models.TBankAccount:
+    properties:
+      access_level:
+        type: string
+      closed_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      opened_at:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+    type: object
+  models.TBankConnectRequest:
+    properties:
+      default_account_id:
+        type: string
+      environment:
+        enum:
+        - sandbox
+        - production
+        type: string
+      token:
+        type: string
+    required:
+    - environment
+    - token
+    type: object
+  models.TBankConnectionStatusResponse:
+    properties:
+      accounts:
+        items:
+          $ref: '#/definitions/models.TBankAccount'
+        type: array
+      connected:
+        type: boolean
+      connection_error:
+        type: string
+      default_account_id:
+        type: string
+      environment:
+        type: string
+      token_masked:
+        type: string
+    type: object
+  models.TBankTestBuyRequest:
+    properties:
+      account_id:
+        type: string
+      instrument_id:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - instrument_id
+    - quantity
+    type: object
+  models.TBankTestBuyResponse:
+    properties:
+      account_id:
+        type: string
+      environment:
+        type: string
+      execution_report_status:
+        type: string
+      instrument_id:
+        type: string
+      order_id:
+        type: string
+      quantity:
+        type: integer
+      response:
+        additionalProperties: true
+        type: object
+    type: object
+  models.TelegramConnectResponse:
+    properties:
+      connect_url:
+        type: string
+      expires_at:
+        type: string
+    type: object
+  models.TelegramPatchRequest:
+    properties:
+      login_2fa_enabled:
+        type: boolean
+    type: object
+  models.TelegramStatusResponse:
+    properties:
+      bot_username:
+        type: string
+      connected:
+        type: boolean
+      login_2fa_enabled:
+        type: boolean
+      telegram_username:
+        type: string
     type: object
   models.UpdateUserRequest:
     properties:
@@ -512,6 +625,45 @@ paths:
       summary: Login
       tags:
       - auth
+  /login/verify:
+    post:
+      consumes:
+      - application/json
+      description: Checks Telegram challenge status and completes login when approved
+      parameters:
+      - description: Verification challenge
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/models.LoginVerifyStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Complete login verification
+      tags:
+      - auth
   /logout:
     post:
       description: Logs out the current user and clears the session
@@ -631,6 +783,195 @@ paths:
       summary: Update current user settings
       tags:
       - settings
+  /me/tbank:
+    get:
+      description: Returns current user T-Bank connection state and available accounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TBankConnectionStatusResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get T-Bank integration status
+      tags:
+      - tbank
+  /me/tbank/connect:
+    post:
+      consumes:
+      - application/json
+      description: Saves user token/environment and verifies access by loading accounts
+      parameters:
+      - description: T-Bank connect payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.TBankConnectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TBankConnectionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Connect T-Bank account
+      tags:
+      - tbank
+  /me/tbank/disconnect:
+    post:
+      description: Removes saved T-Bank credentials for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Disconnect T-Bank account
+      tags:
+      - tbank
+  /me/tbank/test-buy:
+    post:
+      consumes:
+      - application/json
+      description: Places a market buy order using the connected user T-Bank account
+      parameters:
+      - description: T-Bank test buy payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.TBankTestBuyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TBankTestBuyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create T-Bank test buy order
+      tags:
+      - tbank
+  /me/verification/telegram:
+    delete:
+      description: Removes Telegram connection and disables Telegram login verification
+        for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TelegramStatusResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Unlink Telegram verification
+      tags:
+      - verification
+    get:
+      description: Returns Telegram connection status and whether login verification
+        is enabled
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TelegramStatusResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get Telegram verification status
+      tags:
+      - verification
+    patch:
+      consumes:
+      - application/json
+      description: Updates Telegram login verification settings for the current user
+      parameters:
+      - description: Telegram verification settings
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.TelegramPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TelegramStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update Telegram verification settings
+      tags:
+      - verification
+  /me/verification/telegram/connect:
+    post:
+      description: Generates a one-time Telegram connect link for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TelegramConnectResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create Telegram connect link
+      tags:
+      - verification
   /moex/indexes/{secid}/composition:
     get:
       description: Returns index composition snapshot
@@ -677,10 +1018,24 @@ paths:
         name: secid
         required: true
         type: string
-      - description: Comma-separated list of tickers
+      - description: Comma-separated list of tickers (optional; backend can pick top
+          constituents)
         in: query
         name: tickers
-        required: true
+        type: string
+      - description: 'When tickers are omitted: number of top constituents by latest
+          snapshot (0 = all, default 10)'
+        in: query
+        name: topCount
+        type: integer
+      - description: 'Ticker auto-selection mode when tickers are omitted: fixed|rolling
+          (default fixed)'
+        in: query
+        name: selectionMode
+        type: string
+      - description: Top selection date for fixed mode (YYYY-MM-DD, default till/today)
+        in: query
+        name: selectionDate
         type: string
       - description: Start date (YYYY-MM-DD)
         in: query
