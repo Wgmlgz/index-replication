@@ -55,12 +55,12 @@ function ButtonToggleGroup<TValue extends string>({
   value,
   options,
   onValueChange,
-  size = "sm",
+  size = "icon",
   activeVariant = "default",
   inactiveVariant = "secondary",
   select,
   groupClassName,
-  buttonClassName,
+  buttonClassName ='w-auto h-7 px-2 text-xs',
 }: ButtonToggleGroupProps<TValue>) {
   const resolveSelectVariant = (
     variant: ButtonVariant
@@ -83,7 +83,7 @@ function ButtonToggleGroup<TValue extends string>({
         key={option.value}
         type="button"
         size={size}
-        className={cn(size === "icon" ? "size-8" : undefined, buttonClassName)}
+        className={buttonClassName}
         variant={isSelected ? activeVariant : inactiveVariant}
         onClick={() => onValueChange(option.value)}
         aria-pressed={isSelected}
@@ -107,7 +107,7 @@ function ButtonToggleGroup<TValue extends string>({
           <SelectTrigger
             size="sm"
             variant={selectVariant}
-            className={cn(size === "sm" ? "h-7 text-xs" : undefined, select.triggerClassName)}
+            className={cn(size === "icon" ? "h-7 text-xs" : undefined, select.triggerClassName)}
           >
             <SelectValue placeholder={select.placeholder} />
           </SelectTrigger>
