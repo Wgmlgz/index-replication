@@ -19,7 +19,9 @@ const (
 	tbankSettingEnvironment      = "integrations.tbank.environment"
 	tbankSettingDefaultAccountID = "integrations.tbank.default_account_id"
 
-	tbankAppName = "index-replication"
+	tbankAppName                   = "index-replication"
+	sandboxAutoPayInCurrency       = "RUB"
+	sandboxAutoPayInUnits    int64 = 1000000
 )
 
 var (
@@ -76,8 +78,8 @@ func (s *TBankService) GetStatus(ctx context.Context, userID int) (*models.TBank
 	}
 	resp.Accounts = accounts
 
-	if resp.DefaultAccountID == "" && len(accounts) > 0 {
-		resp.DefaultAccountID = accounts[0].ID
+	if resp.DefaultAccountID == "" {
+		resp.DefaultAccountID = selectDefaultAccountID(accounts)
 	}
 
 	return resp, nil
@@ -106,10 +108,28 @@ func (s *TBankService) Connect(
 	if err != nil {
 		return nil, err
 	}
+	if len(accounts) == 0 && environment == models.TBankEnvironmentSandbox {
+		createdAccountID, createErr := s.openSandboxAccount(ctx, token)
+		if createErr != nil {
+			return nil, createErr
+		}
+		accounts, err = s.GetAccounts(ctx, environment, token)
+		if err != nil {
+			return nil, err
+		}
+		if len(accounts) == 0 && createdAccountID != "" {
+			accounts = append(accounts, models.TBankAccount{
+				ID:     createdAccountID,
+				Name:   "Sandbox account",
+				Type:   "ACCOUNT_TYPE_TINKOFF",
+				Status: "ACCOUNT_STATUS_OPEN",
+			})
+		}
+	}
 
 	defaultAccountID := strings.TrimSpace(req.DefaultAccountID)
-	if defaultAccountID == "" && len(accounts) > 0 {
-		defaultAccountID = accounts[0].ID
+	if defaultAccountID == "" {
+		defaultAccountID = selectDefaultAccountID(accounts)
 	}
 	if defaultAccountID != "" && !containsAccount(accounts, defaultAccountID) {
 		return nil, errors.New("default account is not available for this token")
@@ -199,8 +219,17 @@ func (s *TBankService) CreateTestBuyOrder(
 		if err != nil {
 			return nil, err
 		}
-		if len(accounts) > 0 {
-			accountID = accounts[0].ID
+		accountID = selectDefaultAccountID(accounts)
+		if accountID == "" && environment == models.TBankEnvironmentSandbox {
+			accountID, err = s.openSandboxAccount(ctx, token)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if accountID != "" {
+			_ = s.userSettingsRepo.UpsertSettings(userID, map[string]string{
+				tbankSettingDefaultAccountID: accountID,
+			})
 		}
 	}
 	if accountID == "" {
@@ -216,16 +245,14 @@ func (s *TBankService) CreateTestBuyOrder(
 		OrderId:      uuid.NewString(),
 	}
 
-	var orderResp *pb.PostOrderResponse
-	if err := s.withConnection(ctx, environment, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
-		client := pb.NewOrdersServiceClient(conn)
-		resp, callErr := client.PostOrder(callCtx, orderReq)
-		if callErr != nil {
-			return callErr
+	orderResp, err := s.postMarketBuyOrder(ctx, environment, token, orderReq)
+	if err != nil && environment == models.TBankEnvironmentSandbox && isTBankErrorCode(err, "30034") {
+		if payInErr := s.sandboxPayIn(ctx, token, accountID, sandboxAutoPayInCurrency, sandboxAutoPayInUnits); payInErr == nil {
+			orderReq.OrderId = uuid.NewString()
+			orderResp, err = s.postMarketBuyOrder(ctx, environment, token, orderReq)
 		}
-		orderResp = resp
-		return nil
-	}); err != nil {
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -285,4 +312,73 @@ func (s *TBankService) GetAccounts(
 		return nil, err
 	}
 	return accounts, nil
+}
+
+func (s *TBankService) openSandboxAccount(
+	ctx context.Context,
+	token string,
+) (string, error) {
+	var accountID string
+	err := s.withConnection(ctx, models.TBankEnvironmentSandbox, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
+		client := pb.NewSandboxServiceClient(conn)
+		resp, callErr := client.OpenSandboxAccount(callCtx, &pb.OpenSandboxAccountRequest{})
+		if callErr != nil {
+			return callErr
+		}
+		accountID = strings.TrimSpace(resp.GetAccountId())
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return accountID, nil
+}
+
+func (s *TBankService) sandboxPayIn(
+	ctx context.Context,
+	token string,
+	accountID string,
+	currency string,
+	units int64,
+) error {
+	return s.withConnection(ctx, models.TBankEnvironmentSandbox, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
+		client := pb.NewSandboxServiceClient(conn)
+		_, callErr := client.SandboxPayIn(callCtx, &pb.SandboxPayInRequest{
+			AccountId: accountID,
+			Amount: &pb.MoneyValue{
+				Currency: currency,
+				Units:    units,
+				Nano:     0,
+			},
+		})
+		return callErr
+	})
+}
+
+func (s *TBankService) postMarketBuyOrder(
+	ctx context.Context,
+	environment string,
+	token string,
+	orderReq *pb.PostOrderRequest,
+) (*pb.PostOrderResponse, error) {
+	var orderResp *pb.PostOrderResponse
+	if err := s.withConnection(ctx, environment, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
+		client := pb.NewOrdersServiceClient(conn)
+		resp, callErr := client.PostOrder(callCtx, orderReq)
+		if callErr != nil {
+			return callErr
+		}
+		orderResp = resp
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return orderResp, nil
+}
+
+func isTBankErrorCode(err error, code string) bool {
+	if err == nil || strings.TrimSpace(code) == "" {
+		return false
+	}
+	return strings.Contains(err.Error(), code)
 }

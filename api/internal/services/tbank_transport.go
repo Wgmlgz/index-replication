@@ -131,6 +131,9 @@ func normalizeTBankError(err error) error {
 	if msg == "" {
 		msg = "T-Bank request failed"
 	}
+	if st.Code() == codes.InvalidArgument && msg == "30034" {
+		return fmt.Errorf("sandbox account has insufficient funds (30034); top up balance and retry")
+	}
 	if st.Code() == codes.Unauthenticated || st.Code() == codes.PermissionDenied {
 		return fmt.Errorf("%w: %s", ErrTBankAuthFailed, msg)
 	}
@@ -163,6 +166,26 @@ func containsAccount(accounts []models.TBankAccount, accountID string) bool {
 		}
 	}
 	return false
+}
+
+func selectDefaultAccountID(accounts []models.TBankAccount) string {
+	if len(accounts) == 0 {
+		return ""
+	}
+
+	for _, account := range accounts {
+		if strings.EqualFold(account.Status, "ACCOUNT_STATUS_OPEN") && strings.TrimSpace(account.ID) != "" {
+			return account.ID
+		}
+	}
+
+	for _, account := range accounts {
+		if strings.TrimSpace(account.ID) != "" {
+			return account.ID
+		}
+	}
+
+	return ""
 }
 
 func protoToMap(msg proto.Message) map[string]interface{} {
