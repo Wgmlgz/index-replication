@@ -60,6 +60,25 @@ MOEX schedules are applied automatically on startup by the one-shot `temporal-ap
 Operational timeline and monitoring details are documented in `docs/TEMPORAL-MOEX-OPERATIONS.md`.
 Historical MOEX API reads are DB-backed; coverage status is exposed via response headers and sync admin endpoints.
 
+## Move Backfilled MOEX Data (Local -> Prod)
+
+Use `scripts/moex-backfill-transfer.sh` to transfer only MOEX backfill tables (`moex_*`) between compose deployments.
+
+Examples:
+
+```bash
+# 1) Export local data to a dump file
+./scripts/moex-backfill-transfer.sh dump --file ./backups/moex-backfill.sql.gz
+
+# 2) On prod context, restore that dump (truncates MOEX tables first)
+./scripts/moex-backfill-transfer.sh restore --target-context prod --file ./backups/moex-backfill.sql.gz
+
+# Or run both in one command
+./scripts/moex-backfill-transfer.sh migrate --target-context prod
+```
+
+If a docker context has multiple compose projects, pass `--source-project` / `--target-project`.
+
 ## Repo Layout
 
 - `api/` Go REST API

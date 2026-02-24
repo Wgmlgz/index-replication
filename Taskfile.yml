@@ -65,6 +65,25 @@ tasks:
     cmds:
       - node scripts/fetch-moex-docs.js
 
+  moex:data:dump:
+    desc: Dump MOEX backfill tables from local compose postgres
+    cmds:
+      - ./scripts/moex-backfill-transfer.sh dump
+
+  moex:data:restore:
+    desc: Restore MOEX backfill tables into local compose postgres (FILE=...)
+    requires:
+      vars: [FILE]
+    cmds:
+      - ./scripts/moex-backfill-transfer.sh restore --file {{.FILE}}
+
+  moex:data:migrate:
+    desc: Move MOEX backfill data from current docker context to TARGET_CONTEXT
+    requires:
+      vars: [TARGET_CONTEXT]
+    cmds:
+      - ./scripts/moex-backfill-transfer.sh migrate --target-context {{.TARGET_CONTEXT}}{{if .SOURCE_CONTEXT}} --source-context {{.SOURCE_CONTEXT}}{{end}}{{if .SOURCE_PROJECT}} --source-project {{.SOURCE_PROJECT}}{{end}}{{if .TARGET_PROJECT}} --target-project {{.TARGET_PROJECT}}{{end}}{{if .FILE}} --file {{.FILE}}{{end}}{{if .NO_TRUNCATE}} --no-truncate{{end}}{{if .KEEP_FILE}} --keep-file{{end}}
+
   dev:api:
     cmds:
       - task -d api dev

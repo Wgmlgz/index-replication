@@ -3,6 +3,8 @@
 import { useTranslation } from 'react-i18next';
 import { Suspense } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndexCompositionCard } from '@/components/moex-indexes/composition/index-composition-card';
 import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';
@@ -44,15 +46,24 @@ function MoexIndexesContent() {
 
       <div className='grid flex-1 min-h-0 grid-cols-1 gap-6 grid-rows-[minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[480px_minmax(0,1fr)]'>
         <IndexListCard />
-        <div
-          className={`grid min-h-0 gap-6 ${
-            showCompositionCard
-              ? 'grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'
-              : 'grid-rows-[minmax(0,1fr)]'
-          }`}
-        >
-          <IndexChartCard />
-          {showCompositionCard && <IndexCompositionCard />}
+        <div className='min-h-0'>
+          <Card className='flex h-full min-h-0 flex-col gap-0 py-0'>
+            <div
+              className={`grid h-full min-h-0 ${
+                showCompositionCard
+                  ? 'grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+                  : 'grid-rows-[minmax(0,1fr)]'
+              }`}
+            >
+              <IndexChartCard embedded />
+              {showCompositionCard && (
+                <>
+                  <Separator />
+                  <IndexCompositionCard embedded />
+                </>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
     </div>
