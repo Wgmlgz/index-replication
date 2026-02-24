@@ -3,7 +3,13 @@
 import { useTranslation } from 'react-i18next';
 import { Suspense } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndexCompositionCard } from '@/components/moex-indexes/composition/index-composition-card';
@@ -21,7 +27,22 @@ function MoexIndexesContent() {
   const error = listError ?? detailError;
   const { t } = useTranslation();
   const overviewLabel = t('moex.sources.overview');
-  const showCompositionCard = selectedIndex ? selectedIndex.hasComposition : true;
+  const showCompositionCard = selectedIndex
+    ? selectedIndex.hasComposition
+    : true;
+
+  const historySourceLabel = selectedIndex
+    ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
+    : t('moex.sources.selectIndex');
+  const chartTitle = selectedIndex
+    ? `${selectedIndex.name || selectedIndex.shortName || selectedIndex.secid}${
+        selectedIndex.currency ? ` ${selectedIndex.currency}` : ''
+      }`
+    : t('moex.chart.title');
+  const historyHref =
+    selectedIndex && selectedIndex.secid
+      ? moexSourceLinks.indexPage(selectedIndex.secid)
+      : undefined;
 
   return (
     <div className='flex h-[calc(100svh-65px-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 flex-col gap-6 overflow-hidden'>
@@ -47,22 +68,28 @@ function MoexIndexesContent() {
       <div className='grid flex-1 min-h-0 grid-cols-1 gap-6 grid-rows-[minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[480px_minmax(0,1fr)]'>
         <IndexListCard />
         <div className='min-h-0'>
-          <Card className='flex h-full min-h-0 flex-col gap-0 py-0'>
-            <div
+          <Card className='h-full min-h-0'>
+            <CardHeader>
+              <CardTitle>
+                {selectedIndex && selectedIndex.secid} - {chartTitle}
+              </CardTitle>
+              <CardAction>
+                <MoexSourceButton
+                  href={historyHref}
+                  label={historySourceLabel}
+                  tooltip={historySourceLabel}
+                  disabledTooltip={t('moex.sources.selectIndex')}
+                />
+              </CardAction>
+            </CardHeader>
+            <CardContent
               className={`grid h-full min-h-0 ${
-                showCompositionCard
-                  ? 'grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)]'
-                  : 'grid-rows-[minmax(0,1fr)]'
+                showCompositionCard ? 'grid-rows-2' : 'grid-rows-1'
               }`}
             >
-              <IndexChartCard embedded />
-              {showCompositionCard && (
-                <>
-                  <Separator />
-                  <IndexCompositionCard embedded />
-                </>
-              )}
-            </div>
+              <IndexChartCard />
+              {showCompositionCard && <IndexCompositionCard />}
+            </CardContent>
           </Card>
         </div>
       </div>

@@ -7,7 +7,11 @@ import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import {
@@ -36,6 +40,10 @@ const DEFAULT_TOP_COUNT = 10;
 const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
 const DEFAULT_ISSUE_BOARD = 'EQWY';
 
+type IndexCompositionCardProps = {
+  embedded?: boolean;
+};
+
 const resolveChartDate = (chartData: ChartData): string | null => {
   if (chartData.length === 0) return null;
   const last = chartData[chartData.length - 1] as { time?: unknown };
@@ -56,7 +64,9 @@ const resolveChartDate = (chartData: ChartData): string | null => {
   return null;
 };
 
-export function IndexCompositionCard() {
+export function IndexCompositionCard({
+  embedded = false,
+}: IndexCompositionCardProps) {
   const {
     selectedIndex,
     chartData,
@@ -157,13 +167,14 @@ export function IndexCompositionCard() {
       : resolvedTopCount;
   const trendLoading = snapshotLoading || seriesLoading;
   const trendError = snapshotError || seriesError;
-  const showLegend = true
+  const showLegend = true;
   // compositionTab !== 'snapshot' &&
   // !trendLoading &&
   // !trendError &&
   // series.length > 0;
   const showOtherLegend =
-    (compositionTab === 'stacked' || compositionTab === 'snapshot') && snapshotOtherWeight > 0.01;
+    (compositionTab === 'stacked' || compositionTab === 'snapshot') &&
+    snapshotOtherWeight > 0.01;
   const showSnapshotSkeleton = snapshotLoading && snapshotTop.length === 0;
   const showTrendSkeleton = trendLoading && series.length === 0;
   const selectedSecid = selectedIndex?.secid ?? '';
@@ -182,13 +193,13 @@ export function IndexCompositionCard() {
     : undefined;
 
   return (
-    <Card className='flex h-full flex-col'>
+    <>
       <Tabs
         value={compositionTab}
         onValueChange={next => setCompositionTab(next as CompositionTab)}
         className='flex h-full flex-col'
       >
-        <CardContent className='flex h-full min-h-0 flex-col gap-4 lg:flex-row'>
+        <div className='flex h-full min-h-0 flex-col gap-4 lg:flex-row'>
           <div className='flex w-full flex-col gap-4 lg:w-[320px]'>
             <div className='flex items-start justify-between gap-2'>
               <div className='space-y-1'>
@@ -306,7 +317,8 @@ export function IndexCompositionCard() {
                           <span
                             className='h-2.5 w-2.5 rounded-full'
                             style={{
-                              backgroundColor: resolveCompositionSeriesColor(index),
+                              backgroundColor:
+                                resolveCompositionSeriesColor(index),
                             }}
                           />
                           <Tooltip>
@@ -314,12 +326,14 @@ export function IndexCompositionCard() {
                               <a
                                 href={moexSourceLinks.issuePage(
                                   item.id,
-                                  DEFAULT_ISSUE_BOARD
+                                  DEFAULT_ISSUE_BOARD,
                                 )}
                                 target='_blank'
                                 rel='noreferrer noopener'
                                 className='inline-flex items-center gap-2 hover:underline'
-                                aria-label={t('moex.composition.legend.openTicker')}
+                                aria-label={t(
+                                  'moex.composition.legend.openTicker',
+                                )}
                               >
                                 <span className='font-medium text-foreground'>
                                   {item.id}
@@ -329,16 +343,24 @@ export function IndexCompositionCard() {
                                 </span>
                               </a>
                             </TooltipTrigger>
-                            <TooltipContent side='right' className='max-w-[260px]'>
+                            <TooltipContent
+                              side='right'
+                              className='max-w-[260px]'
+                            >
                               <div className='grid gap-1'>
                                 <div className='font-semibold'>{item.id}</div>
-                                {item.name !== item.id && <div>{item.name}</div>}
+                                {item.name !== item.id && (
+                                  <div>{item.name}</div>
+                                )}
                                 {latestPoint && (
                                   <>
                                     <div>
-                                      {t('moex.composition.legend.latestWeight', {
-                                        value: latestPoint.value.toFixed(2),
-                                      })}
+                                      {t(
+                                        'moex.composition.legend.latestWeight',
+                                        {
+                                          value: latestPoint.value.toFixed(2),
+                                        },
+                                      )}
                                     </div>
                                     <div>
                                       {t('moex.composition.legend.asOf', {
@@ -349,9 +371,12 @@ export function IndexCompositionCard() {
                                 )}
                                 {snapshotPoint && (
                                   <div>
-                                    {t('moex.composition.legend.snapshotWeight', {
-                                      value: snapshotPoint.weight.toFixed(2),
-                                    })}
+                                    {t(
+                                      'moex.composition.legend.snapshotWeight',
+                                      {
+                                        value: snapshotPoint.weight.toFixed(2),
+                                      },
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -445,8 +470,8 @@ export function IndexCompositionCard() {
               )}
             </TabsContent>
           </div>
-        </CardContent>
+        </div>
       </Tabs>
-    </Card>
+    </>
   );
 }

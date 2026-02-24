@@ -36,8 +36,13 @@ import {
   RANGE_OPTIONS,
 } from './use-moex-indexes-detail.utils';
 import type { IntervalKey, RangeKey } from './moex-indexes-detail.types';
+import { ButtonGroup } from '@/components/ui/button-group';
 
-export function IndexChartCard() {
+type IndexChartCardProps = {
+  embedded?: boolean;
+};
+
+export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
   const {
     selectedIndex,
     selectedIndexCollections,
@@ -97,241 +102,214 @@ export function IndexChartCard() {
 
   const isQuickRange = QUICK_RANGE_KEYS.includes(rangeKey);
   const isQuickInterval = QUICK_INTERVAL_KEYS.includes(intervalKey);
-  const historySourceLabel = selectedIndex
-    ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
-    : t('moex.sources.selectIndex');
-  const chartTitle = selectedIndex
-    ? `${selectedIndex.name || selectedIndex.shortName || selectedIndex.secid}${
-        selectedIndex.currency ? ` ${selectedIndex.currency}` : ''
-      }`
-    : t('moex.chart.title');
-  const isInactive = selectedIndex
-    ? isIndexInactive(selectedIndex.lastActiveDate)
-    : false;
-  const historyHref = selectedIndex
-    ? moexSourceLinks.indexPage(selectedIndex.secid)
-    : undefined;
+  const isInactive =
+    selectedIndex && selectedIndex.lastActiveDate
+      ? isIndexInactive(selectedIndex.lastActiveDate)
+      : false;
   const showChartSkeleton = historyLoading && chartData.length === 0;
 
   return (
-    <Card className='flex h-full flex-col'>
-      <CardHeader>
-        <CardTitle>
-          {selectedIndex && selectedIndex.secid} - {chartTitle}
-        </CardTitle>
-        <CardAction>
-          <MoexSourceButton
-            href={historyHref}
-            label={historySourceLabel}
-            tooltip={historySourceLabel}
-            disabledTooltip={t('moex.sources.selectIndex')}
-          />
-        </CardAction>
-      </CardHeader>
-      <CardContent className='flex h-full min-h-0 flex-col gap-3'>
-        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-          <div className='flex flex-col gap-3 lg:w-[340px]'>
-            {selectedIndex && (
-              <>
-                <div className='space-y-2'>
-                  {latestValue !== null && (
-                    <div className='text-sm'>
-                      <span className='font-medium'>
-                        {numberFormatter.format(latestValue)}
+    <div className='flex h-full min-h-0 flex-col gap-3'>
+      <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
+        <div className='flex flex-col gap-3 lg:w-[340px]'>
+          {selectedIndex && (
+            <>
+              <div className='space-y-2'>
+                {latestValue !== null && (
+                  <div className='text-sm'>
+                    <span className='font-medium'>
+                      {numberFormatter.format(latestValue)}
+                    </span>
+                    {selectedIndex.currency ? ` ${selectedIndex.currency}` : ''}
+                    {change !== null && changePercent !== null && (
+                      <span
+                        className={`ml-2 text-sm font-medium ${
+                          change > 0
+                            ? 'text-emerald-600'
+                            : change < 0
+                              ? 'text-red-600'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {change > 0 ? '+' : ''}
+                        {numberFormatter.format(change)} (
+                        {change > 0 ? '+' : ''}
+                        {changePercent.toFixed(2)}%)
                       </span>
-                      {selectedIndex.currency
-                        ? ` ${selectedIndex.currency}`
-                        : ''}
-                      {change !== null && changePercent !== null && (
-                        <span
-                          className={`ml-2 text-sm font-medium ${
-                            change > 0
-                              ? 'text-emerald-600'
-                              : change < 0
-                                ? 'text-red-600'
-                                : 'text-muted-foreground'
-                          }`}
-                        >
-                          {change > 0 ? '+' : ''}
-                          {numberFormatter.format(change)} (
-                          {change > 0 ? '+' : ''}
-                          {changePercent.toFixed(2)}%)
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className='space-y-3'>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <span className='text-xs text-muted-foreground'>
-                      {t('moex.chart.range.label')}
-                    </span>
-                    <div className='flex flex-wrap gap-2'>
-                      {QUICK_RANGE_KEYS.map(key => {
-                        const option = RANGE_OPTIONS.find(
-                          item => item.value === key,
-                        );
-                        if (!option) return null;
-                        return (
-                          <Button
-                            key={key}
-                            type='button'
-                            size='sm'
-                            className='h-7 px-2 text-xs'
-                            variant={rangeKey === key ? 'secondary' : 'outline'}
-                            onClick={() => setRangeKey(key)}
-                            aria-pressed={rangeKey === key}
-                          >
-                            {t(option.labelKey)}
-                          </Button>
-                        );
-                      })}
-                      <Select
-                        value={isQuickRange ? undefined : rangeKey}
-                        onValueChange={value => setRangeKey(value as RangeKey)}
-                      >
-                        <SelectTrigger size='sm' className='h-7 text-xs'>
-                          <SelectValue
-                            placeholder={t('moex.chart.range.more')}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXTRA_RANGE_OPTIONS.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {t(option.labelKey)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    )}
                   </div>
-                  {rangeKey === 'custom' && (
-                    <div className='flex flex-wrap items-end gap-3'>
-                      <div className='space-y-1'>
-                        <Label
-                          htmlFor='moex-chart-from'
-                          className='text-xs text-muted-foreground'
-                        >
-                          {t('moex.chart.range.from')}
-                        </Label>
-                        <Input
-                          id='moex-chart-from'
-                          type='date'
-                          value={customFrom}
-                          onChange={event => setCustomFrom(event.target.value)}
-                        />
-                      </div>
-                      <div className='space-y-1'>
-                        <Label
-                          htmlFor='moex-chart-to'
-                          className='text-xs text-muted-foreground'
-                        >
-                          {t('moex.chart.range.to')}
-                        </Label>
-                        <Input
-                          id='moex-chart-to'
-                          type='date'
-                          value={customTill}
-                          onChange={event => setCustomTill(event.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
+              </div>
 
-                <div className='space-y-3'>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <span className='text-xs text-muted-foreground'>
-                      {t('moex.chart.interval.label')}
-                    </span>
-                    <div className='flex flex-wrap gap-2'>
-                      {QUICK_INTERVAL_KEYS.map(key => {
-                        const option = INTERVAL_OPTIONS.find(
-                          item => item.value === key,
-                        );
-                        if (!option) return null;
-                        return (
-                          <Button
-                            key={key}
-                            type='button'
-                            size='sm'
-                            className='h-7 px-2 text-xs'
-                            variant={
-                              intervalKey === key ? 'secondary' : 'outline'
-                            }
-                            onClick={() => setIntervalKey(key)}
-                            aria-pressed={intervalKey === key}
-                          >
-                            {t(option.labelKey)}
-                          </Button>
-                        );
-                      })}
-                      <Select
-                        value={isQuickInterval ? undefined : intervalKey}
-                        onValueChange={value =>
-                          setIntervalKey(value as IntervalKey)
-                        }
-                      >
-                        <SelectTrigger size='sm' className='h-7 text-xs'>
-                          <SelectValue
-                            placeholder={t('moex.chart.interval.more')}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXTRA_INTERVAL_OPTIONS.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {t(option.labelKey)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
+              <div className='space-y-3'>
                 <div className='flex flex-wrap items-center gap-2'>
                   <span className='text-xs text-muted-foreground'>
-                    {t('moex.chart.view.label')}
+                    {t('moex.chart.range.label')}
                   </span>
                   <div className='flex flex-wrap gap-2'>
-                    <Button
-                      type='button'
-                      size='icon'
-                      className='size-8'
-                      variant={viewMode === 'price' ? 'secondary' : 'outline'}
-                      onClick={() => setViewMode('price')}
-                      aria-pressed={viewMode === 'price'}
-                      aria-label={t('moex.chart.view.price')}
-                      title={t('moex.chart.view.price')}
+                    {QUICK_RANGE_KEYS.map(key => {
+                      const option = RANGE_OPTIONS.find(
+                        item => item.value === key,
+                      );
+                      if (!option) return null;
+                      return (
+                        <Button
+                          key={key}
+                          type='button'
+                          size='sm'
+                          className='h-7 px-2 text-xs'
+                          variant={rangeKey === key ? 'secondary' : 'outline'}
+                          onClick={() => setRangeKey(key)}
+                          aria-pressed={rangeKey === key}
+                        >
+                          {t(option.labelKey)}
+                        </Button>
+                      );
+                    })}
+                    <Select
+                      value={isQuickRange ? undefined : rangeKey}
+                      onValueChange={value => setRangeKey(value as RangeKey)}
                     >
-                      <DollarSign className='size-4' />
-                    </Button>
-                    <Button
-                      type='button'
-                      size='icon'
-                      className='size-8'
-                      variant={viewMode === 'percent' ? 'secondary' : 'outline'}
-                      onClick={() => setViewMode('percent')}
-                      aria-pressed={viewMode === 'percent'}
-                      aria-label={t('moex.chart.view.percent')}
-                      title={t('moex.chart.view.percent')}
-                    >
-                      <Percent className='size-4' />
-                    </Button>
+                      <SelectTrigger size='sm' className='h-7 text-xs'>
+                        <SelectValue placeholder={t('moex.chart.range.more')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXTRA_RANGE_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+                {rangeKey === 'custom' && (
+                  <div className='flex flex-wrap items-end gap-3'>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='moex-chart-from'
+                        className='text-xs text-muted-foreground'
+                      >
+                        {t('moex.chart.range.from')}
+                      </Label>
+                      <Input
+                        id='moex-chart-from'
+                        type='date'
+                        value={customFrom}
+                        onChange={event => setCustomFrom(event.target.value)}
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='moex-chart-to'
+                        className='text-xs text-muted-foreground'
+                      >
+                        {t('moex.chart.range.to')}
+                      </Label>
+                      <Input
+                        id='moex-chart-to'
+                        type='date'
+                        value={customTill}
+                        onChange={event => setCustomTill(event.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
+              <div className='space-y-3'>
                 <div className='flex flex-wrap items-center gap-2'>
                   <span className='text-xs text-muted-foreground'>
-                    {t('moex.chart.type.label')}
+                    {t('moex.chart.interval.label')}
                   </span>
                   <div className='flex flex-wrap gap-2'>
+                    {QUICK_INTERVAL_KEYS.map(key => {
+                      const option = INTERVAL_OPTIONS.find(
+                        item => item.value === key,
+                      );
+                      if (!option) return null;
+                      return (
+                        <Button
+                          key={key}
+                          type='button'
+                          size='sm'
+                          className='h-7 px-2 text-xs'
+                          variant={
+                            intervalKey === key ? 'secondary' : 'outline'
+                          }
+                          onClick={() => setIntervalKey(key)}
+                          aria-pressed={intervalKey === key}
+                        >
+                          {t(option.labelKey)}
+                        </Button>
+                      );
+                    })}
+                    <Select
+                      value={isQuickInterval ? undefined : intervalKey}
+                      onValueChange={value =>
+                        setIntervalKey(value as IntervalKey)
+                      }
+                    >
+                      <SelectTrigger size='sm' className='h-7 text-xs'>
+                        <SelectValue
+                          placeholder={t('moex.chart.interval.more')}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXTRA_INTERVAL_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className='flex flex-wrap items-center gap-2'>
+                <span className='text-xs text-muted-foreground'>
+                  {t('moex.chart.view.label')}
+                </span>
+                <div className='flex flex-wrap gap-2'>
+                  <Button
+                    type='button'
+                    size='icon'
+                    className='size-8'
+                    variant={viewMode === 'price' ? 'secondary' : 'outline'}
+                    onClick={() => setViewMode('price')}
+                    aria-pressed={viewMode === 'price'}
+                    aria-label={t('moex.chart.view.price')}
+                    title={t('moex.chart.view.price')}
+                  >
+                    <DollarSign className='size-4' />
+                  </Button>
+                  <Button
+                    type='button'
+                    size='icon'
+                    className='size-8'
+                    variant={viewMode === 'percent' ? 'secondary' : 'outline'}
+                    onClick={() => setViewMode('percent')}
+                    aria-pressed={viewMode === 'percent'}
+                    aria-label={t('moex.chart.view.percent')}
+                    title={t('moex.chart.view.percent')}
+                  >
+                    <Percent className='size-4' />
+                  </Button>
+                </div>
+              </div>
+
+              <div className='flex flex-wrap items-center gap-2'>
+                <span className='text-xs text-muted-foreground'>
+                  {t('moex.chart.type.label')}
+                </span>
+                <div className='flex flex-wrap gap-2'>
+                  <ButtonGroup>
                     <Button
                       type='button'
                       size='icon'
                       className='size-8'
-                      variant={chartType === 'line' ? 'secondary' : 'outline'}
+                      variant={chartType === 'line' ? 'default' : 'secondary'}
                       onClick={() => setChartType('line')}
                       aria-pressed={chartType === 'line'}
                       aria-label={t('moex.chart.type.line')}
@@ -344,7 +322,7 @@ export function IndexChartCard() {
                       size='icon'
                       className='size-8'
                       variant={
-                        chartType === 'candlestick' ? 'secondary' : 'outline'
+                        chartType === 'candlestick' ? 'default' : 'secondary'
                       }
                       onClick={() => setChartType('candlestick')}
                       aria-pressed={chartType === 'candlestick'}
@@ -353,82 +331,82 @@ export function IndexChartCard() {
                     >
                       <CandlestickChart className='size-4' />
                     </Button>
-                  </div>
+                  </ButtonGroup>
                 </div>
+              </div>
 
-                <div className='flex flex-wrap gap-2'>
-                  {selectedIndex.currency && (
-                    <Badge variant='secondary'>{selectedIndex.currency}</Badge>
-                  )}
-                  {selectedIndex.boardId && (
-                    <Badge variant='secondary'>
-                      {t('moex.chart.board', { board: selectedIndex.boardId })}
-                    </Badge>
-                  )}
-                  {selectedIndex.calcMode && (
-                    <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
-                  )}
-                  {isInactive && selectedIndex.lastActiveDate && (
-                    <Badge
-                      variant='outline'
-                      className='border-amber-300/80 text-amber-700'
-                    >
-                      {t('moex.status.inactiveSince', {
-                        date: selectedIndex.lastActiveDate,
-                      })}
-                    </Badge>
-                  )}
-                  {selectedIndex.annualHigh !== null && (
-                    <Badge variant='outline'>
-                      {t('moex.chart.max', {
-                        value: numberFormatter.format(selectedIndex.annualHigh),
-                      })}
-                    </Badge>
-                  )}
-                  {selectedIndex.annualLow !== null && (
-                    <Badge variant='outline'>
-                      {t('moex.chart.min', {
-                        value: numberFormatter.format(selectedIndex.annualLow),
-                      })}
-                    </Badge>
-                  )}
-                </div>
-                {groupsLabel && (
-                  <div className='text-xs text-muted-foreground'>
-                    {groupsLabel}
-                  </div>
+              <div className='flex flex-wrap gap-2'>
+                {selectedIndex.currency && (
+                  <Badge variant='secondary'>{selectedIndex.currency}</Badge>
                 )}
-              </>
-            )}
-            {!selectedIndex && historyLoading && (
-              <div className='space-y-3'>
-                <Skeleton className='h-5 w-48' />
-                <Skeleton className='h-4 w-36' />
-                <Skeleton className='h-8 w-52' />
-                <div className='flex flex-wrap gap-2'>
-                  <Skeleton className='h-6 w-16' />
-                  <Skeleton className='h-6 w-20' />
-                  <Skeleton className='h-6 w-24' />
+                {selectedIndex.boardId && (
+                  <Badge variant='secondary'>
+                    {t('moex.chart.board', { board: selectedIndex.boardId })}
+                  </Badge>
+                )}
+                {selectedIndex.calcMode && (
+                  <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
+                )}
+                {isInactive && selectedIndex.lastActiveDate && (
+                  <Badge
+                    variant='outline'
+                    className='border-amber-300/80 text-amber-700'
+                  >
+                    {t('moex.status.inactiveSince', {
+                      date: selectedIndex.lastActiveDate,
+                    })}
+                  </Badge>
+                )}
+                {selectedIndex.annualHigh != null && (
+                  <Badge variant='outline'>
+                    {t('moex.chart.max', {
+                      value: numberFormatter.format(selectedIndex.annualHigh),
+                    })}
+                  </Badge>
+                )}
+                {selectedIndex.annualLow != null && (
+                  <Badge variant='outline'>
+                    {t('moex.chart.min', {
+                      value: numberFormatter.format(selectedIndex.annualLow),
+                    })}
+                  </Badge>
+                )}
+              </div>
+              {groupsLabel && (
+                <div className='text-xs text-muted-foreground'>
+                  {groupsLabel}
                 </div>
+              )}
+            </>
+          )}
+          {!selectedIndex && historyLoading && (
+            <div className='space-y-3'>
+              <Skeleton className='h-5 w-48' />
+              <Skeleton className='h-4 w-36' />
+              <Skeleton className='h-8 w-52' />
+              <div className='flex flex-wrap gap-2'>
+                <Skeleton className='h-6 w-16' />
+                <Skeleton className='h-6 w-20' />
+                <Skeleton className='h-6 w-24' />
               </div>
-            )}
-          </div>
-
-          <div className='flex min-h-[200px] flex-1 items-stretch'>
-            {showChartSkeleton && (
-              <Skeleton className='h-full min-h-[200px] w-full' />
-            )}
-            {!historyLoading && chartData.length === 0 && (
-              <div className='text-sm text-muted-foreground'>
-                {t('moex.chart.noData')}
-              </div>
-            )}
-            {!showChartSkeleton && chartData.length > 0 && (
-              <IndexChart data={chartData} seriesType={chartType} />
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+
+        <div className='flex min-h-[200px] flex-1 items-stretch'>
+          {showChartSkeleton && (
+            <Skeleton className='h-full min-h-[200px] w-full' />
+          )}
+          {!historyLoading && chartData.length === 0 && (
+            <div className='text-sm text-muted-foreground'>
+              {t('moex.chart.noData')}
+            </div>
+          )}
+          {!showChartSkeleton && chartData.length > 0 && (
+            <IndexChart data={chartData} seriesType={chartType} />
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
