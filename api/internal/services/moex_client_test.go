@@ -105,3 +105,48 @@ func TestMoexISSClientStopsAfterMaxAttempts(t *testing.T) {
 		t.Fatalf("expected %d attempts, got %d", moexRequestMaxAttempts, got)
 	}
 }
+
+func TestResolveCompositionWeightPrefersWeight(t *testing.T) {
+	row := map[string]interface{}{
+		"weight":   12.34,
+		"w_factor": 0.56,
+	}
+
+	weight := resolveCompositionWeight(row)
+	if weight == nil {
+		t.Fatalf("expected non-nil weight")
+	}
+	if *weight != 12.34 {
+		t.Fatalf("expected 12.34, got %v", *weight)
+	}
+}
+
+func TestResolveCompositionWeightFallsBackToWi(t *testing.T) {
+	row := map[string]interface{}{
+		"weight": 0.0,
+		"wi":     0.789,
+	}
+
+	weight := resolveCompositionWeight(row)
+	if weight == nil {
+		t.Fatalf("expected non-nil weight")
+	}
+	if *weight != 0.789 {
+		t.Fatalf("expected 0.789, got %v", *weight)
+	}
+}
+
+func TestResolveCompositionWeightFallsBackToWFactor(t *testing.T) {
+	row := map[string]interface{}{
+		"weight":   nil,
+		"w_factor": "0.1234",
+	}
+
+	weight := resolveCompositionWeight(row)
+	if weight == nil {
+		t.Fatalf("expected non-nil weight")
+	}
+	if *weight != 0.1234 {
+		t.Fatalf("expected 0.1234, got %v", *weight)
+	}
+}

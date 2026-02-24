@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -406,7 +407,7 @@ func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lan
 				Ticker:           asString(getValue(row, "TICKER", "ticker")),
 				ShortName:        asString(getValue(row, "SHORTNAMES", "shortnames", "SHORTNAME", "shortname")),
 				SecID:            asString(getValue(row, "SECIDS", "secids", "SECID", "secid")),
-				Weight:           asFloatPtr(getValue(row, "WEIGHT", "weight")),
+				Weight:           resolveCompositionWeight(row),
 				TradeSessionDate: asStringPtr(getValue(row, "TRADE_SESSION_DATE", "trade_session_date", "TRADESESSIONDATE", "tradeSessionDate")),
 			}
 			if entry.Ticker == "" || entry.TradeDate == "" {
@@ -482,7 +483,7 @@ func (c *moexISSClient) FetchTickerCompositionHistory(ctx context.Context, index
 			Ticker:           tickerCode,
 			ShortName:        asString(getValue(row, "SHORTNAMES", "shortnames", "SHORTNAME", "shortname")),
 			SecID:            asString(getValue(row, "SECIDS", "secids", "SECID", "secid")),
-			Weight:           asFloatPtr(getValue(row, "WEIGHT", "weight")),
+			Weight:           resolveCompositionWeight(row),
 			TradeSessionDate: asStringPtr(getValue(row, "TRADE_SESSION_DATE", "trade_session_date", "TRADESESSIONDATE", "tradeSessionDate")),
 		}
 		if entry.ShortName == "" {
@@ -502,7 +503,7 @@ func (c *moexISSClient) FetchTickerAnalytics(ctx context.Context, indexID, ticke
 	for _, row := range rows {
 		point := models.MoexIndexTickerAnalyticsPoint{
 			TradeDate: asString(getValue(row, "TRADEDATE", "tradedate")),
-			Weight:    asFloatPtr(getValue(row, "WEIGHT", "weight")),
+			Weight:    resolveCompositionWeight(row),
 		}
 		if point.TradeDate == "" {
 			continue
@@ -630,6 +631,28 @@ func asFloatPtr(value interface{}) *float64 {
 		}
 	}
 	return nil
+}
+
+func resolveCompositionWeight(row map[string]interface{}) *float64 {
+	weight := asFloatPtr(getValue(row, "WEIGHT", "weight"))
+	if !isNilOrNearZero(weight) {
+		return weight
+	}
+
+	// Some indexes (for example MOEXALLW) expose zero WEIGHT but non-zero Wi/w_factor.
+	// Use it as a fallback so composition is still informative.
+	fallback := asFloatPtr(getValue(row, "WI", "wi", "W_FACTOR", "w_factor"))
+	if fallback == nil {
+		return weight
+	}
+	return fallback
+}
+
+func isNilOrNearZero(value *float64) bool {
+	if value == nil {
+		return true
+	}
+	return math.Abs(*value) < 1e-12
 }
 
 func asIntPtr(value interface{}) *int {
