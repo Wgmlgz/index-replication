@@ -101,6 +101,7 @@ Environment variables live in `.env`. Key settings:
 - `MOEX_SCHEDULE_TIMEZONE` (default `Europe/Moscow`)
 - `TBANK_INVEST_GRPC_ENDPOINT` (default `invest-public-api.tbank.ru:443`)
 - `TBANK_INVEST_SANDBOX_GRPC_ENDPOINT` (default `sandbox-invest-public-api.tbank.ru:443`)
+- `TBANK_CA_CERT_FILE` (optional path to PEM CA cert trusted for T-Bank TLS)
 - `TEMPORAL_ADDRESS` (default `localhost:7233`)
 - `TEMPORAL_NAMESPACE` (default `moex-sync`)
 - `TEMPORAL_TASK_QUEUE` (default `moex-sync`)
@@ -157,6 +158,14 @@ Authenticated user endpoints for token connect + test buy flow:
 - `POST /api/me/tbank/connect`
 - `POST /api/me/tbank/disconnect`
 - `POST /api/me/tbank/test-buy`
+
+## T-Bank TLS CA Setup
+
+If your runtime does not trust T-Bank certificate chain, place PEM root cert at:
+
+- `api/certs/tbank-root-ca.pem`
+
+This repo auto-detects that path by default for local and Docker compose (compose mounts `./api/certs` to `/root/certs` in container). `TBANK_CA_CERT_FILE` is optional override.
 
 ## Telegram Verification
 

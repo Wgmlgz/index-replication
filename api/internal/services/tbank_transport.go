@@ -3,8 +3,11 @@ package services
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -34,10 +37,15 @@ func (s *TBankService) withConnection(
 	ctx, cancel := context.WithTimeout(parentCtx, 15*time.Second)
 	defer cancel()
 
+	tlsConfig, err := s.buildTBankTLSConfig(endpoint)
+	if err != nil {
+		return err
+	}
+
 	conn, err := grpc.DialContext(
 		ctx,
 		endpoint,
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithBlock(),
 	)
 	if err != nil {
@@ -55,6 +63,39 @@ func (s *TBankService) withConnection(
 		return normalizeTBankError(err)
 	}
 	return nil
+}
+
+func (s *TBankService) buildTBankTLSConfig(endpoint string) (*tls.Config, error) {
+	host := endpoint
+	if parsedHost, _, err := net.SplitHostPort(endpoint); err == nil {
+		host = parsedHost
+	}
+
+	config := &tls.Config{
+		ServerName: host,
+		MinVersion: tls.VersionTLS12,
+	}
+
+	caPath := strings.TrimSpace(s.cfg.TBankCACertFile)
+	if caPath == "" {
+		return config, nil
+	}
+
+	certData, err := os.ReadFile(caPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read TBANK_CA_CERT_FILE (%s): %w", caPath, err)
+	}
+
+	pool, err := x509.SystemCertPool()
+	if err != nil || pool == nil {
+		pool = x509.NewCertPool()
+	}
+	if ok := pool.AppendCertsFromPEM(certData); !ok {
+		return nil, fmt.Errorf("failed to parse PEM certificate(s) from TBANK_CA_CERT_FILE (%s)", caPath)
+	}
+
+	config.RootCAs = pool
+	return config, nil
 }
 
 func (s *TBankService) endpointByEnvironment(environment string) (string, error) {

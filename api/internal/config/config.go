@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -32,6 +33,7 @@ type Config struct {
 	MoexEnableMonthlyDeepResync    bool
 	TBankInvestGrpcEndpoint        string
 	TBankInvestSandboxGrpcEndpoint string
+	TBankCACertFile                string
 	TemporalEnableSearchAttrs      bool
 	TemporalAddr                   string
 	TemporalNS                     string
@@ -67,6 +69,7 @@ func LoadConfig() *Config {
 		MoexEnableMonthlyDeepResync:    getEnvBool("MOEX_ENABLE_MONTHLY_DEEP_RESYNC", false),
 		TBankInvestGrpcEndpoint:        getEnv("TBANK_INVEST_GRPC_ENDPOINT", "invest-public-api.tbank.ru:443"),
 		TBankInvestSandboxGrpcEndpoint: getEnv("TBANK_INVEST_SANDBOX_GRPC_ENDPOINT", "sandbox-invest-public-api.tbank.ru:443"),
+		TBankCACertFile:                getEnvNonEmpty("TBANK_CA_CERT_FILE", defaultTBankCACertFile()),
 		TemporalEnableSearchAttrs:      getEnvBool("TEMPORAL_ENABLE_SEARCH_ATTRIBUTES", false),
 		TemporalAddr:                   getEnv("TEMPORAL_ADDRESS", "localhost:7233"),
 		TemporalNS:                     getEnv("TEMPORAL_NAMESPACE", "moex-sync"),
@@ -138,4 +141,32 @@ func getEnvInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return parsed
+}
+
+func getEnvNonEmpty(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "" {
+			return trimmed
+		}
+	}
+	return defaultValue
+}
+
+func defaultTBankCACertFile() string {
+	candidates := []string{
+		"./certs/tbank-root-ca.pem",
+		"/root/certs/tbank-root-ca.pem",
+		"/app/certs/tbank-root-ca.pem",
+		"../api/certs/tbank-root-ca.pem",
+	}
+
+	for _, path := range candidates {
+		info, err := os.Stat(path)
+		if err == nil && !info.IsDir() {
+			return path
+		}
+	}
+
+	return ""
 }

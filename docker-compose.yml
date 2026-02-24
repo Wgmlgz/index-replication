@@ -108,6 +108,8 @@ services:
   api:
     build:
       context: ./api
+    volumes:
+      - ./api/certs:/root/certs:ro
     environment:
       - PORT=30000
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
@@ -123,6 +125,9 @@ services:
       - TELEGRAM_POLL_TIMEOUT_SEC=${TELEGRAM_POLL_TIMEOUT_SEC:-30}
       - LOGIN_VERIFICATION_TTL_SECONDS=${LOGIN_VERIFICATION_TTL_SECONDS:-300}
       - MOEX_LIVE_CURRENT_DAY_ENABLED=${MOEX_LIVE_CURRENT_DAY_ENABLED:-false}
+      - TBANK_INVEST_GRPC_ENDPOINT=${TBANK_INVEST_GRPC_ENDPOINT:-invest-public-api.tbank.ru:443}
+      - TBANK_INVEST_SANDBOX_GRPC_ENDPOINT=${TBANK_INVEST_SANDBOX_GRPC_ENDPOINT:-sandbox-invest-public-api.tbank.ru:443}
+      - TBANK_CA_CERT_FILE=${TBANK_CA_CERT_FILE:-/root/certs/tbank-root-ca.pem}
     depends_on:
       postgres:
         condition: service_healthy
