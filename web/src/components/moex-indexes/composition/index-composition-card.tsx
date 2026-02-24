@@ -229,57 +229,62 @@ export function IndexCompositionCard({
                 {t('moex.composition.tabs.stacked')}
               </TabsTrigger>
             </TabsList>
-            <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-              <span>{t('moex.composition.topLabel')}</span>
-              <Select
-                value={topCount === null ? 'all' : String(topCount)}
-                onValueChange={value => {
-                  if (value === 'all') {
-                    setCompositionTopCount(null);
-                    return;
-                  }
-                  const parsed = Number.parseInt(value, 10);
-                  if (Number.isFinite(parsed)) setCompositionTopCount(parsed);
-                }}
-              >
-                <SelectTrigger size='sm' className='h-7 text-xs'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {topCountOptions.map(value => (
-                    <SelectItem key={value} value={String(value)}>
-                      {value}
+            <div className='flex gap-4 items-center'>
+              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+                <span>{t('moex.composition.topLabel')}</span>
+                <Select
+                  value={topCount === null ? 'all' : String(topCount)}
+                  onValueChange={value => {
+                    if (value === 'all') {
+                      setCompositionTopCount(null);
+                      return;
+                    }
+                    const parsed = Number.parseInt(value, 10);
+                    if (Number.isFinite(parsed)) setCompositionTopCount(parsed);
+                  }}
+                >
+                  <SelectTrigger size='sm' className='h-7 text-xs'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {topCountOptions.map(value => (
+                      <SelectItem key={value} value={String(value)}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value='all'>
+                      {t('moex.composition.all')}
                     </SelectItem>
-                  ))}
-                  <SelectItem value='all'>
-                    {t('moex.composition.all')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+                <span>{t('moex.composition.selectionMode.label')}</span>
+                <Select
+                  value={compositionSelectionMode}
+                  onValueChange={value =>
+                    setCompositionSelectionMode(
+                      value as CompositionSelectionMode,
+                    )
+                  }
+                >
+                  <SelectTrigger size='sm' className='h-7 text-xs'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='fixed'>
+                      {t('moex.composition.selectionMode.fixed')}
+                    </SelectItem>
+                    <SelectItem value='rolling'>
+                      {t('moex.composition.selectionMode.rolling')}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-              <span>{t('moex.composition.selectionMode.label')}</span>
-              <Select
-                value={compositionSelectionMode}
-                onValueChange={value =>
-                  setCompositionSelectionMode(value as CompositionSelectionMode)
-                }
-              >
-                <SelectTrigger size='sm' className='h-7 text-xs'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='fixed'>
-                    {t('moex.composition.selectionMode.fixed')}
-                  </SelectItem>
-                  <SelectItem value='rolling'>
-                    {t('moex.composition.selectionMode.rolling')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             {compositionSelectionMode === 'fixed' && (
-              <div className='space-y-1'>
+              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                 <Label
                   htmlFor='moex-composition-selection-date'
                   className='text-xs text-muted-foreground'
@@ -289,6 +294,7 @@ export function IndexCompositionCard({
                 <Input
                   id='moex-composition-selection-date'
                   type='date'
+                  className='w-32'
                   value={compositionSelectionDate}
                   max={latestTradeDate ?? undefined}
                   onChange={event =>

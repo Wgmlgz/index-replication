@@ -161,7 +161,7 @@ export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
   return (
     <div className='flex h-full min-h-0 flex-col gap-3'>
       <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-        <div className='flex flex-col gap-3 lg:w-[340px]'>
+        <div className='flex flex-col gap-3 lg:w-[320px]'>
           {selectedIndex && (
             <>
               <div className='space-y-2'>
@@ -187,6 +187,12 @@ export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
                         {changePercent.toFixed(2)}%)
                       </span>
                     )}
+                  </div>
+                )}
+                {latestValue === null && historyLoading && (
+                  <div className='flex items-center gap-2'>
+                    <Skeleton className='h-5 w-20' />
+                    <Skeleton className='h-5 w-16' />
                   </div>
                 )}
               </div>

@@ -83,7 +83,7 @@ function MoexIndexesContent() {
               </CardAction>
             </CardHeader>
             <CardContent
-              className={`grid h-full min-h-0 ${
+              className={`grid h-full min-h-0 gap-4 ${
                 showCompositionCard ? 'grid-rows-2' : 'grid-rows-1'
               }`}
             >

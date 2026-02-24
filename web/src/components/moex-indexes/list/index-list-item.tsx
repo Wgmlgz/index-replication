@@ -12,10 +12,7 @@ type IndexListItemProps = {
   showCollections: boolean;
 };
 
-export function IndexListItem({
-  index,
-  showCollections,
-}: IndexListItemProps) {
+export function IndexListItem({ index, showCollections }: IndexListItemProps) {
   const {
     favoritesSet,
     selectedSecid,
@@ -25,12 +22,12 @@ export function IndexListItem({
   } = useMoexIndexListContext();
   const { t } = useTranslation();
 
-  const secidKey = index.secid.toUpperCase();
+  const secidKey = (index.secid ?? '').toUpperCase();
   const isActive = index.secid === selectedSecid;
   const isFavorite = favoritesSet.has(secidKey);
   const isInactive = isIndexInactive(index.lastActiveDate);
   const collectionTitles = showCollections
-    ? indexCollectionsMap[secidKey] ?? []
+    ? (indexCollectionsMap[secidKey] ?? [])
     : [];
 
   const previewCollections = showCollections
@@ -45,14 +42,16 @@ export function IndexListItem({
     <div
       role='button'
       tabIndex={0}
-      onClick={() => setSelectedSecid(index.secid)}
-      onKeyDown={(event) => {
+      onClick={() => setSelectedSecid(index.secid ?? null)}
+      onKeyDown={event => {
         if (event.key === 'Enter') {
-          setSelectedSecid(index.secid);
+          setSelectedSecid(index.secid ?? null);
         }
       }}
       className={`w-full rounded-md border px-3 py-2 text-left transition ${
-        isActive ? 'border-primary/60 bg-primary/10' : 'border-border hover:bg-muted'
+        isActive
+          ? 'border-primary/60 bg-primary/10'
+          : 'border-transparent hover:bg-muted'
       }`}
     >
       <div className='flex items-start justify-between gap-3'>
@@ -103,7 +102,7 @@ export function IndexListItem({
         </div>
         <button
           type='button'
-          onClick={(event) => {
+          onClick={event => {
             event.stopPropagation();
             toggleFavorite(index.secid);
           }}
