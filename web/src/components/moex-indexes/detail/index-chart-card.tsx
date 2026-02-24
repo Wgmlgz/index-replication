@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardAction,
@@ -15,12 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ButtonToggleGroup,
+  type ButtonToggleGroupOption,
+  type ButtonToggleGroupSelectOption,
+} from '@/components/ui/button-toggle-group';
 import { CandlestickChart, DollarSign, LineChart, Percent } from 'lucide-react';
 import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
@@ -36,7 +33,6 @@ import {
   RANGE_OPTIONS,
 } from './use-moex-indexes-detail.utils';
 import type { IntervalKey, RangeKey } from './moex-indexes-detail.types';
-import { ButtonGroup } from '@/components/ui/button-group';
 
 type IndexChartCardProps = {
   embedded?: boolean;
@@ -107,6 +103,60 @@ export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
       ? isIndexInactive(selectedIndex.lastActiveDate)
       : false;
   const showChartSkeleton = historyLoading && chartData.length === 0;
+  const viewModeOptions: ButtonToggleGroupOption<typeof viewMode>[] = [
+    {
+      value: 'price',
+      label: t('moex.chart.view.price'),
+      content: <DollarSign className='size-4' />,
+    },
+    {
+      value: 'percent',
+      label: t('moex.chart.view.percent'),
+      content: <Percent className='size-4' />,
+    },
+  ];
+  const chartTypeOptions: ButtonToggleGroupOption<typeof chartType>[] = [
+    {
+      value: 'line',
+      label: t('moex.chart.type.line'),
+      content: <LineChart className='size-4' />,
+    },
+    {
+      value: 'candlestick',
+      label: t('moex.chart.type.candlestick'),
+      content: <CandlestickChart className='size-4' />,
+    },
+  ];
+  const rangeOptions: ButtonToggleGroupOption<RangeKey>[] =
+    QUICK_RANGE_KEYS.map(key => {
+      const option = RANGE_OPTIONS.find(item => item.value === key);
+      if (!option) return null;
+      return {
+        value: key,
+        label: t(option.labelKey),
+        content: t(option.labelKey),
+      };
+    }).filter(option => option !== null);
+  const rangeSelectOptions: ButtonToggleGroupSelectOption<RangeKey>[] =
+    EXTRA_RANGE_OPTIONS.map(option => ({
+      value: option.value,
+      label: t(option.labelKey),
+    }));
+  const intervalOptions: ButtonToggleGroupOption<IntervalKey>[] =
+    QUICK_INTERVAL_KEYS.map(key => {
+      const option = INTERVAL_OPTIONS.find(item => item.value === key);
+      if (!option) return null;
+      return {
+        value: key,
+        label: t(option.labelKey),
+        content: t(option.labelKey),
+      };
+    }).filter(option => option !== null);
+  const intervalSelectOptions: ButtonToggleGroupSelectOption<IntervalKey>[] =
+    EXTRA_INTERVAL_OPTIONS.map(option => ({
+      value: option.value,
+      label: t(option.labelKey),
+    }));
 
   return (
     <div className='flex h-full min-h-0 flex-col gap-3'>
@@ -146,42 +196,17 @@ export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
                   <span className='text-xs text-muted-foreground'>
                     {t('moex.chart.range.label')}
                   </span>
-                  <div className='flex flex-wrap gap-2'>
-                    {QUICK_RANGE_KEYS.map(key => {
-                      const option = RANGE_OPTIONS.find(
-                        item => item.value === key,
-                      );
-                      if (!option) return null;
-                      return (
-                        <Button
-                          key={key}
-                          type='button'
-                          size='sm'
-                          className='h-7 px-2 text-xs'
-                          variant={rangeKey === key ? 'secondary' : 'outline'}
-                          onClick={() => setRangeKey(key)}
-                          aria-pressed={rangeKey === key}
-                        >
-                          {t(option.labelKey)}
-                        </Button>
-                      );
-                    })}
-                    <Select
-                      value={isQuickRange ? undefined : rangeKey}
-                      onValueChange={value => setRangeKey(value as RangeKey)}
-                    >
-                      <SelectTrigger size='sm' className='h-7 text-xs'>
-                        <SelectValue placeholder={t('moex.chart.range.more')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EXTRA_RANGE_OPTIONS.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {t(option.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <ButtonToggleGroup
+                    value={rangeKey}
+                    options={rangeOptions}
+                    onValueChange={setRangeKey}
+                    select={{
+                      value: isQuickRange ? undefined : rangeKey,
+                      placeholder: t('moex.chart.range.more'),
+                      options: rangeSelectOptions,
+                      onValueChange: setRangeKey,
+                    }}
+                  />
                 </div>
                 {rangeKey === 'custom' && (
                   <div className='flex flex-wrap items-end gap-3'>
@@ -222,116 +247,45 @@ export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
                   <span className='text-xs text-muted-foreground'>
                     {t('moex.chart.interval.label')}
                   </span>
+                  <ButtonToggleGroup
+                    value={intervalKey}
+                    options={intervalOptions}
+                    onValueChange={setIntervalKey}
+                    select={{
+                      value: isQuickInterval ? undefined : intervalKey,
+                      placeholder: t('moex.chart.interval.more'),
+                      options: intervalSelectOptions,
+                      onValueChange: setIntervalKey,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className='flex flex-wrap items-center gap-4'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <span className='text-xs text-muted-foreground'>
+                    {t('moex.chart.view.label')}
+                  </span>
                   <div className='flex flex-wrap gap-2'>
-                    {QUICK_INTERVAL_KEYS.map(key => {
-                      const option = INTERVAL_OPTIONS.find(
-                        item => item.value === key,
-                      );
-                      if (!option) return null;
-                      return (
-                        <Button
-                          key={key}
-                          type='button'
-                          size='sm'
-                          className='h-7 px-2 text-xs'
-                          variant={
-                            intervalKey === key ? 'secondary' : 'outline'
-                          }
-                          onClick={() => setIntervalKey(key)}
-                          aria-pressed={intervalKey === key}
-                        >
-                          {t(option.labelKey)}
-                        </Button>
-                      );
-                    })}
-                    <Select
-                      value={isQuickInterval ? undefined : intervalKey}
-                      onValueChange={value =>
-                        setIntervalKey(value as IntervalKey)
-                      }
-                    >
-                      <SelectTrigger size='sm' className='h-7 text-xs'>
-                        <SelectValue
-                          placeholder={t('moex.chart.interval.more')}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EXTRA_INTERVAL_OPTIONS.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {t(option.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <ButtonToggleGroup
+                      value={viewMode}
+                      options={viewModeOptions}
+                      onValueChange={setViewMode}
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className='flex flex-wrap items-center gap-2'>
-                <span className='text-xs text-muted-foreground'>
-                  {t('moex.chart.view.label')}
-                </span>
-                <div className='flex flex-wrap gap-2'>
-                  <Button
-                    type='button'
-                    size='icon'
-                    className='size-8'
-                    variant={viewMode === 'price' ? 'secondary' : 'outline'}
-                    onClick={() => setViewMode('price')}
-                    aria-pressed={viewMode === 'price'}
-                    aria-label={t('moex.chart.view.price')}
-                    title={t('moex.chart.view.price')}
-                  >
-                    <DollarSign className='size-4' />
-                  </Button>
-                  <Button
-                    type='button'
-                    size='icon'
-                    className='size-8'
-                    variant={viewMode === 'percent' ? 'secondary' : 'outline'}
-                    onClick={() => setViewMode('percent')}
-                    aria-pressed={viewMode === 'percent'}
-                    aria-label={t('moex.chart.view.percent')}
-                    title={t('moex.chart.view.percent')}
-                  >
-                    <Percent className='size-4' />
-                  </Button>
-                </div>
-              </div>
-
-              <div className='flex flex-wrap items-center gap-2'>
-                <span className='text-xs text-muted-foreground'>
-                  {t('moex.chart.type.label')}
-                </span>
-                <div className='flex flex-wrap gap-2'>
-                  <ButtonGroup>
-                    <Button
-                      type='button'
-                      size='icon'
-                      className='size-8'
-                      variant={chartType === 'line' ? 'default' : 'secondary'}
-                      onClick={() => setChartType('line')}
-                      aria-pressed={chartType === 'line'}
-                      aria-label={t('moex.chart.type.line')}
-                      title={t('moex.chart.type.line')}
-                    >
-                      <LineChart className='size-4' />
-                    </Button>
-                    <Button
-                      type='button'
-                      size='icon'
-                      className='size-8'
-                      variant={
-                        chartType === 'candlestick' ? 'default' : 'secondary'
-                      }
-                      onClick={() => setChartType('candlestick')}
-                      aria-pressed={chartType === 'candlestick'}
-                      aria-label={t('moex.chart.type.candlestick')}
-                      title={t('moex.chart.type.candlestick')}
-                    >
-                      <CandlestickChart className='size-4' />
-                    </Button>
-                  </ButtonGroup>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <span className='text-xs text-muted-foreground'>
+                    {t('moex.chart.type.label')}
+                  </span>
+                  <div className='flex flex-wrap gap-2'>
+                    <ButtonToggleGroup
+                      value={chartType}
+                      options={chartTypeOptions}
+                      onValueChange={setChartType}
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -27,17 +27,20 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  variant = "outline",
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default"
+  variant?: "outline" | "default" | "secondary"
 }) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      data-variant={variant}
       className={cn(
-        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex w-fit items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 data-[variant=outline]:border-input data-[variant=outline]:bg-transparent data-[variant=outline]:text-foreground data-[variant=outline]:shadow-xs data-[variant=outline]:hover:bg-accent data-[variant=outline]:hover:text-accent-foreground dark:data-[variant=outline]:bg-input/30 dark:data-[variant=outline]:border-input dark:data-[variant=outline]:hover:bg-input/50 data-[variant=outline]:data-[placeholder]:text-muted-foreground data-[variant=outline]:[&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=default]:border-primary data-[variant=default]:bg-primary data-[variant=default]:text-primary-foreground data-[variant=default]:shadow-xs data-[variant=default]:hover:bg-primary/90 data-[variant=default]:data-[placeholder]:text-primary-foreground/80 data-[variant=default]:[&_svg:not([class*='text-'])]:text-primary-foreground/80 data-[variant=secondary]:border-secondary data-[variant=secondary]:bg-secondary data-[variant=secondary]:text-secondary-foreground data-[variant=secondary]:shadow-xs data-[variant=secondary]:hover:bg-secondary/80 data-[variant=secondary]:data-[placeholder]:text-secondary-foreground/80 data-[variant=secondary]:[&_svg:not([class*='text-'])]:text-secondary-foreground/80 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
