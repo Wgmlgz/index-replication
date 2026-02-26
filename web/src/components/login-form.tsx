@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import { useUser } from "@/components/user-context";
 import { authApi as auth_api, usersApi } from "@/lib/api";
 import { verificationClient } from "@/lib/verification-client";
 import { useTranslation } from "react-i18next";
+import { DEFAULT_AUTHENTICATED_ROUTE, getSafeNextPath } from "@/lib/routes";
 
 export function LoginForm({
   className,
@@ -33,6 +34,7 @@ export function LoginForm({
   const [verificationExpiresAt, setVerificationExpiresAt] = useState("")
   const [isFinalizing, setIsFinalizing] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { refreshUser } = useUser();
 
   const sleep = (ms: number) =>
@@ -41,6 +43,8 @@ export function LoginForm({
   const onLoginSuccess = async () => {
     setIsFinalizing(true)
     setError("")
+    const nextPath = getSafeNextPath(searchParams.get("next"))
+    const redirectTarget = nextPath ?? DEFAULT_AUTHENTICATED_ROUTE
 
     // In some browsers/cross-origin setups Set-Cookie visibility can lag slightly.
     // Wait for /me to succeed before navigating.
@@ -48,7 +52,7 @@ export function LoginForm({
       try {
         await usersApi.meGet()
         await refreshUser()
-        router.push("/dashboard")
+        router.replace(redirectTarget)
         return
       } catch {
       }

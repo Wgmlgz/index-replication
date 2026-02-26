@@ -1,11 +1,10 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsRestoring, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usersApi as api, authApi } from '@/lib/api';
 import { Permission } from '@/api-client';
 import axios from 'axios';
-import { useRouter, usePathname } from 'next/navigation';
 
 type RoleKey =
   | string
@@ -30,11 +29,14 @@ export interface User {
   created_at: string;
 }
 
+export type AuthState = 'restoring' | 'authenticated' | 'unauthenticated';
+
 interface UserContextValue {
   user: User | null;
   permissions: Permission[];
   setUser: (user: User | null) => void;
   loading: boolean;
+  authState: AuthState;
   refreshUser: () => Promise<void>;
   logoutUser: () => Promise<void>;
 }
@@ -56,34 +58,40 @@ const emptyMeData: MeData = {
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const router = useRouter();
-  const pathname = usePathname();
   const queryClient = useQueryClient();
+  const isRestoring = useIsRestoring();
 
-  const { data, isLoading, refetch } = useQuery<MeData>({
+  const { data, isPending, refetch } = useQuery<MeData>({
     queryKey: USER_QUERY_KEY,
     queryFn: async () => {
-      const resp = await api.meGet();
-      return {
-        user: resp.data.user ?? null,
-        permissions: resp.data.permissions ?? [],
-      };
+      try {
+        const resp = await api.meGet();
+        return {
+          user: resp.data.user ?? null,
+          permissions: resp.data.permissions ?? [],
+        };
+      } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          error.response?.status === axios.HttpStatusCode.Unauthorized
+        ) {
+          return emptyMeData;
+        }
+
+        throw error;
+      }
     },
     retry: false,
     initialData: () => queryClient.getQueryData<MeData>(USER_QUERY_KEY),
-    onError: error => {
-      queryClient.setQueryData(USER_QUERY_KEY, emptyMeData);
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        if (
-          status === axios.HttpStatusCode.Unauthorized &&
-          !pathname.startsWith('/login')
-        ) {
-          router.push('/login', {});
-        }
-      }
-    },
+    refetchOnMount: 'always',
   });
+
+  const loading = isRestoring || (isPending && !data);
+  const authState: AuthState = loading
+    ? 'restoring'
+    : data?.user
+      ? 'authenticated'
+      : 'unauthenticated';
 
   const refreshUser = async () => {
     await refetch();
@@ -96,7 +104,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       console.warn('logout error', e);
     } finally {
       queryClient.setQueryData(USER_QUERY_KEY, emptyMeData);
-      queryClient.removeQueries({ queryKey: USER_QUERY_KEY });
     }
   };
 
@@ -116,7 +123,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         user: data?.user ?? null,
         permissions: data?.permissions ?? [],
         setUser,
-        loading: isLoading,
+        loading,
+        authState,
         refreshUser,
         logoutUser,
       }}
@@ -161,7 +169,6 @@ export function useUser(): UseUserRet {
     if (ctx.user.role_key === 'root') return true;
     const [obj, act] = permissionStr.split(':');
     const res = ctx.permissions.some(p => p.obj === obj && p.act === act);
-    // console.log(obj, act, ctx.permissions, res)
     return res;
   };
 

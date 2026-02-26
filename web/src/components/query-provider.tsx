@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import type { Persister } from '@tanstack/query-persist-client-core';
 
 const QUERY_PERSIST_KEY = 'index-replication-query-cache';
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
@@ -23,20 +22,13 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         },
       })
   );
-  const [persister, setPersister] = useState<Persister | null>(null);
 
-  useEffect(() => {
-    setPersister(
-      createSyncStoragePersister({
-        storage: window.localStorage,
-        key: QUERY_PERSIST_KEY,
-      })
-    );
-  }, []);
-
-  if (!persister) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-  }
+  const [persister] = useState(() =>
+    createSyncStoragePersister({
+      storage: window.localStorage,
+      key: QUERY_PERSIST_KEY,
+    })
+  );
 
   return (
     <PersistQueryClientProvider

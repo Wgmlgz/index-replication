@@ -56,6 +56,36 @@
         "back": "Back to login",
         "genericError": "Verification failed. Please try again."
       }
+    },
+    "guard": {
+      "checkingSessionTitle": "Checking your session",
+      "checkingSessionDescription": "Please wait while we verify your access.",
+      "redirectingToLoginTitle": "Redirecting to sign in",
+      "redirectingToLoginDescription": "This page requires authentication.",
+      "redirectingToAppTitle": "Redirecting to the app",
+      "redirectingToAppDescription": "You are already signed in."
+    }
+  },
+  "landing": {
+    "kicker": "Index Replication Platform",
+    "title": "Track indexes, manage integrations, and operate from one workspace.",
+    "description": "Sign in to access dashboards, audit logs, user management, and T-Bank tools.",
+    "primaryGuest": "Sign in",
+    "primaryAuthenticated": "Open dashboard",
+    "secondaryGuest": "Continue to login",
+    "features": {
+      "indexes": {
+        "title": "MOEX analytics",
+        "description": "Inspect index history and composition with interactive charts."
+      },
+      "audit": {
+        "title": "Operations visibility",
+        "description": "Review audit trails and manage users with role-based access."
+      },
+      "access": {
+        "title": "Secure access",
+        "description": "Use session auth with optional Telegram login verification."
+      }
     }
   },
   "settings": {
