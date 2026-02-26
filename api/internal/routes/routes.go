@@ -7,6 +7,7 @@ import (
 	"server/internal/config"
 	h "server/internal/handlers"
 	m "server/internal/middleware"
+	"server/internal/moex"
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/tbank"
@@ -75,8 +76,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 
 	userHandler := h.NewUserHandler(cfg, repoRegistry.UserRepo, cs, auditService)
 	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
-	moexLiveService := services.NewMoexService(cfg.MoexBaseURL)
-	moexReadService := services.NewMoexReadService(repoRegistry.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
+	moexLiveService := moex.NewMoexService(cfg.MoexBaseURL)
+	moexReadService := moex.NewMoexReadService(repoRegistry.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
 	moexHandler := h.NewMoexHandler(moexReadService)
 	moexSyncAdminHandler := h.NewMoexSyncAdminHandler(repoRegistry.MoexDataRepo)
 	tbankService := tbank.NewService(

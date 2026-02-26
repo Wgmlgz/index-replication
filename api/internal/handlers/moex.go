@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"server/internal/models"
-	"server/internal/services"
+	"server/internal/moex"
 	"strconv"
 	"strings"
 	"time"
@@ -13,10 +13,10 @@ import (
 )
 
 type MoexHandler struct {
-	service *services.MoexReadService
+	service *moex.MoexReadService
 }
 
-func NewMoexHandler(service *services.MoexReadService) *MoexHandler {
+func NewMoexHandler(service *moex.MoexReadService) *MoexHandler {
 	return &MoexHandler{service: service}
 }
 
@@ -269,7 +269,7 @@ func isValidDate(value string) bool {
 	return err == nil
 }
 
-func applyCoverageHeaders(c *gin.Context, coverage *services.MoexCoverageMeta) {
+func applyCoverageHeaders(c *gin.Context, coverage *moex.MoexCoverageMeta) {
 	if coverage == nil {
 		return
 	}

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"server/internal/models"
+	"server/internal/moex"
 	"server/internal/repository"
-	"server/internal/services"
 	"server/internal/workflows"
 
 	"github.com/google/uuid"
@@ -28,7 +28,7 @@ const (
 )
 
 type MoexSyncActivities struct {
-	moexService         *services.MoexService
+	moexService         *moex.MoexService
 	repo                *repository.MoexSyncRepository
 	mutableDays         int
 	immutableBeforeDate *time.Time
@@ -70,7 +70,7 @@ func NewMoexSyncActivities(db *gorm.DB, moexBaseURL string, mutableDays int, imm
 	}
 
 	return &MoexSyncActivities{
-		moexService:         services.NewMoexService(moexBaseURL),
+		moexService:         moex.NewMoexService(moexBaseURL),
 		repo:                repository.NewMoexSyncRepository(db),
 		mutableDays:         mutableDays,
 		immutableBeforeDate: immutable,

@@ -37,7 +37,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 ## Architecture & Principles
 
 - HTTP layer stays in `internal/handlers/` (request/response parsing, status codes).
-- Business logic lives in feature/service packages (mostly `internal/services/`, with T-Bank isolated in `internal/tbank/`).
+- Business logic lives in feature/service packages (mostly `internal/services/`, with MOEX isolated in `internal/moex/` and T-Bank isolated in `internal/tbank/`).
 - Data access is isolated in `internal/repository/` using GORM.
 - Auth is session-based (cookie) and enforced by middleware.
 - Authorization uses Casbin policies and permission constants.
@@ -49,6 +49,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `internal/routes/` defines the HTTP routes.
 - `internal/handlers/` contains request handlers (HTTP layer).
 - `internal/services/` contains most business logic.
+- `internal/moex/` contains MOEX integration logic and read services.
 - `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
 - `internal/repository/` contains data access (DB queries).
 - `internal/models/` defines domain models.
@@ -58,7 +59,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 Use this mapping to locate the right layer quickly:
 
 - Add or change endpoints: `internal/routes/`, `internal/handlers/`
-- Change business rules or workflows: `internal/services/` (or `internal/tbank/` for T-Bank)
+- Change business rules or workflows: `internal/services/` (or feature packages like `internal/moex/` and `internal/tbank/`)
 - Change DB queries or persistence: `internal/repository/`
 - Update data structures: `internal/models/`
 - Add middleware or request/response behavior: `internal/middleware/`

@@ -97,7 +97,7 @@ on what the market supports). Candles are often best for charting.
 
 ## Where This Repo Uses ISS
 
-- `api/internal/services/moex_service.go` calls ISS to:
+- `api/internal/moex/moex_service.go` calls ISS to:
   - List MOEX indexes and collections.
   - Fetch historical series and paginate using cursor tables.
   - Fetch composition snapshots and ticker analytics.
