@@ -11,7 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	moextypes "server/internal/moex/types"
+	moexdomain "server/internal/moex/domain"
 	"strconv"
 	"strings"
 	"time"
@@ -191,46 +191,46 @@ type moexTable struct {
 	Data    [][]interface{} `json:"data"`
 }
 
-type moexSecuritiesResponse struct {
+type moexSecuritiesPayload struct {
 	Securities moexTable `json:"securities"`
 }
 
-type moexIndexCollectionsResponse struct {
+type moexIndexCollectionsPayload struct {
 	SecurityCollections *moexTable `json:"securitycollections"`
 }
 
-type moexHistoryResponse struct {
+type moexHistoryPayload struct {
 	History       moexTable  `json:"history"`
 	HistoryCursor *moexTable `json:"history.cursor"`
 }
 
-type moexIndexAnalyticsResponse struct {
+type moexIndexAnalyticsPayload struct {
 	Analytics       moexTable  `json:"analytics"`
 	AnalyticsCursor *moexTable `json:"analytics.cursor"`
 }
 
-type moexIndexTickerAnalyticsResponse struct {
+type moexIndexTickerAnalyticsPayload struct {
 	Ticker       moexTable  `json:"ticker"`
 	TickerCursor *moexTable `json:"ticker.cursor"`
 }
 
-type moexIndexTickersResponse struct {
+type moexIndexTickersPayload struct {
 	Tickers moexTable `json:"tickers"`
 }
 
-func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]moextypes.MoexIndex, error) {
+func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]moexdomain.Index, error) {
 	params := url.Values{}
 	params.Set("iss.meta", "off")
 	params.Set("lang", lang)
 	params.Set("securities.columns", moexIndexColumns)
 
-	var payload moexSecuritiesResponse
+	var payload moexSecuritiesPayload
 	if err := c.get(ctx, "engines/stock/markets/index/securities.json", params, &payload); err != nil {
 		return nil, err
 	}
 
 	rows := tableToObjects(payload.Securities)
-	indexes := make([]moextypes.MoexIndex, 0, len(rows))
+	indexes := make([]moexdomain.Index, 0, len(rows))
 	for _, row := range rows {
 		secid := asString(getValue(row, "SECID", "secid"))
 		if secid == "" {
@@ -244,7 +244,7 @@ func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]moexty
 		if name == "" {
 			name = shortName
 		}
-		indexes = append(indexes, moextypes.MoexIndex{
+		indexes = append(indexes, moexdomain.Index{
 			Secid:      secid,
 			ShortName:  shortName,
 			Name:       name,
@@ -259,21 +259,21 @@ func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]moexty
 	return indexes, nil
 }
 
-func (c *moexISSClient) FetchCollections(ctx context.Context, lang string) ([]moextypes.MoexIndexCollection, error) {
+func (c *moexISSClient) FetchCollections(ctx context.Context, lang string) ([]moexdomain.IndexCollection, error) {
 	params := url.Values{}
 	params.Set("iss.meta", "off")
 	params.Set("lang", lang)
 
-	var payload moexIndexCollectionsResponse
+	var payload moexIndexCollectionsPayload
 	if err := c.get(ctx, "index.json", params, &payload); err != nil {
 		return nil, err
 	}
 	if payload.SecurityCollections == nil {
-		return []moextypes.MoexIndexCollection{}, nil
+		return []moexdomain.IndexCollection{}, nil
 	}
 
 	rows := tableToObjects(*payload.SecurityCollections)
-	collections := make([]moextypes.MoexIndexCollection, 0, len(rows))
+	collections := make([]moexdomain.IndexCollection, 0, len(rows))
 	for _, row := range rows {
 		id := asIntPtr(getValue(row, "id", "ID"))
 		name := asString(getValue(row, "name", "NAME"))
@@ -286,7 +286,7 @@ func (c *moexISSClient) FetchCollections(ctx context.Context, lang string) ([]mo
 			continue
 		}
 
-		collections = append(collections, moextypes.MoexIndexCollection{
+		collections = append(collections, moexdomain.IndexCollection{
 			ID:              intOrZero(id),
 			Name:            name,
 			Title:           title,
@@ -296,7 +296,7 @@ func (c *moexISSClient) FetchCollections(ctx context.Context, lang string) ([]mo
 	return collections, nil
 }
 
-func (c *moexISSClient) FetchCollectionMemberships(ctx context.Context, lang string, collections []moextypes.MoexIndexCollection) (map[string][]string, error) {
+func (c *moexISSClient) FetchCollectionMemberships(ctx context.Context, lang string, collections []moexdomain.IndexCollection) (map[string][]string, error) {
 	memberships := make(map[string][]string)
 	for _, collection := range collections {
 		if collection.Name == "" || collection.Name == "stock_index_all" {
@@ -309,7 +309,7 @@ func (c *moexISSClient) FetchCollectionMemberships(ctx context.Context, lang str
 		params.Set("security_collection", collection.Name)
 		params.Set("securities.columns", "SECID")
 
-		var payload moexSecuritiesResponse
+		var payload moexSecuritiesPayload
 		if err := c.get(ctx, "engines/stock/markets/index/securities.json", params, &payload); err != nil {
 			return nil, err
 		}
@@ -326,10 +326,10 @@ func (c *moexISSClient) FetchCollectionMemberships(ctx context.Context, lang str
 	return memberships, nil
 }
 
-func (c *moexISSClient) FetchHistory(ctx context.Context, secid, from, till string) ([]moextypes.MoexIndexHistoryPoint, error) {
+func (c *moexISSClient) FetchHistory(ctx context.Context, secid, from, till string) ([]moexdomain.IndexHistoryPoint, error) {
 	start := 0
 	iterations := 0
-	results := make([]moextypes.MoexIndexHistoryPoint, 0)
+	results := make([]moexdomain.IndexHistoryPoint, 0)
 
 	for iterations < moexMaxIterations {
 		iterations++
@@ -345,14 +345,14 @@ func (c *moexISSClient) FetchHistory(ctx context.Context, secid, from, till stri
 			params.Set("till", till)
 		}
 
-		var payload moexHistoryResponse
+		var payload moexHistoryPayload
 		if err := c.get(ctx, fmt.Sprintf("history/engines/stock/markets/index/securities/%s.json", url.PathEscape(secid)), params, &payload); err != nil {
 			return nil, err
 		}
 
 		rows := tableToObjects(payload.History)
 		for _, row := range rows {
-			results = append(results, moextypes.MoexIndexHistoryPoint{
+			results = append(results, moexdomain.IndexHistoryPoint{
 				TradeDate: asString(getValue(row, "TRADEDATE", "tradedate")),
 				Close:     asFloatPtr(getValue(row, "CLOSE", "close")),
 				Open:      asFloatPtr(getValue(row, "OPEN", "open")),
@@ -377,10 +377,10 @@ func (c *moexISSClient) FetchHistory(ctx context.Context, secid, from, till stri
 	return results, nil
 }
 
-func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lang string) ([]moextypes.MoexIndexCompositionEntry, error) {
+func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	start := 0
 	iterations := 0
-	results := make([]moextypes.MoexIndexCompositionEntry, 0)
+	results := make([]moexdomain.IndexCompositionEntry, 0)
 
 	for iterations < moexMaxIterations {
 		iterations++
@@ -394,14 +394,14 @@ func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lan
 			params.Set("date", date)
 		}
 
-		var payload moexIndexAnalyticsResponse
+		var payload moexIndexAnalyticsPayload
 		if err := c.get(ctx, fmt.Sprintf("statistics/engines/stock/markets/index/analytics/%s.json", url.PathEscape(indexID)), params, &payload); err != nil {
 			return nil, err
 		}
 
 		rows := tableToObjects(payload.Analytics)
 		for _, row := range rows {
-			entry := moextypes.MoexIndexCompositionEntry{
+			entry := moexdomain.IndexCompositionEntry{
 				IndexID:          asString(getValue(row, "INDEXID", "indexid")),
 				TradeDate:        asString(getValue(row, "TRADEDATE", "tradedate")),
 				Ticker:           asString(getValue(row, "TICKER", "ticker")),
@@ -443,7 +443,7 @@ func (c *moexISSClient) FetchIndexTickerWindows(ctx context.Context, indexID, da
 		params.Set("date", strings.TrimSpace(date))
 	}
 
-	var payload moexIndexTickersResponse
+	var payload moexIndexTickersPayload
 	if err := c.get(ctx, fmt.Sprintf("statistics/engines/stock/markets/index/analytics/%s/tickers.json", url.PathEscape(indexID)), params, &payload); err != nil {
 		return nil, err
 	}
@@ -464,20 +464,20 @@ func (c *moexISSClient) FetchIndexTickerWindows(ctx context.Context, indexID, da
 	return result, nil
 }
 
-func (c *moexISSClient) FetchTickerCompositionHistory(ctx context.Context, indexID, ticker, from, till, lang string) ([]moextypes.MoexIndexCompositionEntry, error) {
+func (c *moexISSClient) FetchTickerCompositionHistory(ctx context.Context, indexID, ticker, from, till, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	rows, err := c.fetchTickerAnalyticsRows(ctx, indexID, ticker, from, till, lang)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]moextypes.MoexIndexCompositionEntry, 0, len(rows))
+	result := make([]moexdomain.IndexCompositionEntry, 0, len(rows))
 	for _, row := range rows {
 		tradeDate := asString(getValue(row, "TRADEDATE", "tradedate"))
 		tickerCode := asString(getValue(row, "TICKER", "ticker"))
 		if tradeDate == "" || tickerCode == "" {
 			continue
 		}
-		entry := moextypes.MoexIndexCompositionEntry{
+		entry := moexdomain.IndexCompositionEntry{
 			IndexID:          asString(getValue(row, "INDEXID", "indexid")),
 			TradeDate:        tradeDate,
 			Ticker:           tickerCode,
@@ -494,14 +494,14 @@ func (c *moexISSClient) FetchTickerCompositionHistory(ctx context.Context, index
 	return result, nil
 }
 
-func (c *moexISSClient) FetchTickerAnalytics(ctx context.Context, indexID, ticker, from, till, lang string) ([]moextypes.MoexIndexTickerAnalyticsPoint, error) {
+func (c *moexISSClient) FetchTickerAnalytics(ctx context.Context, indexID, ticker, from, till, lang string) ([]moexdomain.IndexTickerAnalyticsPoint, error) {
 	rows, err := c.fetchTickerAnalyticsRows(ctx, indexID, ticker, from, till, lang)
 	if err != nil {
 		return nil, err
 	}
-	results := make([]moextypes.MoexIndexTickerAnalyticsPoint, 0, len(rows))
+	results := make([]moexdomain.IndexTickerAnalyticsPoint, 0, len(rows))
 	for _, row := range rows {
-		point := moextypes.MoexIndexTickerAnalyticsPoint{
+		point := moexdomain.IndexTickerAnalyticsPoint{
 			TradeDate: asString(getValue(row, "TRADEDATE", "tradedate")),
 			Weight:    resolveCompositionWeight(row),
 		}
@@ -533,7 +533,7 @@ func (c *moexISSClient) fetchTickerAnalyticsRows(ctx context.Context, indexID, t
 			params.Set("till", till)
 		}
 
-		var payload moexIndexTickerAnalyticsResponse
+		var payload moexIndexTickerAnalyticsPayload
 		if err := c.get(ctx, fmt.Sprintf("statistics/engines/stock/markets/index/analytics/%s/tickers/%s.json", url.PathEscape(indexID), url.PathEscape(ticker)), params, &payload); err != nil {
 			return nil, err
 		}

@@ -16,3 +16,12 @@ type UserFavoriteIndex struct {
 	SecID     string    `gorm:"size:64;not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
+
+type UserFavoriteIndexRow struct {
+	SecID string `gorm:"column:secid"`
+}
+
+type UserSettingKVRow struct {
+	Key   string
+	Value string
+}

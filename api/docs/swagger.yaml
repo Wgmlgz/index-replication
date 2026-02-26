@@ -84,6 +84,21 @@ definitions:
       status:
         type: string
     type: object
+  MoexCoverageResponse:
+    properties:
+      dataset:
+        type: string
+      entityKey:
+        type: string
+      fromDate:
+        type: string
+      isComplete:
+        type: boolean
+      toDate:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   MoexIndex:
     properties:
       annualHigh:
@@ -173,6 +188,58 @@ definitions:
             type: string
           type: array
         type: object
+    type: object
+  MoexSyncRunResponse:
+    properties:
+      dataset:
+        type: string
+      details:
+        type: string
+      entityKey:
+        type: string
+      errorText:
+        type: string
+      fetchedRows:
+        type: integer
+      finishedAt:
+        type: string
+      runId:
+        type: string
+      startedAt:
+        type: string
+      status:
+        type: string
+      upsertedRows:
+        type: integer
+      workflowId:
+        type: string
+      workflowRunId:
+        type: string
+    type: object
+  MoexSyncStateResponse:
+    properties:
+      checkedThroughDate:
+        type: string
+      dataset:
+        type: string
+      entityKey:
+        type: string
+      immutableBeforeDate:
+        type: string
+      lastAttemptAt:
+        type: string
+      lastError:
+        type: string
+      lastSuccessAt:
+        type: string
+      mutableSinceDate:
+        type: string
+      retryCount:
+        type: integer
+      status:
+        type: string
+      updatedAt:
+        type: string
     type: object
   PasswordChangeRequest:
     properties:
@@ -534,73 +601,6 @@ definitions:
     - full_name
     - id
     - username
-    type: object
-  repository.MoexCoverageRow:
-    properties:
-      dataset:
-        type: string
-      entityKey:
-        type: string
-      fromDate:
-        type: string
-      isComplete:
-        type: boolean
-      toDate:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  repository.MoexSyncRunRow:
-    properties:
-      dataset:
-        type: string
-      details:
-        type: string
-      entityKey:
-        type: string
-      errorText:
-        type: string
-      fetchedRows:
-        type: integer
-      finishedAt:
-        type: string
-      runId:
-        type: string
-      startedAt:
-        type: string
-      status:
-        type: string
-      upsertedRows:
-        type: integer
-      workflowId:
-        type: string
-      workflowRunId:
-        type: string
-    type: object
-  repository.MoexSyncStateRow:
-    properties:
-      checkedThroughDate:
-        type: string
-      dataset:
-        type: string
-      entityKey:
-        type: string
-      immutableBeforeDate:
-        type: string
-      lastAttemptAt:
-        type: string
-      lastError:
-        type: string
-      lastSuccessAt:
-        type: string
-      mutableSinceDate:
-        type: string
-      retryCount:
-        type: integer
-      status:
-        type: string
-      updatedAt:
-        type: string
     type: object
 externalDocs:
   description: OpenAPI
@@ -1414,7 +1414,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/repository.MoexCoverageRow'
+              $ref: '#/definitions/MoexCoverageResponse'
             type: array
         "400":
           description: Bad Request
@@ -1454,7 +1454,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/repository.MoexSyncRunRow'
+              $ref: '#/definitions/MoexSyncRunResponse'
             type: array
         "500":
           description: Internal Server Error
@@ -1486,7 +1486,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/repository.MoexSyncStateRow'
+              $ref: '#/definitions/MoexSyncStateResponse'
             type: array
         "500":
           description: Internal Server Error

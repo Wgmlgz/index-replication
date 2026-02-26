@@ -29,7 +29,7 @@ func NewMoexSyncAdminHandler(repo *repository.MoexDataRepository) *MoexSyncAdmin
 //	@Param			dataset		query		string	false	"Dataset filter"
 //	@Param			entityKey	query		string	false	"Entity key filter"
 //	@Param			limit		query		int		false	"Result limit"
-//	@Success		200			{array}		repository.MoexSyncStateRow
+//	@Success		200			{array}		dto.MoexSyncStateResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/moex/sync/state [get]
 func (h *MoexSyncAdminHandler) GetMoexSyncState(c *gin.Context) {
@@ -39,7 +39,7 @@ func (h *MoexSyncAdminHandler) GetMoexSyncState(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX sync state"})
 		return
 	}
-	c.JSON(http.StatusOK, rows)
+	c.JSON(http.StatusOK, dto.NewMoexSyncStateResponses(rows))
 }
 
 // GetMoexCoverage godoc
@@ -53,7 +53,7 @@ func (h *MoexSyncAdminHandler) GetMoexSyncState(c *gin.Context) {
 //	@Param			from		query		string	false	"From date (YYYY-MM-DD)"
 //	@Param			till		query		string	false	"Till date (YYYY-MM-DD)"
 //	@Param			limit		query		int		false	"Result limit"
-//	@Success		200			{array}		repository.MoexCoverageRow
+//	@Success		200			{array}		dto.MoexCoverageResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/moex/sync/coverage [get]
@@ -75,7 +75,7 @@ func (h *MoexSyncAdminHandler) GetMoexCoverage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX coverage"})
 		return
 	}
-	c.JSON(http.StatusOK, rows)
+	c.JSON(http.StatusOK, dto.NewMoexCoverageResponses(rows))
 }
 
 // GetMoexSyncRuns godoc
@@ -88,7 +88,7 @@ func (h *MoexSyncAdminHandler) GetMoexCoverage(c *gin.Context) {
 //	@Param			entityKey	query		string	false	"Entity key filter"
 //	@Param			status		query		string	false	"Status filter"
 //	@Param			limit		query		int		false	"Result limit"
-//	@Success		200			{array}		repository.MoexSyncRunRow
+//	@Success		200			{array}		dto.MoexSyncRunResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/moex/sync/runs [get]
 func (h *MoexSyncAdminHandler) GetMoexSyncRuns(c *gin.Context) {
@@ -98,7 +98,7 @@ func (h *MoexSyncAdminHandler) GetMoexSyncRuns(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX sync runs"})
 		return
 	}
-	c.JSON(http.StatusOK, rows)
+	c.JSON(http.StatusOK, dto.NewMoexSyncRunResponses(rows))
 }
 
 func parsePositiveInt(value string, fallback int) int {

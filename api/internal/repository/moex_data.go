@@ -2,83 +2,15 @@ package repository
 
 import (
 	"context"
+	"server/internal/models"
 	"sort"
 	"strings"
 	"time"
 
-	moextypes "server/internal/moex/types"
+	moexdomain "server/internal/moex/domain"
 
 	"gorm.io/gorm"
 )
-
-type MoexCoverageRange struct {
-	FromDate time.Time `json:"fromDate"`
-	ToDate   time.Time `json:"toDate"`
-}
-
-type MoexSyncStateRow struct {
-	Dataset             string     `json:"dataset"`
-	EntityKey           string     `json:"entityKey"`
-	CheckedThroughDate  *time.Time `json:"checkedThroughDate"`
-	ImmutableBeforeDate *time.Time `json:"immutableBeforeDate"`
-	MutableSinceDate    *time.Time `json:"mutableSinceDate"`
-	Status              string     `json:"status"`
-	LastSuccessAt       *time.Time `json:"lastSuccessAt"`
-	LastAttemptAt       *time.Time `json:"lastAttemptAt"`
-	RetryCount          int        `json:"retryCount"`
-	LastError           *string    `json:"lastError"`
-	UpdatedAt           time.Time  `json:"updatedAt"`
-}
-
-type MoexCoverageRow struct {
-	Dataset    string    `json:"dataset"`
-	EntityKey  string    `json:"entityKey"`
-	FromDate   time.Time `json:"fromDate"`
-	ToDate     time.Time `json:"toDate"`
-	IsComplete bool      `json:"isComplete"`
-	UpdatedAt  time.Time `json:"updatedAt"`
-}
-
-type MoexSyncRunRow struct {
-	RunID         string     `json:"runId"`
-	WorkflowID    *string    `json:"workflowId"`
-	WorkflowRunID *string    `json:"workflowRunId"`
-	Dataset       string     `json:"dataset"`
-	EntityKey     string     `json:"entityKey"`
-	Status        string     `json:"status"`
-	StartedAt     time.Time  `json:"startedAt"`
-	FinishedAt    *time.Time `json:"finishedAt"`
-	FetchedRows   int        `json:"fetchedRows"`
-	UpsertedRows  int        `json:"upsertedRows"`
-	ErrorText     *string    `json:"errorText"`
-	Details       *string    `json:"details"`
-}
-
-type MoexCompositionSeriesRow struct {
-	Ticker    string
-	TradeDate time.Time
-	Weight    *float64
-}
-
-type moexCoverageScanRow struct {
-	FromDate   time.Time `gorm:"column:from_date"`
-	ToDate     time.Time `gorm:"column:to_date"`
-	IsComplete bool      `gorm:"column:is_complete"`
-}
-
-type moexOverviewIndexRow struct {
-	Secid          string     `gorm:"column:secid"`
-	ShortName      string     `gorm:"column:short_name"`
-	Name           string     `gorm:"column:name"`
-	Currency       *string    `gorm:"column:currency"`
-	Decimals       *int       `gorm:"column:decimals"`
-	BoardID        *string    `gorm:"column:board_id"`
-	CalcMode       *string    `gorm:"column:calc_mode"`
-	AnnualHigh     *float64   `gorm:"column:annual_high"`
-	AnnualLow      *float64   `gorm:"column:annual_low"`
-	LastActiveDate *time.Time `gorm:"column:last_active_date"`
-	HasComposition bool       `gorm:"column:has_composition"`
-}
 
 type MoexDataRepository struct {
 	db *gorm.DB
@@ -88,8 +20,8 @@ func NewMoexDataRepository(db *gorm.DB) *MoexDataRepository {
 	return &MoexDataRepository{db: db}
 }
 
-func (r *MoexDataRepository) GetOverview(ctx context.Context) (moextypes.MoexIndexesOverviewResponse, error) {
-	var indexRows []moexOverviewIndexRow
+func (r *MoexDataRepository) GetOverview(ctx context.Context) (moexdomain.IndexesOverview, error) {
+	var indexRows []models.MoexOverviewIndexRow
 	if err := r.db.WithContext(ctx).
 		Table("moex_indexes AS i").
 		Select(`
@@ -120,27 +52,27 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (moextypes.MoexInd
 		`).
 		Order("i.secid ASC").
 		Find(&indexRows).Error; err != nil {
-		return moextypes.MoexIndexesOverviewResponse{}, err
+		return moexdomain.IndexesOverview{}, err
 	}
 
-	var collectionRows []MoexIndexCollectionDB
+	var collectionRows []models.MoexIndexCollectionDB
 	if err := r.db.WithContext(ctx).Order("id ASC").Find(&collectionRows).Error; err != nil {
-		return moextypes.MoexIndexesOverviewResponse{}, err
+		return moexdomain.IndexesOverview{}, err
 	}
 
-	var membershipRows []MoexIndexCollectionMembershipDB
+	var membershipRows []models.MoexIndexCollectionMembershipDB
 	if err := r.db.WithContext(ctx).Order("secid ASC, collection_name ASC").Find(&membershipRows).Error; err != nil {
-		return moextypes.MoexIndexesOverviewResponse{}, err
+		return moexdomain.IndexesOverview{}, err
 	}
 
-	indexes := make([]moextypes.MoexIndex, 0, len(indexRows))
+	indexes := make([]moexdomain.Index, 0, len(indexRows))
 	for _, row := range indexRows {
 		var lastActiveDate *string
 		if row.LastActiveDate != nil {
 			formatted := row.LastActiveDate.UTC().Format("2006-01-02")
 			lastActiveDate = &formatted
 		}
-		indexes = append(indexes, moextypes.MoexIndex{
+		indexes = append(indexes, moexdomain.Index{
 			Secid:          row.Secid,
 			ShortName:      row.ShortName,
 			Name:           row.Name,
@@ -155,9 +87,9 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (moextypes.MoexInd
 		})
 	}
 
-	collections := make([]moextypes.MoexIndexCollection, 0, len(collectionRows))
+	collections := make([]moexdomain.IndexCollection, 0, len(collectionRows))
 	for _, row := range collectionRows {
-		collections = append(collections, moextypes.MoexIndexCollection{
+		collections = append(collections, moexdomain.IndexCollection{
 			ID:              row.ID,
 			Name:            row.Name,
 			Title:           row.Title,
@@ -170,14 +102,14 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (moextypes.MoexInd
 		memberships[row.Secid] = append(memberships[row.Secid], row.CollectionName)
 	}
 
-	return moextypes.MoexIndexesOverviewResponse{
+	return moexdomain.IndexesOverview{
 		Indexes:     indexes,
 		Collections: collections,
 		Memberships: memberships,
 	}, nil
 }
 
-func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string, fromDate, toDate *time.Time) ([]moextypes.MoexIndexHistoryPoint, error) {
+func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string, fromDate, toDate *time.Time) ([]moexdomain.IndexHistoryPoint, error) {
 	q := r.db.WithContext(ctx).Table("moex_index_history_daily").
 		Select("trade_date", "open", "high", "low", "close").
 		Where("secid = ?", strings.TrimSpace(secid)).
@@ -189,20 +121,14 @@ func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string
 		q = q.Where("trade_date <= ?", dateOnlyUTCDay(*toDate))
 	}
 
-	var rows []struct {
-		TradeDate time.Time `gorm:"column:trade_date"`
-		Open      *float64  `gorm:"column:open"`
-		High      *float64  `gorm:"column:high"`
-		Low       *float64  `gorm:"column:low"`
-		Close     *float64  `gorm:"column:close"`
-	}
+	var rows []models.MoexHistoryPointRow
 	if err := q.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
-	points := make([]moextypes.MoexIndexHistoryPoint, 0, len(rows))
+	points := make([]moexdomain.IndexHistoryPoint, 0, len(rows))
 	for _, row := range rows {
-		points = append(points, moextypes.MoexIndexHistoryPoint{
+		points = append(points, moexdomain.IndexHistoryPoint{
 			TradeDate: row.TradeDate.UTC().Format("2006-01-02"),
 			Open:      row.Open,
 			High:      row.High,
@@ -221,9 +147,7 @@ func (r *MoexDataRepository) ResolveCompositionDate(ctx context.Context, indexID
 		q = q.Where("trade_date <= ?", dateOnlyUTCDay(*preferredDate))
 	}
 
-	var row struct {
-		TradeDate *time.Time `gorm:"column:trade_date"`
-	}
+	var row models.MoexMaxTradeDateRow
 	if err := q.Scan(&row).Error; err != nil {
 		return nil, err
 	}
@@ -234,8 +158,8 @@ func (r *MoexDataRepository) ResolveCompositionDate(ctx context.Context, indexID
 	return &normalized, nil
 }
 
-func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID string, tradeDate time.Time) ([]moextypes.MoexIndexCompositionEntry, error) {
-	var rows []MoexIndexCompositionDailyDB
+func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID string, tradeDate time.Time) ([]moexdomain.IndexCompositionEntry, error) {
+	var rows []models.MoexIndexCompositionDailyDB
 	if err := r.db.WithContext(ctx).
 		Where("index_id = ? AND trade_date = ?", strings.TrimSpace(indexID), dateOnlyUTCDay(tradeDate)).
 		Order("ticker ASC").
@@ -243,7 +167,7 @@ func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID 
 		return nil, err
 	}
 
-	result := make([]moextypes.MoexIndexCompositionEntry, 0, len(rows))
+	result := make([]moexdomain.IndexCompositionEntry, 0, len(rows))
 	for _, row := range rows {
 		var secID string
 		if row.SecID != nil {
@@ -258,7 +182,7 @@ func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID 
 			formatted := row.TradeSessionDate.UTC().Format("2006-01-02")
 			tradeSessionDate = &formatted
 		}
-		result = append(result, moextypes.MoexIndexCompositionEntry{
+		result = append(result, moexdomain.IndexCompositionEntry{
 			IndexID:          row.IndexID,
 			TradeDate:        row.TradeDate.UTC().Format("2006-01-02"),
 			Ticker:           row.Ticker,
@@ -271,7 +195,7 @@ func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID 
 	return result, nil
 }
 
-func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, indexID string, tickers []string, fromDate, toDate *time.Time) ([]MoexCompositionSeriesRow, error) {
+func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, indexID string, tickers []string, fromDate, toDate *time.Time) ([]models.MoexCompositionSeriesRow, error) {
 	normalizedTickers := make([]string, 0, len(tickers))
 	for _, ticker := range tickers {
 		ticker = strings.TrimSpace(ticker)
@@ -281,7 +205,7 @@ func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, inde
 		normalizedTickers = append(normalizedTickers, ticker)
 	}
 	if len(normalizedTickers) == 0 {
-		return []MoexCompositionSeriesRow{}, nil
+		return []models.MoexCompositionSeriesRow{}, nil
 	}
 
 	q := r.db.WithContext(ctx).Table("moex_index_composition_daily").
@@ -295,14 +219,14 @@ func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, inde
 		q = q.Where("trade_date <= ?", dateOnlyUTCDay(*toDate))
 	}
 
-	var rows []MoexCompositionSeriesRow
+	var rows []models.MoexCompositionSeriesRow
 	if err := q.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
 
-func (r *MoexDataRepository) ListCompositionSeriesTopRows(ctx context.Context, indexID string, topCount int, fromDate, toDate *time.Time) ([]MoexCompositionSeriesRow, error) {
+func (r *MoexDataRepository) ListCompositionSeriesTopRows(ctx context.Context, indexID string, topCount int, fromDate, toDate *time.Time) ([]models.MoexCompositionSeriesRow, error) {
 	if topCount < 0 {
 		topCount = 0
 	}
@@ -336,21 +260,21 @@ WITH ranked AS (
 	}
 	query += "ORDER BY ticker ASC, trade_date ASC"
 
-	var rows []MoexCompositionSeriesRow
+	var rows []models.MoexCompositionSeriesRow
 	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
 
-func (r *MoexDataRepository) EvaluateCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate time.Time) (string, []MoexCoverageRange, error) {
+func (r *MoexDataRepository) EvaluateCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate time.Time) (string, []models.MoexCoverageRange, error) {
 	fromDate = dateOnlyUTCDay(fromDate)
 	toDate = dateOnlyUTCDay(toDate)
 	if fromDate.After(toDate) {
 		fromDate, toDate = toDate, fromDate
 	}
 
-	var rows []moexCoverageScanRow
+	var rows []models.MoexCoverageScanRow
 	err := r.db.WithContext(ctx).
 		Table("moex_data_coverage").
 		Select("from_date", "to_date", "is_complete").
@@ -361,17 +285,17 @@ func (r *MoexDataRepository) EvaluateCoverage(ctx context.Context, dataset, enti
 		return "unknown", nil, err
 	}
 	if len(rows) == 0 {
-		return "unknown", []MoexCoverageRange{{FromDate: fromDate, ToDate: toDate}}, nil
+		return "unknown", []models.MoexCoverageRange{{FromDate: fromDate, ToDate: toDate}}, nil
 	}
 
-	complete := make([]MoexCoverageRange, 0, len(rows))
-	incomplete := make([]MoexCoverageRange, 0)
+	complete := make([]models.MoexCoverageRange, 0, len(rows))
+	incomplete := make([]models.MoexCoverageRange, 0)
 	for _, row := range rows {
 		rangeFrom, rangeTo, ok := clipRange(dateOnlyUTCDay(row.FromDate), dateOnlyUTCDay(row.ToDate), fromDate, toDate)
 		if !ok {
 			continue
 		}
-		current := MoexCoverageRange{FromDate: rangeFrom, ToDate: rangeTo}
+		current := models.MoexCoverageRange{FromDate: rangeFrom, ToDate: rangeTo}
 		if row.IsComplete {
 			complete = append(complete, current)
 		} else {
@@ -389,7 +313,7 @@ func (r *MoexDataRepository) EvaluateCoverage(ctx context.Context, dataset, enti
 	return "incomplete", missing, nil
 }
 
-func (r *MoexDataRepository) ListSyncState(ctx context.Context, dataset, entityKey string, limit int) ([]MoexSyncStateRow, error) {
+func (r *MoexDataRepository) ListSyncState(ctx context.Context, dataset, entityKey string, limit int) ([]models.MoexSyncStateRow, error) {
 	if limit <= 0 || limit > 1000 {
 		limit = 200
 	}
@@ -401,12 +325,12 @@ func (r *MoexDataRepository) ListSyncState(ctx context.Context, dataset, entityK
 		q = q.Where("entity_key = ?", strings.TrimSpace(entityKey))
 	}
 
-	var rows []MoexSyncStateRow
+	var rows []models.MoexSyncStateRow
 	err := q.Order("dataset ASC, entity_key ASC").Limit(limit).Find(&rows).Error
 	return rows, err
 }
 
-func (r *MoexDataRepository) ListCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate *time.Time, limit int) ([]MoexCoverageRow, error) {
+func (r *MoexDataRepository) ListCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate *time.Time, limit int) ([]models.MoexCoverageRow, error) {
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
@@ -424,12 +348,12 @@ func (r *MoexDataRepository) ListCoverage(ctx context.Context, dataset, entityKe
 		q = q.Where("from_date <= ?", dateOnlyUTCDay(*toDate))
 	}
 
-	var rows []MoexCoverageRow
+	var rows []models.MoexCoverageRow
 	err := q.Order("dataset ASC, entity_key ASC, from_date ASC").Limit(limit).Find(&rows).Error
 	return rows, err
 }
 
-func (r *MoexDataRepository) ListSyncRuns(ctx context.Context, dataset, entityKey, status string, limit int) ([]MoexSyncRunRow, error) {
+func (r *MoexDataRepository) ListSyncRuns(ctx context.Context, dataset, entityKey, status string, limit int) ([]models.MoexSyncRunRow, error) {
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
@@ -444,7 +368,7 @@ func (r *MoexDataRepository) ListSyncRuns(ctx context.Context, dataset, entityKe
 		q = q.Where("status = ?", strings.TrimSpace(status))
 	}
 
-	var rows []MoexSyncRunRow
+	var rows []models.MoexSyncRunRow
 	err := q.Order("started_at DESC").Limit(limit).Find(&rows).Error
 	return rows, err
 }
@@ -470,7 +394,7 @@ func clipRange(fromDate, toDate, minDate, maxDate time.Time) (time.Time, time.Ti
 	return fromDate, toDate, true
 }
 
-func mergeCoverageRanges(ranges []MoexCoverageRange) []MoexCoverageRange {
+func mergeCoverageRanges(ranges []models.MoexCoverageRange) []models.MoexCoverageRange {
 	if len(ranges) == 0 {
 		return nil
 	}
@@ -481,7 +405,7 @@ func mergeCoverageRanges(ranges []MoexCoverageRange) []MoexCoverageRange {
 		return ranges[i].FromDate.Before(ranges[j].FromDate)
 	})
 
-	merged := make([]MoexCoverageRange, 0, len(ranges))
+	merged := make([]models.MoexCoverageRange, 0, len(ranges))
 	for _, current := range ranges {
 		if len(merged) == 0 {
 			merged = append(merged, current)
@@ -499,19 +423,19 @@ func mergeCoverageRanges(ranges []MoexCoverageRange) []MoexCoverageRange {
 	return merged
 }
 
-func computeMissingCoverageRanges(fromDate, toDate time.Time, mergedComplete []MoexCoverageRange) []MoexCoverageRange {
+func computeMissingCoverageRanges(fromDate, toDate time.Time, mergedComplete []models.MoexCoverageRange) []models.MoexCoverageRange {
 	if len(mergedComplete) == 0 {
-		return []MoexCoverageRange{{FromDate: fromDate, ToDate: toDate}}
+		return []models.MoexCoverageRange{{FromDate: fromDate, ToDate: toDate}}
 	}
 
-	missing := make([]MoexCoverageRange, 0)
+	missing := make([]models.MoexCoverageRange, 0)
 	cursor := fromDate
 	for _, covered := range mergedComplete {
 		if covered.ToDate.Before(cursor) {
 			continue
 		}
 		if covered.FromDate.After(cursor) {
-			missing = append(missing, MoexCoverageRange{
+			missing = append(missing, models.MoexCoverageRange{
 				FromDate: cursor,
 				ToDate:   covered.FromDate.AddDate(0, 0, -1),
 			})
@@ -525,7 +449,7 @@ func computeMissingCoverageRanges(fromDate, toDate time.Time, mergedComplete []M
 		}
 	}
 	if !cursor.After(toDate) {
-		missing = append(missing, MoexCoverageRange{FromDate: cursor, ToDate: toDate})
+		missing = append(missing, models.MoexCoverageRange{FromDate: cursor, ToDate: toDate})
 	}
 	return missing
 }

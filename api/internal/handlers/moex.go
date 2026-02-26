@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"server/internal/api/dto"
 	"server/internal/moex"
-	moextypes "server/internal/moex/types"
 	"strconv"
 	"strings"
 	"time"
@@ -16,8 +15,6 @@ import (
 type MoexHandler struct {
 	service *moex.MoexReadService
 }
-
-var _ = moextypes.MoexIndexesOverviewResponse{}
 
 func NewMoexHandler(service *moex.MoexReadService) *MoexHandler {
 	return &MoexHandler{service: service}
@@ -30,7 +27,7 @@ func NewMoexHandler(service *moex.MoexReadService) *MoexHandler {
 //	@Tags			moex
 //	@Produce		json
 //	@Param			lang	query		string	false	"Response language (ru/en)"
-//	@Success		200		{object}	moextypes.MoexIndexesOverviewResponse
+//	@Success		200		{object}	dto.MoexIndexesOverviewResponse
 //	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/overview [get]
 func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
@@ -40,7 +37,7 @@ func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX overview"})
 		return
 	}
-	c.JSON(http.StatusOK, overview)
+	c.JSON(http.StatusOK, dto.NewMoexIndexesOverviewResponse(overview))
 }
 
 // GetMoexIndexHistory godoc
@@ -53,7 +50,7 @@ func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
 //	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
-//	@Success		200				{array}		moextypes.MoexIndexHistoryPoint
+//	@Success		200				{array}		dto.MoexIndexHistoryPoint
 //	@Failure		400				{object}	dto.ErrorResponse
 //	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/history [get]
@@ -82,7 +79,7 @@ func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 		return
 	}
 	applyCoverageHeaders(c, coverage)
-	c.JSON(http.StatusOK, points)
+	c.JSON(http.StatusOK, dto.NewMoexIndexHistoryPoints(points))
 }
 
 // GetMoexIndexComposition godoc
@@ -94,7 +91,7 @@ func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 //	@Param			secid	path		string	true	"Index SECID"
 //	@Param			date	query		string	false	"Snapshot date (YYYY-MM-DD)"
 //	@Param			lang	query		string	false	"Response language (ru/en)"
-//	@Success		200		{array}		moextypes.MoexIndexCompositionEntry
+//	@Success		200		{array}		dto.MoexIndexCompositionEntry
 //	@Failure		400		{object}	dto.ErrorResponse
 //	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition [get]
@@ -118,7 +115,7 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 		return
 	}
 	applyCoverageHeaders(c, coverage)
-	c.JSON(http.StatusOK, rows)
+	c.JSON(http.StatusOK, dto.NewMoexIndexCompositionEntries(rows))
 }
 
 // GetMoexIndexCompositionSeries godoc
@@ -136,7 +133,7 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
 //	@Param			lang			query		string	false	"Response language (ru/en)"
-//	@Success		200				{object}	map[string][]moextypes.MoexIndexTickerAnalyticsPoint
+//	@Success		200				{object}	map[string][]dto.MoexIndexTickerAnalyticsPoint
 //	@Failure		400				{object}	dto.ErrorResponse
 //	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition/series [get]
@@ -194,7 +191,7 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 		return
 	}
 	applyCoverageHeaders(c, coverage)
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, dto.NewMoexIndexTickerSeries(result))
 }
 
 func parseIntervalDays(value string) (int, error) {

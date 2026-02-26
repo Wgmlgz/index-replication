@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"server/internal/models"
 	"strings"
 
 	"gorm.io/gorm"
@@ -16,11 +17,7 @@ func NewUserSettingsRepository(db *gorm.DB) *UserSettingsRepository {
 }
 
 func (r *UserSettingsRepository) GetSettings(userID int) (map[string]string, error) {
-	type row struct {
-		Key   string
-		Value string
-	}
-	var rows []row
+	var rows []models.UserSettingKVRow
 	if err := r.db.Table("user_settings").
 		Select("key, value").
 		Where("user_id = ?", userID).
@@ -85,10 +82,7 @@ func (r *UserSettingsRepository) DeleteSettings(userID int, keys []string) error
 }
 
 func (r *UserSettingsRepository) GetFavoriteIndexes(userID int) ([]string, error) {
-	type row struct {
-		SecID string `gorm:"column:secid"`
-	}
-	var rows []row
+	var rows []models.UserFavoriteIndexRow
 	if err := r.db.Table("user_favorite_indexes").
 		Select("secid").
 		Where("user_id = ?", userID).

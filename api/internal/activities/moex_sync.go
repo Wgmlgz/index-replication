@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"server/internal/moex"
-	moextypes "server/internal/moex/types"
+	moexdomain "server/internal/moex/domain"
 	"server/internal/repository"
 	"server/internal/workflows"
 
@@ -565,8 +565,8 @@ func recordSyncHeartbeat(ctx context.Context, heartbeat moexSyncHeartbeat) {
 	activity.RecordHeartbeat(ctx, heartbeat)
 }
 
-func normalizeCompositionRows(indexID string, rows []moextypes.MoexIndexCompositionEntry) []moextypes.MoexIndexCompositionEntry {
-	normalized := make([]moextypes.MoexIndexCompositionEntry, 0, len(rows))
+func normalizeCompositionRows(indexID string, rows []moexdomain.IndexCompositionEntry) []moexdomain.IndexCompositionEntry {
+	normalized := make([]moexdomain.IndexCompositionEntry, 0, len(rows))
 	for _, row := range rows {
 		row.IndexID = indexID
 		normalized = append(normalized, row)

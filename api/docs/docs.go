@@ -1220,7 +1220,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/repository.MoexCoverageRow"
+                                "$ref": "#/definitions/MoexCoverageResponse"
                             }
                         }
                     },
@@ -1281,7 +1281,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/repository.MoexSyncRunRow"
+                                "$ref": "#/definitions/MoexSyncRunResponse"
                             }
                         }
                     },
@@ -1330,7 +1330,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/repository.MoexSyncStateRow"
+                                "$ref": "#/definitions/MoexSyncStateResponse"
                             }
                         }
                     },
@@ -1815,6 +1815,29 @@ const docTemplate = `{
                 }
             }
         },
+        "MoexCoverageResponse": {
+            "type": "object",
+            "properties": {
+                "dataset": {
+                    "type": "string"
+                },
+                "entityKey": {
+                    "type": "string"
+                },
+                "fromDate": {
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "toDate": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "MoexIndex": {
             "type": "object",
             "properties": {
@@ -1950,6 +1973,85 @@ const docTemplate = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        },
+        "MoexSyncRunResponse": {
+            "type": "object",
+            "properties": {
+                "dataset": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "entityKey": {
+                    "type": "string"
+                },
+                "errorText": {
+                    "type": "string"
+                },
+                "fetchedRows": {
+                    "type": "integer"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
+                "runId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "upsertedRows": {
+                    "type": "integer"
+                },
+                "workflowId": {
+                    "type": "string"
+                },
+                "workflowRunId": {
+                    "type": "string"
+                }
+            }
+        },
+        "MoexSyncStateResponse": {
+            "type": "object",
+            "properties": {
+                "checkedThroughDate": {
+                    "type": "string"
+                },
+                "dataset": {
+                    "type": "string"
+                },
+                "entityKey": {
+                    "type": "string"
+                },
+                "immutableBeforeDate": {
+                    "type": "string"
+                },
+                "lastAttemptAt": {
+                    "type": "string"
+                },
+                "lastError": {
+                    "type": "string"
+                },
+                "lastSuccessAt": {
+                    "type": "string"
+                },
+                "mutableSinceDate": {
+                    "type": "string"
+                },
+                "retryCount": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },
@@ -2493,108 +2595,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.MoexCoverageRow": {
-            "type": "object",
-            "properties": {
-                "dataset": {
-                    "type": "string"
-                },
-                "entityKey": {
-                    "type": "string"
-                },
-                "fromDate": {
-                    "type": "string"
-                },
-                "isComplete": {
-                    "type": "boolean"
-                },
-                "toDate": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.MoexSyncRunRow": {
-            "type": "object",
-            "properties": {
-                "dataset": {
-                    "type": "string"
-                },
-                "details": {
-                    "type": "string"
-                },
-                "entityKey": {
-                    "type": "string"
-                },
-                "errorText": {
-                    "type": "string"
-                },
-                "fetchedRows": {
-                    "type": "integer"
-                },
-                "finishedAt": {
-                    "type": "string"
-                },
-                "runId": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "upsertedRows": {
-                    "type": "integer"
-                },
-                "workflowId": {
-                    "type": "string"
-                },
-                "workflowRunId": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.MoexSyncStateRow": {
-            "type": "object",
-            "properties": {
-                "checkedThroughDate": {
-                    "type": "string"
-                },
-                "dataset": {
-                    "type": "string"
-                },
-                "entityKey": {
-                    "type": "string"
-                },
-                "immutableBeforeDate": {
-                    "type": "string"
-                },
-                "lastAttemptAt": {
-                    "type": "string"
-                },
-                "lastError": {
-                    "type": "string"
-                },
-                "lastSuccessAt": {
-                    "type": "string"
-                },
-                "mutableSinceDate": {
-                    "type": "string"
-                },
-                "retryCount": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
                     "type": "string"
                 }
             }

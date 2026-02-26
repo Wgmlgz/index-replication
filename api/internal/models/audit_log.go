@@ -5,16 +5,16 @@ import (
 )
 
 type AuditLog struct {
-	ID          int       `gorm:"primaryKey;autoIncrement" json:"id"`
-	PerformedBy int       `gorm:"not null" json:"performed_by"`
-	Action      string    `gorm:"not null;size:50" json:"action"`
-	EntityType  string    `gorm:"not null;size:50" json:"entity_type"`
-	EntityID    *int      `json:"entity_id"`
-	Details     string    `gorm:"type:text" json:"details"`
-	Timestamp   time.Time `gorm:"autoCreateTime" json:"timestamp"`
+	ID          int    `gorm:"primaryKey;autoIncrement"`
+	PerformedBy int    `gorm:"not null"`
+	Action      string `gorm:"not null;size:50"`
+	EntityType  string `gorm:"not null;size:50"`
+	EntityID    *int
+	Details     string    `gorm:"type:text"`
+	Timestamp   time.Time `gorm:"autoCreateTime"`
 
 	// Relations
-	PerformedByUser *User `gorm:"foreignKey:PerformedBy" json:"performed_by_user,omitempty"`
+	PerformedByUser *User `gorm:"foreignKey:PerformedBy"`
 }
 
 // AuditLogAction constants

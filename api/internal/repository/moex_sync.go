@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	moextypes "server/internal/moex/types"
+	"server/internal/models"
+	moexdomain "server/internal/moex/domain"
 	"strings"
 	"time"
 
@@ -18,28 +19,15 @@ const (
 	MoexSyncStatusError   = "error"
 )
 
-type MoexSyncState struct {
-	Dataset             string     `gorm:"column:dataset"`
-	EntityKey           string     `gorm:"column:entity_key"`
-	CheckedThroughDate  *time.Time `gorm:"column:checked_through_date"`
-	ImmutableBeforeDate *time.Time `gorm:"column:immutable_before_date"`
-	MutableSinceDate    *time.Time `gorm:"column:mutable_since_date"`
-}
-
 type MoexSyncRepository struct {
 	db *gorm.DB
-}
-
-type MoexIncompleteCoverageRange struct {
-	FromDate time.Time `gorm:"column:from_date"`
-	ToDate   time.Time `gorm:"column:to_date"`
 }
 
 func NewMoexSyncRepository(db *gorm.DB) *MoexSyncRepository {
 	return &MoexSyncRepository{db: db}
 }
 
-func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moextypes.MoexIndexesOverviewResponse) error {
+func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moexdomain.IndexesOverview) error {
 	tx := r.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return tx.Error
@@ -50,9 +38,9 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moext
 		}
 	}()
 
-	indexRows := make([]MoexIndexDB, 0, len(overview.Indexes))
+	indexRows := make([]models.MoexIndexDB, 0, len(overview.Indexes))
 	for _, item := range overview.Indexes {
-		indexRows = append(indexRows, MoexIndexDB{
+		indexRows = append(indexRows, models.MoexIndexDB{
 			Secid:      item.Secid,
 			ShortName:  item.ShortName,
 			Name:       item.Name,
@@ -66,9 +54,9 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moext
 		})
 	}
 
-	collectionRows := make([]MoexIndexCollectionDB, 0, len(overview.Collections))
+	collectionRows := make([]models.MoexIndexCollectionDB, 0, len(overview.Collections))
 	for _, item := range overview.Collections {
-		collectionRows = append(collectionRows, MoexIndexCollectionDB{
+		collectionRows = append(collectionRows, models.MoexIndexCollectionDB{
 			ID:              item.ID,
 			Name:            item.Name,
 			Title:           item.Title,
@@ -77,7 +65,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moext
 		})
 	}
 
-	membershipRows := make([]MoexIndexCollectionMembershipDB, 0)
+	membershipRows := make([]models.MoexIndexCollectionMembershipDB, 0)
 	for secid, collections := range overview.Memberships {
 		normalizedSecid := strings.TrimSpace(secid)
 		if normalizedSecid == "" {
@@ -88,7 +76,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moext
 			if normalizedCollection == "" {
 				continue
 			}
-			membershipRows = append(membershipRows, MoexIndexCollectionMembershipDB{
+			membershipRows = append(membershipRows, models.MoexIndexCollectionMembershipDB{
 				Secid:          normalizedSecid,
 				CollectionName: normalizedCollection,
 				UpdatedAt:      time.Now().UTC(),
@@ -146,8 +134,8 @@ func (r *MoexSyncRepository) ListIndexSecids(ctx context.Context) ([]string, err
 	return secids, nil
 }
 
-func (r *MoexSyncRepository) GetSyncState(ctx context.Context, dataset, entityKey string) (*MoexSyncState, error) {
-	var state MoexSyncState
+func (r *MoexSyncRepository) GetSyncState(ctx context.Context, dataset, entityKey string) (*models.MoexSyncState, error) {
+	var state models.MoexSyncState
 	err := r.db.WithContext(ctx).
 		Table("moex_sync_state").
 		Select("dataset", "entity_key", "checked_through_date", "immutable_before_date", "mutable_since_date").
@@ -162,13 +150,13 @@ func (r *MoexSyncRepository) GetSyncState(ctx context.Context, dataset, entityKe
 	return &state, nil
 }
 
-func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid string, points []moextypes.MoexIndexHistoryPoint) (int, error) {
+func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid string, points []moexdomain.IndexHistoryPoint) (int, error) {
 	trimmedSecid := strings.TrimSpace(secid)
 	if trimmedSecid == "" {
 		return 0, fmt.Errorf("empty secid")
 	}
 
-	rows := make([]MoexIndexHistoryDailyDB, 0, len(points))
+	rows := make([]models.MoexIndexHistoryDailyDB, 0, len(points))
 	ingestedAt := time.Now().UTC()
 	for _, point := range points {
 		if point.TradeDate == "" {
@@ -179,7 +167,7 @@ func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid stri
 			continue
 		}
 		tradeDate = dateOnlyUTC(tradeDate)
-		rows = append(rows, MoexIndexHistoryDailyDB{
+		rows = append(rows, models.MoexIndexHistoryDailyDB{
 			Secid:      trimmedSecid,
 			TradeDate:  tradeDate,
 			Open:       point.Open,
@@ -205,13 +193,13 @@ func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid stri
 	return len(rows), nil
 }
 
-func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, indexID string, entries []moextypes.MoexIndexCompositionEntry) (int, error) {
+func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, indexID string, entries []moexdomain.IndexCompositionEntry) (int, error) {
 	trimmedIndexID := strings.TrimSpace(indexID)
 	if trimmedIndexID == "" {
 		return 0, fmt.Errorf("empty index id")
 	}
 
-	rows := make([]MoexIndexCompositionDailyDB, 0, len(entries))
+	rows := make([]models.MoexIndexCompositionDailyDB, 0, len(entries))
 	ingestedAt := time.Now().UTC()
 	for _, entry := range entries {
 		if entry.TradeDate == "" || strings.TrimSpace(entry.Ticker) == "" {
@@ -240,7 +228,7 @@ func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, index
 			shortName = &trimmedShortName
 		}
 
-		rows = append(rows, MoexIndexCompositionDailyDB{
+		rows = append(rows, models.MoexIndexCompositionDailyDB{
 			IndexID:          trimmedIndexID,
 			TradeDate:        dateOnlyUTC(tradeDate),
 			Ticker:           strings.TrimSpace(entry.Ticker),
@@ -284,14 +272,14 @@ func (r *MoexSyncRepository) UpsertCoverage(ctx context.Context, dataset, entity
 	).Error
 }
 
-func (r *MoexSyncRepository) ListIncompleteCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate time.Time) ([]MoexIncompleteCoverageRange, error) {
+func (r *MoexSyncRepository) ListIncompleteCoverage(ctx context.Context, dataset, entityKey string, fromDate, toDate time.Time) ([]models.MoexIncompleteCoverageRange, error) {
 	fromDate = dateOnlyUTC(fromDate)
 	toDate = dateOnlyUTC(toDate)
 	if fromDate.After(toDate) {
 		fromDate, toDate = toDate, fromDate
 	}
 
-	var rows []MoexIncompleteCoverageRange
+	var rows []models.MoexIncompleteCoverageRange
 	err := r.db.WithContext(ctx).
 		Table("moex_data_coverage").
 		Select("from_date", "to_date").
