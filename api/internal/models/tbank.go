@@ -57,3 +57,90 @@ type TBankTestBuyResponse struct {
 	ExecutionReportStatus string                 `json:"execution_report_status,omitempty"`
 	Response              map[string]interface{} `json:"response,omitempty"`
 }
+
+// TBankSetDefaultAccountRequest updates selected default account.
+// swagger:model
+type TBankSetDefaultAccountRequest struct {
+	AccountID string `json:"account_id" binding:"required"`
+}
+
+// TBankSandboxPayInRequest performs sandbox balance top-up.
+// swagger:model
+type TBankSandboxPayInRequest struct {
+	AccountID string `json:"account_id"`
+	Currency  string `json:"currency"`
+	Units     int64  `json:"units"`
+}
+
+// TBankSandboxPayInResponse is returned after sandbox top-up.
+// swagger:model
+type TBankSandboxPayInResponse struct {
+	Environment string `json:"environment"`
+	AccountID   string `json:"account_id"`
+	Currency    string `json:"currency"`
+	Units       int64  `json:"units"`
+}
+
+// TBankMoneyBalance represents account money and withdraw balances by currency.
+// swagger:model
+type TBankMoneyBalance struct {
+	Currency          string  `json:"currency"`
+	Available         float64 `json:"available"`
+	Blocked           float64 `json:"blocked"`
+	WithdrawAvailable float64 `json:"withdraw_available"`
+	WithdrawBlocked   float64 `json:"withdraw_blocked"`
+}
+
+// TBankPortfolioPosition represents one portfolio position.
+// swagger:model
+type TBankPortfolioPosition struct {
+	Ticker         string  `json:"ticker,omitempty"`
+	InstrumentID   string  `json:"instrument_id,omitempty"`
+	Figi           string  `json:"figi,omitempty"`
+	Name           string  `json:"name,omitempty"`
+	InstrumentType string  `json:"instrument_type,omitempty"`
+	Quantity       float64 `json:"quantity"`
+	CurrentPrice   float64 `json:"current_price"`
+	CurrentValue   float64 `json:"current_value"`
+	ExpectedYield  float64 `json:"expected_yield"`
+	Currency       string  `json:"currency,omitempty"`
+}
+
+// TBankAccountPortfolioResponse contains account-level balance snapshot.
+// swagger:model
+type TBankAccountPortfolioResponse struct {
+	Environment                  string                   `json:"environment"`
+	AccountID                    string                   `json:"account_id"`
+	TotalAmountPortfolio         float64                  `json:"total_amount_portfolio"`
+	TotalAmountPortfolioCurrency string                   `json:"total_amount_portfolio_currency,omitempty"`
+	DailyYield                   float64                  `json:"daily_yield"`
+	DailyYieldRelative           float64                  `json:"daily_yield_relative"`
+	Money                        []TBankMoneyBalance      `json:"money"`
+	Positions                    []TBankPortfolioPosition `json:"positions"`
+}
+
+// TBankInstrumentLookupItem contains one lookup candidate.
+// swagger:model
+type TBankInstrumentLookupItem struct {
+	InstrumentID      string `json:"instrument_id"`
+	Ticker            string `json:"ticker"`
+	ClassCode         string `json:"class_code,omitempty"`
+	Name              string `json:"name,omitempty"`
+	InstrumentType    string `json:"instrument_type,omitempty"`
+	Figi              string `json:"figi,omitempty"`
+	Uid               string `json:"uid,omitempty"`
+	PositionUid       string `json:"position_uid,omitempty"`
+	Isin              string `json:"isin,omitempty"`
+	Lot               int32  `json:"lot"`
+	ApiTradeAvailable bool   `json:"api_trade_available"`
+	ForIis            bool   `json:"for_iis"`
+	ForQualInvestor   bool   `json:"for_qual_investor"`
+}
+
+// TBankInstrumentLookupResponse contains ticker lookup results.
+// swagger:model
+type TBankInstrumentLookupResponse struct {
+	Query       string                      `json:"query"`
+	ClassCode   string                      `json:"class_code,omitempty"`
+	Instruments []TBankInstrumentLookupItem `json:"instruments"`
+}

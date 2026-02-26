@@ -36,6 +36,8 @@ const (
 	ActionTelegram2FAUpdated         = "telegram_2fa_updated"
 	ActionTBankConnected             = "tbank_connected"
 	ActionTBankDisconnected          = "tbank_disconnected"
+	ActionTBankDefaultAccountUpdated = "tbank_default_account_updated"
+	ActionTBankSandboxPayIn          = "tbank_sandbox_pay_in"
 	ActionTBankTestBuyCreated        = "tbank_test_buy_created"
 )
 

@@ -157,6 +157,10 @@ Authenticated user endpoints for token connect + test buy flow:
 - `GET /api/me/tbank`
 - `POST /api/me/tbank/connect`
 - `POST /api/me/tbank/disconnect`
+- `POST /api/me/tbank/default-account`
+- `GET /api/me/tbank/portfolio`
+- `POST /api/me/tbank/sandbox/pay-in`
+- `GET /api/me/tbank/instruments/lookup`
 - `POST /api/me/tbank/test-buy`
 
 ## T-Bank TLS CA Setup

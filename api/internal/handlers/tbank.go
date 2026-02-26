@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"server/internal/models"
 	"server/internal/services"
@@ -128,4 +129,123 @@ func (h *TBankHandler) CreateTestBuyOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+// SetDefaultAccount godoc
+//
+//	@Summary		Set T-Bank default account
+//	@Description	Sets connected account to use by default for test-buy and portfolio actions
+//	@Tags			tbank
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		models.TBankSetDefaultAccountRequest	true	"Default account payload"
+//	@Success		200		{object}	models.TBankConnectionStatusResponse
+//	@Failure		400		{object}	models.ErrorResponse
+//	@Failure		502		{object}	models.ErrorResponse
+//	@Router			/me/tbank/default-account [post]
+func (h *TBankHandler) SetDefaultAccount(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+
+	var req models.TBankSetDefaultAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		return
+	}
+
+	resp, err := h.tbankService.SetDefaultAccount(c.Request.Context(), userID, &req)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetAccountPortfolio godoc
+//
+//	@Summary		Get T-Bank account balances and portfolio
+//	@Description	Returns balances and positions for selected account (or default account if omitted)
+//	@Tags			tbank
+//	@Produce		json
+//	@Param			account_id	query		string	false	"Account id"
+//	@Success		200			{object}	models.TBankAccountPortfolioResponse
+//	@Failure		400			{object}	models.ErrorResponse
+//	@Failure		502			{object}	models.ErrorResponse
+//	@Router			/me/tbank/portfolio [get]
+func (h *TBankHandler) GetAccountPortfolio(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	accountID := strings.TrimSpace(c.Query("account_id"))
+
+	resp, err := h.tbankService.GetAccountPortfolio(c.Request.Context(), userID, accountID)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// SandboxPayIn godoc
+//
+//	@Summary		Top up T-Bank sandbox account
+//	@Description	Adds virtual money to selected sandbox account
+//	@Tags			tbank
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		models.TBankSandboxPayInRequest	true	"Sandbox pay-in payload"
+//	@Success		200		{object}	models.TBankSandboxPayInResponse
+//	@Failure		400		{object}	models.ErrorResponse
+//	@Failure		502		{object}	models.ErrorResponse
+//	@Router			/me/tbank/sandbox/pay-in [post]
+func (h *TBankHandler) SandboxPayIn(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+
+	var req models.TBankSandboxPayInRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		return
+	}
+
+	resp, err := h.tbankService.SandboxPayIn(c.Request.Context(), userID, &req)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// FindInstrumentByTicker godoc
+//
+//	@Summary		Find T-Bank instrument id by ticker
+//	@Description	Resolves T-Bank instrument candidates by MOEX ticker and optional class code
+//	@Tags			tbank
+//	@Produce		json
+//	@Param			ticker		query		string	true	"MOEX ticker"
+//	@Param			class_code	query		string	false	"MOEX class code (for exact filtering)"
+//	@Success		200			{object}	models.TBankInstrumentLookupResponse
+//	@Failure		400			{object}	models.ErrorResponse
+//	@Failure		502			{object}	models.ErrorResponse
+//	@Router			/me/tbank/instruments/lookup [get]
+func (h *TBankHandler) FindInstrumentByTicker(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	ticker := strings.TrimSpace(c.Query("ticker"))
+	classCode := strings.TrimSpace(c.Query("class_code"))
+
+	resp, err := h.tbankService.FindInstrumentByTicker(c.Request.Context(), userID, ticker, classCode)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+func writeTBankServiceError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, services.ErrTBankNotConnected),
+		errors.Is(err, services.ErrTBankNoAccountFound),
+		errors.Is(err, services.ErrTBankAuthFailed),
+		errors.Is(err, services.ErrTBankInvalidEnv),
+		errors.Is(err, services.ErrTBankSandboxOnly):
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+	default:
+		c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
+	}
 }
