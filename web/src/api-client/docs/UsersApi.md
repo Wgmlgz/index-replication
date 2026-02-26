@@ -14,7 +14,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**usersPost**](#userspost) | **POST** /users | Create user|
 
 # **meGet**
-> ModelsPermissionsResponse meGet()
+> PermissionsResponse meGet()
 
 Returns profile on logged in user
 
@@ -38,7 +38,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**ModelsPermissionsResponse**
+**PermissionsResponse**
 
 ### Authorization
 
@@ -60,7 +60,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **usersGet**
-> ModelsUserListResponse usersGet()
+> UserListResponse usersGet()
 
 Returns a paginated list of users
 
@@ -103,7 +103,7 @@ const { status, data } = await apiInstance.usersGet(
 
 ### Return type
 
-**ModelsUserListResponse**
+**UserListResponse**
 
 ### Authorization
 
@@ -231,7 +231,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **usersIdGet**
-> ModelsUserResponse usersIdGet()
+> UserResponse usersIdGet()
 
 Returns details of a user
 
@@ -262,7 +262,7 @@ const { status, data } = await apiInstance.usersIdGet(
 
 ### Return type
 
-**ModelsUserResponse**
+**UserResponse**
 
 ### Authorization
 
@@ -293,14 +293,14 @@ Updates an existing user
 import {
     UsersApi,
     Configuration,
-    ModelsUpdateUserRequest
+    UpdateUserRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
 
 let id: number; //User ID (default to undefined)
-let body: ModelsUpdateUserRequest; //User update info
+let body: UpdateUserRequest; //User update info
 
 const { status, data } = await apiInstance.usersIdPut(
     id,
@@ -312,7 +312,7 @@ const { status, data } = await apiInstance.usersIdPut(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **ModelsUpdateUserRequest**| User update info | |
+| **body** | **UpdateUserRequest**| User update info | |
 | **id** | [**number**] | User ID | defaults to undefined|
 
 
@@ -405,13 +405,13 @@ Creates a new user
 import {
     UsersApi,
     Configuration,
-    ModelsCreateUserRequest
+    CreateUserRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
 
-let body: ModelsCreateUserRequest; //User info
+let body: CreateUserRequest; //User info
 
 const { status, data } = await apiInstance.usersPost(
     body
@@ -422,7 +422,7 @@ const { status, data } = await apiInstance.usersPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **ModelsCreateUserRequest**| User info | |
+| **body** | **CreateUserRequest**| User info | |
 
 
 ### Return type

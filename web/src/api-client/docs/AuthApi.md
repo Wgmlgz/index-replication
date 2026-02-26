@@ -20,13 +20,13 @@ Authenticates a user and starts a session
 import {
     AuthApi,
     Configuration,
-    ModelsLoginRequest
+    LoginRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new AuthApi(configuration);
 
-let body: ModelsLoginRequest; //Login credentials
+let body: LoginRequest; //Login credentials
 
 const { status, data } = await apiInstance.loginPost(
     body
@@ -37,7 +37,7 @@ const { status, data } = await apiInstance.loginPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **ModelsLoginRequest**| Login credentials | |
+| **body** | **LoginRequest**| Login credentials | |
 
 
 ### Return type
@@ -76,13 +76,13 @@ Checks Telegram challenge status and completes login when approved
 import {
     AuthApi,
     Configuration,
-    ModelsLoginVerifyRequest
+    LoginVerifyRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new AuthApi(configuration);
 
-let body: ModelsLoginVerifyRequest; //Verification challenge
+let body: LoginVerifyRequest; //Verification challenge
 
 const { status, data } = await apiInstance.loginVerifyPost(
     body
@@ -93,7 +93,7 @@ const { status, data } = await apiInstance.loginVerifyPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **ModelsLoginVerifyRequest**| Verification challenge | |
+| **body** | **LoginVerifyRequest**| Verification challenge | |
 
 
 ### Return type
@@ -176,13 +176,13 @@ Changes the password for the current user
 import {
     AuthApi,
     Configuration,
-    ModelsPasswordChangeRequest
+    PasswordChangeRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new AuthApi(configuration);
 
-let body: ModelsPasswordChangeRequest; //Password change info
+let body: PasswordChangeRequest; //Password change info
 
 const { status, data } = await apiInstance.mePasswordPut(
     body
@@ -193,7 +193,7 @@ const { status, data } = await apiInstance.mePasswordPut(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **ModelsPasswordChangeRequest**| Password change info | |
+| **body** | **PasswordChangeRequest**| Password change info | |
 
 
 ### Return type

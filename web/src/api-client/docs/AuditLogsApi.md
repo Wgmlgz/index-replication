@@ -53,7 +53,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **auditLogsGet**
-> ModelsAuditLogListResponse auditLogsGet()
+> AuditLogListResponse auditLogsGet()
 
 Returns a paginated list of audit logs with filters
 
@@ -108,7 +108,7 @@ const { status, data } = await apiInstance.auditLogsGet(
 
 ### Return type
 
-**ModelsAuditLogListResponse**
+**AuditLogListResponse**
 
 ### Authorization
 
@@ -129,7 +129,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **auditLogsIdGet**
-> ModelsAuditLogResponse auditLogsIdGet()
+> AuditLogResponse auditLogsIdGet()
 
 Returns details of an audit log entry
 
@@ -160,7 +160,7 @@ const { status, data } = await apiInstance.auditLogsIdGet(
 
 ### Return type
 
-**ModelsAuditLogResponse**
+**AuditLogResponse**
 
 ### Authorization
 

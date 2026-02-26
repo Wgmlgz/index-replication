@@ -13,7 +13,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**moexSyncStateGet**](#moexsyncstateget) | **GET** /moex/sync/state | Get MOEX sync state rows|
 
 # **moexIndexesOverviewGet**
-> ModelsMoexIndexesOverviewResponse moexIndexesOverviewGet()
+> MoexIndexesOverviewResponse moexIndexesOverviewGet()
 
 Returns indexes list, collections, and membership map
 
@@ -44,7 +44,7 @@ const { status, data } = await apiInstance.moexIndexesOverviewGet(
 
 ### Return type
 
-**ModelsMoexIndexesOverviewResponse**
+**MoexIndexesOverviewResponse**
 
 ### Authorization
 
@@ -65,7 +65,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **moexIndexesSecidCompositionGet**
-> Array<ModelsMoexIndexCompositionEntry> moexIndexesSecidCompositionGet()
+> Array<MoexIndexCompositionEntry> moexIndexesSecidCompositionGet()
 
 Returns index composition snapshot
 
@@ -102,7 +102,7 @@ const { status, data } = await apiInstance.moexIndexesSecidCompositionGet(
 
 ### Return type
 
-**Array<ModelsMoexIndexCompositionEntry>**
+**Array<MoexIndexCompositionEntry>**
 
 ### Authorization
 
@@ -124,7 +124,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **moexIndexesSecidCompositionSeriesGet**
-> { [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; } moexIndexesSecidCompositionSeriesGet()
+> { [key: string]: Array<MoexIndexTickerAnalyticsPoint>; } moexIndexesSecidCompositionSeriesGet()
 
 Returns downsampled weight series for index tickers
 
@@ -179,7 +179,7 @@ const { status, data } = await apiInstance.moexIndexesSecidCompositionSeriesGet(
 
 ### Return type
 
-**{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }**
+**{ [key: string]: Array<MoexIndexTickerAnalyticsPoint>; }**
 
 ### Authorization
 
@@ -201,7 +201,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **moexIndexesSecidHistoryGet**
-> Array<ModelsMoexIndexHistoryPoint> moexIndexesSecidHistoryGet()
+> Array<MoexIndexHistoryPoint> moexIndexesSecidHistoryGet()
 
 Returns downsampled history for a MOEX index
 
@@ -241,7 +241,7 @@ const { status, data } = await apiInstance.moexIndexesSecidHistoryGet(
 
 ### Return type
 
-**Array<ModelsMoexIndexHistoryPoint>**
+**Array<MoexIndexHistoryPoint>**
 
 ### Authorization
 

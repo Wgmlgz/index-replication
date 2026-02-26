@@ -8,7 +8,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**meSettingsPatch**](#mesettingspatch) | **PATCH** /me/settings | Update current user settings|
 
 # **meSettingsGet**
-> ModelsUserSettingsResponse meSettingsGet()
+> UserSettingsResponse meSettingsGet()
 
 Returns settings for the current user, including favorites
 
@@ -32,7 +32,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**ModelsUserSettingsResponse**
+**UserSettingsResponse**
 
 ### Authorization
 
@@ -53,7 +53,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **meSettingsPatch**
-> ModelsUserSettingsResponse meSettingsPatch(payload)
+> UserSettingsResponse meSettingsPatch(payload)
 
 Updates settings for the current user, including favorites
 
@@ -63,13 +63,13 @@ Updates settings for the current user, including favorites
 import {
     SettingsApi,
     Configuration,
-    ModelsUserSettingsPatchRequest
+    UserSettingsPatchRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new SettingsApi(configuration);
 
-let payload: ModelsUserSettingsPatchRequest; //Settings payload
+let payload: UserSettingsPatchRequest; //Settings payload
 
 const { status, data } = await apiInstance.meSettingsPatch(
     payload
@@ -80,12 +80,12 @@ const { status, data } = await apiInstance.meSettingsPatch(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **payload** | **ModelsUserSettingsPatchRequest**| Settings payload | |
+| **payload** | **UserSettingsPatchRequest**| Settings payload | |
 
 
 ### Return type
 
-**ModelsUserSettingsResponse**
+**UserSettingsResponse**
 
 ### Authorization
 

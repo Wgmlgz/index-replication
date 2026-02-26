@@ -1,0 +1,22 @@
+# MoexIndexTickerAnalyticsPoint
+
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**tradeDate** | **string** |  | [optional] [default to undefined]
+**weight** | **number** |  | [optional] [default to undefined]
+
+## Example
+
+```typescript
+import { MoexIndexTickerAnalyticsPoint } from './api';
+
+const instance: MoexIndexTickerAnalyticsPoint = {
+    tradeDate,
+    weight,
+};
+```
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

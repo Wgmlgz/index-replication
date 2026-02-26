@@ -23,47 +23,44 @@ import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
-export interface ModelsAuditLogListResponse {
-    'logs': Array<ModelsAuditLogResponse>;
+export interface AuditLogListResponse {
+    'logs': Array<AuditLogResponse>;
     'page': number;
     'page_size': number;
     'total': number;
 }
-export interface ModelsAuditLogResponse {
+export interface AuditLogResponse {
     'action': string;
     'details'?: string;
     'entity_id'?: number;
     'entity_type': string;
     'id': number;
     'log_image'?: string;
-    'performed_by'?: ModelsUserShort;
+    'performed_by'?: UserShort;
     'timestamp': string;
 }
-export interface ModelsCreateUserRequest {
+export interface CreateUserRequest {
     'comment'?: string;
     'full_name': string;
     'password': string;
     'role_id': number;
     'username': string;
 }
-export interface ModelsErrorResponse {
+export interface ErrorResponse {
     'error'?: string;
 }
-export interface ModelsLoginRequest {
+export interface LoginRequest {
     'password'?: string;
-    /**
-     * Add remember me flag
-     */
     'remember_me'?: boolean;
     'username'?: string;
 }
-export interface ModelsLoginVerifyRequest {
+export interface LoginVerifyRequest {
     'challenge_id'?: string;
 }
-export interface ModelsLoginVerifyStatusResponse {
+export interface LoginVerifyStatusResponse {
     'status'?: string;
 }
-export interface ModelsMoexIndex {
+export interface MoexIndex {
     'annualHigh'?: number;
     'annualLow'?: number;
     'boardId'?: string;
@@ -76,13 +73,13 @@ export interface ModelsMoexIndex {
     'secid'?: string;
     'shortName'?: string;
 }
-export interface ModelsMoexIndexCollection {
+export interface MoexIndexCollection {
     'id'?: number;
     'name'?: string;
     'securityGroupId'?: number;
     'title'?: string;
 }
-export interface ModelsMoexIndexCompositionEntry {
+export interface MoexIndexCompositionEntry {
     'indexId'?: string;
     'secId'?: string;
     'shortName'?: string;
@@ -91,87 +88,33 @@ export interface ModelsMoexIndexCompositionEntry {
     'tradeSessionDate'?: string;
     'weight'?: number;
 }
-export interface ModelsMoexIndexHistoryPoint {
+export interface MoexIndexHistoryPoint {
     'close'?: number;
     'high'?: number;
     'low'?: number;
     'open'?: number;
     'tradeDate'?: string;
 }
-export interface ModelsMoexIndexTickerAnalyticsPoint {
+export interface MoexIndexTickerAnalyticsPoint {
     'tradeDate'?: string;
     'weight'?: number;
 }
-export interface ModelsMoexIndexesOverviewResponse {
-    'collections'?: Array<ModelsMoexIndexCollection>;
-    'indexes'?: Array<ModelsMoexIndex>;
+export interface MoexIndexesOverviewResponse {
+    'collections'?: Array<MoexIndexCollection>;
+    'indexes'?: Array<MoexIndex>;
     'memberships'?: { [key: string]: Array<string>; };
 }
-export interface ModelsPasswordChangeRequest {
+export interface PasswordChangeRequest {
     'new_password'?: string;
     'old_password'?: string;
 }
-export interface ModelsPermission {
+export interface Permission {
     'act': string;
     'obj': string;
 }
-export interface ModelsPermissionsResponse {
-    'permissions': Array<ModelsPermission>;
-    'user': ModelsUserResponse;
-}
-export interface ModelsTelegramConnectResponse {
-    'connect_url'?: string;
-    'expires_at'?: string;
-}
-export interface ModelsTelegramPatchRequest {
-    'login_2fa_enabled'?: boolean;
-}
-export interface ModelsTelegramStatusResponse {
-    'bot_username'?: string;
-    'connected'?: boolean;
-    'login_2fa_enabled'?: boolean;
-    'telegram_username'?: string;
-}
-export interface ModelsUpdateUserRequest {
-    'comment'?: string;
-    'email'?: string;
-    'full_name'?: string;
-    'password'?: string;
-    'phone'?: string;
-    'role_id'?: number;
-}
-export interface ModelsUserListResponse {
-    'page'?: number;
-    'page_size'?: number;
-    'total'?: number;
-    'users'?: Array<ModelsUserResponse>;
-}
-export interface ModelsUserResponse {
-    'blocked_at': string;
-    'comment': string;
-    'created_at': string;
-    'email': string;
-    'full_name': string;
-    'id': number;
-    'is_blocked': boolean;
-    'last_active': string;
-    'phone': string;
-    'role_id': number;
-    'role_key': string;
-    'username': string;
-}
-export interface ModelsUserSettingsPatchRequest {
-    'favorites'?: Array<string>;
-    'values'?: { [key: string]: string; };
-}
-export interface ModelsUserSettingsResponse {
-    'favorites'?: Array<string>;
-    'values'?: { [key: string]: string; };
-}
-export interface ModelsUserShort {
-    'full_name': string;
-    'id': number;
-    'username': string;
+export interface PermissionsResponse {
+    'permissions': Array<Permission>;
+    'user': UserResponse;
 }
 export interface RepositoryMoexCoverageRow {
     'dataset'?: string;
@@ -207,6 +150,167 @@ export interface RepositoryMoexSyncStateRow {
     'retryCount'?: number;
     'status'?: string;
     'updatedAt'?: string;
+}
+export interface TBankAccount {
+    'access_level'?: string;
+    'closed_at'?: string;
+    'id'?: string;
+    'name'?: string;
+    'opened_at'?: string;
+    'status'?: string;
+    'type'?: string;
+}
+export interface TBankAccountPortfolioResponse {
+    'account_id'?: string;
+    'daily_yield'?: number;
+    'daily_yield_relative'?: number;
+    'environment'?: string;
+    'money'?: Array<TBankMoneyBalance>;
+    'positions'?: Array<TBankPortfolioPosition>;
+    'total_amount_portfolio'?: number;
+    'total_amount_portfolio_currency'?: string;
+}
+export interface TBankConnectRequest {
+    'default_account_id'?: string;
+    'environment': TBankConnectRequestEnvironmentEnum;
+    'token': string;
+}
+
+export const TBankConnectRequestEnvironmentEnum = {
+    Sandbox: 'sandbox',
+    Production: 'production'
+} as const;
+
+export type TBankConnectRequestEnvironmentEnum = typeof TBankConnectRequestEnvironmentEnum[keyof typeof TBankConnectRequestEnvironmentEnum];
+
+export interface TBankConnectionStatusResponse {
+    'accounts'?: Array<TBankAccount>;
+    'connected'?: boolean;
+    'connection_error'?: string;
+    'default_account_id'?: string;
+    'environment'?: string;
+    'token_masked'?: string;
+}
+export interface TBankInstrumentLookupItem {
+    'api_trade_available'?: boolean;
+    'class_code'?: string;
+    'figi'?: string;
+    'for_iis'?: boolean;
+    'for_qual_investor'?: boolean;
+    'instrument_id'?: string;
+    'instrument_type'?: string;
+    'isin'?: string;
+    'lot'?: number;
+    'name'?: string;
+    'position_uid'?: string;
+    'ticker'?: string;
+    'uid'?: string;
+}
+export interface TBankInstrumentLookupResponse {
+    'class_code'?: string;
+    'instruments'?: Array<TBankInstrumentLookupItem>;
+    'query'?: string;
+}
+export interface TBankMoneyBalance {
+    'available'?: number;
+    'blocked'?: number;
+    'currency'?: string;
+    'withdraw_available'?: number;
+    'withdraw_blocked'?: number;
+}
+export interface TBankPortfolioPosition {
+    'currency'?: string;
+    'current_price'?: number;
+    'current_value'?: number;
+    'expected_yield'?: number;
+    'figi'?: string;
+    'instrument_id'?: string;
+    'instrument_type'?: string;
+    'name'?: string;
+    'quantity'?: number;
+    'ticker'?: string;
+}
+export interface TBankSandboxPayInRequest {
+    'account_id'?: string;
+    'currency'?: string;
+    'units'?: number;
+}
+export interface TBankSandboxPayInResponse {
+    'account_id'?: string;
+    'currency'?: string;
+    'environment'?: string;
+    'units'?: number;
+}
+export interface TBankSetDefaultAccountRequest {
+    'account_id': string;
+}
+export interface TBankTestBuyRequest {
+    'account_id'?: string;
+    'instrument_id': string;
+    'quantity': number;
+}
+export interface TBankTestBuyResponse {
+    'account_id'?: string;
+    'environment'?: string;
+    'execution_report_status'?: string;
+    'instrument_id'?: string;
+    'order_id'?: string;
+    'quantity'?: number;
+    'response'?: { [key: string]: any; };
+}
+export interface TelegramConnectResponse {
+    'connect_url'?: string;
+    'expires_at'?: string;
+}
+export interface TelegramPatchRequest {
+    'login_2fa_enabled'?: boolean;
+}
+export interface TelegramStatusResponse {
+    'bot_username'?: string;
+    'connected'?: boolean;
+    'login_2fa_enabled'?: boolean;
+    'telegram_username'?: string;
+}
+export interface UpdateUserRequest {
+    'comment'?: string;
+    'email'?: string;
+    'full_name'?: string;
+    'password'?: string;
+    'phone'?: string;
+    'role_id'?: number;
+}
+export interface UserListResponse {
+    'page'?: number;
+    'page_size'?: number;
+    'total'?: number;
+    'users'?: Array<UserResponse>;
+}
+export interface UserResponse {
+    'blocked_at': string;
+    'comment': string;
+    'created_at': string;
+    'email': string;
+    'full_name': string;
+    'id': number;
+    'is_blocked': boolean;
+    'last_active': string;
+    'phone': string;
+    'role_id': number;
+    'role_key': string;
+    'username': string;
+}
+export interface UserSettingsPatchRequest {
+    'favorites'?: Array<string>;
+    'values'?: { [key: string]: string; };
+}
+export interface UserSettingsResponse {
+    'favorites'?: Array<string>;
+    'values'?: { [key: string]: string; };
+}
+export interface UserShort {
+    'full_name': string;
+    'id': number;
+    'username': string;
 }
 
 /**
@@ -389,7 +493,7 @@ export const AuditLogsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAuditLogListResponse>> {
+        async auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AuditLogListResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuditLogsApi.auditLogsGet']?.[localVarOperationServerIndex]?.url;
@@ -402,7 +506,7 @@ export const AuditLogsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async auditLogsIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAuditLogResponse>> {
+        async auditLogsIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AuditLogResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.auditLogsIdGet(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuditLogsApi.auditLogsIdGet']?.[localVarOperationServerIndex]?.url;
@@ -441,7 +545,7 @@ export const AuditLogsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAuditLogListResponse> {
+        auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): AxiosPromise<AuditLogListResponse> {
             return localVarFp.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options).then((request) => request(axios, basePath));
         },
         /**
@@ -451,7 +555,7 @@ export const AuditLogsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        auditLogsIdGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAuditLogResponse> {
+        auditLogsIdGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<AuditLogResponse> {
             return localVarFp.auditLogsIdGet(id, options).then((request) => request(axios, basePath));
         },
     };
@@ -512,11 +616,11 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         /**
          * Authenticates a user and starts a session
          * @summary Login
-         * @param {ModelsLoginRequest} body Login credentials
+         * @param {LoginRequest} body Login credentials
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        loginPost: async (body: ModelsLoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        loginPost: async (body: LoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'body' is not null or undefined
             assertParamExists('loginPost', 'body', body)
             const localVarPath = `/login`;
@@ -547,11 +651,11 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         /**
          * Checks Telegram challenge status and completes login when approved
          * @summary Complete login verification
-         * @param {ModelsLoginVerifyRequest} body Verification challenge
+         * @param {LoginVerifyRequest} body Verification challenge
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        loginVerifyPost: async (body: ModelsLoginVerifyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        loginVerifyPost: async (body: LoginVerifyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'body' is not null or undefined
             assertParamExists('loginVerifyPost', 'body', body)
             const localVarPath = `/login/verify`;
@@ -612,11 +716,11 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         /**
          * Changes the password for the current user
          * @summary Change Password
-         * @param {ModelsPasswordChangeRequest} body Password change info
+         * @param {PasswordChangeRequest} body Password change info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        mePasswordPut: async (body: ModelsPasswordChangeRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        mePasswordPut: async (body: PasswordChangeRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'body' is not null or undefined
             assertParamExists('mePasswordPut', 'body', body)
             const localVarPath = `/me/password`;
@@ -656,11 +760,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
         /**
          * Authenticates a user and starts a session
          * @summary Login
-         * @param {ModelsLoginRequest} body Login credentials
+         * @param {LoginRequest} body Login credentials
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async loginPost(body: ModelsLoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
+        async loginPost(body: LoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.loginPost(body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.loginPost']?.[localVarOperationServerIndex]?.url;
@@ -669,11 +773,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
         /**
          * Checks Telegram challenge status and completes login when approved
          * @summary Complete login verification
-         * @param {ModelsLoginVerifyRequest} body Verification challenge
+         * @param {LoginVerifyRequest} body Verification challenge
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async loginVerifyPost(body: ModelsLoginVerifyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
+        async loginVerifyPost(body: LoginVerifyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.loginVerifyPost(body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.loginVerifyPost']?.[localVarOperationServerIndex]?.url;
@@ -694,11 +798,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
         /**
          * Changes the password for the current user
          * @summary Change Password
-         * @param {ModelsPasswordChangeRequest} body Password change info
+         * @param {PasswordChangeRequest} body Password change info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async mePasswordPut(body: ModelsPasswordChangeRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
+        async mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.mePasswordPut(body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.mePasswordPut']?.[localVarOperationServerIndex]?.url;
@@ -716,21 +820,21 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         /**
          * Authenticates a user and starts a session
          * @summary Login
-         * @param {ModelsLoginRequest} body Login credentials
+         * @param {LoginRequest} body Login credentials
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        loginPost(body: ModelsLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
+        loginPost(body: LoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
             return localVarFp.loginPost(body, options).then((request) => request(axios, basePath));
         },
         /**
          * Checks Telegram challenge status and completes login when approved
          * @summary Complete login verification
-         * @param {ModelsLoginVerifyRequest} body Verification challenge
+         * @param {LoginVerifyRequest} body Verification challenge
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        loginVerifyPost(body: ModelsLoginVerifyRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
+        loginVerifyPost(body: LoginVerifyRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
             return localVarFp.loginVerifyPost(body, options).then((request) => request(axios, basePath));
         },
         /**
@@ -745,11 +849,11 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         /**
          * Changes the password for the current user
          * @summary Change Password
-         * @param {ModelsPasswordChangeRequest} body Password change info
+         * @param {PasswordChangeRequest} body Password change info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        mePasswordPut(body: ModelsPasswordChangeRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
+        mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
             return localVarFp.mePasswordPut(body, options).then((request) => request(axios, basePath));
         },
     };
@@ -762,22 +866,22 @@ export class AuthApi extends BaseAPI {
     /**
      * Authenticates a user and starts a session
      * @summary Login
-     * @param {ModelsLoginRequest} body Login credentials
+     * @param {LoginRequest} body Login credentials
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public loginPost(body: ModelsLoginRequest, options?: RawAxiosRequestConfig) {
+    public loginPost(body: LoginRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).loginPost(body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Checks Telegram challenge status and completes login when approved
      * @summary Complete login verification
-     * @param {ModelsLoginVerifyRequest} body Verification challenge
+     * @param {LoginVerifyRequest} body Verification challenge
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public loginVerifyPost(body: ModelsLoginVerifyRequest, options?: RawAxiosRequestConfig) {
+    public loginVerifyPost(body: LoginVerifyRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).loginVerifyPost(body, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -794,11 +898,11 @@ export class AuthApi extends BaseAPI {
     /**
      * Changes the password for the current user
      * @summary Change Password
-     * @param {ModelsPasswordChangeRequest} body Password change info
+     * @param {PasswordChangeRequest} body Password change info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public mePasswordPut(body: ModelsPasswordChangeRequest, options?: RawAxiosRequestConfig) {
+    public mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).mePasswordPut(body, options).then((request) => request(this.axios, this.basePath));
     }
 }
@@ -1178,7 +1282,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsMoexIndexesOverviewResponse>> {
+        async moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<MoexIndexesOverviewResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesOverviewGet(lang, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesOverviewGet']?.[localVarOperationServerIndex]?.url;
@@ -1193,7 +1297,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ModelsMoexIndexCompositionEntry>>> {
+        async moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<MoexIndexCompositionEntry>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidCompositionGet(secid, date, lang, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidCompositionGet']?.[localVarOperationServerIndex]?.url;
@@ -1214,7 +1318,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }>> {
+        async moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<MoexIndexTickerAnalyticsPoint>; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidCompositionSeriesGet(secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidCompositionSeriesGet']?.[localVarOperationServerIndex]?.url;
@@ -1230,7 +1334,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ModelsMoexIndexHistoryPoint>>> {
+        async moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<MoexIndexHistoryPoint>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexIndexesSecidHistoryGet']?.[localVarOperationServerIndex]?.url;
@@ -1300,7 +1404,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsMoexIndexesOverviewResponse> {
+        moexIndexesOverviewGet(lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<MoexIndexesOverviewResponse> {
             return localVarFp.moexIndexesOverviewGet(lang, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1312,7 +1416,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<ModelsMoexIndexCompositionEntry>> {
+        moexIndexesSecidCompositionGet(secid: string, date?: string, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<MoexIndexCompositionEntry>> {
             return localVarFp.moexIndexesSecidCompositionGet(secid, date, lang, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1330,7 +1434,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<ModelsMoexIndexTickerAnalyticsPoint>; }> {
+        moexIndexesSecidCompositionSeriesGet(secid: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, lang?: string, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<MoexIndexTickerAnalyticsPoint>; }> {
             return localVarFp.moexIndexesSecidCompositionSeriesGet(secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1343,7 +1447,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ModelsMoexIndexHistoryPoint>> {
+        moexIndexesSecidHistoryGet(secid: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<MoexIndexHistoryPoint>> {
             return localVarFp.moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1532,11 +1636,11 @@ export const SettingsApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * Updates settings for the current user, including favorites
          * @summary Update current user settings
-         * @param {ModelsUserSettingsPatchRequest} payload Settings payload
+         * @param {UserSettingsPatchRequest} payload Settings payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meSettingsPatch: async (payload: ModelsUserSettingsPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        meSettingsPatch: async (payload: UserSettingsPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'payload' is not null or undefined
             assertParamExists('meSettingsPatch', 'payload', payload)
             const localVarPath = `/me/settings`;
@@ -1579,7 +1683,7 @@ export const SettingsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async meSettingsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserSettingsResponse>> {
+        async meSettingsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserSettingsResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meSettingsGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['SettingsApi.meSettingsGet']?.[localVarOperationServerIndex]?.url;
@@ -1588,11 +1692,11 @@ export const SettingsApiFp = function(configuration?: Configuration) {
         /**
          * Updates settings for the current user, including favorites
          * @summary Update current user settings
-         * @param {ModelsUserSettingsPatchRequest} payload Settings payload
+         * @param {UserSettingsPatchRequest} payload Settings payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async meSettingsPatch(payload: ModelsUserSettingsPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserSettingsResponse>> {
+        async meSettingsPatch(payload: UserSettingsPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserSettingsResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meSettingsPatch(payload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['SettingsApi.meSettingsPatch']?.[localVarOperationServerIndex]?.url;
@@ -1613,17 +1717,17 @@ export const SettingsApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meSettingsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserSettingsResponse> {
+        meSettingsGet(options?: RawAxiosRequestConfig): AxiosPromise<UserSettingsResponse> {
             return localVarFp.meSettingsGet(options).then((request) => request(axios, basePath));
         },
         /**
          * Updates settings for the current user, including favorites
          * @summary Update current user settings
-         * @param {ModelsUserSettingsPatchRequest} payload Settings payload
+         * @param {UserSettingsPatchRequest} payload Settings payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meSettingsPatch(payload: ModelsUserSettingsPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserSettingsResponse> {
+        meSettingsPatch(payload: UserSettingsPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserSettingsResponse> {
             return localVarFp.meSettingsPatch(payload, options).then((request) => request(axios, basePath));
         },
     };
@@ -1646,12 +1750,591 @@ export class SettingsApi extends BaseAPI {
     /**
      * Updates settings for the current user, including favorites
      * @summary Update current user settings
-     * @param {ModelsUserSettingsPatchRequest} payload Settings payload
+     * @param {UserSettingsPatchRequest} payload Settings payload
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public meSettingsPatch(payload: ModelsUserSettingsPatchRequest, options?: RawAxiosRequestConfig) {
+    public meSettingsPatch(payload: UserSettingsPatchRequest, options?: RawAxiosRequestConfig) {
         return SettingsApiFp(this.configuration).meSettingsPatch(payload, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * TbankApi - axios parameter creator
+ */
+export const TbankApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Saves user token/environment and verifies access by loading accounts
+         * @summary Connect T-Bank account
+         * @param {TBankConnectRequest} payload T-Bank connect payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankConnectPost: async (payload: TBankConnectRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meTbankConnectPost', 'payload', payload)
+            const localVarPath = `/me/tbank/connect`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Sets connected account to use by default for test-buy and portfolio actions
+         * @summary Set T-Bank default account
+         * @param {TBankSetDefaultAccountRequest} payload Default account payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankDefaultAccountPost: async (payload: TBankSetDefaultAccountRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meTbankDefaultAccountPost', 'payload', payload)
+            const localVarPath = `/me/tbank/default-account`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Removes saved T-Bank credentials for the current user
+         * @summary Disconnect T-Bank account
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankDisconnectPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank/disconnect`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns current user T-Bank connection state and available accounts
+         * @summary Get T-Bank integration status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Resolves T-Bank instrument candidates by MOEX ticker and optional class code
+         * @summary Find T-Bank instrument id by ticker
+         * @param {string} ticker MOEX ticker
+         * @param {string} [classCode] MOEX class code (for exact filtering)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankInstrumentsLookupGet: async (ticker: string, classCode?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'ticker' is not null or undefined
+            assertParamExists('meTbankInstrumentsLookupGet', 'ticker', ticker)
+            const localVarPath = `/me/tbank/instruments/lookup`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (ticker !== undefined) {
+                localVarQueryParameter['ticker'] = ticker;
+            }
+
+            if (classCode !== undefined) {
+                localVarQueryParameter['class_code'] = classCode;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns balances and positions for selected account (or default account if omitted)
+         * @summary Get T-Bank account balances and portfolio
+         * @param {string} [accountId] Account id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioGet: async (accountId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank/portfolio`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (accountId !== undefined) {
+                localVarQueryParameter['account_id'] = accountId;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Adds virtual money to selected sandbox account
+         * @summary Top up T-Bank sandbox account
+         * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankSandboxPayInPost: async (payload: TBankSandboxPayInRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meTbankSandboxPayInPost', 'payload', payload)
+            const localVarPath = `/me/tbank/sandbox/pay-in`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Places a market buy order using the connected user T-Bank account
+         * @summary Create T-Bank test buy order
+         * @param {TBankTestBuyRequest} payload T-Bank test buy payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankTestBuyPost: async (payload: TBankTestBuyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meTbankTestBuyPost', 'payload', payload)
+            const localVarPath = `/me/tbank/test-buy`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * TbankApi - functional programming interface
+ */
+export const TbankApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = TbankApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Saves user token/environment and verifies access by loading accounts
+         * @summary Connect T-Bank account
+         * @param {TBankConnectRequest} payload T-Bank connect payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankConnectPost(payload: TBankConnectRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankConnectionStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankConnectPost(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankConnectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Sets connected account to use by default for test-buy and portfolio actions
+         * @summary Set T-Bank default account
+         * @param {TBankSetDefaultAccountRequest} payload Default account payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankDefaultAccountPost(payload: TBankSetDefaultAccountRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankConnectionStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankDefaultAccountPost(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankDefaultAccountPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Removes saved T-Bank credentials for the current user
+         * @summary Disconnect T-Bank account
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankDisconnectPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: boolean; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankDisconnectPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankDisconnectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns current user T-Bank connection state and available accounts
+         * @summary Get T-Bank integration status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankConnectionStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Resolves T-Bank instrument candidates by MOEX ticker and optional class code
+         * @summary Find T-Bank instrument id by ticker
+         * @param {string} ticker MOEX ticker
+         * @param {string} [classCode] MOEX class code (for exact filtering)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankInstrumentsLookupGet(ticker: string, classCode?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankInstrumentLookupResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankInstrumentsLookupGet(ticker, classCode, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankInstrumentsLookupGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns balances and positions for selected account (or default account if omitted)
+         * @summary Get T-Bank account balances and portfolio
+         * @param {string} [accountId] Account id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankAccountPortfolioResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioGet(accountId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Adds virtual money to selected sandbox account
+         * @summary Top up T-Bank sandbox account
+         * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankSandboxPayInPost(payload: TBankSandboxPayInRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankSandboxPayInResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankSandboxPayInPost(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankSandboxPayInPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Places a market buy order using the connected user T-Bank account
+         * @summary Create T-Bank test buy order
+         * @param {TBankTestBuyRequest} payload T-Bank test buy payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankTestBuyPost(payload: TBankTestBuyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankTestBuyResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankTestBuyPost(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankTestBuyPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * TbankApi - factory interface
+ */
+export const TbankApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = TbankApiFp(configuration)
+    return {
+        /**
+         * Saves user token/environment and verifies access by loading accounts
+         * @summary Connect T-Bank account
+         * @param {TBankConnectRequest} payload T-Bank connect payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankConnectPost(payload: TBankConnectRequest, options?: RawAxiosRequestConfig): AxiosPromise<TBankConnectionStatusResponse> {
+            return localVarFp.meTbankConnectPost(payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Sets connected account to use by default for test-buy and portfolio actions
+         * @summary Set T-Bank default account
+         * @param {TBankSetDefaultAccountRequest} payload Default account payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankDefaultAccountPost(payload: TBankSetDefaultAccountRequest, options?: RawAxiosRequestConfig): AxiosPromise<TBankConnectionStatusResponse> {
+            return localVarFp.meTbankDefaultAccountPost(payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Removes saved T-Bank credentials for the current user
+         * @summary Disconnect T-Bank account
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankDisconnectPost(options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: boolean; }> {
+            return localVarFp.meTbankDisconnectPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns current user T-Bank connection state and available accounts
+         * @summary Get T-Bank integration status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankGet(options?: RawAxiosRequestConfig): AxiosPromise<TBankConnectionStatusResponse> {
+            return localVarFp.meTbankGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Resolves T-Bank instrument candidates by MOEX ticker and optional class code
+         * @summary Find T-Bank instrument id by ticker
+         * @param {string} ticker MOEX ticker
+         * @param {string} [classCode] MOEX class code (for exact filtering)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankInstrumentsLookupGet(ticker: string, classCode?: string, options?: RawAxiosRequestConfig): AxiosPromise<TBankInstrumentLookupResponse> {
+            return localVarFp.meTbankInstrumentsLookupGet(ticker, classCode, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns balances and positions for selected account (or default account if omitted)
+         * @summary Get T-Bank account balances and portfolio
+         * @param {string} [accountId] Account id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig): AxiosPromise<TBankAccountPortfolioResponse> {
+            return localVarFp.meTbankPortfolioGet(accountId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Adds virtual money to selected sandbox account
+         * @summary Top up T-Bank sandbox account
+         * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankSandboxPayInPost(payload: TBankSandboxPayInRequest, options?: RawAxiosRequestConfig): AxiosPromise<TBankSandboxPayInResponse> {
+            return localVarFp.meTbankSandboxPayInPost(payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Places a market buy order using the connected user T-Bank account
+         * @summary Create T-Bank test buy order
+         * @param {TBankTestBuyRequest} payload T-Bank test buy payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankTestBuyPost(payload: TBankTestBuyRequest, options?: RawAxiosRequestConfig): AxiosPromise<TBankTestBuyResponse> {
+            return localVarFp.meTbankTestBuyPost(payload, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * TbankApi - object-oriented interface
+ */
+export class TbankApi extends BaseAPI {
+    /**
+     * Saves user token/environment and verifies access by loading accounts
+     * @summary Connect T-Bank account
+     * @param {TBankConnectRequest} payload T-Bank connect payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankConnectPost(payload: TBankConnectRequest, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankConnectPost(payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Sets connected account to use by default for test-buy and portfolio actions
+     * @summary Set T-Bank default account
+     * @param {TBankSetDefaultAccountRequest} payload Default account payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankDefaultAccountPost(payload: TBankSetDefaultAccountRequest, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankDefaultAccountPost(payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Removes saved T-Bank credentials for the current user
+     * @summary Disconnect T-Bank account
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankDisconnectPost(options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankDisconnectPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns current user T-Bank connection state and available accounts
+     * @summary Get T-Bank integration status
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankGet(options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Resolves T-Bank instrument candidates by MOEX ticker and optional class code
+     * @summary Find T-Bank instrument id by ticker
+     * @param {string} ticker MOEX ticker
+     * @param {string} [classCode] MOEX class code (for exact filtering)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankInstrumentsLookupGet(ticker: string, classCode?: string, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankInstrumentsLookupGet(ticker, classCode, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns balances and positions for selected account (or default account if omitted)
+     * @summary Get T-Bank account balances and portfolio
+     * @param {string} [accountId] Account id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankPortfolioGet(accountId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Adds virtual money to selected sandbox account
+     * @summary Top up T-Bank sandbox account
+     * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankSandboxPayInPost(payload: TBankSandboxPayInRequest, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankSandboxPayInPost(payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Places a market buy order using the connected user T-Bank account
+     * @summary Create T-Bank test buy order
+     * @param {TBankTestBuyRequest} payload T-Bank test buy payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankTestBuyPost(payload: TBankTestBuyRequest, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankTestBuyPost(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1853,11 +2536,11 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
          * Updates an existing user
          * @summary Update user
          * @param {number} id User ID
-         * @param {ModelsUpdateUserRequest} body User update info
+         * @param {UpdateUserRequest} body User update info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersIdPut: async (id: number, body: ModelsUpdateUserRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        usersIdPut: async (id: number, body: UpdateUserRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('usersIdPut', 'id', id)
             // verify required parameter 'body' is not null or undefined
@@ -1925,11 +2608,11 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
         /**
          * Creates a new user
          * @summary Create user
-         * @param {ModelsCreateUserRequest} body User info
+         * @param {CreateUserRequest} body User info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersPost: async (body: ModelsCreateUserRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        usersPost: async (body: CreateUserRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'body' is not null or undefined
             assertParamExists('usersPost', 'body', body)
             const localVarPath = `/users`;
@@ -1972,7 +2655,7 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async meGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsPermissionsResponse>> {
+        async meGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PermissionsResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.meGet']?.[localVarOperationServerIndex]?.url;
@@ -1989,7 +2672,7 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserListResponse>> {
+        async usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserListResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersGet(page, pageSize, search, sortBy, sortDir, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.usersGet']?.[localVarOperationServerIndex]?.url;
@@ -2028,7 +2711,7 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsUserResponse>> {
+        async usersIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersIdGet(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.usersIdGet']?.[localVarOperationServerIndex]?.url;
@@ -2038,11 +2721,11 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * Updates an existing user
          * @summary Update user
          * @param {number} id User ID
-         * @param {ModelsUpdateUserRequest} body User update info
+         * @param {UpdateUserRequest} body User update info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersIdPut(id: number, body: ModelsUpdateUserRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: string; }>> {
+        async usersIdPut(id: number, body: UpdateUserRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: string; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersIdPut(id, body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.usersIdPut']?.[localVarOperationServerIndex]?.url;
@@ -2064,11 +2747,11 @@ export const UsersApiFp = function(configuration?: Configuration) {
         /**
          * Creates a new user
          * @summary Create user
-         * @param {ModelsCreateUserRequest} body User info
+         * @param {CreateUserRequest} body User info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersPost(body: ModelsCreateUserRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: string; }>> {
+        async usersPost(body: CreateUserRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: string; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersPost(body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.usersPost']?.[localVarOperationServerIndex]?.url;
@@ -2089,7 +2772,7 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsPermissionsResponse> {
+        meGet(options?: RawAxiosRequestConfig): AxiosPromise<PermissionsResponse> {
             return localVarFp.meGet(options).then((request) => request(axios, basePath));
         },
         /**
@@ -2103,7 +2786,7 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserListResponse> {
+        usersGet(page?: number, pageSize?: number, search?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): AxiosPromise<UserListResponse> {
             return localVarFp.usersGet(page, pageSize, search, sortBy, sortDir, options).then((request) => request(axios, basePath));
         },
         /**
@@ -2133,18 +2816,18 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersIdGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ModelsUserResponse> {
+        usersIdGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<UserResponse> {
             return localVarFp.usersIdGet(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Updates an existing user
          * @summary Update user
          * @param {number} id User ID
-         * @param {ModelsUpdateUserRequest} body User update info
+         * @param {UpdateUserRequest} body User update info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersIdPut(id: number, body: ModelsUpdateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
+        usersIdPut(id: number, body: UpdateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
             return localVarFp.usersIdPut(id, body, options).then((request) => request(axios, basePath));
         },
         /**
@@ -2160,11 +2843,11 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
         /**
          * Creates a new user
          * @summary Create user
-         * @param {ModelsCreateUserRequest} body User info
+         * @param {CreateUserRequest} body User info
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersPost(body: ModelsCreateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
+        usersPost(body: CreateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
             return localVarFp.usersPost(body, options).then((request) => request(axios, basePath));
         },
     };
@@ -2236,11 +2919,11 @@ export class UsersApi extends BaseAPI {
      * Updates an existing user
      * @summary Update user
      * @param {number} id User ID
-     * @param {ModelsUpdateUserRequest} body User update info
+     * @param {UpdateUserRequest} body User update info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public usersIdPut(id: number, body: ModelsUpdateUserRequest, options?: RawAxiosRequestConfig) {
+    public usersIdPut(id: number, body: UpdateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersIdPut(id, body, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -2258,11 +2941,11 @@ export class UsersApi extends BaseAPI {
     /**
      * Creates a new user
      * @summary Create user
-     * @param {ModelsCreateUserRequest} body User info
+     * @param {CreateUserRequest} body User info
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public usersPost(body: ModelsCreateUserRequest, options?: RawAxiosRequestConfig) {
+    public usersPost(body: CreateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersPost(body, options).then((request) => request(this.axios, this.basePath));
     }
 }
@@ -2290,6 +2973,36 @@ export const VerificationApiAxiosParamCreator = function (configuration?: Config
             }
 
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Removes Telegram connection and disables Telegram login verification for the current user
+         * @summary Unlink Telegram verification
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramDelete: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/verification/telegram`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -2337,11 +3050,11 @@ export const VerificationApiAxiosParamCreator = function (configuration?: Config
         /**
          * Updates Telegram login verification settings for the current user
          * @summary Update Telegram verification settings
-         * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+         * @param {TelegramPatchRequest} payload Telegram verification settings
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meVerificationTelegramPatch: async (payload: ModelsTelegramPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        meVerificationTelegramPatch: async (payload: TelegramPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'payload' is not null or undefined
             assertParamExists('meVerificationTelegramPatch', 'payload', payload)
             const localVarPath = `/me/verification/telegram`;
@@ -2384,10 +3097,22 @@ export const VerificationApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsTelegramConnectResponse>> {
+        async meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramConnectResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramConnectPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramConnectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Removes Telegram connection and disables Telegram login verification for the current user
+         * @summary Unlink Telegram verification
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meVerificationTelegramDelete(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramDelete(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramDelete']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2396,7 +3121,7 @@ export const VerificationApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async meVerificationTelegramGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsTelegramStatusResponse>> {
+        async meVerificationTelegramGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramGet']?.[localVarOperationServerIndex]?.url;
@@ -2405,11 +3130,11 @@ export const VerificationApiFp = function(configuration?: Configuration) {
         /**
          * Updates Telegram login verification settings for the current user
          * @summary Update Telegram verification settings
-         * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+         * @param {TelegramPatchRequest} payload Telegram verification settings
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async meVerificationTelegramPatch(payload: ModelsTelegramPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsTelegramStatusResponse>> {
+        async meVerificationTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramPatch(payload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramPatch']?.[localVarOperationServerIndex]?.url;
@@ -2430,8 +3155,17 @@ export const VerificationApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): AxiosPromise<ModelsTelegramConnectResponse> {
+        meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): AxiosPromise<TelegramConnectResponse> {
             return localVarFp.meVerificationTelegramConnectPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Removes Telegram connection and disables Telegram login verification for the current user
+         * @summary Unlink Telegram verification
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meVerificationTelegramDelete(options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
+            return localVarFp.meVerificationTelegramDelete(options).then((request) => request(axios, basePath));
         },
         /**
          * Returns Telegram connection status and whether login verification is enabled
@@ -2439,17 +3173,17 @@ export const VerificationApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meVerificationTelegramGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsTelegramStatusResponse> {
+        meVerificationTelegramGet(options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
             return localVarFp.meVerificationTelegramGet(options).then((request) => request(axios, basePath));
         },
         /**
          * Updates Telegram login verification settings for the current user
          * @summary Update Telegram verification settings
-         * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+         * @param {TelegramPatchRequest} payload Telegram verification settings
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        meVerificationTelegramPatch(payload: ModelsTelegramPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsTelegramStatusResponse> {
+        meVerificationTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
             return localVarFp.meVerificationTelegramPatch(payload, options).then((request) => request(axios, basePath));
         },
     };
@@ -2470,6 +3204,16 @@ export class VerificationApi extends BaseAPI {
     }
 
     /**
+     * Removes Telegram connection and disables Telegram login verification for the current user
+     * @summary Unlink Telegram verification
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meVerificationTelegramDelete(options?: RawAxiosRequestConfig) {
+        return VerificationApiFp(this.configuration).meVerificationTelegramDelete(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Returns Telegram connection status and whether login verification is enabled
      * @summary Get Telegram verification status
      * @param {*} [options] Override http request option.
@@ -2482,11 +3226,11 @@ export class VerificationApi extends BaseAPI {
     /**
      * Updates Telegram login verification settings for the current user
      * @summary Update Telegram verification settings
-     * @param {ModelsTelegramPatchRequest} payload Telegram verification settings
+     * @param {TelegramPatchRequest} payload Telegram verification settings
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public meVerificationTelegramPatch(payload: ModelsTelegramPatchRequest, options?: RawAxiosRequestConfig) {
+    public meVerificationTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig) {
         return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
