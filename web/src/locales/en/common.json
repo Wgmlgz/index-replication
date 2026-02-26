@@ -1,6 +1,8 @@
 {
   "common": {
-    "error": "Error"
+    "error": "Error",
+    "loading": "Loading...",
+    "articleUnavailable": "Article is not available for this language yet."
   },
   "navigation": {
     "brand": "Replicant",
@@ -8,7 +10,29 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "cards": {
+      "moex": {
+        "title": "MOEX indexes",
+        "button": "Open indexes"
+      },
+      "auditLogs": {
+        "title": "Audit logs",
+        "button": "View logs"
+      },
+      "users": {
+        "title": "Users",
+        "button": "Manage users"
+      },
+      "settings": {
+        "title": "Settings",
+        "button": "Open settings"
+      },
+      "integrations": {
+        "title": "Integrations",
+        "button": "Open integrations"
+      }
+    }
   },
   "auth": {
     "login": {
@@ -35,19 +59,52 @@
     }
   },
   "settings": {
+    "page": {
+      "loading": "Loading...",
+      "appSettingsTitle": "Application settings",
+      "apiUrlLabel": "API base URL",
+      "apiUrlPlaceholder": "http://localhost:8080",
+      "defaultThresholdLabel": "Default threshold",
+      "oneThresholdLabel": "One threshold",
+      "oneOtherThresholdLabel": "One other threshold",
+      "currentUserTitle": "Current user info",
+      "loginLabel": "Login",
+      "fullNameLabel": "Full name",
+      "emailLabel": "Email",
+      "roleLabel": "Role",
+      "phoneLabel": "Phone",
+      "blockedLabel": "Blocked",
+      "createdLabel": "Created",
+      "lastActiveLabel": "Last active",
+      "notAuthorized": "Not authenticated.",
+      "none": "(none)",
+      "never": "(never)",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "changePassword": {
+      "title": "Change password",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "save": "Save",
+      "saving": "Saving...",
+      "success": "Password updated successfully.",
+      "error": "Failed to update password.",
+      "validation": {
+        "currentRequired": "Current password is required.",
+        "newMinLength": "New password must contain at least 6 characters.",
+        "passwordMismatch": "Passwords do not match."
+      }
+    },
     "telegram": {
       "title": "Telegram verification",
+      "description": "Connect Telegram account and manage login verification settings.",
       "loading": "Loading Telegram verification settings...",
       "connectionLabel": "Connection:",
       "connected": "Connected",
       "notConnected": "Not connected",
       "username": "Telegram account: @{{username}}",
-      "instructions": {
-        "step1": "1. Generate a one-time connect link.",
-        "step2": "2. Open it and press Start in Telegram bot chat.",
-        "step3": "3. In Telegram, press the Connect account button.",
-        "step4": "4. Return here and enable login verification."
-      },
       "generateLink": "Generate connect link",
       "openBot": "Open bot chat",
       "unlink": "Unlink Telegram",
@@ -224,27 +281,20 @@
       "calcAsc": "Calculation type"
     }
   },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Manage external connections and credentials in one place.",
+    "loading": "Loading integrations...",
+    "notAuthorized": "Not authenticated."
+  },
   "tbankTest": {
     "title": "T-Bank trading workspace",
-    "description": "Connect T-Bank, manage accounts, check balances, resolve instrument ids, and place test orders in one place.",
+    "description": "Run test orders, manage balances, and resolve instrument ids. Configure token and account in Integrations.",
     "menu": {
       "title": "T-Bank test buy",
       "button": "Open T-Bank tester"
     },
     "loading": "Loading integration status...",
-    "instructions": {
-      "title": "How to set this up",
-      "description": "Follow this once, then use Connect + Place test buy.",
-      "step1": "Open T-Bank Invest settings and create an API token.",
-      "step2": "Start with Sandbox environment for testing and use a sandbox token.",
-      "step3": "Paste token in API token field, optionally set default account id, then click Connect.",
-      "step4": "After connection, review account ids in Available accounts and choose a default account.",
-      "step5": "Use ticker lookup to resolve instrument id (UID/FIGI) from MOEX ticker before placing an order.",
-      "step6": "Do not mix sandbox token with production environment.",
-      "tokenDocs": "Token docs",
-      "sandboxDocs": "Sandbox docs",
-      "settingsLink": "T-Bank Invest settings"
-    },
     "errors": {
       "status": "Failed to load T-Bank integration status.",
       "connect": "Failed to connect T-Bank account.",
@@ -256,8 +306,8 @@
       "defaultAccount": "Failed to update default account."
     },
     "connect": {
-      "title": "Connect account",
-      "description": "Token is stored in user settings and used only for your requests.",
+      "title": "T-Bank integration",
+      "description": "Save API token and account defaults for T-Bank features.",
       "statusLabel": "Connection:",
       "connected": "Connected",
       "notConnected": "Not connected",
@@ -270,18 +320,10 @@
       "defaultAccountLabel": "Default account id (optional)",
       "defaultAccountAuto": "Auto-pick first open account",
       "defaultAccountValue": "Default account: {{accountID}}",
-      "connectButton": "Connect",
+      "connectButton": "Save and connect",
       "saveDefaultButton": "Save default account",
       "disconnectButton": "Disconnect",
-      "refreshButton": "Refresh status",
-      "accountsTitle": "Available accounts",
-      "accountsEmpty": "No accounts returned.",
-      "accountNoName": "Unnamed account",
-      "accountTypeLabel": "Type: {{value}}",
-      "accountStatusLabel": "Status: {{value}}",
-      "accountAccessLabel": "Access: {{value}}",
-      "useForOrderButton": "Use for order",
-      "useAsDefaultButton": "Use as default"
+      "refreshButton": "Refresh status"
     },
     "buy": {
       "title": "Place test buy",

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from '@/lib/zod';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,25 +23,34 @@ import { H3 } from '@/components/ui/typography';
 import { authApi } from '@/lib/api';
 import { PasswordChangeRequest } from '@/api-client';
 
-const formSchema = z
-  .object({
-    old_password: z.string().min(1, { message: 'Текущий пароль обязателен.' }),
-    new_password: z
-      .string()
-      .min(6, {
-        message: 'Новый пароль должен содержать не менее 6 символов.',
-      }),
-    confirm_password: z.string(),
-  })
-  .refine(data => data.new_password === data.confirm_password, {
-    message: 'Пароли не совпадают.',
-    path: ['confirm_password'],
-  });
+type ChangePasswordFormValues = {
+  old_password: string;
+  new_password: string;
+  confirm_password: string;
+};
+
+const buildFormSchema = (t: TFunction) =>
+  z
+    .object({
+      old_password: z.string().min(1, { message: String(t('settings.changePassword.validation.currentRequired')) }),
+      new_password: z
+        .string()
+        .min(6, {
+          message: String(t('settings.changePassword.validation.newMinLength')),
+        }),
+      confirm_password: z.string(),
+    })
+    .refine(data => data.new_password === data.confirm_password, {
+      message: String(t('settings.changePassword.validation.passwordMismatch')),
+      path: ['confirm_password'],
+    });
 
 export function ChangePasswordForm() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const formSchema = useMemo(() => buildFormSchema(t), [t]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       old_password: '',
@@ -48,17 +59,17 @@ export function ChangePasswordForm() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: ChangePasswordFormValues) {
     setLoading(true);
     try {
       await authApi.mePasswordPut({
         old_password: values.old_password,
         new_password: values.new_password,
       } as PasswordChangeRequest);
-      toast.success('Пароль успешно изменен.');
+      toast.success(t('settings.changePassword.success'));
       form.reset();
     } catch (error: any) {
-      toast.error(error?.body?.error || 'Не удалось изменить пароль.');
+      toast.error(error?.body?.error || t('settings.changePassword.error'));
     } finally {
       setLoading(false);
     }
@@ -68,7 +79,7 @@ export function ChangePasswordForm() {
     <Card className='w-full h-full'>
       <CardHeader>
         <CardTitle>
-          <H3>Изменить пароль</H3>
+          <H3>{t('settings.changePassword.title')}</H3>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -79,7 +90,7 @@ export function ChangePasswordForm() {
               name='old_password'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Текущий пароль</FormLabel>
+                  <FormLabel>{t('settings.changePassword.currentPasswordLabel')}</FormLabel>
                   <FormControl>
                     <Input type='password' {...field} />
                   </FormControl>
@@ -92,7 +103,7 @@ export function ChangePasswordForm() {
               name='new_password'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Новый пароль</FormLabel>
+                  <FormLabel>{t('settings.changePassword.newPasswordLabel')}</FormLabel>
                   <FormControl>
                     <Input type='password' {...field} />
                   </FormControl>
@@ -105,7 +116,7 @@ export function ChangePasswordForm() {
               name='confirm_password'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Подтвердите новый пароль</FormLabel>
+                  <FormLabel>{t('settings.changePassword.confirmPasswordLabel')}</FormLabel>
                   <FormControl>
                     <Input type='password' {...field} />
                   </FormControl>
@@ -114,7 +125,7 @@ export function ChangePasswordForm() {
               )}
             />
             <Button type='submit' disabled={loading}>
-              {loading ? 'Сохранение...' : 'Сохранить'}
+              {loading ? t('settings.changePassword.saving') : t('settings.changePassword.save')}
             </Button>
           </form>
         </Form>

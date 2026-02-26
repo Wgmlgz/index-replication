@@ -43,6 +43,19 @@ Common tasks:
 - Tailwind tokens and global styling are in `web/src/app/globals.css`.
 - Tauri support is wired through Axios adapters in `web/src/lib/api.ts`.
 
+## Markdown Articles
+
+Long-form instructional content is stored as markdown articles and rendered via reusable components.
+
+- Article files live under `web/public/articles/{lang}/{slug}.md`
+- Reusable renderer: `web/src/components/content/markdown-article.tsx`
+- Integration wrapper: `web/src/components/integrations/integration-instructions-article.tsx`
+- Locale fallback defaults to English (`en`) when an article for the active language is missing.
+
+Example slugs:
+- `integrations/telegram-verification`
+- `integrations/tbank-integration`
+
 ## Entry Points
 
 - App Router root: `web/src/app/`
@@ -54,6 +67,7 @@ Feature routes (App Router):
 - `web/src/app/users/page.tsx`
 - `web/src/app/audit-logs/page.tsx`
 - `web/src/app/settings/page.tsx`
+- `web/src/app/integrations/page.tsx`
 - `web/src/app/dashboard/page.tsx`
 - `web/src/app/moex-indexes/page.tsx`
 - `web/src/app/tbank-test/page.tsx`

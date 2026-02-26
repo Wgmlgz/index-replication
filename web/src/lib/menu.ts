@@ -1,5 +1,5 @@
 import { PermissionStr } from "@/components/user-context";
-import { History, Users, LineChart, Wallet } from "lucide-react";
+import { History, Users, LineChart, Wallet, Plug } from "lucide-react";
 
 export type DashboardCard = {
   title: string;
@@ -14,31 +14,48 @@ export type DashboardCard = {
 
 export const DashboardCards: DashboardCard[] = [
   {
-    title: 'Индексы MOEX',
+    title: 'MOEX indexes',
+    titleKey: 'navigation.cards.moex.title',
     icon: LineChart,
-    buttonText: 'Открыть индексы',
+    buttonText: 'Open indexes',
+    buttonTextKey: 'navigation.cards.moex.button',
     href: '/moex-indexes',
     permission: null,
   },
   {
-    title: 'Журнал событий',
+    title: 'Audit logs',
+    titleKey: 'navigation.cards.auditLogs.title',
     icon: History,
-    buttonText: 'Просмотреть журнал',
+    buttonText: 'View logs',
+    buttonTextKey: 'navigation.cards.auditLogs.button',
     href: '/audit-logs',
     permission: 'audit_logs:view',
   },
   {
-    title: 'Пользователи',
+    title: 'Users',
+    titleKey: 'navigation.cards.users.title',
     icon: Users,
-    buttonText: 'Управлять пользователями',
+    buttonText: 'Manage users',
+    buttonTextKey: 'navigation.cards.users.button',
     href: '/users',
     permission: 'users:view',
   },
   {
-    title: 'Настройки',
+    title: 'Settings',
+    titleKey: 'navigation.cards.settings.title',
     icon: History,
-    buttonText: 'Перейти к настройкам',
+    buttonText: 'Open settings',
+    buttonTextKey: 'navigation.cards.settings.button',
     href: '/settings',
+    permission: null,
+  },
+  {
+    title: 'Integrations',
+    titleKey: 'navigation.cards.integrations.title',
+    icon: Plug,
+    buttonText: 'Open integrations',
+    buttonTextKey: 'navigation.cards.integrations.button',
+    href: '/integrations',
     permission: null,
   },
   {
