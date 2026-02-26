@@ -149,20 +149,15 @@ export function useMoexIndexComposition(options: {
       const response = await moexApi.moexIndexesSecidCompositionSeriesGet(
         options.selectedIndex!.secid ?? '',
         options.compositionSelectionMode === 'fixed' ? fixedModeTickersParam : '',
+        topCountParam,
+        options.compositionSelectionMode,
+        options.compositionSelectionMode === 'fixed'
+          ? effectiveSelectionDate
+          : undefined,
         dateRange.from,
         dateRange.till,
         intervalDays,
         undefined,
-        {
-          params: {
-            topCount: topCountParam,
-            selectionMode: options.compositionSelectionMode,
-            selectionDate:
-              options.compositionSelectionMode === 'fixed'
-                ? effectiveSelectionDate
-                : undefined,
-          },
-        }
       );
       return response.data;
     },
