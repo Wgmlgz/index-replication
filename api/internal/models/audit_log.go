@@ -46,29 +46,3 @@ const (
 	EntityTypeUser   = "user"
 	EntityTypeSystem = "system"
 )
-
-// AuditLogResponse represents an audit log entry in API responses
-// swagger:model
-type AuditLogResponse struct {
-	ID          int        `json:"id" binding:"required"`
-	Action      string     `json:"action" binding:"required"`
-	EntityType  string     `json:"entity_type" binding:"required"`
-	EntityID    *int       `json:"entity_id"`
-	Details     string     `json:"details"`
-	LogImage    *string    `json:"log_image"`
-	Timestamp   time.Time  `json:"timestamp" binding:"required"`
-	PerformedBy *UserShort `json:"performed_by,omitempty"`
-}
-
-type AuditLogListResponse struct {
-	Total    int64              `json:"total" binding:"required"`
-	Page     int                `json:"page" binding:"required"`
-	PageSize int                `json:"page_size" binding:"required"`
-	Logs     []AuditLogResponse `json:"logs" binding:"required"`
-}
-
-type UserShort struct {
-	ID       int    `json:"id" binding:"required"`
-	Username string `json:"username" binding:"required"`
-	FullName string `json:"full_name" binding:"required"`
-}

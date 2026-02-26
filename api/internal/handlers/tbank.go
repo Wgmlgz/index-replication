@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"server/internal/models"
+	"server/internal/api/dto"
 	"server/internal/tbank"
 	"server/internal/utils"
 
@@ -26,14 +26,14 @@ func NewTBankHandler(tbankService *tbank.Service) *TBankHandler {
 //	@Description	Returns current user T-Bank connection state and available accounts
 //	@Tags			tbank
 //	@Produce		json
-//	@Success		200	{object}	models.TBankConnectionStatusResponse
-//	@Failure		500	{object}	models.ErrorResponse
+//	@Success		200	{object}	dto.TBankConnectionStatusResponse
+//	@Failure		500	{object}	dto.ErrorResponse
 //	@Router			/me/tbank [get]
 func (h *TBankHandler) GetStatus(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 	resp, err := h.tbankService.GetStatus(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to load T-Bank status"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to load T-Bank status"})
 		return
 	}
 	c.JSON(http.StatusOK, resp)
@@ -46,18 +46,18 @@ func (h *TBankHandler) GetStatus(c *gin.Context) {
 //	@Tags			tbank
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		models.TBankConnectRequest	true	"T-Bank connect payload"
-//	@Success		200		{object}	models.TBankConnectionStatusResponse
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		502		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Param			payload	body		dto.TBankConnectRequest	true	"T-Bank connect payload"
+//	@Success		200		{object}	dto.TBankConnectionStatusResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		502		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/me/tbank/connect [post]
 func (h *TBankHandler) Connect(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
-	var req models.TBankConnectRequest
+	var req dto.TBankConnectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
 		return
 	}
 
@@ -65,9 +65,9 @@ func (h *TBankHandler) Connect(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, tbank.ErrTBankInvalidEnv), errors.Is(err, tbank.ErrTBankAuthFailed):
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		default:
-			c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
+			c.JSON(http.StatusBadGateway, dto.ErrorResponse{Error: err.Error()})
 		}
 		return
 	}
@@ -81,12 +81,12 @@ func (h *TBankHandler) Connect(c *gin.Context) {
 //	@Tags			tbank
 //	@Produce		json
 //	@Success		200	{object}	map[string]bool
-//	@Failure		500	{object}	models.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
 //	@Router			/me/tbank/disconnect [post]
 func (h *TBankHandler) Disconnect(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 	if err := h.tbankService.Disconnect(userID); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to disconnect T-Bank"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to disconnect T-Bank"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
@@ -99,18 +99,18 @@ func (h *TBankHandler) Disconnect(c *gin.Context) {
 //	@Tags			tbank
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		models.TBankTestBuyRequest	true	"T-Bank test buy payload"
-//	@Success		200		{object}	models.TBankTestBuyResponse
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		502		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Param			payload	body		dto.TBankTestBuyRequest	true	"T-Bank test buy payload"
+//	@Success		200		{object}	dto.TBankTestBuyResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		502		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/me/tbank/test-buy [post]
 func (h *TBankHandler) CreateTestBuyOrder(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
-	var req models.TBankTestBuyRequest
+	var req dto.TBankTestBuyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
 		return
 	}
 
@@ -121,9 +121,9 @@ func (h *TBankHandler) CreateTestBuyOrder(c *gin.Context) {
 			errors.Is(err, tbank.ErrTBankNoAccountFound),
 			errors.Is(err, tbank.ErrTBankAuthFailed),
 			errors.Is(err, tbank.ErrTBankInvalidEnv):
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		default:
-			c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
+			c.JSON(http.StatusBadGateway, dto.ErrorResponse{Error: err.Error()})
 		}
 		return
 	}
@@ -138,17 +138,17 @@ func (h *TBankHandler) CreateTestBuyOrder(c *gin.Context) {
 //	@Tags			tbank
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		models.TBankSetDefaultAccountRequest	true	"Default account payload"
-//	@Success		200		{object}	models.TBankConnectionStatusResponse
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		502		{object}	models.ErrorResponse
+//	@Param			payload	body		dto.TBankSetDefaultAccountRequest	true	"Default account payload"
+//	@Success		200		{object}	dto.TBankConnectionStatusResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		502		{object}	dto.ErrorResponse
 //	@Router			/me/tbank/default-account [post]
 func (h *TBankHandler) SetDefaultAccount(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
-	var req models.TBankSetDefaultAccountRequest
+	var req dto.TBankSetDefaultAccountRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
 		return
 	}
 
@@ -167,9 +167,9 @@ func (h *TBankHandler) SetDefaultAccount(c *gin.Context) {
 //	@Tags			tbank
 //	@Produce		json
 //	@Param			account_id	query		string	false	"Account id"
-//	@Success		200			{object}	models.TBankAccountPortfolioResponse
-//	@Failure		400			{object}	models.ErrorResponse
-//	@Failure		502			{object}	models.ErrorResponse
+//	@Success		200			{object}	dto.TBankAccountPortfolioResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		502			{object}	dto.ErrorResponse
 //	@Router			/me/tbank/portfolio [get]
 func (h *TBankHandler) GetAccountPortfolio(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
@@ -190,17 +190,17 @@ func (h *TBankHandler) GetAccountPortfolio(c *gin.Context) {
 //	@Tags			tbank
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		models.TBankSandboxPayInRequest	true	"Sandbox pay-in payload"
-//	@Success		200		{object}	models.TBankSandboxPayInResponse
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		502		{object}	models.ErrorResponse
+//	@Param			payload	body		dto.TBankSandboxPayInRequest	true	"Sandbox pay-in payload"
+//	@Success		200		{object}	dto.TBankSandboxPayInResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		502		{object}	dto.ErrorResponse
 //	@Router			/me/tbank/sandbox/pay-in [post]
 func (h *TBankHandler) SandboxPayIn(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
-	var req models.TBankSandboxPayInRequest
+	var req dto.TBankSandboxPayInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
 		return
 	}
 
@@ -220,9 +220,9 @@ func (h *TBankHandler) SandboxPayIn(c *gin.Context) {
 //	@Produce		json
 //	@Param			ticker		query		string	true	"MOEX ticker"
 //	@Param			class_code	query		string	false	"MOEX class code (for exact filtering)"
-//	@Success		200			{object}	models.TBankInstrumentLookupResponse
-//	@Failure		400			{object}	models.ErrorResponse
-//	@Failure		502			{object}	models.ErrorResponse
+//	@Success		200			{object}	dto.TBankInstrumentLookupResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		502			{object}	dto.ErrorResponse
 //	@Router			/me/tbank/instruments/lookup [get]
 func (h *TBankHandler) FindInstrumentByTicker(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
@@ -244,8 +244,8 @@ func writeTBankServiceError(c *gin.Context, err error) {
 		errors.Is(err, tbank.ErrTBankAuthFailed),
 		errors.Is(err, tbank.ErrTBankInvalidEnv),
 		errors.Is(err, tbank.ErrTBankSandboxOnly):
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	default:
-		c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadGateway, dto.ErrorResponse{Error: err.Error()})
 	}
 }

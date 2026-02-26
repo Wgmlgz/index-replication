@@ -1,4 +1,4 @@
-package models
+package dto
 
 import "time"
 
@@ -7,8 +7,6 @@ const (
 	TBankEnvironmentProduction = "production"
 )
 
-// TBankAccount represents a single account from UsersService_GetAccounts.
-// swagger:model
 type TBankAccount struct {
 	ID          string     `json:"id"`
 	Name        string     `json:"name,omitempty"`
@@ -17,10 +15,8 @@ type TBankAccount struct {
 	AccessLevel string     `json:"access_level,omitempty"`
 	OpenedAt    *time.Time `json:"opened_at,omitempty"`
 	ClosedAt    *time.Time `json:"closed_at,omitempty"`
-}
+} //@name TBankAccount
 
-// TBankConnectionStatusResponse represents current T-Bank integration state.
-// swagger:model
 type TBankConnectionStatusResponse struct {
 	Connected        bool           `json:"connected"`
 	Environment      string         `json:"environment,omitempty"`
@@ -28,26 +24,20 @@ type TBankConnectionStatusResponse struct {
 	DefaultAccountID string         `json:"default_account_id,omitempty"`
 	Accounts         []TBankAccount `json:"accounts"`
 	ConnectionError  string         `json:"connection_error,omitempty"`
-}
+} //@name TBankConnectionStatusResponse
 
-// TBankConnectRequest contains user token + environment to connect.
-// swagger:model
 type TBankConnectRequest struct {
 	Token            string `json:"token" binding:"required"`
 	Environment      string `json:"environment" binding:"required,oneof=sandbox production"`
 	DefaultAccountID string `json:"default_account_id"`
-}
+} //@name TBankConnectRequest
 
-// TBankTestBuyRequest places a simple market buy order for testing.
-// swagger:model
 type TBankTestBuyRequest struct {
 	AccountID    string `json:"account_id"`
 	InstrumentID string `json:"instrument_id" binding:"required"`
 	Quantity     int64  `json:"quantity" binding:"required,min=1"`
-}
+} //@name TBankTestBuyRequest
 
-// TBankTestBuyResponse exposes essential order submission details.
-// swagger:model
 type TBankTestBuyResponse struct {
 	Environment           string                 `json:"environment"`
 	AccountID             string                 `json:"account_id"`
@@ -56,43 +46,33 @@ type TBankTestBuyResponse struct {
 	OrderID               string                 `json:"order_id,omitempty"`
 	ExecutionReportStatus string                 `json:"execution_report_status,omitempty"`
 	Response              map[string]interface{} `json:"response,omitempty"`
-}
+} //@name TBankTestBuyResponse
 
-// TBankSetDefaultAccountRequest updates selected default account.
-// swagger:model
 type TBankSetDefaultAccountRequest struct {
 	AccountID string `json:"account_id" binding:"required"`
-}
+} //@name TBankSetDefaultAccountRequest
 
-// TBankSandboxPayInRequest performs sandbox balance top-up.
-// swagger:model
 type TBankSandboxPayInRequest struct {
 	AccountID string `json:"account_id"`
 	Currency  string `json:"currency"`
 	Units     int64  `json:"units"`
-}
+} //@name TBankSandboxPayInRequest
 
-// TBankSandboxPayInResponse is returned after sandbox top-up.
-// swagger:model
 type TBankSandboxPayInResponse struct {
 	Environment string `json:"environment"`
 	AccountID   string `json:"account_id"`
 	Currency    string `json:"currency"`
 	Units       int64  `json:"units"`
-}
+} //@name TBankSandboxPayInResponse
 
-// TBankMoneyBalance represents account money and withdraw balances by currency.
-// swagger:model
 type TBankMoneyBalance struct {
 	Currency          string  `json:"currency"`
 	Available         float64 `json:"available"`
 	Blocked           float64 `json:"blocked"`
 	WithdrawAvailable float64 `json:"withdraw_available"`
 	WithdrawBlocked   float64 `json:"withdraw_blocked"`
-}
+} //@name TBankMoneyBalance
 
-// TBankPortfolioPosition represents one portfolio position.
-// swagger:model
 type TBankPortfolioPosition struct {
 	Ticker         string  `json:"ticker,omitempty"`
 	InstrumentID   string  `json:"instrument_id,omitempty"`
@@ -104,10 +84,8 @@ type TBankPortfolioPosition struct {
 	CurrentValue   float64 `json:"current_value"`
 	ExpectedYield  float64 `json:"expected_yield"`
 	Currency       string  `json:"currency,omitempty"`
-}
+} //@name TBankPortfolioPosition
 
-// TBankAccountPortfolioResponse contains account-level balance snapshot.
-// swagger:model
 type TBankAccountPortfolioResponse struct {
 	Environment                  string                   `json:"environment"`
 	AccountID                    string                   `json:"account_id"`
@@ -117,10 +95,8 @@ type TBankAccountPortfolioResponse struct {
 	DailyYieldRelative           float64                  `json:"daily_yield_relative"`
 	Money                        []TBankMoneyBalance      `json:"money"`
 	Positions                    []TBankPortfolioPosition `json:"positions"`
-}
+} //@name TBankAccountPortfolioResponse
 
-// TBankInstrumentLookupItem contains one lookup candidate.
-// swagger:model
 type TBankInstrumentLookupItem struct {
 	InstrumentID      string `json:"instrument_id"`
 	Ticker            string `json:"ticker"`
@@ -135,12 +111,10 @@ type TBankInstrumentLookupItem struct {
 	ApiTradeAvailable bool   `json:"api_trade_available"`
 	ForIis            bool   `json:"for_iis"`
 	ForQualInvestor   bool   `json:"for_qual_investor"`
-}
+} //@name TBankInstrumentLookupItem
 
-// TBankInstrumentLookupResponse contains ticker lookup results.
-// swagger:model
 type TBankInstrumentLookupResponse struct {
 	Query       string                      `json:"query"`
 	ClassCode   string                      `json:"class_code,omitempty"`
 	Instruments []TBankInstrumentLookupItem `json:"instruments"`
-}
+} //@name TBankInstrumentLookupResponse

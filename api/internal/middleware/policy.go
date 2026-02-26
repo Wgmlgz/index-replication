@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"net/http"
+	"server/internal/api/dto"
 	"server/internal/config"
-	"server/internal/models"
 	"server/internal/services"
 	"server/internal/utils"
 
@@ -14,7 +14,7 @@ import (
 func RPM(casbinService *services.CasbinService, permission config.Permission) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if !RP(casbinService, ctx, permission) {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, models.ErrorResponse{Error: "Forbidden"})
+			ctx.AbortWithStatusJSON(http.StatusForbidden, dto.ErrorResponse{Error: "Forbidden"})
 			return
 		}
 		ctx.Next()

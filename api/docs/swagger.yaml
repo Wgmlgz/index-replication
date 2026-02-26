@@ -1,10 +1,10 @@
 basePath: /api
 definitions:
-  models.AuditLogListResponse:
+  AuditLogListResponse:
     properties:
       logs:
         items:
-          $ref: '#/definitions/models.AuditLogResponse'
+          $ref: '#/definitions/AuditLogResponse'
         type: array
       page:
         type: integer
@@ -18,7 +18,7 @@ definitions:
     - page_size
     - total
     type: object
-  models.AuditLogResponse:
+  AuditLogResponse:
     properties:
       action:
         type: string
@@ -33,7 +33,7 @@ definitions:
       log_image:
         type: string
       performed_by:
-        $ref: '#/definitions/models.UserShort'
+        $ref: '#/definitions/UserShort'
       timestamp:
         type: string
     required:
@@ -42,7 +42,7 @@ definitions:
     - id
     - timestamp
     type: object
-  models.CreateUserRequest:
+  CreateUserRequest:
     properties:
       comment:
         type: string
@@ -60,39 +60,128 @@ definitions:
     - role_id
     - username
     type: object
-  models.ErrorResponse:
+  ErrorResponse:
     properties:
       error:
         type: string
     type: object
-  models.LoginRequest:
+  LoginRequest:
     properties:
       password:
         type: string
       remember_me:
-        description: Add remember me flag
         type: boolean
       username:
         type: string
     type: object
-  models.LoginVerifyRequest:
+  LoginVerifyRequest:
     properties:
       challenge_id:
         type: string
     type: object
-  models.LoginVerifyStatusResponse:
+  LoginVerifyStatusResponse:
     properties:
       status:
         type: string
     type: object
-  models.PasswordChangeRequest:
+  MoexIndex:
+    properties:
+      annualHigh:
+        type: number
+      annualLow:
+        type: number
+      boardId:
+        type: string
+      calcMode:
+        type: string
+      currency:
+        type: string
+      decimals:
+        type: integer
+      hasComposition:
+        type: boolean
+      lastActiveDate:
+        type: string
+      name:
+        type: string
+      secid:
+        type: string
+      shortName:
+        type: string
+    type: object
+  MoexIndexCollection:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      securityGroupId:
+        type: integer
+      title:
+        type: string
+    type: object
+  MoexIndexCompositionEntry:
+    properties:
+      indexId:
+        type: string
+      secId:
+        type: string
+      shortName:
+        type: string
+      ticker:
+        type: string
+      tradeDate:
+        type: string
+      tradeSessionDate:
+        type: string
+      weight:
+        type: number
+    type: object
+  MoexIndexHistoryPoint:
+    properties:
+      close:
+        type: number
+      high:
+        type: number
+      low:
+        type: number
+      open:
+        type: number
+      tradeDate:
+        type: string
+    type: object
+  MoexIndexTickerAnalyticsPoint:
+    properties:
+      tradeDate:
+        type: string
+      weight:
+        type: number
+    type: object
+  MoexIndexesOverviewResponse:
+    properties:
+      collections:
+        items:
+          $ref: '#/definitions/MoexIndexCollection'
+        type: array
+      indexes:
+        items:
+          $ref: '#/definitions/MoexIndex'
+        type: array
+      memberships:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
+  PasswordChangeRequest:
     properties:
       new_password:
         type: string
       old_password:
         type: string
     type: object
-  models.Permission:
+  Permission:
     properties:
       act:
         type: string
@@ -102,19 +191,19 @@ definitions:
     - act
     - obj
     type: object
-  models.PermissionsResponse:
+  PermissionsResponse:
     properties:
       permissions:
         items:
-          $ref: '#/definitions/models.Permission'
+          $ref: '#/definitions/Permission'
         type: array
       user:
-        $ref: '#/definitions/models.UserResponse'
+        $ref: '#/definitions/UserResponse'
     required:
     - permissions
     - user
     type: object
-  models.TBankAccount:
+  TBankAccount:
     properties:
       access_level:
         type: string
@@ -131,7 +220,7 @@ definitions:
       type:
         type: string
     type: object
-  models.TBankAccountPortfolioResponse:
+  TBankAccountPortfolioResponse:
     properties:
       account_id:
         type: string
@@ -143,18 +232,18 @@ definitions:
         type: string
       money:
         items:
-          $ref: '#/definitions/models.TBankMoneyBalance'
+          $ref: '#/definitions/TBankMoneyBalance'
         type: array
       positions:
         items:
-          $ref: '#/definitions/models.TBankPortfolioPosition'
+          $ref: '#/definitions/TBankPortfolioPosition'
         type: array
       total_amount_portfolio:
         type: number
       total_amount_portfolio_currency:
         type: string
     type: object
-  models.TBankConnectRequest:
+  TBankConnectRequest:
     properties:
       default_account_id:
         type: string
@@ -169,11 +258,11 @@ definitions:
     - environment
     - token
     type: object
-  models.TBankConnectionStatusResponse:
+  TBankConnectionStatusResponse:
     properties:
       accounts:
         items:
-          $ref: '#/definitions/models.TBankAccount'
+          $ref: '#/definitions/TBankAccount'
         type: array
       connected:
         type: boolean
@@ -186,7 +275,7 @@ definitions:
       token_masked:
         type: string
     type: object
-  models.TBankInstrumentLookupItem:
+  TBankInstrumentLookupItem:
     properties:
       api_trade_available:
         type: boolean
@@ -215,18 +304,18 @@ definitions:
       uid:
         type: string
     type: object
-  models.TBankInstrumentLookupResponse:
+  TBankInstrumentLookupResponse:
     properties:
       class_code:
         type: string
       instruments:
         items:
-          $ref: '#/definitions/models.TBankInstrumentLookupItem'
+          $ref: '#/definitions/TBankInstrumentLookupItem'
         type: array
       query:
         type: string
     type: object
-  models.TBankMoneyBalance:
+  TBankMoneyBalance:
     properties:
       available:
         type: number
@@ -239,7 +328,7 @@ definitions:
       withdraw_blocked:
         type: number
     type: object
-  models.TBankPortfolioPosition:
+  TBankPortfolioPosition:
     properties:
       currency:
         type: string
@@ -262,7 +351,7 @@ definitions:
       ticker:
         type: string
     type: object
-  models.TBankSandboxPayInRequest:
+  TBankSandboxPayInRequest:
     properties:
       account_id:
         type: string
@@ -271,7 +360,7 @@ definitions:
       units:
         type: integer
     type: object
-  models.TBankSandboxPayInResponse:
+  TBankSandboxPayInResponse:
     properties:
       account_id:
         type: string
@@ -282,14 +371,14 @@ definitions:
       units:
         type: integer
     type: object
-  models.TBankSetDefaultAccountRequest:
+  TBankSetDefaultAccountRequest:
     properties:
       account_id:
         type: string
     required:
     - account_id
     type: object
-  models.TBankTestBuyRequest:
+  TBankTestBuyRequest:
     properties:
       account_id:
         type: string
@@ -302,7 +391,7 @@ definitions:
     - instrument_id
     - quantity
     type: object
-  models.TBankTestBuyResponse:
+  TBankTestBuyResponse:
     properties:
       account_id:
         type: string
@@ -320,19 +409,19 @@ definitions:
         additionalProperties: true
         type: object
     type: object
-  models.TelegramConnectResponse:
+  TelegramConnectResponse:
     properties:
       connect_url:
         type: string
       expires_at:
         type: string
     type: object
-  models.TelegramPatchRequest:
+  TelegramPatchRequest:
     properties:
       login_2fa_enabled:
         type: boolean
     type: object
-  models.TelegramStatusResponse:
+  TelegramStatusResponse:
     properties:
       bot_username:
         type: string
@@ -343,7 +432,7 @@ definitions:
       telegram_username:
         type: string
     type: object
-  models.UpdateUserRequest:
+  UpdateUserRequest:
     properties:
       comment:
         type: string
@@ -358,7 +447,7 @@ definitions:
       role_id:
         type: integer
     type: object
-  models.UserListResponse:
+  UserListResponse:
     properties:
       page:
         type: integer
@@ -368,10 +457,10 @@ definitions:
         type: integer
       users:
         items:
-          $ref: '#/definitions/models.UserResponse'
+          $ref: '#/definitions/UserResponse'
         type: array
     type: object
-  models.UserResponse:
+  UserResponse:
     properties:
       blocked_at:
         type: string
@@ -411,7 +500,7 @@ definitions:
     - role_key
     - username
     type: object
-  models.UserSettingsPatchRequest:
+  UserSettingsPatchRequest:
     properties:
       favorites:
         items:
@@ -422,7 +511,7 @@ definitions:
           type: string
         type: object
     type: object
-  models.UserSettingsResponse:
+  UserSettingsResponse:
     properties:
       favorites:
         items:
@@ -433,7 +522,7 @@ definitions:
           type: string
         type: object
     type: object
-  models.UserShort:
+  UserShort:
     properties:
       full_name:
         type: string
@@ -513,96 +602,6 @@ definitions:
       updatedAt:
         type: string
     type: object
-  types.MoexIndex:
-    properties:
-      annualHigh:
-        type: number
-      annualLow:
-        type: number
-      boardId:
-        type: string
-      calcMode:
-        type: string
-      currency:
-        type: string
-      decimals:
-        type: integer
-      hasComposition:
-        type: boolean
-      lastActiveDate:
-        type: string
-      name:
-        type: string
-      secid:
-        type: string
-      shortName:
-        type: string
-    type: object
-  types.MoexIndexCollection:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      securityGroupId:
-        type: integer
-      title:
-        type: string
-    type: object
-  types.MoexIndexCompositionEntry:
-    properties:
-      indexId:
-        type: string
-      secId:
-        type: string
-      shortName:
-        type: string
-      ticker:
-        type: string
-      tradeDate:
-        type: string
-      tradeSessionDate:
-        type: string
-      weight:
-        type: number
-    type: object
-  types.MoexIndexHistoryPoint:
-    properties:
-      close:
-        type: number
-      high:
-        type: number
-      low:
-        type: number
-      open:
-        type: number
-      tradeDate:
-        type: string
-    type: object
-  types.MoexIndexTickerAnalyticsPoint:
-    properties:
-      tradeDate:
-        type: string
-      weight:
-        type: number
-    type: object
-  types.MoexIndexesOverviewResponse:
-    properties:
-      collections:
-        items:
-          $ref: '#/definitions/types.MoexIndexCollection'
-        type: array
-      indexes:
-        items:
-          $ref: '#/definitions/types.MoexIndex'
-        type: array
-      memberships:
-        additionalProperties:
-          items:
-            type: string
-          type: array
-        type: object
-    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -666,11 +665,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.AuditLogListResponse'
+            $ref: '#/definitions/AuditLogListResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: List audit logs
       tags:
       - audit-logs
@@ -689,11 +688,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.AuditLogResponse'
+            $ref: '#/definitions/AuditLogResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get audit log
       tags:
       - audit-logs
@@ -723,7 +722,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/models.LoginRequest'
+          $ref: '#/definitions/LoginRequest'
       produces:
       - application/json
       responses:
@@ -735,19 +734,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Login
       tags:
       - auth
@@ -762,7 +761,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/models.LoginVerifyRequest'
+          $ref: '#/definitions/LoginVerifyRequest'
       produces:
       - application/json
       responses:
@@ -774,19 +773,19 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/models.LoginVerifyStatusResponse'
+            $ref: '#/definitions/LoginVerifyStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Complete login verification
       tags:
       - auth
@@ -816,15 +815,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.PermissionsResponse'
+            $ref: '#/definitions/PermissionsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get self info
       tags:
       - users
@@ -839,7 +838,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/models.PasswordChangeRequest'
+          $ref: '#/definitions/PasswordChangeRequest'
       produces:
       - application/json
       responses:
@@ -851,15 +850,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Change Password
       tags:
       - auth
@@ -872,11 +871,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.UserSettingsResponse'
+            $ref: '#/definitions/UserSettingsResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get current user settings
       tags:
       - settings
@@ -890,22 +889,22 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/models.UserSettingsPatchRequest'
+          $ref: '#/definitions/UserSettingsPatchRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.UserSettingsResponse'
+            $ref: '#/definitions/UserSettingsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Update current user settings
       tags:
       - settings
@@ -918,11 +917,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankConnectionStatusResponse'
+            $ref: '#/definitions/TBankConnectionStatusResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get T-Bank integration status
       tags:
       - tbank
@@ -937,26 +936,26 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/models.TBankConnectRequest'
+          $ref: '#/definitions/TBankConnectRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankConnectionStatusResponse'
+            $ref: '#/definitions/TBankConnectionStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "502":
           description: Bad Gateway
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Connect T-Bank account
       tags:
       - tbank
@@ -972,22 +971,22 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/models.TBankSetDefaultAccountRequest'
+          $ref: '#/definitions/TBankSetDefaultAccountRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankConnectionStatusResponse'
+            $ref: '#/definitions/TBankConnectionStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "502":
           description: Bad Gateway
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Set T-Bank default account
       tags:
       - tbank
@@ -1006,7 +1005,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Disconnect T-Bank account
       tags:
       - tbank
@@ -1030,15 +1029,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankInstrumentLookupResponse'
+            $ref: '#/definitions/TBankInstrumentLookupResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "502":
           description: Bad Gateway
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Find T-Bank instrument id by ticker
       tags:
       - tbank
@@ -1057,15 +1056,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankAccountPortfolioResponse'
+            $ref: '#/definitions/TBankAccountPortfolioResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "502":
           description: Bad Gateway
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get T-Bank account balances and portfolio
       tags:
       - tbank
@@ -1080,22 +1079,22 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/models.TBankSandboxPayInRequest'
+          $ref: '#/definitions/TBankSandboxPayInRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankSandboxPayInResponse'
+            $ref: '#/definitions/TBankSandboxPayInResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "502":
           description: Bad Gateway
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Top up T-Bank sandbox account
       tags:
       - tbank
@@ -1110,26 +1109,26 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/models.TBankTestBuyRequest'
+          $ref: '#/definitions/TBankTestBuyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TBankTestBuyResponse'
+            $ref: '#/definitions/TBankTestBuyResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "502":
           description: Bad Gateway
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Create T-Bank test buy order
       tags:
       - tbank
@@ -1143,11 +1142,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TelegramStatusResponse'
+            $ref: '#/definitions/TelegramStatusResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Unlink Telegram verification
       tags:
       - verification
@@ -1160,11 +1159,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TelegramStatusResponse'
+            $ref: '#/definitions/TelegramStatusResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get Telegram verification status
       tags:
       - verification
@@ -1178,22 +1177,22 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/models.TelegramPatchRequest'
+          $ref: '#/definitions/TelegramPatchRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TelegramStatusResponse'
+            $ref: '#/definitions/TelegramStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Update Telegram verification settings
       tags:
       - verification
@@ -1206,15 +1205,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TelegramConnectResponse'
+            $ref: '#/definitions/TelegramConnectResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Create Telegram connect link
       tags:
       - verification
@@ -1242,16 +1241,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/types.MoexIndexCompositionEntry'
+              $ref: '#/definitions/MoexIndexCompositionEntry'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX index composition
       tags:
       - moex
@@ -1307,17 +1306,17 @@ paths:
           schema:
             additionalProperties:
               items:
-                $ref: '#/definitions/types.MoexIndexTickerAnalyticsPoint'
+                $ref: '#/definitions/MoexIndexTickerAnalyticsPoint'
               type: array
             type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX index composition series
       tags:
       - moex
@@ -1349,16 +1348,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/types.MoexIndexHistoryPoint'
+              $ref: '#/definitions/MoexIndexHistoryPoint'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX index history
       tags:
       - moex
@@ -1376,11 +1375,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/types.MoexIndexesOverviewResponse'
+            $ref: '#/definitions/MoexIndexesOverviewResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX indexes overview
       tags:
       - moex
@@ -1420,11 +1419,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX coverage rows
       tags:
       - moex
@@ -1460,7 +1459,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX sync run history
       tags:
       - moex
@@ -1492,7 +1491,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get MOEX sync state rows
       tags:
       - moex
@@ -1526,11 +1525,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.UserListResponse'
+            $ref: '#/definitions/UserListResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: List users
       tags:
       - users
@@ -1544,7 +1543,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/models.CreateUserRequest'
+          $ref: '#/definitions/CreateUserRequest'
       produces:
       - application/json
       responses:
@@ -1557,15 +1556,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Create user
       tags:
       - users
@@ -1588,15 +1587,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Delete a user
       tags:
       - users
@@ -1614,11 +1613,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.UserResponse'
+            $ref: '#/definitions/UserResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Get user
       tags:
       - users
@@ -1637,7 +1636,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/models.UpdateUserRequest'
+          $ref: '#/definitions/UpdateUserRequest'
       produces:
       - application/json
       responses:
@@ -1650,19 +1649,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Update user
       tags:
       - users
@@ -1687,11 +1686,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Block user
       tags:
       - users
@@ -1716,11 +1715,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Unblock user
       tags:
       - users

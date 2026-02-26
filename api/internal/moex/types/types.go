@@ -13,7 +13,7 @@ type MoexIndex struct {
 	AnnualLow      *float64 `json:"annualLow"`
 	LastActiveDate *string  `json:"lastActiveDate"`
 	HasComposition bool     `json:"hasComposition"`
-}
+} //@name MoexIndex
 
 // MoexIndexCollection represents a MOEX index collection.
 type MoexIndexCollection struct {
@@ -21,14 +21,14 @@ type MoexIndexCollection struct {
 	Name            string `json:"name"`
 	Title           string `json:"title"`
 	SecurityGroupID *int   `json:"securityGroupId"`
-}
+} //@name MoexIndexCollection
 
 // MoexIndexesOverviewResponse bundles indexes and collection metadata.
 type MoexIndexesOverviewResponse struct {
 	Indexes     []MoexIndex           `json:"indexes"`
 	Collections []MoexIndexCollection `json:"collections"`
 	Memberships map[string][]string   `json:"memberships"`
-}
+} //@name MoexIndexesOverviewResponse
 
 // MoexIndexHistoryPoint represents a downsampled history point.
 type MoexIndexHistoryPoint struct {
@@ -37,7 +37,7 @@ type MoexIndexHistoryPoint struct {
 	Open      *float64 `json:"open"`
 	High      *float64 `json:"high"`
 	Low       *float64 `json:"low"`
-}
+} //@name MoexIndexHistoryPoint
 
 // MoexIndexCompositionEntry represents a single composition row.
 type MoexIndexCompositionEntry struct {
@@ -48,10 +48,10 @@ type MoexIndexCompositionEntry struct {
 	SecID            string   `json:"secId"`
 	Weight           *float64 `json:"weight"`
 	TradeSessionDate *string  `json:"tradeSessionDate"`
-}
+} //@name MoexIndexCompositionEntry
 
 // MoexIndexTickerAnalyticsPoint represents a ticker weight point.
 type MoexIndexTickerAnalyticsPoint struct {
 	TradeDate string   `json:"tradeDate"`
 	Weight    *float64 `json:"weight"`
-}
+} //@name MoexIndexTickerAnalyticsPoint

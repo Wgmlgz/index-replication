@@ -16,13 +16,3 @@ type UserFavoriteIndex struct {
 	SecID     string    `gorm:"size:64;not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
-
-type UserSettingsResponse struct {
-	Favorites []string          `json:"favorites"`
-	Values    map[string]string `json:"values,omitempty"`
-}
-
-type UserSettingsPatchRequest struct {
-	Favorites *[]string          `json:"favorites"`
-	Values    *map[string]string `json:"values"`
-}

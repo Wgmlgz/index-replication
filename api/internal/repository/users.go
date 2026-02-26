@@ -14,6 +14,23 @@ type UserRepository struct {
 	db *gorm.DB
 }
 
+type CreateUserInput struct {
+	Username string
+	Password string
+	FullName string
+	RoleID   int
+	Comment  string
+}
+
+type UpdateUserInput struct {
+	FullName string
+	Phone    string
+	Email    string
+	Password *string
+	RoleID   int
+	Comment  string
+}
+
 func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
@@ -48,18 +65,18 @@ func (r *UserRepository) ListUsers(page, pageSize int, search string, sortBy, so
 	return users, total, nil
 }
 
-func (r *UserRepository) CreateUser(req models.CreateUserRequest) (*models.User, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+func (r *UserRepository) CreateUser(input CreateUserInput) (*models.User, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := models.User{
-		Username:       req.Username,
-		PasswordHash:   string(hash),
-		FullName:       req.FullName,
-		RoleID:         req.RoleID,
-		Comment:        req.Comment,
+		Username:     input.Username,
+		PasswordHash: string(hash),
+		FullName:     input.FullName,
+		RoleID:       input.RoleID,
+		Comment:      input.Comment,
 	}
 
 	if err := r.db.Create(&user).Error; err != nil {
@@ -84,30 +101,30 @@ func (r *UserRepository) GetRoleKeyByID(id int) (string, error) {
 	return role.Key, nil
 }
 
-func (r *UserRepository) UpdateUser(id string, req models.UpdateUserRequest) (*models.User, string, *models.UserResponse, *models.UserResponse, error) {
+func (r *UserRepository) UpdateUser(id string, input UpdateUserInput) (*models.User, string, *models.User, *models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, "", nil, nil, err
 	}
 
-	oldUser := models.NewUserResponse(&user)
+	oldUser := user
 
 	// Role changed
-	if user.RoleID != req.RoleID {
+	if user.RoleID != input.RoleID {
 		// Logout
 		_ = models.DeleteAllSessionsForUser(r.db, user.ID)
 	}
 
 	action := models.ActionUserUpdated
 
-	user.FullName = req.FullName
-	user.RoleID = req.RoleID
-	user.Phone = req.Phone
-	user.Email = req.Email
-	user.Comment = req.Comment
+	user.FullName = input.FullName
+	user.RoleID = input.RoleID
+	user.Phone = input.Phone
+	user.Email = input.Email
+	user.Comment = input.Comment
 
-	if req.Password != nil {
-		hash, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
+	if input.Password != nil {
+		hash, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost)
 		if err != nil {
 			return nil, "", nil, nil, fmt.Errorf("failed to hash password: %w", err)
 		}
@@ -119,7 +136,7 @@ func (r *UserRepository) UpdateUser(id string, req models.UpdateUserRequest) (*m
 		return nil, "", nil, nil, err
 	}
 
-	newUser := models.NewUserResponse(&user)
+	newUser := user
 
 	return &user, action, &oldUser, &newUser, nil
 }

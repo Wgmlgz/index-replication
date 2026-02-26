@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"server/internal/api/dto"
 	"server/internal/models"
 
 	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
@@ -24,8 +25,8 @@ type tbankConnection struct {
 func (s *Service) SetDefaultAccount(
 	ctx context.Context,
 	userID int,
-	req *models.TBankSetDefaultAccountRequest,
-) (*models.TBankConnectionStatusResponse, error) {
+	req *dto.TBankSetDefaultAccountRequest,
+) (*dto.TBankConnectionStatusResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -70,7 +71,7 @@ func (s *Service) GetAccountPortfolio(
 	ctx context.Context,
 	userID int,
 	accountID string,
-) (*models.TBankAccountPortfolioResponse, error) {
+) (*dto.TBankAccountPortfolioResponse, error) {
 	conn, err := s.getConnectedTBankConnection(userID)
 	if err != nil {
 		return nil, err
@@ -110,7 +111,7 @@ func (s *Service) GetAccountPortfolio(
 		return nil, err
 	}
 
-	return &models.TBankAccountPortfolioResponse{
+	return &dto.TBankAccountPortfolioResponse{
 		Environment:                  conn.environment,
 		AccountID:                    resolvedAccountID,
 		TotalAmountPortfolio:         moneyValueToFloat(portfolioResp.GetTotalAmountPortfolio()),
@@ -125,8 +126,8 @@ func (s *Service) GetAccountPortfolio(
 func (s *Service) SandboxPayIn(
 	ctx context.Context,
 	userID int,
-	req *models.TBankSandboxPayInRequest,
-) (*models.TBankSandboxPayInResponse, error) {
+	req *dto.TBankSandboxPayInRequest,
+) (*dto.TBankSandboxPayInResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -135,7 +136,7 @@ func (s *Service) SandboxPayIn(
 	if err != nil {
 		return nil, err
 	}
-	if conn.environment != models.TBankEnvironmentSandbox {
+	if conn.environment != dto.TBankEnvironmentSandbox {
 		return nil, ErrTBankSandboxOnly
 	}
 
@@ -172,7 +173,7 @@ func (s *Service) SandboxPayIn(
 		},
 	)
 
-	return &models.TBankSandboxPayInResponse{
+	return &dto.TBankSandboxPayInResponse{
 		Environment: conn.environment,
 		AccountID:   resolvedAccountID,
 		Currency:    currency,
@@ -185,7 +186,7 @@ func (s *Service) FindInstrumentByTicker(
 	userID int,
 	ticker string,
 	classCode string,
-) (*models.TBankInstrumentLookupResponse, error) {
+) (*dto.TBankInstrumentLookupResponse, error) {
 	conn, err := s.getConnectedTBankConnection(userID)
 	if err != nil {
 		return nil, err
@@ -214,7 +215,7 @@ func (s *Service) FindInstrumentByTicker(
 		return nil, err
 	}
 
-	filtered := make([]models.TBankInstrumentLookupItem, 0, len(instruments))
+	filtered := make([]dto.TBankInstrumentLookupItem, 0, len(instruments))
 	for _, item := range instruments {
 		if item == nil {
 			continue
@@ -239,7 +240,7 @@ func (s *Service) FindInstrumentByTicker(
 			continue
 		}
 
-		filtered = append(filtered, models.TBankInstrumentLookupItem{
+		filtered = append(filtered, dto.TBankInstrumentLookupItem{
 			InstrumentID:      instrumentID,
 			Ticker:            itemTicker,
 			ClassCode:         itemClassCode,
@@ -265,7 +266,7 @@ func (s *Service) FindInstrumentByTicker(
 		return filtered[i].Ticker < filtered[j].Ticker
 	})
 
-	return &models.TBankInstrumentLookupResponse{
+	return &dto.TBankInstrumentLookupResponse{
 		Query:       normalizedTicker,
 		ClassCode:   normalizedClassCode,
 		Instruments: filtered,
@@ -319,7 +320,7 @@ func (s *Service) resolveAccountID(
 		return accountID, nil
 	}
 
-	if allowSandboxOpen && conn.environment == models.TBankEnvironmentSandbox {
+	if allowSandboxOpen && conn.environment == dto.TBankEnvironmentSandbox {
 		createdAccountID, openErr := s.openSandboxAccount(ctx, conn.token)
 		if openErr != nil {
 			return "", openErr
@@ -336,10 +337,10 @@ func (s *Service) resolveAccountID(
 	return "", ErrTBankNoAccountFound
 }
 
-func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLimitsResponse) []models.TBankMoneyBalance {
-	byCurrency := map[string]*models.TBankMoneyBalance{}
+func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLimitsResponse) []dto.TBankMoneyBalance {
+	byCurrency := map[string]*dto.TBankMoneyBalance{}
 
-	ensure := func(currency string) *models.TBankMoneyBalance {
+	ensure := func(currency string) *dto.TBankMoneyBalance {
 		currency = strings.ToUpper(strings.TrimSpace(currency))
 		if currency == "" {
 			currency = "UNKNOWN"
@@ -347,7 +348,7 @@ func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLi
 		if existing, ok := byCurrency[currency]; ok {
 			return existing
 		}
-		entry := &models.TBankMoneyBalance{Currency: currency}
+		entry := &dto.TBankMoneyBalance{Currency: currency}
 		byCurrency[currency] = entry
 		return entry
 	}
@@ -374,7 +375,7 @@ func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLi
 		}
 	}
 
-	result := make([]models.TBankMoneyBalance, 0, len(byCurrency))
+	result := make([]dto.TBankMoneyBalance, 0, len(byCurrency))
 	for _, entry := range byCurrency {
 		result = append(result, *entry)
 	}
@@ -384,8 +385,8 @@ func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLi
 	return result
 }
 
-func mapPortfolioPositions(positions []*pb.PortfolioPosition) []models.TBankPortfolioPosition {
-	result := make([]models.TBankPortfolioPosition, 0, len(positions))
+func mapPortfolioPositions(positions []*pb.PortfolioPosition) []dto.TBankPortfolioPosition {
+	result := make([]dto.TBankPortfolioPosition, 0, len(positions))
 	for _, position := range positions {
 		if position == nil {
 			continue
@@ -399,7 +400,7 @@ func mapPortfolioPositions(positions []*pb.PortfolioPosition) []models.TBankPort
 			instrumentID = strings.TrimSpace(position.GetFigi())
 		}
 
-		result = append(result, models.TBankPortfolioPosition{
+		result = append(result, dto.TBankPortfolioPosition{
 			Ticker:         strings.TrimSpace(position.GetTicker()),
 			InstrumentID:   instrumentID,
 			Figi:           strings.TrimSpace(position.GetFigi()),
@@ -419,7 +420,7 @@ func mapPortfolioPositions(positions []*pb.PortfolioPosition) []models.TBankPort
 	return result
 }
 
-func tickerMatchScore(ticker, classCode string, item models.TBankInstrumentLookupItem) int {
+func tickerMatchScore(ticker, classCode string, item dto.TBankInstrumentLookupItem) int {
 	if item.Ticker == ticker && classCode != "" && item.ClassCode == classCode {
 		return 0
 	}

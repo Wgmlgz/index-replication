@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"server/internal/api/dto"
 	"server/internal/models"
 
 	"github.com/google/uuid"
@@ -62,7 +63,7 @@ func NewService(
 	}
 }
 
-func (s *Service) GetStatus(ctx context.Context, userID int) (*models.TBankConnectionStatusResponse, error) {
+func (s *Service) GetStatus(ctx context.Context, userID int) (*dto.TBankConnectionStatusResponse, error) {
 	settings, err := s.settingsStore.GetSettings(userID)
 	if err != nil {
 		return nil, err
@@ -72,12 +73,12 @@ func (s *Service) GetStatus(ctx context.Context, userID int) (*models.TBankConne
 	environment := normalizeTBankEnvironment(settings[tbankSettingEnvironment])
 	defaultAccountID := strings.TrimSpace(settings[tbankSettingDefaultAccountID])
 
-	resp := &models.TBankConnectionStatusResponse{
+	resp := &dto.TBankConnectionStatusResponse{
 		Connected:        token != "",
 		Environment:      environment,
 		TokenMasked:      maskToken(token),
 		DefaultAccountID: defaultAccountID,
-		Accounts:         make([]models.TBankAccount, 0),
+		Accounts:         make([]dto.TBankAccount, 0),
 	}
 
 	if token == "" {
@@ -101,8 +102,8 @@ func (s *Service) GetStatus(ctx context.Context, userID int) (*models.TBankConne
 func (s *Service) Connect(
 	ctx context.Context,
 	userID int,
-	req *models.TBankConnectRequest,
-) (*models.TBankConnectionStatusResponse, error) {
+	req *dto.TBankConnectRequest,
+) (*dto.TBankConnectionStatusResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -121,7 +122,7 @@ func (s *Service) Connect(
 	if err != nil {
 		return nil, err
 	}
-	if len(accounts) == 0 && environment == models.TBankEnvironmentSandbox {
+	if len(accounts) == 0 && environment == dto.TBankEnvironmentSandbox {
 		createdAccountID, createErr := s.openSandboxAccount(ctx, token)
 		if createErr != nil {
 			return nil, createErr
@@ -131,7 +132,7 @@ func (s *Service) Connect(
 			return nil, err
 		}
 		if len(accounts) == 0 && createdAccountID != "" {
-			accounts = append(accounts, models.TBankAccount{
+			accounts = append(accounts, dto.TBankAccount{
 				ID:     createdAccountID,
 				Name:   "Sandbox account",
 				Type:   "ACCOUNT_TYPE_TINKOFF",
@@ -167,7 +168,7 @@ func (s *Service) Connect(
 		},
 	)
 
-	return &models.TBankConnectionStatusResponse{
+	return &dto.TBankConnectionStatusResponse{
 		Connected:        true,
 		Environment:      environment,
 		TokenMasked:      maskToken(token),
@@ -197,8 +198,8 @@ func (s *Service) Disconnect(userID int) error {
 func (s *Service) CreateTestBuyOrder(
 	ctx context.Context,
 	userID int,
-	req *models.TBankTestBuyRequest,
-) (*models.TBankTestBuyResponse, error) {
+	req *dto.TBankTestBuyRequest,
+) (*dto.TBankTestBuyResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -233,7 +234,7 @@ func (s *Service) CreateTestBuyOrder(
 			return nil, err
 		}
 		accountID = selectDefaultAccountID(accounts)
-		if accountID == "" && environment == models.TBankEnvironmentSandbox {
+		if accountID == "" && environment == dto.TBankEnvironmentSandbox {
 			accountID, err = s.openSandboxAccount(ctx, token)
 			if err != nil {
 				return nil, err
@@ -259,7 +260,7 @@ func (s *Service) CreateTestBuyOrder(
 	}
 
 	orderResp, err := s.postMarketBuyOrder(ctx, environment, token, orderReq)
-	if err != nil && environment == models.TBankEnvironmentSandbox && isTBankErrorCode(err, "30034") {
+	if err != nil && environment == dto.TBankEnvironmentSandbox && isTBankErrorCode(err, "30034") {
 		if payInErr := s.sandboxPayIn(ctx, token, accountID, sandboxAutoPayInCurrency, sandboxAutoPayInUnits); payInErr == nil {
 			orderReq.OrderId = uuid.NewString()
 			orderResp, err = s.postMarketBuyOrder(ctx, environment, token, orderReq)
@@ -269,7 +270,7 @@ func (s *Service) CreateTestBuyOrder(
 		return nil, err
 	}
 
-	resp := &models.TBankTestBuyResponse{
+	resp := &dto.TBankTestBuyResponse{
 		Environment:           environment,
 		AccountID:             accountID,
 		InstrumentID:          instrumentID,
@@ -299,8 +300,8 @@ func (s *Service) GetAccounts(
 	ctx context.Context,
 	environment string,
 	token string,
-) ([]models.TBankAccount, error) {
-	var accounts []models.TBankAccount
+) ([]dto.TBankAccount, error) {
+	var accounts []dto.TBankAccount
 	if err := s.withConnection(ctx, environment, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
 		client := pb.NewUsersServiceClient(conn)
 		resp, callErr := client.GetAccounts(callCtx, &pb.GetAccountsRequest{})
@@ -308,9 +309,9 @@ func (s *Service) GetAccounts(
 			return callErr
 		}
 
-		accounts = make([]models.TBankAccount, 0, len(resp.GetAccounts()))
+		accounts = make([]dto.TBankAccount, 0, len(resp.GetAccounts()))
 		for _, account := range resp.GetAccounts() {
-			accounts = append(accounts, models.TBankAccount{
+			accounts = append(accounts, dto.TBankAccount{
 				ID:          account.GetId(),
 				Name:        account.GetName(),
 				Type:        account.GetType().String(),
@@ -332,7 +333,7 @@ func (s *Service) openSandboxAccount(
 	token string,
 ) (string, error) {
 	var accountID string
-	err := s.withConnection(ctx, models.TBankEnvironmentSandbox, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
+	err := s.withConnection(ctx, dto.TBankEnvironmentSandbox, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
 		client := pb.NewSandboxServiceClient(conn)
 		resp, callErr := client.OpenSandboxAccount(callCtx, &pb.OpenSandboxAccountRequest{})
 		if callErr != nil {
@@ -354,7 +355,7 @@ func (s *Service) sandboxPayIn(
 	currency string,
 	units int64,
 ) error {
-	return s.withConnection(ctx, models.TBankEnvironmentSandbox, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
+	return s.withConnection(ctx, dto.TBankEnvironmentSandbox, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
 		client := pb.NewSandboxServiceClient(conn)
 		_, callErr := client.SandboxPayIn(callCtx, &pb.SandboxPayInRequest{
 			AccountId: accountID,

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"server/internal/models"
+	"server/internal/api/dto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -100,9 +100,9 @@ func (s *Service) buildTBankTLSConfig(endpoint string) (*tls.Config, error) {
 
 func (s *Service) endpointByEnvironment(environment string) (string, error) {
 	switch normalizeTBankEnvironment(environment) {
-	case models.TBankEnvironmentSandbox:
+	case dto.TBankEnvironmentSandbox:
 		return s.cfg.TBankInvestSandboxGrpcEndpoint, nil
-	case models.TBankEnvironmentProduction:
+	case dto.TBankEnvironmentProduction:
 		return s.cfg.TBankInvestGrpcEndpoint, nil
 	default:
 		return "", ErrTBankInvalidEnv
@@ -111,10 +111,10 @@ func (s *Service) endpointByEnvironment(environment string) (string, error) {
 
 func normalizeTBankEnvironment(environment string) string {
 	switch strings.ToLower(strings.TrimSpace(environment)) {
-	case models.TBankEnvironmentProduction:
-		return models.TBankEnvironmentProduction
+	case dto.TBankEnvironmentProduction:
+		return dto.TBankEnvironmentProduction
 	default:
-		return models.TBankEnvironmentSandbox
+		return dto.TBankEnvironmentSandbox
 	}
 }
 
@@ -159,7 +159,7 @@ func maskToken(token string) string {
 	return token[:4] + strings.Repeat("*", len(token)-8) + token[len(token)-4:]
 }
 
-func containsAccount(accounts []models.TBankAccount, accountID string) bool {
+func containsAccount(accounts []dto.TBankAccount, accountID string) bool {
 	for _, account := range accounts {
 		if account.ID == accountID {
 			return true
@@ -168,7 +168,7 @@ func containsAccount(accounts []models.TBankAccount, accountID string) bool {
 	return false
 }
 
-func selectDefaultAccountID(accounts []models.TBankAccount) string {
+func selectDefaultAccountID(accounts []dto.TBankAccount) string {
 	if len(accounts) == 0 {
 		return ""
 	}

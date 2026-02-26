@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"server/internal/models"
+	"server/internal/api/dto"
 	"server/internal/repository"
 	"server/internal/utils"
 )
@@ -25,25 +25,25 @@ func NewUserSettingsHandler(repo *repository.UserSettingsRepository) *UserSettin
 //	@Description	Returns settings for the current user, including favorites
 //	@Tags			settings
 //	@Produce		json
-//	@Success		200	{object}	models.UserSettingsResponse
-//	@Failure		500	{object}	models.ErrorResponse
+//	@Success		200	{object}	dto.UserSettingsResponse
+//	@Failure		500	{object}	dto.ErrorResponse
 //	@Router			/me/settings [get]
 func (h *UserSettingsHandler) GetSettings(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
 	favorites, err := h.repo.GetFavoriteIndexes(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
 	values, err := h.repo.GetSettings(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
-	c.JSON(http.StatusOK, models.UserSettingsResponse{
+	c.JSON(http.StatusOK, dto.UserSettingsResponse{
 		Favorites: favorites,
 		Values:    values,
 	})
@@ -56,23 +56,23 @@ func (h *UserSettingsHandler) GetSettings(c *gin.Context) {
 //	@Tags			settings
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		models.UserSettingsPatchRequest	true	"Settings payload"
-//	@Success		200	{object}	models.UserSettingsResponse
-//	@Failure		400	{object}	models.ErrorResponse
-//	@Failure		500	{object}	models.ErrorResponse
+//	@Param			payload	body		dto.UserSettingsPatchRequest	true	"Settings payload"
+//	@Success		200	{object}	dto.UserSettingsResponse
+//	@Failure		400	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
 //	@Router			/me/settings [patch]
 func (h *UserSettingsHandler) PatchSettings(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
-	var req models.UserSettingsPatchRequest
+	var req dto.UserSettingsPatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid payload"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
 		return
 	}
 
 	if req.Values != nil {
 		if err := h.repo.UpsertSettings(userID, *req.Values); err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 			return
 		}
 	}
@@ -80,24 +80,24 @@ func (h *UserSettingsHandler) PatchSettings(c *gin.Context) {
 	if req.Favorites != nil {
 		normalized := normalizeFavorites(*req.Favorites)
 		if err := h.repo.ReplaceFavoriteIndexes(userID, normalized); err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 			return
 		}
 	}
 
 	favorites, err := h.repo.GetFavoriteIndexes(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
 	values, err := h.repo.GetSettings(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
-	c.JSON(http.StatusOK, models.UserSettingsResponse{
+	c.JSON(http.StatusOK, dto.UserSettingsResponse{
 		Favorites: favorites,
 		Values:    values,
 	})

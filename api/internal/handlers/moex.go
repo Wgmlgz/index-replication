@@ -3,7 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"server/internal/models"
+	"server/internal/api/dto"
 	"server/internal/moex"
 	moextypes "server/internal/moex/types"
 	"strconv"
@@ -31,13 +31,13 @@ func NewMoexHandler(service *moex.MoexReadService) *MoexHandler {
 //	@Produce		json
 //	@Param			lang	query		string	false	"Response language (ru/en)"
 //	@Success		200		{object}	moextypes.MoexIndexesOverviewResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/overview [get]
 func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
 	lang := strings.TrimSpace(c.Query("lang"))
 	overview, err := h.service.GetIndexesOverview(c.Request.Context(), lang)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX overview"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX overview"})
 		return
 	}
 	c.JSON(http.StatusOK, overview)
@@ -54,31 +54,31 @@ func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
 //	@Success		200				{array}		moextypes.MoexIndexHistoryPoint
-//	@Failure		400				{object}	models.ErrorResponse
-//	@Failure		500				{object}	models.ErrorResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/history [get]
 func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 	secid := strings.TrimSpace(c.Param("secid"))
 	if secid == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing secid"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Missing secid"})
 		return
 	}
 
 	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	intervalDays, err := parseIntervalDays(c.Query("intervalDays"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	points, coverage, err := h.service.GetIndexHistory(c.Request.Context(), secid, from, till, intervalDays)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX history"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX history"})
 		return
 	}
 	applyCoverageHeaders(c, coverage)
@@ -95,26 +95,26 @@ func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 //	@Param			date	query		string	false	"Snapshot date (YYYY-MM-DD)"
 //	@Param			lang	query		string	false	"Response language (ru/en)"
 //	@Success		200		{array}		moextypes.MoexIndexCompositionEntry
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition [get]
 func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 	secid := strings.TrimSpace(c.Param("secid"))
 	if secid == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing secid"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Missing secid"})
 		return
 	}
 
 	date := strings.TrimSpace(c.Query("date"))
 	if date != "" && !isValidDate(date) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid date format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid date format"})
 		return
 	}
 	lang := strings.TrimSpace(c.Query("lang"))
 
 	rows, coverage, err := h.service.GetIndexComposition(c.Request.Context(), secid, date, lang)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX composition"})
 		return
 	}
 	applyCoverageHeaders(c, coverage)
@@ -137,13 +137,13 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
 //	@Param			lang			query		string	false	"Response language (ru/en)"
 //	@Success		200				{object}	map[string][]moextypes.MoexIndexTickerAnalyticsPoint
-//	@Failure		400				{object}	models.ErrorResponse
-//	@Failure		500				{object}	models.ErrorResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition/series [get]
 func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 	secid := strings.TrimSpace(c.Param("secid"))
 	if secid == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Missing secid"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Missing secid"})
 		return
 	}
 
@@ -160,29 +160,29 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 
 	topCount, err := parseTopCount(c.Query("topCount"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 	selectionMode, err := parseCompositionSelectionMode(c.Query("selectionMode"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 	selectionDate := strings.TrimSpace(c.Query("selectionDate"))
 	if selectionDate != "" && !isValidDate(selectionDate) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid selectionDate"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid selectionDate"})
 		return
 	}
 
 	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	intervalDays, err := parseIntervalDays(c.Query("intervalDays"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -190,7 +190,7 @@ func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
 
 	result, coverage, err := h.service.GetIndexCompositionSeries(c.Request.Context(), secid, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, lang)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX composition series"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX composition series"})
 		return
 	}
 	applyCoverageHeaders(c, coverage)

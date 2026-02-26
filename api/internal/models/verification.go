@@ -34,33 +34,3 @@ type TelegramConnectToken struct {
 	ConsumedAt *time.Time
 	CreatedAt  time.Time `gorm:"autoCreateTime"`
 }
-
-type LoginVerifyRequest struct {
-	ChallengeID string `json:"challenge_id"`
-}
-
-type LoginVerificationPendingResponse struct {
-	VerificationRequired bool      `json:"verification_required"`
-	ChallengeID          string    `json:"challenge_id"`
-	ExpiresAt            time.Time `json:"expires_at"`
-}
-
-type LoginVerifyStatusResponse struct {
-	Status string `json:"status"`
-}
-
-type TelegramStatusResponse struct {
-	Connected        bool   `json:"connected"`
-	Login2FAEnabled  bool   `json:"login_2fa_enabled"`
-	BotUsername      string `json:"bot_username,omitempty"`
-	TelegramUsername string `json:"telegram_username,omitempty"`
-}
-
-type TelegramConnectResponse struct {
-	ConnectURL string    `json:"connect_url"`
-	ExpiresAt  time.Time `json:"expires_at"`
-}
-
-type TelegramPatchRequest struct {
-	Login2FAEnabled *bool `json:"login_2fa_enabled"`
-}

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"server/internal/models"
+	"server/internal/api/dto"
 	"server/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -30,13 +30,13 @@ func NewMoexSyncAdminHandler(repo *repository.MoexDataRepository) *MoexSyncAdmin
 //	@Param			entityKey	query		string	false	"Entity key filter"
 //	@Param			limit		query		int		false	"Result limit"
 //	@Success		200			{array}		repository.MoexSyncStateRow
-//	@Failure		500			{object}	models.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/moex/sync/state [get]
 func (h *MoexSyncAdminHandler) GetMoexSyncState(c *gin.Context) {
 	limit := parsePositiveInt(c.Query("limit"), 200)
 	rows, err := h.repo.ListSyncState(c.Request.Context(), c.Query("dataset"), c.Query("entityKey"), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX sync state"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX sync state"})
 		return
 	}
 	c.JSON(http.StatusOK, rows)
@@ -54,25 +54,25 @@ func (h *MoexSyncAdminHandler) GetMoexSyncState(c *gin.Context) {
 //	@Param			till		query		string	false	"Till date (YYYY-MM-DD)"
 //	@Param			limit		query		int		false	"Result limit"
 //	@Success		200			{array}		repository.MoexCoverageRow
-//	@Failure		400			{object}	models.ErrorResponse
-//	@Failure		500			{object}	models.ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/moex/sync/coverage [get]
 func (h *MoexSyncAdminHandler) GetMoexCoverage(c *gin.Context) {
 	fromDate, err := parseOptionalDate(c.Query("from"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid from date"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid from date"})
 		return
 	}
 	tillDate, err := parseOptionalDate(c.Query("till"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid till date"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid till date"})
 		return
 	}
 
 	limit := parsePositiveInt(c.Query("limit"), 500)
 	rows, err := h.repo.ListCoverage(c.Request.Context(), c.Query("dataset"), c.Query("entityKey"), fromDate, tillDate, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX coverage"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX coverage"})
 		return
 	}
 	c.JSON(http.StatusOK, rows)
@@ -89,13 +89,13 @@ func (h *MoexSyncAdminHandler) GetMoexCoverage(c *gin.Context) {
 //	@Param			status		query		string	false	"Status filter"
 //	@Param			limit		query		int		false	"Result limit"
 //	@Success		200			{array}		repository.MoexSyncRunRow
-//	@Failure		500			{object}	models.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/moex/sync/runs [get]
 func (h *MoexSyncAdminHandler) GetMoexSyncRuns(c *gin.Context) {
 	limit := parsePositiveInt(c.Query("limit"), 500)
 	rows, err := h.repo.ListSyncRuns(c.Request.Context(), c.Query("dataset"), c.Query("entityKey"), c.Query("status"), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to fetch MOEX sync runs"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch MOEX sync runs"})
 		return
 	}
 	c.JSON(http.StatusOK, rows)

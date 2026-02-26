@@ -3,8 +3,8 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"server/internal/api/dto"
 	"server/internal/config"
-	"server/internal/models"
 	"server/internal/repository"
 	"server/internal/services"
 	"time"
@@ -45,8 +45,8 @@ func NewAuditLogHandler(
 //	@Param			performed_by	query		int		false	"Performed by user ID filter"
 //	@Param			start_date		query		string	false	"Start date (RFC3339)"
 //	@Param			end_date		query		string	false	"End date (RFC3339)"
-//	@Success		200				{object}	models.AuditLogListResponse
-//	@Failure		500				{object}	models.ErrorResponse
+//	@Success		200				{object}	dto.AuditLogListResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/audit-logs [get]
 func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 	// Pagination
@@ -89,11 +89,11 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 		page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
-	c.JSON(http.StatusOK, NewAuditLogListResponse(auditLogs, total, page, pageSize))
+	c.JSON(http.StatusOK, dto.NewAuditLogListResponse(auditLogs, total, page, pageSize))
 }
 
 // GetAuditLogActions godoc
@@ -107,12 +107,12 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 func (h *AuditLogHandler) GetAuditLogActions(c *gin.Context) {
 	actions, err := h.repo.GetAuditLogActions()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 	entityTypes, err := h.repo.GetAuditLogEntityTypes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
@@ -128,48 +128,15 @@ func (h *AuditLogHandler) GetAuditLogActions(c *gin.Context) {
 // @Tags         audit-logs
 // @Produce      json
 // @Param        id   path      int  true  "Audit Log ID"
-// @Success      200  {object}  models.AuditLogResponse
-// @Failure      404  {object}  models.ErrorResponse
+// @Success      200  {object}  dto.AuditLogResponse
+// @Failure      404  {object}  dto.ErrorResponse
 // @Router       /audit-logs/{id} [get]
 func (h *AuditLogHandler) GetAuditLog(c *gin.Context) {
 	id := c.Param("id")
 	log, err := h.repo.GetAuditLogByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Audit log not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Audit log not found"})
 		return
 	}
-	c.JSON(http.StatusOK, NewAuditLogResponse(log))
-}
-
-func NewAuditLogResponse(log *models.AuditLog) models.AuditLogResponse {
-	resp := models.AuditLogResponse{
-		ID:         log.ID,
-		Action:     log.Action,
-		EntityType: log.EntityType,
-		EntityID:   log.EntityID,
-		Details:    log.Details,
-		Timestamp:  log.Timestamp,
-	}
-
-	if log.PerformedByUser != nil {
-		resp.PerformedBy = &models.UserShort{
-			ID:       log.PerformedByUser.ID,
-			Username: log.PerformedByUser.Username,
-			FullName: log.PerformedByUser.FullName,
-		}
-	}
-	return resp
-}
-
-func NewAuditLogListResponse(logs []models.AuditLog, total int64, page, pageSize int) models.AuditLogListResponse {
-	logResponses := make([]models.AuditLogResponse, len(logs))
-	for i, log := range logs {
-		logResponses[i] = NewAuditLogResponse(&log)
-	}
-	return models.AuditLogListResponse{
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Logs:     logResponses,
-	}
+	c.JSON(http.StatusOK, dto.NewAuditLogResponse(log))
 }

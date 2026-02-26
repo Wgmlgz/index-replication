@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"server/internal/api/dto"
 	"server/internal/config"
 	"server/internal/models"
 	"server/internal/repository"
@@ -213,7 +214,7 @@ func (s *VerificationService) ConsumeApprovedLoginChallenge(challengeID string) 
 	return user, challenge.RememberMe, nil
 }
 
-func (s *VerificationService) GetTelegramStatus(userID int) (*models.TelegramStatusResponse, error) {
+func (s *VerificationService) GetTelegramStatus(userID int) (*dto.TelegramStatusResponse, error) {
 	enabled, chatID, username, err := s.readTelegramStatus(userID)
 	if err != nil {
 		return nil, err
@@ -227,7 +228,7 @@ func (s *VerificationService) GetTelegramStatus(userID int) (*models.TelegramSta
 		botUsername = name
 	}
 
-	return &models.TelegramStatusResponse{
+	return &dto.TelegramStatusResponse{
 		Connected:        chatID != 0,
 		Login2FAEnabled:  enabled,
 		BotUsername:      botUsername,
@@ -235,7 +236,7 @@ func (s *VerificationService) GetTelegramStatus(userID int) (*models.TelegramSta
 	}, nil
 }
 
-func (s *VerificationService) CreateTelegramConnectLink(userID int) (*models.TelegramConnectResponse, error) {
+func (s *VerificationService) CreateTelegramConnectLink(userID int) (*dto.TelegramConnectResponse, error) {
 	if s.telegramService == nil || !s.telegramService.Enabled() {
 		return nil, fmt.Errorf("%w: TELEGRAM_BOT_TOKEN is empty", ErrTelegramUnavailable)
 	}
@@ -265,7 +266,7 @@ func (s *VerificationService) CreateTelegramConnectLink(userID int) (*models.Tel
 	if connectURL == "" {
 		return nil, fmt.Errorf("%w: bot username is empty; set TELEGRAM_BOT_USERNAME or allow getMe", ErrTelegramUnavailable)
 	}
-	return &models.TelegramConnectResponse{
+	return &dto.TelegramConnectResponse{
 		ConnectURL: connectURL,
 		ExpiresAt:  expiresAt,
 	}, nil

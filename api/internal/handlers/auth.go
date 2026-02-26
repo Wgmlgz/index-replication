@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"server/internal/api/dto"
 	"server/internal/config"
 	"server/internal/middleware"
 	"server/internal/models"
@@ -50,39 +51,39 @@ func NewAuthHandler(db *gorm.DB,
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		models.LoginRequest	true	"Login credentials"
+//	@Param			body	body		dto.LoginRequest	true	"Login credentials"
 //	@Success		200		{object}	map[string]interface{}
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		401		{object}	models.ErrorResponse
-//	@Failure		403		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		403		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req models.LoginRequest
+	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid request"})
 		return
 	}
 
 	user, err := h.userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Invalid credentials"})
+			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Invalid credentials"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
 	// Check if blocked
 	if user.BlockedAt != nil {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{Error: "Account blocked"})
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Account blocked"})
 		return
 	}
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Invalid credentials"})
 		return
 	}
 
@@ -90,18 +91,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		log.Printf("auth login: verification initialization failed user_id=%d username=%s err=%v", user.ID, user.Username, err)
 		if errors.Is(err, services.ErrTelegramNotConnected) {
-			c.JSON(http.StatusForbidden, models.ErrorResponse{Error: "Telegram login verification is enabled, but Telegram account is not connected"})
+			c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Telegram login verification is enabled, but Telegram account is not connected"})
 			return
 		}
 		if errors.Is(err, services.ErrTelegramUnavailable) {
-			c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Login verification is temporarily unavailable"})
+			c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: "Login verification is temporarily unavailable"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to initialize login verification"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to initialize login verification"})
 		return
 	}
 	if challenge != nil {
-		c.JSON(http.StatusAccepted, models.LoginVerificationPendingResponse{
+		c.JSON(http.StatusAccepted, dto.LoginVerificationPendingResponse{
 			VerificationRequired: true,
 			ChallengeID:          challenge.ID,
 			ExpiresAt:            challenge.ExpiresAt,
@@ -112,7 +113,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// After successful authentication:
 	if err := middleware.SetSessionUser(h.db, c, int(user.ID), user.Role.Key, req.RememberMe); err != nil {
 		fmt.Println("Failed to set session:", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to save session"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to save session"})
 		return
 	}
 
@@ -147,17 +148,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		models.LoginVerifyRequest	true	"Verification challenge"
+//	@Param			body	body		dto.LoginVerifyRequest	true	"Verification challenge"
 //	@Success		200		{object}	map[string]interface{}
-//	@Success		202		{object}	models.LoginVerifyStatusResponse
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		401		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Success		202		{object}	dto.LoginVerifyStatusResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/login/verify [post]
 func (h *AuthHandler) VerifyLogin(c *gin.Context) {
-	var req models.LoginVerifyRequest
+	var req dto.LoginVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.ChallengeID == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid request"})
 		return
 	}
 
@@ -165,28 +166,28 @@ func (h *AuthHandler) VerifyLogin(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrVerificationPending):
-			c.JSON(http.StatusAccepted, models.LoginVerifyStatusResponse{Status: models.VerificationStatusPending})
+			c.JSON(http.StatusAccepted, dto.LoginVerifyStatusResponse{Status: models.VerificationStatusPending})
 		case errors.Is(err, services.ErrVerificationDenied):
-			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Login verification was denied"})
+			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification was denied"})
 		case errors.Is(err, services.ErrVerificationExpired):
-			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Login verification has expired"})
+			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification has expired"})
 		case errors.Is(err, services.ErrVerificationConsumed):
-			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Login verification has already been used"})
+			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification has already been used"})
 		case errors.Is(err, services.ErrVerificationNotFound):
-			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Login verification request not found"})
+			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification request not found"})
 		default:
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to verify login"})
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to verify login"})
 		}
 		return
 	}
 
 	if user.BlockedAt != nil {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{Error: "Account blocked"})
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Account blocked"})
 		return
 	}
 
 	if err := middleware.SetSessionUser(h.db, c, int(user.ID), user.Role.Key, rememberMe); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to save session"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to save session"})
 		return
 	}
 
@@ -223,7 +224,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	performedBy := utils.GetRequestContext(c).UserID
 
 	if err := middleware.ClearSession(h.db, c); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to clear session"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to clear session"})
 		return
 	}
 
@@ -245,36 +246,36 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		models.PasswordChangeRequest	true	"Password change info"
+//	@Param			body	body		dto.PasswordChangeRequest	true	"Password change info"
 //	@Success		200		{object}	map[string]interface{}
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		401		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/me/password [put]
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
-	var req models.PasswordChangeRequest
+	var req dto.PasswordChangeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid request"})
 		return
 	}
 
 	// Get current password hash using GORM
 	var user models.User
 	if err := h.db.Select("password_hash").Where("id = ?", userID).First(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "User not found"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "User not found"})
 		return
 	}
 
 	// Verify old password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Invalid current password"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Invalid current password"})
 		return
 	}
 
 	if err := h.userRepo.UpdatePassword(userID, req.NewPassword); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to update password"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to update password"})
 		return
 	}
 

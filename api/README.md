@@ -37,6 +37,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 ## Architecture & Principles
 
 - HTTP layer stays in `internal/handlers/` (request/response parsing, status codes).
+- API request/response DTOs live in `internal/api/dto/` (feature-grouped schema structs for handlers/OpenAPI).
 - Business logic lives in feature/service packages (mostly `internal/services/`, with MOEX isolated in `internal/moex/` and T-Bank isolated in `internal/tbank/`).
 - Data access is isolated in `internal/repository/` using GORM.
 - Auth is session-based (cookie) and enforced by middleware.
@@ -48,12 +49,13 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `main.go` boots the server and wires config, routes, and middleware.
 - `internal/routes/` defines the HTTP routes.
 - `internal/handlers/` contains request handlers (HTTP layer).
+- `internal/api/dto/` contains HTTP DTOs and OpenAPI schema models.
 - `internal/services/` contains most business logic.
 - `internal/moex/` contains MOEX integration logic and read services.
 - `internal/moex/types/` contains MOEX DTO/shared types used by MOEX + repository layers.
 - `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
 - `internal/repository/` contains data access (DB queries).
-- `internal/models/` defines domain models.
+- `internal/models/` defines persistence/domain models (GORM entities and domain constants).
 
 ## Where To Implement Changes
 
@@ -62,7 +64,8 @@ Use this mapping to locate the right layer quickly:
 - Add or change endpoints: `internal/routes/`, `internal/handlers/`
 - Change business rules or workflows: `internal/services/` (or feature packages like `internal/moex/` and `internal/tbank/`)
 - Change DB queries or persistence: `internal/repository/`
-- Update data structures: `internal/models/`
+- Update API request/response structures: `internal/api/dto/`
+- Update persistence/domain structures: `internal/models/`
 - Add middleware or request/response behavior: `internal/middleware/`
 - Auth and session flow: `internal/handlers/auth.go`, `internal/middleware/session.go`
 - User management endpoints: `internal/handlers/users.go`, `internal/repository/users.go`

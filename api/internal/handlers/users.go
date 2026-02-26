@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"server/internal/api/dto"
 	"server/internal/config"
 	"server/internal/middleware"
 	"server/internal/models"
@@ -45,8 +46,8 @@ func NewUserHandler(
 //	@Param			search		query		string	false	"Search term"
 //	@Param			sort_by		query		string	false	"Sort by field"
 //	@Param			sort_dir		query		string	false	"Sort direction (asc/desc)"
-//	@Success		200			{object}	models.UserListResponse
-//	@Failure		500			{object}	models.ErrorResponse
+//	@Success		200			{object}	dto.UserListResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	// Pagination
@@ -77,13 +78,13 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 	users, total, err := h.userRepo.ListUsers(page, pageSize, search, sortBy, sortDir, CheckViewRoot(h, c))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Database error"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
 
-	var userList []models.UserResponse
+	var userList []dto.UserResponse
 	for _, user := range users {
-		userList = append(userList, models.NewUserResponse(&user))
+		userList = append(userList, dto.NewUserResponse(&user))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -101,34 +102,40 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		models.CreateUserRequest	true	"User info"
+//	@Param			body	body		dto.CreateUserRequest	true	"User info"
 //	@Success		201		{object}	map[string]string
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		401		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	// Get current user ID from context
 	performedBy := utils.GetRequestContext(c).UserID
 
-	var req models.CreateUserRequest
+	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid request"})
 		return
 	}
 	if !CheckModifyUser(h, c, req.RoleID) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Role assignment denied"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Role assignment denied"})
 		return
 	}
 
 	if _, err := h.userRepo.GetUserByUsername(req.Username); err == nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Username already taken"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Username already taken"})
 		return
 	}
 
-	user, err := h.userRepo.CreateUser(req)
+	user, err := h.userRepo.CreateUser(repository.CreateUserInput{
+		Username: req.Username,
+		Password: req.Password,
+		FullName: req.FullName,
+		RoleID:   req.RoleID,
+		Comment:  req.Comment,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to create user"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create user"})
 		return
 	}
 
@@ -138,9 +145,9 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		models.ActionUserCreated,
 		user.ID,
 		map[string]interface{}{
-			"username":        user.Username,
-			"full_name":       user.FullName,
-			"role_id":         user.RoleID,
+			"username":  user.Username,
+			"full_name": user.FullName,
+			"role_id":   user.RoleID,
 		},
 	)
 
@@ -153,8 +160,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Tags         users
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
-// @Success      200  {object}  models.UserResponse
-// @Failure      404  {object}  models.ErrorResponse
+// @Success      200  {object}  dto.UserResponse
+// @Failure      404  {object}  dto.ErrorResponse
 // @Router       /users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id, ok := CheckAccessToUserByIdAllowSelf(h, c)
@@ -163,10 +170,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	}
 	user, err := h.userRepo.GetUserByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "User not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
 		return
 	}
-	resp := models.NewUserResponse(user)
+	resp := dto.NewUserResponse(user)
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -178,12 +185,12 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int							true	"User ID"
-//	@Param			body	body		models.UpdateUserRequest	true	"User update info"
+//	@Param			body	body		dto.UpdateUserRequest	true	"User update info"
 //	@Success		200		{object}	map[string]string
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		401		{object}	models.ErrorResponse
-//	@Failure		404		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	id, ok := CheckAccessToUserById(h, c)
@@ -191,9 +198,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var req models.UpdateUserRequest
+	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid request"})
 		return
 	}
 
@@ -201,23 +208,30 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		// Can edit users with role R, if have permission to create users with role R
 		user, err := h.userRepo.GetUserByID(id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "User not found"})
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "User not found"})
 			return
 		}
 		if !CheckModifyUser(h, c, user.RoleID) {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Updating this user is not allowed"})
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Updating this user is not allowed"})
 			return
 		}
 	}
 
 	if !CheckModifyUser(h, c, req.RoleID) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Role change denied"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Role change denied"})
 		return
 	}
 
-	user, action, oldUser, newUser, err := h.userRepo.UpdateUser(id, req)
+	user, action, oldUser, newUser, err := h.userRepo.UpdateUser(id, repository.UpdateUserInput{
+		FullName: req.FullName,
+		Phone:    req.Phone,
+		Email:    req.Email,
+		Password: req.Password,
+		RoleID:   req.RoleID,
+		Comment:  req.Comment,
+	})
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "User not updated"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not updated"})
 		return
 	}
 
@@ -226,7 +240,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		performedBy,
 		action,
 		user.ID,
-		map[string]interface{}{"old": oldUser, "new": newUser},
+		map[string]interface{}{"old": dto.NewUserResponse(oldUser), "new": dto.NewUserResponse(newUser)},
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
@@ -239,9 +253,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Success		200		{object}  models.PermissionsResponse
-//	@Failure		401		{object}	models.ErrorResponse
-//	@Failure		404		{object}	models.ErrorResponse
+//	@Success		200		{object}  dto.PermissionsResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
 //	@Router			/me [get]
 func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 	reqCtx := utils.GetRequestContext(c)
@@ -250,20 +264,20 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 
 	user, err := h.userRepo.GetCurrentUser(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "User not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
 		return
 	}
 
 	rawPermissions := h.cs.GetPermissionsForRole(role)
 
-	permissions := make([]models.Permission, 0)
+	permissions := make([]dto.Permission, 0)
 	for _, p := range rawPermissions {
 		if len(p) >= 2 {
-			permissions = append(permissions, models.Permission{Obj: p[1], Act: p[2]})
+			permissions = append(permissions, dto.Permission{Obj: p[1], Act: p[2]})
 		}
 	}
 
-	c.JSON(http.StatusOK, models.PermissionsResponse{Permissions: permissions, User: models.NewUserResponse(user)})
+	c.JSON(http.StatusOK, dto.PermissionsResponse{Permissions: permissions, User: dto.NewUserResponse(user)})
 }
 
 // BlockUser godoc
@@ -273,8 +287,8 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
 // @Success      200  {object}  map[string]string
-// @Failure      404  {object}  models.ErrorResponse
-// @Failure      500  {object}  models.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
 // @Router       /users/{id}/block [post]
 func (h *UserHandler) BlockUser(c *gin.Context) {
 	id, ok := CheckAccessToUserById(h, c)
@@ -283,7 +297,7 @@ func (h *UserHandler) BlockUser(c *gin.Context) {
 	}
 	user, err := h.userRepo.BlockUser(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "User not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
 		return
 	}
 	// Audit log
@@ -299,8 +313,8 @@ func (h *UserHandler) BlockUser(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
 // @Success      200  {object}  map[string]string
-// @Failure      404  {object}  models.ErrorResponse
-// @Failure      500  {object}  models.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
 // @Router       /users/{id}/unblock [post]
 func (h *UserHandler) UnblockUser(c *gin.Context) {
 	id, ok := CheckAccessToUserById(h, c)
@@ -309,7 +323,7 @@ func (h *UserHandler) UnblockUser(c *gin.Context) {
 	}
 	user, err := h.userRepo.UnblockUser(id)
 	if err != nil {
-		c.JSON(http.StatusNotModified, models.ErrorResponse{Error: "User not unblocked"})
+		c.JSON(http.StatusNotModified, dto.ErrorResponse{Error: "User not unblocked"})
 		return
 	}
 
@@ -327,9 +341,9 @@ func (h *UserHandler) UnblockUser(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Success 204 "No Content"
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id, ok := CheckAccessToUserById(h, c)
@@ -339,20 +353,20 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	user, err := h.userRepo.GetUserByID(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "User not found"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "User not found"})
 		return
 	}
 	if user.BlockedAt == nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Can't delete active (not blocked) user"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Can't delete active (not blocked) user"})
 		return
 	}
 	if !CheckDeleteUser(h, c, user.RoleID) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Can't delete user with this role"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Can't delete user with this role"})
 		return
 	}
 
 	if h.userRepo.DeleteUser(c.Request.Context(), id) != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to delete user"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to delete user"})
 		return
 	}
 	// Log the action
@@ -372,7 +386,7 @@ func CheckAccessToUserById(h *UserHandler, c *gin.Context) (string, bool) {
 	id := c.Param("id")
 
 	if id == strconv.Itoa(utils.GetRequestContext(c).UserID) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Cant modify self via this route"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Cant modify self via this route"})
 		return "", false
 	}
 
@@ -384,7 +398,7 @@ func CheckAccessToUserByIdAllowSelf(h *UserHandler, c *gin.Context) (string, boo
 	id := c.Param("id")
 
 	if _, err := h.userRepo.GetUserByID(id); err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "User not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
 		return "", false
 	}
 
