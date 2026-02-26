@@ -1,4 +1,4 @@
-package models
+package types
 
 // MoexIndex represents a single MOEX index entry.
 type MoexIndex struct {

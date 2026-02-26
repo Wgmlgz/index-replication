@@ -5,7 +5,7 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"server/internal/models"
+	moextypes "server/internal/moex/types"
 	"sort"
 	"strings"
 	"time"
@@ -31,34 +31,34 @@ func NewMoexService(baseURL string) *MoexService {
 	}
 }
 
-func (s *MoexService) GetIndexesOverview(ctx context.Context, lang string) (models.MoexIndexesOverviewResponse, error) {
+func (s *MoexService) GetIndexesOverview(ctx context.Context, lang string) (moextypes.MoexIndexesOverviewResponse, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "ru"
 	}
 
 	indexes, err := s.client.FetchIndexes(ctx, lang)
 	if err != nil {
-		return models.MoexIndexesOverviewResponse{}, err
+		return moextypes.MoexIndexesOverviewResponse{}, err
 	}
 
 	collections, err := s.client.FetchCollections(ctx, lang)
 	if err != nil {
-		return models.MoexIndexesOverviewResponse{}, err
+		return moextypes.MoexIndexesOverviewResponse{}, err
 	}
 
 	memberships, err := s.client.FetchCollectionMemberships(ctx, lang, collections)
 	if err != nil {
-		return models.MoexIndexesOverviewResponse{}, err
+		return moextypes.MoexIndexesOverviewResponse{}, err
 	}
 
-	return models.MoexIndexesOverviewResponse{
+	return moextypes.MoexIndexesOverviewResponse{
 		Indexes:     indexes,
 		Collections: collections,
 		Memberships: memberships,
 	}, nil
 }
 
-func (s *MoexService) GetIndexHistory(ctx context.Context, secid, from, till string, intervalDays int) ([]models.MoexIndexHistoryPoint, error) {
+func (s *MoexService) GetIndexHistory(ctx context.Context, secid, from, till string, intervalDays int) ([]moextypes.MoexIndexHistoryPoint, error) {
 	points, err := s.client.FetchHistory(ctx, secid, from, till)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (s *MoexService) GetIndexHistory(ctx context.Context, secid, from, till str
 	return downsampleHistory(points, interval), nil
 }
 
-func (s *MoexService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]models.MoexIndexCompositionEntry, error) {
+func (s *MoexService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]moextypes.MoexIndexCompositionEntry, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "en"
 	}
@@ -78,24 +78,24 @@ func (s *MoexService) ListIndexCompositionTickers(ctx context.Context, indexID, 
 	return s.client.FetchIndexTickerWindows(ctx, indexID, date)
 }
 
-func (s *MoexService) GetIndexTickerCompositionHistory(ctx context.Context, indexID, ticker, from, till, lang string) ([]models.MoexIndexCompositionEntry, error) {
+func (s *MoexService) GetIndexTickerCompositionHistory(ctx context.Context, indexID, ticker, from, till, lang string) ([]moextypes.MoexIndexCompositionEntry, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "en"
 	}
 	return s.client.FetchTickerCompositionHistory(ctx, indexID, ticker, from, till, lang)
 }
 
-func (s *MoexService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, from, till string, intervalDays int, lang string) (map[string][]models.MoexIndexTickerAnalyticsPoint, error) {
+func (s *MoexService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, from, till string, intervalDays int, lang string) (map[string][]moextypes.MoexIndexTickerAnalyticsPoint, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "en"
 	}
 
-	result := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(tickers))
+	result := make(map[string][]moextypes.MoexIndexTickerAnalyticsPoint, len(tickers))
 	for _, ticker := range tickers {
 		points, err := s.client.FetchTickerAnalytics(ctx, indexID, ticker, from, till, lang)
 		if err != nil {
 			if isMoexStatus(err, http.StatusNotFound, http.StatusBadRequest) {
-				result[ticker] = []models.MoexIndexTickerAnalyticsPoint{}
+				result[ticker] = []moextypes.MoexIndexTickerAnalyticsPoint{}
 				continue
 			}
 			return nil, err
@@ -126,7 +126,7 @@ func parseDate(value string) (time.Time, bool) {
 	return parsed, true
 }
 
-func resolveIntervalDaysFromHistory(points []models.MoexIndexHistoryPoint, intervalDays int) int {
+func resolveIntervalDaysFromHistory(points []moextypes.MoexIndexHistoryPoint, intervalDays int) int {
 	if intervalDays > 0 {
 		return intervalDays
 	}
@@ -166,8 +166,8 @@ func pickClosestInterval(desired int) int {
 	return closest
 }
 
-func normalizeHistory(points []models.MoexIndexHistoryPoint) []models.MoexIndexHistoryPoint {
-	normalized := make([]models.MoexIndexHistoryPoint, 0, len(points))
+func normalizeHistory(points []moextypes.MoexIndexHistoryPoint) []moextypes.MoexIndexHistoryPoint {
+	normalized := make([]moextypes.MoexIndexHistoryPoint, 0, len(points))
 	for _, point := range points {
 		if point.TradeDate == "" || point.Close == nil {
 			continue
@@ -180,15 +180,15 @@ func normalizeHistory(points []models.MoexIndexHistoryPoint) []models.MoexIndexH
 	return normalized
 }
 
-func downsampleHistory(points []models.MoexIndexHistoryPoint, intervalDays int) []models.MoexIndexHistoryPoint {
+func downsampleHistory(points []moextypes.MoexIndexHistoryPoint, intervalDays int) []moextypes.MoexIndexHistoryPoint {
 	normalized := normalizeHistory(points)
 	if intervalDays <= 1 {
 		return normalized
 	}
 
-	result := make([]models.MoexIndexHistoryPoint, 0)
+	result := make([]moextypes.MoexIndexHistoryPoint, 0)
 	var bucketStart time.Time
-	bucket := make([]models.MoexIndexHistoryPoint, 0)
+	bucket := make([]moextypes.MoexIndexHistoryPoint, 0)
 
 	flush := func() {
 		if len(bucket) == 0 {
@@ -232,7 +232,7 @@ func downsampleHistory(points []models.MoexIndexHistoryPoint, intervalDays int) 
 		if math.IsInf(lowValue, 0) || math.IsNaN(lowValue) {
 			lowValue = *closeValue
 		}
-		result = append(result, models.MoexIndexHistoryPoint{
+		result = append(result, moextypes.MoexIndexHistoryPoint{
 			TradeDate: last.TradeDate,
 			Open:      open,
 			High:      floatPtr(highValue),
@@ -248,7 +248,7 @@ func downsampleHistory(points []models.MoexIndexHistoryPoint, intervalDays int) 
 		}
 		if bucketStart.IsZero() {
 			bucketStart = parsed
-			bucket = []models.MoexIndexHistoryPoint{point}
+			bucket = []moextypes.MoexIndexHistoryPoint{point}
 			continue
 		}
 		diff := int(math.Abs(parsed.Sub(bucketStart).Hours() / 24))
@@ -258,15 +258,15 @@ func downsampleHistory(points []models.MoexIndexHistoryPoint, intervalDays int) 
 		}
 		flush()
 		bucketStart = parsed
-		bucket = []models.MoexIndexHistoryPoint{point}
+		bucket = []moextypes.MoexIndexHistoryPoint{point}
 	}
 	flush()
 
 	return result
 }
 
-func downsampleTickerSeries(points []models.MoexIndexTickerAnalyticsPoint, from, till string, intervalDays int) []models.MoexIndexTickerAnalyticsPoint {
-	normalized := make([]models.MoexIndexTickerAnalyticsPoint, 0, len(points))
+func downsampleTickerSeries(points []moextypes.MoexIndexTickerAnalyticsPoint, from, till string, intervalDays int) []moextypes.MoexIndexTickerAnalyticsPoint {
+	normalized := make([]moextypes.MoexIndexTickerAnalyticsPoint, 0, len(points))
 	startDate, okStart := parseDate(from)
 	endDate, okEnd := parseDate(till)
 	for _, point := range points {
@@ -290,7 +290,7 @@ func downsampleTickerSeries(points []models.MoexIndexTickerAnalyticsPoint, from,
 	})
 
 	if len(normalized) == 0 {
-		return []models.MoexIndexTickerAnalyticsPoint{}
+		return []moextypes.MoexIndexTickerAnalyticsPoint{}
 	}
 
 	if !okStart {
@@ -331,7 +331,7 @@ func downsampleTickerSeries(points []models.MoexIndexTickerAnalyticsPoint, from,
 	}
 
 	// Sample by actual trading dates only to avoid synthetic weekend buckets and chart gaps.
-	result := make([]models.MoexIndexTickerAnalyticsPoint, 0, len(normalized))
+	result := make([]moextypes.MoexIndexTickerAnalyticsPoint, 0, len(normalized))
 	var lastSelectedDate time.Time
 	haveLastSelected := false
 	for _, point := range normalized {

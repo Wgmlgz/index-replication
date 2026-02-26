@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"server/internal/models"
+	moextypes "server/internal/moex/types"
 	"server/internal/repository"
 )
 
@@ -35,11 +35,11 @@ func NewMoexReadService(repo *repository.MoexDataRepository, liveService *MoexSe
 	}
 }
 
-func (s *MoexReadService) GetIndexesOverview(ctx context.Context, _ string) (models.MoexIndexesOverviewResponse, error) {
+func (s *MoexReadService) GetIndexesOverview(ctx context.Context, _ string) (moextypes.MoexIndexesOverviewResponse, error) {
 	return s.repo.GetOverview(ctx)
 }
 
-func (s *MoexReadService) GetIndexHistory(ctx context.Context, secid, from, till string, intervalDays int) ([]models.MoexIndexHistoryPoint, *MoexCoverageMeta, error) {
+func (s *MoexReadService) GetIndexHistory(ctx context.Context, secid, from, till string, intervalDays int) ([]moextypes.MoexIndexHistoryPoint, *MoexCoverageMeta, error) {
 	fromDate, tillDate, err := parseRangePointers(from, till)
 	if err != nil {
 		return nil, nil, err
@@ -66,7 +66,7 @@ func (s *MoexReadService) GetIndexHistory(ctx context.Context, secid, from, till
 	return result, meta, nil
 }
 
-func (s *MoexReadService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]models.MoexIndexCompositionEntry, *MoexCoverageMeta, error) {
+func (s *MoexReadService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]moextypes.MoexIndexCompositionEntry, *MoexCoverageMeta, error) {
 	_ = lang
 
 	preferredDate := todayUTC()
@@ -98,7 +98,7 @@ func (s *MoexReadService) GetIndexComposition(ctx context.Context, indexID, date
 		if err != nil {
 			return nil, nil, err
 		}
-		return []models.MoexIndexCompositionEntry{}, meta, nil
+		return []moextypes.MoexIndexCompositionEntry{}, meta, nil
 	}
 
 	rows, err := s.repo.ListCompositionByDate(ctx, indexID, *snapshotDate)
@@ -113,7 +113,7 @@ func (s *MoexReadService) GetIndexComposition(ctx context.Context, indexID, date
 	return rows, meta, nil
 }
 
-func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, topCount int, selectionMode, selectionDate, from, till string, intervalDays int, _ string) (map[string][]models.MoexIndexTickerAnalyticsPoint, *MoexCoverageMeta, error) {
+func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID string, tickers []string, topCount int, selectionMode, selectionDate, from, till string, intervalDays int, _ string) (map[string][]moextypes.MoexIndexTickerAnalyticsPoint, *MoexCoverageMeta, error) {
 	fromDate, tillDate, err := parseRangePointers(from, till)
 	if err != nil {
 		return nil, nil, err
@@ -156,7 +156,7 @@ func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID
 			if err != nil {
 				return nil, nil, err
 			}
-			return map[string][]models.MoexIndexTickerAnalyticsPoint{}, meta, nil
+			return map[string][]moextypes.MoexIndexTickerAnalyticsPoint{}, meta, nil
 		}
 		rows, err = s.repo.ListCompositionSeriesRows(ctx, indexID, resolvedTickers, fromDate, tillDate)
 		if err != nil {
@@ -168,7 +168,7 @@ func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID
 		if err != nil {
 			return nil, nil, err
 		}
-		return map[string][]models.MoexIndexTickerAnalyticsPoint{}, meta, nil
+		return map[string][]moextypes.MoexIndexTickerAnalyticsPoint{}, meta, nil
 	}
 
 	if len(resolvedTickers) == 0 {
@@ -186,18 +186,18 @@ func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID
 		}
 		sort.Strings(resolvedTickers)
 	}
-	series := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(resolvedTickers))
+	series := make(map[string][]moextypes.MoexIndexTickerAnalyticsPoint, len(resolvedTickers))
 	for _, ticker := range resolvedTickers {
-		series[ticker] = []models.MoexIndexTickerAnalyticsPoint{}
+		series[ticker] = []moextypes.MoexIndexTickerAnalyticsPoint{}
 	}
 
-	grouped := make(map[string][]models.MoexIndexTickerAnalyticsPoint, len(resolvedTickers))
+	grouped := make(map[string][]moextypes.MoexIndexTickerAnalyticsPoint, len(resolvedTickers))
 	var inferredFrom *time.Time
 	var inferredTill *time.Time
 	for _, row := range rows {
 		tradeDate := dateOnlyUTC(row.TradeDate)
 		dateStr := tradeDate.Format("2006-01-02")
-		grouped[row.Ticker] = append(grouped[row.Ticker], models.MoexIndexTickerAnalyticsPoint{
+		grouped[row.Ticker] = append(grouped[row.Ticker], moextypes.MoexIndexTickerAnalyticsPoint{
 			TradeDate: dateStr,
 			Weight:    row.Weight,
 		})
@@ -297,9 +297,9 @@ func downsampleDateLabels(dates []string, intervalDays int) []string {
 	return result
 }
 
-func alignTickerSeriesByDates(points []models.MoexIndexTickerAnalyticsPoint, dates []string) []models.MoexIndexTickerAnalyticsPoint {
+func alignTickerSeriesByDates(points []moextypes.MoexIndexTickerAnalyticsPoint, dates []string) []moextypes.MoexIndexTickerAnalyticsPoint {
 	if len(dates) == 0 {
-		return []models.MoexIndexTickerAnalyticsPoint{}
+		return []moextypes.MoexIndexTickerAnalyticsPoint{}
 	}
 	weightsByDate := make(map[string]*float64, len(points))
 	for _, point := range points {
@@ -309,19 +309,19 @@ func alignTickerSeriesByDates(points []models.MoexIndexTickerAnalyticsPoint, dat
 		}
 		weightsByDate[date] = point.Weight
 	}
-	result := make([]models.MoexIndexTickerAnalyticsPoint, 0, len(dates))
+	result := make([]moextypes.MoexIndexTickerAnalyticsPoint, 0, len(dates))
 	for _, date := range dates {
 		weight, ok := weightsByDate[date]
 		if !ok || weight == nil {
 			zero := 0.0
-			result = append(result, models.MoexIndexTickerAnalyticsPoint{
+			result = append(result, moextypes.MoexIndexTickerAnalyticsPoint{
 				TradeDate: date,
 				Weight:    &zero,
 			})
 			continue
 		}
 		value := *weight
-		result = append(result, models.MoexIndexTickerAnalyticsPoint{
+		result = append(result, moextypes.MoexIndexTickerAnalyticsPoint{
 			TradeDate: date,
 			Weight:    &value,
 		})
@@ -411,7 +411,7 @@ func normalizeTickers(tickers []string) []string {
 	return normalized
 }
 
-func (s *MoexReadService) buildCoverageMeta(ctx context.Context, dataset, entityKey string, fromDate, tillDate *time.Time, points []models.MoexIndexHistoryPoint) (*MoexCoverageMeta, error) {
+func (s *MoexReadService) buildCoverageMeta(ctx context.Context, dataset, entityKey string, fromDate, tillDate *time.Time, points []moextypes.MoexIndexHistoryPoint) (*MoexCoverageMeta, error) {
 	effectiveFrom := fromDate
 	effectiveTill := tillDate
 	if (effectiveFrom == nil || effectiveTill == nil) && len(points) > 0 {
@@ -480,8 +480,8 @@ func parseRangePointers(from, till string) (*time.Time, *time.Time, error) {
 	return fromDate, tillDate, nil
 }
 
-func mergeHistoryPoints(existing, extra []models.MoexIndexHistoryPoint) []models.MoexIndexHistoryPoint {
-	byDate := make(map[string]models.MoexIndexHistoryPoint, len(existing)+len(extra))
+func mergeHistoryPoints(existing, extra []moextypes.MoexIndexHistoryPoint) []moextypes.MoexIndexHistoryPoint {
+	byDate := make(map[string]moextypes.MoexIndexHistoryPoint, len(existing)+len(extra))
 	for _, point := range existing {
 		if strings.TrimSpace(point.TradeDate) == "" {
 			continue
@@ -495,7 +495,7 @@ func mergeHistoryPoints(existing, extra []models.MoexIndexHistoryPoint) []models
 		byDate[point.TradeDate] = point
 	}
 
-	merged := make([]models.MoexIndexHistoryPoint, 0, len(byDate))
+	merged := make([]moextypes.MoexIndexHistoryPoint, 0, len(byDate))
 	for _, point := range byDate {
 		merged = append(merged, point)
 	}

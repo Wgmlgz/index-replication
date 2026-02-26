@@ -50,6 +50,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `internal/handlers/` contains request handlers (HTTP layer).
 - `internal/services/` contains most business logic.
 - `internal/moex/` contains MOEX integration logic and read services.
+- `internal/moex/types/` contains MOEX DTO/shared types used by MOEX + repository layers.
 - `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
 - `internal/repository/` contains data access (DB queries).
 - `internal/models/` defines domain models.

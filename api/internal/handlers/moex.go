@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"server/internal/models"
 	"server/internal/moex"
+	moextypes "server/internal/moex/types"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,8 @@ import (
 type MoexHandler struct {
 	service *moex.MoexReadService
 }
+
+var _ = moextypes.MoexIndexesOverviewResponse{}
 
 func NewMoexHandler(service *moex.MoexReadService) *MoexHandler {
 	return &MoexHandler{service: service}
@@ -27,7 +30,7 @@ func NewMoexHandler(service *moex.MoexReadService) *MoexHandler {
 //	@Tags			moex
 //	@Produce		json
 //	@Param			lang	query		string	false	"Response language (ru/en)"
-//	@Success		200		{object}	models.MoexIndexesOverviewResponse
+//	@Success		200		{object}	moextypes.MoexIndexesOverviewResponse
 //	@Failure		500		{object}	models.ErrorResponse
 //	@Router			/moex/indexes/overview [get]
 func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
@@ -50,7 +53,7 @@ func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
 //	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
-//	@Success		200				{array}		models.MoexIndexHistoryPoint
+//	@Success		200				{array}		moextypes.MoexIndexHistoryPoint
 //	@Failure		400				{object}	models.ErrorResponse
 //	@Failure		500				{object}	models.ErrorResponse
 //	@Router			/moex/indexes/{secid}/history [get]
@@ -91,7 +94,7 @@ func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 //	@Param			secid	path		string	true	"Index SECID"
 //	@Param			date	query		string	false	"Snapshot date (YYYY-MM-DD)"
 //	@Param			lang	query		string	false	"Response language (ru/en)"
-//	@Success		200		{array}		models.MoexIndexCompositionEntry
+//	@Success		200		{array}		moextypes.MoexIndexCompositionEntry
 //	@Failure		400		{object}	models.ErrorResponse
 //	@Failure		500		{object}	models.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition [get]
@@ -133,7 +136,7 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 //	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
 //	@Param			intervalDays	query		int		false	"Downsample interval in days"
 //	@Param			lang			query		string	false	"Response language (ru/en)"
-//	@Success		200				{object}	map[string][]models.MoexIndexTickerAnalyticsPoint
+//	@Success		200				{object}	map[string][]moextypes.MoexIndexTickerAnalyticsPoint
 //	@Failure		400				{object}	models.ErrorResponse
 //	@Failure		500				{object}	models.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition/series [get]

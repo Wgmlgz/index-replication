@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"server/internal/models"
+	moextypes "server/internal/moex/types"
 	"strings"
 	"time"
 
@@ -39,7 +39,7 @@ func NewMoexSyncRepository(db *gorm.DB) *MoexSyncRepository {
 	return &MoexSyncRepository{db: db}
 }
 
-func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview models.MoexIndexesOverviewResponse) error {
+func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moextypes.MoexIndexesOverviewResponse) error {
 	tx := r.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return tx.Error
@@ -50,9 +50,9 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview model
 		}
 	}()
 
-	indexRows := make([]models.MoexIndexDB, 0, len(overview.Indexes))
+	indexRows := make([]MoexIndexDB, 0, len(overview.Indexes))
 	for _, item := range overview.Indexes {
-		indexRows = append(indexRows, models.MoexIndexDB{
+		indexRows = append(indexRows, MoexIndexDB{
 			Secid:      item.Secid,
 			ShortName:  item.ShortName,
 			Name:       item.Name,
@@ -66,9 +66,9 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview model
 		})
 	}
 
-	collectionRows := make([]models.MoexIndexCollectionDB, 0, len(overview.Collections))
+	collectionRows := make([]MoexIndexCollectionDB, 0, len(overview.Collections))
 	for _, item := range overview.Collections {
-		collectionRows = append(collectionRows, models.MoexIndexCollectionDB{
+		collectionRows = append(collectionRows, MoexIndexCollectionDB{
 			ID:              item.ID,
 			Name:            item.Name,
 			Title:           item.Title,
@@ -77,7 +77,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview model
 		})
 	}
 
-	membershipRows := make([]models.MoexIndexCollectionMembershipDB, 0)
+	membershipRows := make([]MoexIndexCollectionMembershipDB, 0)
 	for secid, collections := range overview.Memberships {
 		normalizedSecid := strings.TrimSpace(secid)
 		if normalizedSecid == "" {
@@ -88,7 +88,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview model
 			if normalizedCollection == "" {
 				continue
 			}
-			membershipRows = append(membershipRows, models.MoexIndexCollectionMembershipDB{
+			membershipRows = append(membershipRows, MoexIndexCollectionMembershipDB{
 				Secid:          normalizedSecid,
 				CollectionName: normalizedCollection,
 				UpdatedAt:      time.Now().UTC(),
@@ -162,13 +162,13 @@ func (r *MoexSyncRepository) GetSyncState(ctx context.Context, dataset, entityKe
 	return &state, nil
 }
 
-func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid string, points []models.MoexIndexHistoryPoint) (int, error) {
+func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid string, points []moextypes.MoexIndexHistoryPoint) (int, error) {
 	trimmedSecid := strings.TrimSpace(secid)
 	if trimmedSecid == "" {
 		return 0, fmt.Errorf("empty secid")
 	}
 
-	rows := make([]models.MoexIndexHistoryDailyDB, 0, len(points))
+	rows := make([]MoexIndexHistoryDailyDB, 0, len(points))
 	ingestedAt := time.Now().UTC()
 	for _, point := range points {
 		if point.TradeDate == "" {
@@ -179,7 +179,7 @@ func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid stri
 			continue
 		}
 		tradeDate = dateOnlyUTC(tradeDate)
-		rows = append(rows, models.MoexIndexHistoryDailyDB{
+		rows = append(rows, MoexIndexHistoryDailyDB{
 			Secid:      trimmedSecid,
 			TradeDate:  tradeDate,
 			Open:       point.Open,
@@ -205,13 +205,13 @@ func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid stri
 	return len(rows), nil
 }
 
-func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, indexID string, entries []models.MoexIndexCompositionEntry) (int, error) {
+func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, indexID string, entries []moextypes.MoexIndexCompositionEntry) (int, error) {
 	trimmedIndexID := strings.TrimSpace(indexID)
 	if trimmedIndexID == "" {
 		return 0, fmt.Errorf("empty index id")
 	}
 
-	rows := make([]models.MoexIndexCompositionDailyDB, 0, len(entries))
+	rows := make([]MoexIndexCompositionDailyDB, 0, len(entries))
 	ingestedAt := time.Now().UTC()
 	for _, entry := range entries {
 		if entry.TradeDate == "" || strings.TrimSpace(entry.Ticker) == "" {
@@ -240,7 +240,7 @@ func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, index
 			shortName = &trimmedShortName
 		}
 
-		rows = append(rows, models.MoexIndexCompositionDailyDB{
+		rows = append(rows, MoexIndexCompositionDailyDB{
 			IndexID:          trimmedIndexID,
 			TradeDate:        dateOnlyUTC(tradeDate),
 			Ticker:           strings.TrimSpace(entry.Ticker),

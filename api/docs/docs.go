@@ -539,6 +539,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/tbank/default-account": {
+            "post": {
+                "description": "Sets connected account to use by default for test-buy and portfolio actions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Set T-Bank default account",
+                "parameters": [
+                    {
+                        "description": "Default account payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankSetDefaultAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankConnectionStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/tbank/disconnect": {
             "post": {
                 "description": "Removes saved T-Bank credentials for the current user",
@@ -561,6 +607,139 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/instruments/lookup": {
+            "get": {
+                "description": "Resolves T-Bank instrument candidates by MOEX ticker and optional class code",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Find T-Bank instrument id by ticker",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MOEX ticker",
+                        "name": "ticker",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MOEX class code (for exact filtering)",
+                        "name": "class_code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankInstrumentLookupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/portfolio": {
+            "get": {
+                "description": "Returns balances and positions for selected account (or default account if omitted)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Get T-Bank account balances and portfolio",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account id",
+                        "name": "account_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankAccountPortfolioResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/sandbox/pay-in": {
+            "post": {
+                "description": "Adds virtual money to selected sandbox account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Top up T-Bank sandbox account",
+                "parameters": [
+                    {
+                        "description": "Sandbox pay-in payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankSandboxPayInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TBankSandboxPayInResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -768,7 +947,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.MoexIndexesOverviewResponse"
+                            "$ref": "#/definitions/types.MoexIndexesOverviewResponse"
                         }
                     },
                     "500": {
@@ -817,7 +996,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.MoexIndexCompositionEntry"
+                                "$ref": "#/definitions/types.MoexIndexCompositionEntry"
                             }
                         }
                     },
@@ -911,7 +1090,7 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/models.MoexIndexTickerAnalyticsPoint"
+                                    "$ref": "#/definitions/types.MoexIndexTickerAnalyticsPoint"
                                 }
                             }
                         }
@@ -974,7 +1153,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.MoexIndexHistoryPoint"
+                                "$ref": "#/definitions/types.MoexIndexHistoryPoint"
                             }
                         }
                     },
@@ -1637,144 +1816,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.MoexIndex": {
-            "type": "object",
-            "properties": {
-                "annualHigh": {
-                    "type": "number"
-                },
-                "annualLow": {
-                    "type": "number"
-                },
-                "boardId": {
-                    "type": "string"
-                },
-                "calcMode": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "decimals": {
-                    "type": "integer"
-                },
-                "hasComposition": {
-                    "type": "boolean"
-                },
-                "lastActiveDate": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "secid": {
-                    "type": "string"
-                },
-                "shortName": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.MoexIndexCollection": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "securityGroupId": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.MoexIndexCompositionEntry": {
-            "type": "object",
-            "properties": {
-                "indexId": {
-                    "type": "string"
-                },
-                "secId": {
-                    "type": "string"
-                },
-                "shortName": {
-                    "type": "string"
-                },
-                "ticker": {
-                    "type": "string"
-                },
-                "tradeDate": {
-                    "type": "string"
-                },
-                "tradeSessionDate": {
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "number"
-                }
-            }
-        },
-        "models.MoexIndexHistoryPoint": {
-            "type": "object",
-            "properties": {
-                "close": {
-                    "type": "number"
-                },
-                "high": {
-                    "type": "number"
-                },
-                "low": {
-                    "type": "number"
-                },
-                "open": {
-                    "type": "number"
-                },
-                "tradeDate": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.MoexIndexTickerAnalyticsPoint": {
-            "type": "object",
-            "properties": {
-                "tradeDate": {
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "number"
-                }
-            }
-        },
-        "models.MoexIndexesOverviewResponse": {
-            "type": "object",
-            "properties": {
-                "collections": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.MoexIndexCollection"
-                    }
-                },
-                "indexes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.MoexIndex"
-                    }
-                },
-                "memberships": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "models.PasswordChangeRequest": {
             "type": "object",
             "properties": {
@@ -1845,6 +1886,41 @@ const docTemplate = `{
                 }
             }
         },
+        "models.TBankAccountPortfolioResponse": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "daily_yield": {
+                    "type": "number"
+                },
+                "daily_yield_relative": {
+                    "type": "number"
+                },
+                "environment": {
+                    "type": "string"
+                },
+                "money": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TBankMoneyBalance"
+                    }
+                },
+                "positions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TBankPortfolioPosition"
+                    }
+                },
+                "total_amount_portfolio": {
+                    "type": "number"
+                },
+                "total_amount_portfolio_currency": {
+                    "type": "string"
+                }
+            }
+        },
         "models.TBankConnectRequest": {
             "type": "object",
             "required": [
@@ -1889,6 +1965,164 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "token_masked": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankInstrumentLookupItem": {
+            "type": "object",
+            "properties": {
+                "api_trade_available": {
+                    "type": "boolean"
+                },
+                "class_code": {
+                    "type": "string"
+                },
+                "figi": {
+                    "type": "string"
+                },
+                "for_iis": {
+                    "type": "boolean"
+                },
+                "for_qual_investor": {
+                    "type": "boolean"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "instrument_type": {
+                    "type": "string"
+                },
+                "isin": {
+                    "type": "string"
+                },
+                "lot": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "position_uid": {
+                    "type": "string"
+                },
+                "ticker": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankInstrumentLookupResponse": {
+            "type": "object",
+            "properties": {
+                "class_code": {
+                    "type": "string"
+                },
+                "instruments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TBankInstrumentLookupItem"
+                    }
+                },
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankMoneyBalance": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "number"
+                },
+                "blocked": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "withdraw_available": {
+                    "type": "number"
+                },
+                "withdraw_blocked": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.TBankPortfolioPosition": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "current_price": {
+                    "type": "number"
+                },
+                "current_value": {
+                    "type": "number"
+                },
+                "expected_yield": {
+                    "type": "number"
+                },
+                "figi": {
+                    "type": "string"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "instrument_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "ticker": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TBankSandboxPayInRequest": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "units": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.TBankSandboxPayInResponse": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "environment": {
+                    "type": "string"
+                },
+                "units": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.TBankSetDefaultAccountRequest": {
+            "type": "object",
+            "required": [
+                "account_id"
+            ],
+            "properties": {
+                "account_id": {
                     "type": "string"
                 }
             }
@@ -2225,6 +2459,144 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "types.MoexIndex": {
+            "type": "object",
+            "properties": {
+                "annualHigh": {
+                    "type": "number"
+                },
+                "annualLow": {
+                    "type": "number"
+                },
+                "boardId": {
+                    "type": "string"
+                },
+                "calcMode": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "decimals": {
+                    "type": "integer"
+                },
+                "hasComposition": {
+                    "type": "boolean"
+                },
+                "lastActiveDate": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "secid": {
+                    "type": "string"
+                },
+                "shortName": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.MoexIndexCollection": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "securityGroupId": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.MoexIndexCompositionEntry": {
+            "type": "object",
+            "properties": {
+                "indexId": {
+                    "type": "string"
+                },
+                "secId": {
+                    "type": "string"
+                },
+                "shortName": {
+                    "type": "string"
+                },
+                "ticker": {
+                    "type": "string"
+                },
+                "tradeDate": {
+                    "type": "string"
+                },
+                "tradeSessionDate": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "types.MoexIndexHistoryPoint": {
+            "type": "object",
+            "properties": {
+                "close": {
+                    "type": "number"
+                },
+                "high": {
+                    "type": "number"
+                },
+                "low": {
+                    "type": "number"
+                },
+                "open": {
+                    "type": "number"
+                },
+                "tradeDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.MoexIndexTickerAnalyticsPoint": {
+            "type": "object",
+            "properties": {
+                "tradeDate": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "types.MoexIndexesOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "collections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.MoexIndexCollection"
+                    }
+                },
+                "indexes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.MoexIndex"
+                    }
+                },
+                "memberships": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         }

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"server/internal/models"
+	moextypes "server/internal/moex/types"
 
 	"gorm.io/gorm"
 )
@@ -88,7 +88,7 @@ func NewMoexDataRepository(db *gorm.DB) *MoexDataRepository {
 	return &MoexDataRepository{db: db}
 }
 
-func (r *MoexDataRepository) GetOverview(ctx context.Context) (models.MoexIndexesOverviewResponse, error) {
+func (r *MoexDataRepository) GetOverview(ctx context.Context) (moextypes.MoexIndexesOverviewResponse, error) {
 	var indexRows []moexOverviewIndexRow
 	if err := r.db.WithContext(ctx).
 		Table("moex_indexes AS i").
@@ -120,27 +120,27 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (models.MoexIndexe
 		`).
 		Order("i.secid ASC").
 		Find(&indexRows).Error; err != nil {
-		return models.MoexIndexesOverviewResponse{}, err
+		return moextypes.MoexIndexesOverviewResponse{}, err
 	}
 
-	var collectionRows []models.MoexIndexCollectionDB
+	var collectionRows []MoexIndexCollectionDB
 	if err := r.db.WithContext(ctx).Order("id ASC").Find(&collectionRows).Error; err != nil {
-		return models.MoexIndexesOverviewResponse{}, err
+		return moextypes.MoexIndexesOverviewResponse{}, err
 	}
 
-	var membershipRows []models.MoexIndexCollectionMembershipDB
+	var membershipRows []MoexIndexCollectionMembershipDB
 	if err := r.db.WithContext(ctx).Order("secid ASC, collection_name ASC").Find(&membershipRows).Error; err != nil {
-		return models.MoexIndexesOverviewResponse{}, err
+		return moextypes.MoexIndexesOverviewResponse{}, err
 	}
 
-	indexes := make([]models.MoexIndex, 0, len(indexRows))
+	indexes := make([]moextypes.MoexIndex, 0, len(indexRows))
 	for _, row := range indexRows {
 		var lastActiveDate *string
 		if row.LastActiveDate != nil {
 			formatted := row.LastActiveDate.UTC().Format("2006-01-02")
 			lastActiveDate = &formatted
 		}
-		indexes = append(indexes, models.MoexIndex{
+		indexes = append(indexes, moextypes.MoexIndex{
 			Secid:          row.Secid,
 			ShortName:      row.ShortName,
 			Name:           row.Name,
@@ -155,9 +155,9 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (models.MoexIndexe
 		})
 	}
 
-	collections := make([]models.MoexIndexCollection, 0, len(collectionRows))
+	collections := make([]moextypes.MoexIndexCollection, 0, len(collectionRows))
 	for _, row := range collectionRows {
-		collections = append(collections, models.MoexIndexCollection{
+		collections = append(collections, moextypes.MoexIndexCollection{
 			ID:              row.ID,
 			Name:            row.Name,
 			Title:           row.Title,
@@ -170,14 +170,14 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (models.MoexIndexe
 		memberships[row.Secid] = append(memberships[row.Secid], row.CollectionName)
 	}
 
-	return models.MoexIndexesOverviewResponse{
+	return moextypes.MoexIndexesOverviewResponse{
 		Indexes:     indexes,
 		Collections: collections,
 		Memberships: memberships,
 	}, nil
 }
 
-func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string, fromDate, toDate *time.Time) ([]models.MoexIndexHistoryPoint, error) {
+func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string, fromDate, toDate *time.Time) ([]moextypes.MoexIndexHistoryPoint, error) {
 	q := r.db.WithContext(ctx).Table("moex_index_history_daily").
 		Select("trade_date", "open", "high", "low", "close").
 		Where("secid = ?", strings.TrimSpace(secid)).
@@ -200,9 +200,9 @@ func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string
 		return nil, err
 	}
 
-	points := make([]models.MoexIndexHistoryPoint, 0, len(rows))
+	points := make([]moextypes.MoexIndexHistoryPoint, 0, len(rows))
 	for _, row := range rows {
-		points = append(points, models.MoexIndexHistoryPoint{
+		points = append(points, moextypes.MoexIndexHistoryPoint{
 			TradeDate: row.TradeDate.UTC().Format("2006-01-02"),
 			Open:      row.Open,
 			High:      row.High,
@@ -234,8 +234,8 @@ func (r *MoexDataRepository) ResolveCompositionDate(ctx context.Context, indexID
 	return &normalized, nil
 }
 
-func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID string, tradeDate time.Time) ([]models.MoexIndexCompositionEntry, error) {
-	var rows []models.MoexIndexCompositionDailyDB
+func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID string, tradeDate time.Time) ([]moextypes.MoexIndexCompositionEntry, error) {
+	var rows []MoexIndexCompositionDailyDB
 	if err := r.db.WithContext(ctx).
 		Where("index_id = ? AND trade_date = ?", strings.TrimSpace(indexID), dateOnlyUTCDay(tradeDate)).
 		Order("ticker ASC").
@@ -243,7 +243,7 @@ func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID 
 		return nil, err
 	}
 
-	result := make([]models.MoexIndexCompositionEntry, 0, len(rows))
+	result := make([]moextypes.MoexIndexCompositionEntry, 0, len(rows))
 	for _, row := range rows {
 		var secID string
 		if row.SecID != nil {
@@ -258,7 +258,7 @@ func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID 
 			formatted := row.TradeSessionDate.UTC().Format("2006-01-02")
 			tradeSessionDate = &formatted
 		}
-		result = append(result, models.MoexIndexCompositionEntry{
+		result = append(result, moextypes.MoexIndexCompositionEntry{
 			IndexID:          row.IndexID,
 			TradeDate:        row.TradeDate.UTC().Format("2006-01-02"),
 			Ticker:           row.Ticker,
