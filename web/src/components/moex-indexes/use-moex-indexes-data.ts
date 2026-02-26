@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import type { MoexIndex as MoexIndex } from '@/api-client';
 import { moexApi } from '@/lib/api';
 import {
   userSettingsClient,

@@ -1,11 +1,11 @@
 import { settingsApi } from '@/lib/api';
 import type {
-  ModelsUserSettingsPatchRequest,
-  ModelsUserSettingsResponse,
+  UserSettingsPatchRequest,
+  UserSettingsResponse,
 } from '@/api-client';
 
-export type UserSettings = ModelsUserSettingsResponse;
-export type UserSettingsPatch = ModelsUserSettingsPatchRequest;
+export type UserSettings = UserSettingsResponse;
+export type UserSettingsPatch = UserSettingsPatchRequest;
 
 export const userSettingsClient = {
   async getSettings(): Promise<UserSettings> {

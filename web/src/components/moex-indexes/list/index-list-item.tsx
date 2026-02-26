@@ -3,7 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import type { MoexIndex as MoexIndex } from '@/api-client';
 import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
 import { useMoexIndexListContext } from './moex-indexes-list-context';
 

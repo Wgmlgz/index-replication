@@ -18,8 +18,8 @@ import { User } from './columns';
 import { useEffect, useState } from 'react';
 import { usersApi as api } from '@/lib/api';
 import {
-  ModelsCreateUserRequest,
-  ModelsUpdateUserRequest,
+  CreateUserRequest,
+  UpdateUserRequest,
 } from '@/api-client/api';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Switch } from '../ui/switch';
@@ -205,7 +205,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
   const onSubmit = async (values: UserFormValues) => {
     try {
       if (mode === 'create') {
-        const body: ModelsCreateUserRequest = {
+        const body: CreateUserRequest = {
           username: values.username ?? '',
           full_name: values.full_name,
           // phone: values.phone,
@@ -216,7 +216,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
         };
         await api.usersPost(body);
       } else if (mode === 'edit' && user) {
-        const body: ModelsUpdateUserRequest = {
+        const body: UpdateUserRequest = {
           full_name: values.full_name,
           phone: values.phone,
           email: values.email,

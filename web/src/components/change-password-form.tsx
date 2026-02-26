@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { H3 } from '@/components/ui/typography';
 import { authApi } from '@/lib/api';
-import { ModelsPasswordChangeRequest } from '@/api-client';
+import { PasswordChangeRequest } from '@/api-client';
 
 const formSchema = z
   .object({
@@ -54,7 +54,7 @@ export function ChangePasswordForm() {
       await authApi.mePasswordPut({
         old_password: values.old_password,
         new_password: values.new_password,
-      } as ModelsPasswordChangeRequest);
+      } as PasswordChangeRequest);
       toast.success('Пароль успешно изменен.');
       form.reset();
     } catch (error: any) {

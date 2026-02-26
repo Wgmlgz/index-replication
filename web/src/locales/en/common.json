@@ -2,6 +2,14 @@
   "common": {
     "error": "Error"
   },
+  "navigation": {
+    "brand": "Replicant",
+    "section": "Navigation",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  },
   "auth": {
     "login": {
       "title": "Sign in to your account",

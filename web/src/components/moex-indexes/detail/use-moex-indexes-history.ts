@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import type { MoexIndex as MoexIndex } from '@/api-client';
 import { moexApi } from '@/lib/api';
 import type { ChartData } from './index-chart';
 import { resolveDateRange, resolveIntervalDays } from './use-moex-indexes-detail.utils';

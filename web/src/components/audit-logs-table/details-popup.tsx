@@ -17,10 +17,10 @@ import { Eye, EyeIcon, Image, X } from 'lucide-react';
 import { Time } from '../ui/time';
 import { AuditLog } from './columns';
 import { actionColors, actionLabels, extractRectsFromLog } from '@/lib/logs';
-import { ModelsAuditLogResponse } from '@/api-client';
+import { AuditLogResponse } from '@/api-client';
 
 interface DetailsPopupProps {
-  auditLog: ModelsAuditLogResponse | null;
+  auditLog: AuditLogResponse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

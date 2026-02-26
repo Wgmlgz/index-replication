@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
-  ModelsMoexIndex as MoexIndex,
-  ModelsMoexIndexCollection as MoexIndexCollection,
+  MoexIndex as MoexIndex,
+  MoexIndexCollection as MoexIndexCollection,
 } from '@/api-client';
 import type {
   FilterKey,

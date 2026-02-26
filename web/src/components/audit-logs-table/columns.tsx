@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { Time } from "../ui/time"
 import { actionColors, actionLabels, entityTypeLabels, extractRectsFromLog } from "@/lib/logs"
-import { ModelsAuditLogResponse } from "@/api-client"
+import { AuditLogResponse } from "@/api-client"
 
 // This type is used to define the shape of our data.
 export type AuditLog = {
@@ -23,7 +23,7 @@ export type AuditLog = {
     full_name: string
   }
   onViewDetails?: (auditLog: AuditLog) => void
-} & ModelsAuditLogResponse
+} & AuditLogResponse
 
 
 export const columns: ColumnDef<AuditLog>[] = [

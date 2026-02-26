@@ -1,4 +1,4 @@
-import { ModelsAuditLogResponse, ModelsRecognizedSkuDetection } from "@/api-client"
+import { AuditLogResponse, ModelsRecognizedSkuDetection } from "@/api-client"
 
 // Action display names
 export const actionLabels: Record<string, string> = {
@@ -49,7 +49,7 @@ export const entityTypeLabels: Record<string, string> = {
   recognition: "Распознавание",
 }
 
-export const extractRectsFromLog = (log: ModelsAuditLogResponse) => {
+export const extractRectsFromLog = (log: AuditLogResponse) => {
   const parsed = JSON.parse(log.details ?? '{}')
   const detections = (parsed.response?.detections || parsed.response?.rects);
   console.log(detections)

@@ -1,10 +1,16 @@
-import * as React from "react"
+'use client';
 
-// import { SearchForm } from "@/components/search-form"
-// import { VersionSwitcher } from "@/components/version-switcher"
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { LogIn, LogOut, Package, PanelLeftIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useUser } from '@/components/user-context';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { DashboardCards } from '@/lib/menu';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -13,58 +19,110 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-
-// This is sample data.
-
-
-const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-  navMain: [
-    {
-      title: "Навигация",
-      url: "#",
-      items: [
-        { url: "/dashboard", title: "Главная" },
-        { url: "/users", title: "Пользователи" },
-        { url: "/audit-logs", title: "История" },
-        { url: "/map", title: "Карта" },
-      ],
-    },
-  ],
-}
+  useSidebar,
+} from '@/components/ui/sidebar';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { user, hasPermission, logoutUser } = useUser();
+  const { state, toggleSidebar } = useSidebar();
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } finally {
+      router.push('/login');
+    }
+  };
+
   return (
-    <Sidebar {...props}>
+    <Sidebar collapsible='icon' {...props}>
       <SidebarHeader>
-        sdf
-        {/* <VersionSwitcher
-          versions={data.versions}
-          defaultVersion={data.versions[0]}
-        />
-        <SearchForm /> */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip={t('navigation.brand')}>
+              <Link href={'/dashboard'}>
+                <Package className='size-4' />
+                <span>{t('navigation.brand')}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={toggleSidebar}>
+              <PanelLeftIcon />
+              <span>
+                {state === 'expanded'
+                  ? t('navigation.collapseSidebar')
+                  : t('navigation.expandSidebar')}
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={(item as any).isActive}>
-                      <a href={item.url}>{item.title}</a>
+        <SidebarGroup>
+          <SidebarGroupLabel>{t('navigation.section')}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {DashboardCards.map(item => {
+                const isVisible =
+                  !item.permission || hasPermission(item.permission);
+                if (!isVisible) return null;
+
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.titleKey ? t(item.titleKey) : item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>
+                          {item.titleKey ? t(item.titleKey) : item.title}
+                        </span>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarRail />
+      <SidebarFooter className='mb-16'>
+        {/* {user && (
+          <div className='px-2 py-1 text-xs text-muted-foreground'>
+            <span className='font-semibold'>{user.username}</span>
+            <br/>
+            (<span>{user.role_key}</span>)
+          </div>
+        )} */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <ModeToggle />
+          </SidebarMenuItem>
+          {user ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogout}>
+                <LogOut />
+                <span>{t('navigation.signOut')}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/login'}>
+                <Link href='/login'>
+                  <LogIn />
+                  <span>{t('navigation.signIn')}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
-  ModelsMoexIndex as MoexIndex,
-  ModelsMoexIndexCollection as MoexIndexCollection,
+  MoexIndex as MoexIndex,
+  MoexIndexCollection as MoexIndexCollection,
 } from '@/api-client';
 import { matchesLastActiveRange } from '@/components/moex-indexes/moex-indexes-activity';
 import type {

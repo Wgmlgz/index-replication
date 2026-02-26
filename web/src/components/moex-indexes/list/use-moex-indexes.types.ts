@@ -1,4 +1,4 @@
-import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import type { MoexIndex as MoexIndex } from '@/api-client';
 
 export type FilterOption = {
   value: string;

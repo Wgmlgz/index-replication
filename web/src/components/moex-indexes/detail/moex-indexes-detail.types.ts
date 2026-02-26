@@ -1,4 +1,4 @@
-import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import type { MoexIndex as MoexIndex } from '@/api-client';
 import type { ChartData, ChartSeriesType } from './index-chart';
 
 export type RangeKey =

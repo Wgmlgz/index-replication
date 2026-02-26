@@ -3,9 +3,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  type ModelsMoexIndex as MoexIndex,
-  type ModelsMoexIndexCompositionEntry as MoexIndexCompositionEntry,
-  type ModelsMoexIndexTickerAnalyticsPoint as MoexIndexTickerAnalyticsPoint,
+  type MoexIndex as MoexIndex,
+  type MoexIndexCompositionEntry as MoexIndexCompositionEntry,
+  type MoexIndexTickerAnalyticsPoint as MoexIndexTickerAnalyticsPoint,
 } from '@/api-client';
 import { moexApi } from '@/lib/api';
 import { resolveDateRange, resolveIntervalDays } from '../detail/use-moex-indexes-detail.utils';

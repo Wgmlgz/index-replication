@@ -3,7 +3,7 @@
 import React, { createContext, useContext } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usersApi as api, authApi } from '@/lib/api';
-import { ModelsPermission } from '@/api-client';
+import { Permission } from '@/api-client';
 import axios from 'axios';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -32,7 +32,7 @@ export interface User {
 
 interface UserContextValue {
   user: User | null;
-  permissions: ModelsPermission[];
+  permissions: Permission[];
   setUser: (user: User | null) => void;
   loading: boolean;
   refreshUser: () => Promise<void>;
@@ -45,7 +45,7 @@ const USER_QUERY_KEY = ['auth', 'me'];
 
 type MeData = {
   user: User | null;
-  permissions: ModelsPermission[];
+  permissions: Permission[];
 };
 
 const emptyMeData: MeData = {

@@ -25,7 +25,7 @@ import { UserTable } from "@/components/users-table/user-table"
 import { Badge } from "../ui/badge"
 import { actionColors, actionLabels, entityTypeLabels } from "@/lib/logs"
 import { downloadTextFile } from "@/lib/utils"
-import { ModelsAuditLogResponse } from "@/api-client"
+import { AuditLogResponse } from "@/api-client"
 
 const fetchAuditLogs = async (
   pagination: PaginationState,
@@ -109,7 +109,7 @@ export function AuditLogsTable({ }: AuditLogsTableProps) {
   const [filterKey, setFilterKey] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null)
-  const [displayLogs, setDisplayLogs] = useState<ModelsAuditLogResponse[]>([])
+  const [displayLogs, setDisplayLogs] = useState<AuditLogResponse[]>([])
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [userOptions, setUserOptions] = useState<any[]>([])
   const [userSearch, setUserSearch] = useState("")

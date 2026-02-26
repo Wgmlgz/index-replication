@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { format, subYears } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import type { ModelsMoexIndex as MoexIndex } from '@/api-client';
+import type { MoexIndex as MoexIndex } from '@/api-client';
 import type {
   ChartType,
   ChartViewMode,
