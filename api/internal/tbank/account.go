@@ -1,4 +1,4 @@
-package services
+package tbank
 
 import (
 	"context"
@@ -21,7 +21,7 @@ type tbankConnection struct {
 	defaultAccountID string
 }
 
-func (s *TBankService) SetDefaultAccount(
+func (s *Service) SetDefaultAccount(
 	ctx context.Context,
 	userID int,
 	req *models.TBankSetDefaultAccountRequest,
@@ -47,13 +47,13 @@ func (s *TBankService) SetDefaultAccount(
 		return nil, errors.New("account is not available for this token")
 	}
 
-	if err := s.userSettingsRepo.UpsertSettings(userID, map[string]string{
+	if err := s.settingsStore.UpsertSettings(userID, map[string]string{
 		tbankSettingDefaultAccountID: accountID,
 	}); err != nil {
 		return nil, err
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTBankDefaultAccountUpdated,
 		userID,
@@ -66,7 +66,7 @@ func (s *TBankService) SetDefaultAccount(
 	return s.GetStatus(ctx, userID)
 }
 
-func (s *TBankService) GetAccountPortfolio(
+func (s *Service) GetAccountPortfolio(
 	ctx context.Context,
 	userID int,
 	accountID string,
@@ -122,7 +122,7 @@ func (s *TBankService) GetAccountPortfolio(
 	}, nil
 }
 
-func (s *TBankService) SandboxPayIn(
+func (s *Service) SandboxPayIn(
 	ctx context.Context,
 	userID int,
 	req *models.TBankSandboxPayInRequest,
@@ -160,7 +160,7 @@ func (s *TBankService) SandboxPayIn(
 		return nil, err
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTBankSandboxPayIn,
 		userID,
@@ -180,7 +180,7 @@ func (s *TBankService) SandboxPayIn(
 	}, nil
 }
 
-func (s *TBankService) FindInstrumentByTicker(
+func (s *Service) FindInstrumentByTicker(
 	ctx context.Context,
 	userID int,
 	ticker string,
@@ -272,8 +272,8 @@ func (s *TBankService) FindInstrumentByTicker(
 	}, nil
 }
 
-func (s *TBankService) getConnectedTBankConnection(userID int) (*tbankConnection, error) {
-	settings, err := s.userSettingsRepo.GetSettings(userID)
+func (s *Service) getConnectedTBankConnection(userID int) (*tbankConnection, error) {
+	settings, err := s.settingsStore.GetSettings(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (s *TBankService) getConnectedTBankConnection(userID int) (*tbankConnection
 	}, nil
 }
 
-func (s *TBankService) resolveAccountID(
+func (s *Service) resolveAccountID(
 	ctx context.Context,
 	conn *tbankConnection,
 	requestedAccountID string,
@@ -325,7 +325,7 @@ func (s *TBankService) resolveAccountID(
 			return "", openErr
 		}
 		if createdAccountID != "" {
-			_ = s.userSettingsRepo.UpsertSettings(userID, map[string]string{
+			_ = s.settingsStore.UpsertSettings(userID, map[string]string{
 				tbankSettingDefaultAccountID: createdAccountID,
 			})
 			conn.defaultAccountID = createdAccountID

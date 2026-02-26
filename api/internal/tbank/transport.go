@@ -1,4 +1,4 @@
-package services
+package tbank
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (s *TBankService) withConnection(
+func (s *Service) withConnection(
 	parentCtx context.Context,
 	environment string,
 	token string,
@@ -65,7 +65,7 @@ func (s *TBankService) withConnection(
 	return nil
 }
 
-func (s *TBankService) buildTBankTLSConfig(endpoint string) (*tls.Config, error) {
+func (s *Service) buildTBankTLSConfig(endpoint string) (*tls.Config, error) {
 	host := endpoint
 	if parsedHost, _, err := net.SplitHostPort(endpoint); err == nil {
 		host = parsedHost
@@ -98,7 +98,7 @@ func (s *TBankService) buildTBankTLSConfig(endpoint string) (*tls.Config, error)
 	return config, nil
 }
 
-func (s *TBankService) endpointByEnvironment(environment string) (string, error) {
+func (s *Service) endpointByEnvironment(environment string) (string, error) {
 	switch normalizeTBankEnvironment(environment) {
 	case models.TBankEnvironmentSandbox:
 		return s.cfg.TBankInvestSandboxGrpcEndpoint, nil

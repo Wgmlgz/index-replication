@@ -6,17 +6,17 @@ import (
 	"strings"
 
 	"server/internal/models"
-	"server/internal/services"
+	"server/internal/tbank"
 	"server/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 type TBankHandler struct {
-	tbankService *services.TBankService
+	tbankService *tbank.Service
 }
 
-func NewTBankHandler(tbankService *services.TBankService) *TBankHandler {
+func NewTBankHandler(tbankService *tbank.Service) *TBankHandler {
 	return &TBankHandler{tbankService: tbankService}
 }
 
@@ -64,7 +64,7 @@ func (h *TBankHandler) Connect(c *gin.Context) {
 	resp, err := h.tbankService.Connect(c.Request.Context(), userID, &req)
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrTBankInvalidEnv), errors.Is(err, services.ErrTBankAuthFailed):
+		case errors.Is(err, tbank.ErrTBankInvalidEnv), errors.Is(err, tbank.ErrTBankAuthFailed):
 			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		default:
 			c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
@@ -117,10 +117,10 @@ func (h *TBankHandler) CreateTestBuyOrder(c *gin.Context) {
 	resp, err := h.tbankService.CreateTestBuyOrder(c.Request.Context(), userID, &req)
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrTBankNotConnected),
-			errors.Is(err, services.ErrTBankNoAccountFound),
-			errors.Is(err, services.ErrTBankAuthFailed),
-			errors.Is(err, services.ErrTBankInvalidEnv):
+		case errors.Is(err, tbank.ErrTBankNotConnected),
+			errors.Is(err, tbank.ErrTBankNoAccountFound),
+			errors.Is(err, tbank.ErrTBankAuthFailed),
+			errors.Is(err, tbank.ErrTBankInvalidEnv):
 			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		default:
 			c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
@@ -239,11 +239,11 @@ func (h *TBankHandler) FindInstrumentByTicker(c *gin.Context) {
 
 func writeTBankServiceError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, services.ErrTBankNotConnected),
-		errors.Is(err, services.ErrTBankNoAccountFound),
-		errors.Is(err, services.ErrTBankAuthFailed),
-		errors.Is(err, services.ErrTBankInvalidEnv),
-		errors.Is(err, services.ErrTBankSandboxOnly):
+	case errors.Is(err, tbank.ErrTBankNotConnected),
+		errors.Is(err, tbank.ErrTBankNoAccountFound),
+		errors.Is(err, tbank.ErrTBankAuthFailed),
+		errors.Is(err, tbank.ErrTBankInvalidEnv),
+		errors.Is(err, tbank.ErrTBankSandboxOnly):
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 	default:
 		c.JSON(http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})

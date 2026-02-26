@@ -1,13 +1,11 @@
-package services
+package tbank
 
 import (
 	"context"
 	"errors"
 	"strings"
 
-	"server/internal/config"
 	"server/internal/models"
-	"server/internal/repository"
 
 	"github.com/google/uuid"
 	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
@@ -31,26 +29,41 @@ var (
 	ErrTBankAuthFailed     = errors.New("tbank authentication failed")
 )
 
-type TBankService struct {
-	cfg              *config.Config
-	userSettingsRepo *repository.UserSettingsRepository
-	auditService     *AuditService
+type Config struct {
+	TBankInvestGrpcEndpoint        string
+	TBankInvestSandboxGrpcEndpoint string
+	TBankCACertFile                string
 }
 
-func NewTBankService(
-	cfg *config.Config,
-	userSettingsRepo *repository.UserSettingsRepository,
-	auditService *AuditService,
-) *TBankService {
-	return &TBankService{
-		cfg:              cfg,
-		userSettingsRepo: userSettingsRepo,
-		auditService:     auditService,
+type SettingsStore interface {
+	GetSettings(userID int) (map[string]string, error)
+	UpsertSettings(userID int, values map[string]string) error
+}
+
+type AuditLogger interface {
+	LogUserAction(performedBy int, action string, userID int, details interface{}) error
+}
+
+type Service struct {
+	cfg           Config
+	settingsStore SettingsStore
+	auditLogger   AuditLogger
+}
+
+func NewService(
+	cfg Config,
+	settingsStore SettingsStore,
+	auditLogger AuditLogger,
+) *Service {
+	return &Service{
+		cfg:           cfg,
+		settingsStore: settingsStore,
+		auditLogger:   auditLogger,
 	}
 }
 
-func (s *TBankService) GetStatus(ctx context.Context, userID int) (*models.TBankConnectionStatusResponse, error) {
-	settings, err := s.userSettingsRepo.GetSettings(userID)
+func (s *Service) GetStatus(ctx context.Context, userID int) (*models.TBankConnectionStatusResponse, error) {
+	settings, err := s.settingsStore.GetSettings(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +98,7 @@ func (s *TBankService) GetStatus(ctx context.Context, userID int) (*models.TBank
 	return resp, nil
 }
 
-func (s *TBankService) Connect(
+func (s *Service) Connect(
 	ctx context.Context,
 	userID int,
 	req *models.TBankConnectRequest,
@@ -135,7 +148,7 @@ func (s *TBankService) Connect(
 		return nil, errors.New("default account is not available for this token")
 	}
 
-	if err := s.userSettingsRepo.UpsertSettings(userID, map[string]string{
+	if err := s.settingsStore.UpsertSettings(userID, map[string]string{
 		tbankSettingToken:            token,
 		tbankSettingEnvironment:      environment,
 		tbankSettingDefaultAccountID: defaultAccountID,
@@ -143,7 +156,7 @@ func (s *TBankService) Connect(
 		return nil, err
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTBankConnected,
 		userID,
@@ -163,8 +176,8 @@ func (s *TBankService) Connect(
 	}, nil
 }
 
-func (s *TBankService) Disconnect(userID int) error {
-	if err := s.userSettingsRepo.UpsertSettings(userID, map[string]string{
+func (s *Service) Disconnect(userID int) error {
+	if err := s.settingsStore.UpsertSettings(userID, map[string]string{
 		tbankSettingToken:            "",
 		tbankSettingEnvironment:      "",
 		tbankSettingDefaultAccountID: "",
@@ -172,7 +185,7 @@ func (s *TBankService) Disconnect(userID int) error {
 		return err
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTBankDisconnected,
 		userID,
@@ -181,7 +194,7 @@ func (s *TBankService) Disconnect(userID int) error {
 	return nil
 }
 
-func (s *TBankService) CreateTestBuyOrder(
+func (s *Service) CreateTestBuyOrder(
 	ctx context.Context,
 	userID int,
 	req *models.TBankTestBuyRequest,
@@ -195,7 +208,7 @@ func (s *TBankService) CreateTestBuyOrder(
 		return nil, errors.New("instrument_id is required")
 	}
 
-	settings, err := s.userSettingsRepo.GetSettings(userID)
+	settings, err := s.settingsStore.GetSettings(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +240,7 @@ func (s *TBankService) CreateTestBuyOrder(
 			}
 		}
 		if accountID != "" {
-			_ = s.userSettingsRepo.UpsertSettings(userID, map[string]string{
+			_ = s.settingsStore.UpsertSettings(userID, map[string]string{
 				tbankSettingDefaultAccountID: accountID,
 			})
 		}
@@ -266,7 +279,7 @@ func (s *TBankService) CreateTestBuyOrder(
 		Response:              protoToMap(orderResp),
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTBankTestBuyCreated,
 		userID,
@@ -282,7 +295,7 @@ func (s *TBankService) CreateTestBuyOrder(
 	return resp, nil
 }
 
-func (s *TBankService) GetAccounts(
+func (s *Service) GetAccounts(
 	ctx context.Context,
 	environment string,
 	token string,
@@ -314,7 +327,7 @@ func (s *TBankService) GetAccounts(
 	return accounts, nil
 }
 
-func (s *TBankService) openSandboxAccount(
+func (s *Service) openSandboxAccount(
 	ctx context.Context,
 	token string,
 ) (string, error) {
@@ -334,7 +347,7 @@ func (s *TBankService) openSandboxAccount(
 	return accountID, nil
 }
 
-func (s *TBankService) sandboxPayIn(
+func (s *Service) sandboxPayIn(
 	ctx context.Context,
 	token string,
 	accountID string,
@@ -355,7 +368,7 @@ func (s *TBankService) sandboxPayIn(
 	})
 }
 
-func (s *TBankService) postMarketBuyOrder(
+func (s *Service) postMarketBuyOrder(
 	ctx context.Context,
 	environment string,
 	token string,

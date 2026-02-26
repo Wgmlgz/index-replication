@@ -37,7 +37,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 ## Architecture & Principles
 
 - HTTP layer stays in `internal/handlers/` (request/response parsing, status codes).
-- Business logic lives in `internal/services/`.
+- Business logic lives in feature/service packages (mostly `internal/services/`, with T-Bank isolated in `internal/tbank/`).
 - Data access is isolated in `internal/repository/` using GORM.
 - Auth is session-based (cookie) and enforced by middleware.
 - Authorization uses Casbin policies and permission constants.
@@ -48,7 +48,8 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `main.go` boots the server and wires config, routes, and middleware.
 - `internal/routes/` defines the HTTP routes.
 - `internal/handlers/` contains request handlers (HTTP layer).
-- `internal/services/` contains business logic.
+- `internal/services/` contains most business logic.
+- `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
 - `internal/repository/` contains data access (DB queries).
 - `internal/models/` defines domain models.
 
@@ -57,13 +58,13 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 Use this mapping to locate the right layer quickly:
 
 - Add or change endpoints: `internal/routes/`, `internal/handlers/`
-- Change business rules or workflows: `internal/services/`
+- Change business rules or workflows: `internal/services/` (or `internal/tbank/` for T-Bank)
 - Change DB queries or persistence: `internal/repository/`
 - Update data structures: `internal/models/`
 - Add middleware or request/response behavior: `internal/middleware/`
 - Auth and session flow: `internal/handlers/auth.go`, `internal/middleware/session.go`
 - User management endpoints: `internal/handlers/users.go`, `internal/repository/users.go`
-- T-Bank integration/test trading: `internal/handlers/tbank.go`, `internal/services/tbank_service.go`
+- T-Bank integration/test trading: `internal/handlers/tbank.go`, `internal/tbank/`
 - Audit log endpoints and behavior: `internal/handlers/audit_log.go`, `internal/services/audit_service.go`
 - Bot/token auth: `internal/middleware/token.go`
 - Add or change permissions: `internal/config/permission.go`, `internal/config/model.conf`

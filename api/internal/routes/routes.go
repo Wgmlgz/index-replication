@@ -9,6 +9,7 @@ import (
 	m "server/internal/middleware"
 	"server/internal/repository"
 	"server/internal/services"
+	"server/internal/tbank"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -78,7 +79,15 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	moexReadService := services.NewMoexReadService(repoRegistry.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
 	moexHandler := h.NewMoexHandler(moexReadService)
 	moexSyncAdminHandler := h.NewMoexSyncAdminHandler(repoRegistry.MoexDataRepo)
-	tbankService := services.NewTBankService(cfg, repoRegistry.UserSettingsRepo, auditService)
+	tbankService := tbank.NewService(
+		tbank.Config{
+			TBankInvestGrpcEndpoint:        cfg.TBankInvestGrpcEndpoint,
+			TBankInvestSandboxGrpcEndpoint: cfg.TBankInvestSandboxGrpcEndpoint,
+			TBankCACertFile:                cfg.TBankCACertFile,
+		},
+		repoRegistry.UserSettingsRepo,
+		auditService,
+	)
 	tbankHandler := h.NewTBankHandler(tbankService)
 
 	// Protected user routes
