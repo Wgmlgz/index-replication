@@ -9,16 +9,16 @@ import {
   OTHER_SERIES_COLOR,
   resolveCompositionSeriesColor,
 } from '@/components/charts/composition-series-chart';
+import { CompositionControls } from '@/components/charts/composition-controls';
 import { CompositionSnapshotChart } from '@/components/charts/composition-snapshot-chart';
+import { CompositionTabPanels } from '@/components/charts/composition-tab-panels';
+import { CompositionTabsList } from '@/components/charts/composition-tabs-list';
 import { TimeSeriesChartState } from '@/components/charts/time-series-chart-state';
 import { TimeSeriesControls } from '@/components/charts/time-series-controls';
 import { TimeSeriesValueSummary } from '@/components/charts/time-series-value-summary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs } from '@/components/ui/tabs';
 import {
   applyChartControlsUrlState,
   parseChartControlsUrlState,
@@ -373,154 +373,57 @@ export function PortfolioAnalyticsSection() {
             onValueChange={next => setCompositionTab(next as PortfolioCompositionTab)}
             className='space-y-4'
           >
-            <TabsList className='w-full justify-start'>
-              <TabsTrigger value='snapshot'>{t('portfolio.composition.tabs.snapshot')}</TabsTrigger>
-              <TabsTrigger value='trend'>{t('portfolio.composition.tabs.trend')}</TabsTrigger>
-              <TabsTrigger value='stacked'>{t('portfolio.composition.tabs.stacked')}</TabsTrigger>
-            </TabsList>
+            <CompositionTabsList translationKeyPrefix='portfolio.composition' />
 
-            <div className='flex flex-wrap items-center gap-4 text-xs text-muted-foreground'>
-              <div className='flex items-center gap-2'>
-                <span>{t('portfolio.composition.topLabel')}</span>
-                <Select
-                  value={compositionTopCount === null ? 'all' : String(compositionTopCount)}
-                  onValueChange={value => {
-                    if (value === 'all') {
-                      setCompositionTopCount(null);
-                      return;
-                    }
-                    const parsed = Number.parseInt(value, 10);
-                    if (Number.isFinite(parsed)) setCompositionTopCount(parsed);
-                  }}
-                >
-                  <SelectTrigger size='sm' className='h-7 text-xs w-[84px]'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TOP_COUNT_OPTIONS.map(value => (
-                      <SelectItem key={value} value={String(value)}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value='all'>{t('portfolio.composition.all')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CompositionControls
+              translationKeyPrefix='portfolio.composition'
+              topCount={compositionTopCount}
+              setTopCount={setCompositionTopCount}
+              topCountOptions={TOP_COUNT_OPTIONS}
+              selectionMode={compositionSelectionMode}
+              setSelectionMode={setCompositionSelectionMode}
+              selectionDate={compositionSelectionDate}
+              setSelectionDate={setCompositionSelectionDate}
+              idPrefix='portfolio'
+            />
 
-              <div className='flex items-center gap-2'>
-                <span>{t('portfolio.composition.selectionMode.label')}</span>
-                <Select
-                  value={compositionSelectionMode}
-                  onValueChange={value =>
-                    setCompositionSelectionMode(value as PortfolioCompositionSelectionMode)
-                  }
-                >
-                  <SelectTrigger size='sm' className='h-7 text-xs w-[120px]'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='fixed'>
-                      {t('portfolio.composition.selectionMode.fixed')}
-                    </SelectItem>
-                    <SelectItem value='rolling'>
-                      {t('portfolio.composition.selectionMode.rolling')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {compositionSelectionMode === 'fixed' && (
-                <div className='flex items-center gap-2'>
-                  <Label htmlFor='portfolio-composition-date' className='text-xs text-muted-foreground'>
-                    {t('portfolio.composition.selectionDate')}
-                  </Label>
-                  <Input
-                    id='portfolio-composition-date'
-                    type='date'
-                    className='h-7 text-xs w-[140px]'
-                    value={compositionSelectionDate}
-                    onChange={event => setCompositionSelectionDate(event.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-
-            <TabsContent value='snapshot' className='min-h-[240px]'>
-              {snapshotLoading && <Skeleton className='h-[240px] w-full' />}
-              {!snapshotLoading && snapshotError && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('portfolio.composition.error')}
-                </div>
-              )}
-              {!snapshotLoading && !snapshotError && snapshotTop.length === 0 && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('portfolio.composition.noData')}
-                </div>
-              )}
-              {!snapshotLoading && !snapshotError && snapshotTop.length > 0 && (
+            <CompositionTabPanels
+              translationKeyPrefix='portfolio.composition'
+              snapshotLoading={snapshotLoading}
+              snapshotError={snapshotError}
+              snapshotEmpty={snapshotTop.length === 0}
+              showSnapshotSkeleton={snapshotLoading && snapshotTop.length === 0}
+              snapshotChart={
                 <div className='h-[240px]'>
                   <CompositionSnapshotChart items={snapshotChartItems} />
                 </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value='trend' className='min-h-[240px]'>
-              {(snapshotLoading || seriesLoading) && <Skeleton className='h-[240px] w-full' />}
-              {!snapshotLoading && !seriesLoading && (snapshotError || seriesError) && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('portfolio.composition.error')}
+              }
+              trendLoading={snapshotLoading || seriesLoading}
+              trendError={snapshotError || seriesError}
+              trendEmpty={series.length === 0}
+              showTrendSkeleton={
+                (snapshotLoading || seriesLoading) && series.length === 0
+              }
+              trendChart={
+                <div className='h-[240px]'>
+                  <CompositionSeriesChart series={series} variant='line' />
                 </div>
-              )}
-              {!snapshotLoading &&
-                !seriesLoading &&
-                !snapshotError &&
-                !seriesError &&
-                series.length === 0 && (
-                  <div className='text-sm text-muted-foreground'>
-                    {t('portfolio.composition.noSeries')}
-                  </div>
-                )}
-              {!snapshotLoading &&
-                !seriesLoading &&
-                !snapshotError &&
-                !seriesError &&
-                series.length > 0 && (
-                  <div className='h-[240px]'>
-                    <CompositionSeriesChart series={series} variant='line' />
-                  </div>
-                )}
-            </TabsContent>
-
-            <TabsContent value='stacked' className='min-h-[240px]'>
-              {(snapshotLoading || seriesLoading) && <Skeleton className='h-[240px] w-full' />}
-              {!snapshotLoading && !seriesLoading && (snapshotError || seriesError) && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('portfolio.composition.error')}
+              }
+              stackedChart={
+                <div className='h-[240px]'>
+                  <CompositionSeriesChart
+                    series={series}
+                    variant='stacked'
+                    includeOther
+                  />
                 </div>
-              )}
-              {!snapshotLoading &&
-                !seriesLoading &&
-                !snapshotError &&
-                !seriesError &&
-                series.length === 0 && (
-                  <div className='text-sm text-muted-foreground'>
-                    {t('portfolio.composition.noSeries')}
-                  </div>
-                )}
-              {!snapshotLoading &&
-                !seriesLoading &&
-                !snapshotError &&
-                !seriesError &&
-                series.length > 0 && (
-                  <div className='h-[240px]'>
-                    <CompositionSeriesChart
-                      series={series}
-                      variant='stacked'
-                      includeOther
-                    />
-                  </div>
-                )}
-            </TabsContent>
+              }
+              snapshotClassName='min-h-[240px]'
+              trendClassName='min-h-[240px]'
+              stackedClassName='min-h-[240px]'
+              snapshotSkeletonClassName='h-[240px] min-h-0'
+              trendSkeletonClassName='h-[240px] min-h-0'
+            />
           </Tabs>
 
           {series.length > 0 && (

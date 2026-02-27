@@ -4,9 +4,6 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -14,14 +11,7 @@ import {
 } from '@/components/ui/tooltip';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs } from '@/components/ui/tabs';
 import type { ChartData } from '@/components/charts/index-chart';
 import {
   IndexCompositionChart,
@@ -29,10 +19,12 @@ import {
   resolveCompositionSeriesColor,
 } from '@/components/charts/composition-series-chart';
 import { IndexCompositionSnapshotChart } from '@/components/charts/composition-snapshot-chart';
+import { CompositionControls } from '@/components/charts/composition-controls';
+import { CompositionTabPanels } from '@/components/charts/composition-tab-panels';
+import { CompositionTabsList } from '@/components/charts/composition-tabs-list';
 import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
 import type {
-  CompositionSelectionMode,
   CompositionTab,
 } from '../detail/moex-indexes-detail.types';
 
@@ -219,91 +211,19 @@ export function IndexCompositionCard({
                 className='shrink-0'
               />
             </div>
-            <TabsList className='w-full justify-start'>
-              <TabsTrigger value='snapshot'>
-                {t('moex.composition.tabs.snapshot')}
-              </TabsTrigger>
-              <TabsTrigger value='trend'>
-                {t('moex.composition.tabs.trend')}
-              </TabsTrigger>
-              <TabsTrigger value='stacked'>
-                {t('moex.composition.tabs.stacked')}
-              </TabsTrigger>
-            </TabsList>
-            <div className='flex gap-4 items-center'>
-              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-                <span>{t('moex.composition.topLabel')}</span>
-                <Select
-                  value={topCount === null ? 'all' : String(topCount)}
-                  onValueChange={value => {
-                    if (value === 'all') {
-                      setCompositionTopCount(null);
-                      return;
-                    }
-                    const parsed = Number.parseInt(value, 10);
-                    if (Number.isFinite(parsed)) setCompositionTopCount(parsed);
-                  }}
-                >
-                  <SelectTrigger size='sm' className='h-7 text-xs'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {topCountOptions.map(value => (
-                      <SelectItem key={value} value={String(value)}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value='all'>
-                      {t('moex.composition.all')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-                <span>{t('moex.composition.selectionMode.label')}</span>
-                <Select
-                  value={compositionSelectionMode}
-                  onValueChange={value =>
-                    setCompositionSelectionMode(
-                      value as CompositionSelectionMode,
-                    )
-                  }
-                >
-                  <SelectTrigger size='sm' className='h-7 text-xs'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='fixed'>
-                      {t('moex.composition.selectionMode.fixed')}
-                    </SelectItem>
-                    <SelectItem value='rolling'>
-                      {t('moex.composition.selectionMode.rolling')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {compositionSelectionMode === 'fixed' && (
-              <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-                <Label
-                  htmlFor='moex-composition-selection-date'
-                  className='text-xs text-muted-foreground'
-                >
-                  {t('moex.composition.selectionDate')}
-                </Label>
-                <Input
-                  id='moex-composition-selection-date'
-                  type='date'
-                  className='w-32'
-                  value={compositionSelectionDate}
-                  max={latestTradeDate ?? undefined}
-                  onChange={event =>
-                    setCompositionSelectionDate(event.target.value)
-                  }
-                />
-              </div>
-            )}
+            <CompositionTabsList translationKeyPrefix='moex.composition' />
+            <CompositionControls
+              translationKeyPrefix='moex.composition'
+              topCount={topCount}
+              setTopCount={setCompositionTopCount}
+              topCountOptions={topCountOptions}
+              selectionMode={compositionSelectionMode}
+              setSelectionMode={setCompositionSelectionMode}
+              selectionDate={compositionSelectionDate}
+              setSelectionDate={setCompositionSelectionDate}
+              selectionDateMax={latestTradeDate ?? undefined}
+              idPrefix='moex'
+            />
             <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
               {selectedIndex && (
                 <Badge variant='outline'>{selectedIndex.secid}</Badge>
@@ -412,61 +332,25 @@ export function IndexCompositionCard({
             )}
           </div>
           <div className='col-span-3 flex min-h-[200px] flex-1 flex-col'>
-            <TabsContent value='snapshot' className='flex-1'>
-              {showSnapshotSkeleton && (
-                <Skeleton className='h-full min-h-[240px] w-full' />
-              )}
-              {!snapshotLoading && snapshotError && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.error')}
-                </div>
-              )}
-              {!snapshotLoading &&
-                !snapshotError &&
-                snapshotTop.length === 0 && (
-                  <div className='text-sm text-muted-foreground'>
-                    {t('moex.composition.noData')}
-                  </div>
-                )}
-              {!snapshotLoading && !snapshotError && snapshotTop.length > 0 && (
+            <CompositionTabPanels
+              translationKeyPrefix='moex.composition'
+              snapshotLoading={snapshotLoading}
+              snapshotError={snapshotError}
+              snapshotEmpty={snapshotTop.length === 0}
+              showSnapshotSkeleton={showSnapshotSkeleton}
+              snapshotChart={
                 <IndexCompositionSnapshotChart items={snapshotChartItems} />
-              )}
-            </TabsContent>
-            <TabsContent value='trend' className='flex h-full flex-col'>
-              {showTrendSkeleton && (
-                <Skeleton className='h-full min-h-[200px] w-full' />
-              )}
-              {!trendLoading && trendError && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.error')}
-                </div>
-              )}
-              {!trendLoading && !trendError && series.length === 0 && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.noSeries')}
-                </div>
-              )}
-              {!trendLoading && !trendError && series.length > 0 && (
+              }
+              trendLoading={trendLoading}
+              trendError={trendError}
+              trendEmpty={series.length === 0}
+              showTrendSkeleton={showTrendSkeleton}
+              trendChart={
                 <div className='min-h-[200px] flex-1'>
                   <IndexCompositionChart series={series} variant='line' />
                 </div>
-              )}
-            </TabsContent>
-            <TabsContent value='stacked' className='flex h-full flex-col'>
-              {showTrendSkeleton && (
-                <Skeleton className='h-full min-h-[200px] w-full' />
-              )}
-              {!trendLoading && trendError && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.error')}
-                </div>
-              )}
-              {!trendLoading && !trendError && series.length === 0 && (
-                <div className='text-sm text-muted-foreground'>
-                  {t('moex.composition.noSeries')}
-                </div>
-              )}
-              {!trendLoading && !trendError && series.length > 0 && (
+              }
+              stackedChart={
                 <div className='min-h-[200px] flex-1'>
                   <IndexCompositionChart
                     series={series}
@@ -474,8 +358,11 @@ export function IndexCompositionCard({
                     includeOther
                   />
                 </div>
-              )}
-            </TabsContent>
+              }
+              snapshotClassName='flex-1'
+              trendClassName='flex h-full flex-col'
+              stackedClassName='flex h-full flex-col'
+            />
           </div>
         </div>
       </Tabs>
