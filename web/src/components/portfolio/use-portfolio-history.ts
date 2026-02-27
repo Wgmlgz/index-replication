@@ -4,6 +4,10 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { TBankPortfolioHistoryPoint } from '@/api-client';
 import type { ChartData } from '@/components/charts/index-chart';
+import {
+  buildLineChartData,
+  calculateChangeStats,
+} from '@/components/charts/time-series-analytics';
 import { tbankApi } from '@/lib/api';
 import {
   resolveDateRange,
@@ -80,28 +84,22 @@ export function usePortfolioHistory(options: {
       }));
   }, [history]);
 
-  const latestValueRaw = normalizedHistory[normalizedHistory.length - 1]?.value ?? null;
-  const previousValueRaw = normalizedHistory[normalizedHistory.length - 2]?.value ?? null;
-  const change =
-    latestValueRaw !== null && previousValueRaw !== null
-      ? latestValueRaw - previousValueRaw
-      : null;
-  const changePercent =
-    change !== null && previousValueRaw
-      ? (change / previousValueRaw) * 100
-      : null;
+  const valuePoints = useMemo(
+    () =>
+      normalizedHistory.map(point => ({
+        time: point.tradeDate,
+        value: point.value,
+      })),
+    [normalizedHistory]
+  );
+  const { latestValue, change, changePercent } = useMemo(
+    () => calculateChangeStats(valuePoints.map(point => point.value)),
+    [valuePoints]
+  );
 
   const chartData = useMemo<ChartData>(() => {
-    const baseValue = normalizedHistory[0]?.value ?? null;
-    const usePercent = options.viewMode === 'percent' && baseValue !== null && baseValue !== 0;
-
-    return normalizedHistory.map(point => ({
-      time: point.tradeDate,
-      value: usePercent
-        ? ((point.value - baseValue) / baseValue) * 100
-        : point.value,
-    }));
-  }, [normalizedHistory, options.viewMode]);
+    return buildLineChartData(valuePoints, options.viewMode);
+  }, [options.viewMode, valuePoints]);
 
   const currency =
     normalizedHistory[normalizedHistory.length - 1]?.currency ?? '';
@@ -117,7 +115,7 @@ export function usePortfolioHistory(options: {
     loading: historyQuery.isLoading,
     error: Boolean(historyQuery.error),
     chartData,
-    latestValue: latestValueRaw,
+    latestValue,
     change,
     changePercent,
     currency,

@@ -16,6 +16,8 @@ import { CompositionTabsList } from '@/components/charts/composition-tabs-list';
 import { TimeSeriesChartState } from '@/components/charts/time-series-chart-state';
 import { TimeSeriesControls } from '@/components/charts/time-series-controls';
 import { TimeSeriesValueSummary } from '@/components/charts/time-series-value-summary';
+import { buildSnapshotChartItems } from '@/components/charts/composition-analytics';
+import { useChartControlsState } from '@/components/charts/use-chart-controls-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs } from '@/components/ui/tabs';
@@ -24,15 +26,9 @@ import {
   parseChartControlsUrlState,
   type ChartControlsUrlCodecConfig,
 } from '@/lib/charting/chart-controls-url-state';
-import {
-  type ChartViewMode,
-  type IntervalKey,
-  type RangeKey,
-} from '@/lib/charting/time-series-controls';
 import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
 import { usePortfolioHistory } from './use-portfolio-history';
 import {
-  type PortfolioCompositionSelectionMode,
   type PortfolioCompositionTab,
   usePortfolioComposition,
 } from './use-portfolio-composition';
@@ -100,64 +96,25 @@ export function PortfolioAnalyticsSection() {
   );
 
   const [accountID, setAccountID] = useState(() => parsedUrl.accountID ?? '');
-  const [rangeKey, setRangeKey] = useState<RangeKey>(
-    () => parsedUrl.chartControls.rangeKey ?? '1y'
-  );
-  const [intervalKey, setIntervalKey] = useState<IntervalKey>(
-    () => parsedUrl.chartControls.intervalKey ?? 'auto'
-  );
-  const [customFrom, setCustomFrom] = useState(
-    () => parsedUrl.chartControls.customFrom ?? ''
-  );
-  const [customTill, setCustomTill] = useState(
-    () => parsedUrl.chartControls.customTill ?? ''
-  );
-  const [viewMode, setViewMode] = useState<ChartViewMode>(
-    () => parsedUrl.chartControls.viewMode ?? 'price'
-  );
-  const [compositionTab, setCompositionTab] = useState<PortfolioCompositionTab>(
-    () => parsedUrl.chartControls.compositionTab ?? 'snapshot'
-  );
-  const [compositionSelectionMode, setCompositionSelectionMode] =
-    useState<PortfolioCompositionSelectionMode>(
-      () => parsedUrl.chartControls.compositionSelectionMode ?? 'fixed'
-    );
-  const [compositionSelectionDate, setCompositionSelectionDate] = useState(
-    () => parsedUrl.chartControls.compositionSelectionDate ?? ''
-  );
-  const [compositionTopCount, setCompositionTopCount] = useState<number | null>(
-    () =>
-      parsedUrl.chartControls.compositionTopCount === undefined
-        ? 10
-        : parsedUrl.chartControls.compositionTopCount
-  );
+  const chartControls = useChartControlsState({
+    initial: parsedUrl.chartControls,
+    defaults: {
+      rangeKey: '1y',
+      intervalKey: 'auto',
+      viewMode: 'price',
+      compositionTab: 'snapshot',
+      compositionSelectionMode: 'fixed',
+      compositionTopCount: 10,
+    },
+  });
 
   const portfolioUrlStateKey = useMemo(
     () =>
       JSON.stringify({
         accountID,
-        rangeKey,
-        intervalKey,
-        customFrom,
-        customTill,
-        viewMode,
-        compositionTab,
-        compositionSelectionMode,
-        compositionSelectionDate,
-        compositionTopCount,
+        chartControls: chartControls.controlsStateKey,
       }),
-    [
-      accountID,
-      rangeKey,
-      intervalKey,
-      customFrom,
-      customTill,
-      viewMode,
-      compositionTab,
-      compositionSelectionMode,
-      compositionSelectionDate,
-      compositionTopCount,
-    ]
+    [accountID, chartControls.controlsStateKey]
   );
 
   useUrlStateSync({
@@ -167,21 +124,7 @@ export function PortfolioAnalyticsSection() {
     parse: parsePortfolioUrlState,
     applyParsedState: next => {
       setAccountID(next.accountID ?? '');
-      setRangeKey(next.chartControls.rangeKey ?? '1y');
-      setIntervalKey(next.chartControls.intervalKey ?? 'auto');
-      setCustomFrom(next.chartControls.customFrom ?? '');
-      setCustomTill(next.chartControls.customTill ?? '');
-      setViewMode(next.chartControls.viewMode ?? 'price');
-      setCompositionTab(next.chartControls.compositionTab ?? 'snapshot');
-      setCompositionSelectionMode(
-        next.chartControls.compositionSelectionMode ?? 'fixed'
-      );
-      setCompositionSelectionDate(next.chartControls.compositionSelectionDate ?? '');
-      setCompositionTopCount(
-        next.chartControls.compositionTopCount === undefined
-          ? 10
-          : next.chartControls.compositionTopCount
-      );
+      chartControls.applyParsedControls(next.chartControls);
     },
     buildSearchParams: () => {
       const next = new URLSearchParams(window.location.search);
@@ -195,15 +138,15 @@ export function PortfolioAnalyticsSection() {
       applyChartControlsUrlState(
         next,
         {
-          rangeKey,
-          intervalKey,
-          customFrom,
-          customTill,
-          viewMode,
-          compositionTab,
-          compositionSelectionMode,
-          compositionSelectionDate,
-          compositionTopCount,
+          rangeKey: chartControls.rangeKey,
+          intervalKey: chartControls.intervalKey,
+          customFrom: chartControls.customFrom,
+          customTill: chartControls.customTill,
+          viewMode: chartControls.viewMode,
+          compositionTab: chartControls.compositionTab,
+          compositionSelectionMode: chartControls.compositionSelectionMode,
+          compositionSelectionDate: chartControls.compositionSelectionDate,
+          compositionTopCount: chartControls.compositionTopCount,
         },
         PORTFOLIO_CHART_URL_CODEC
       );
@@ -214,7 +157,7 @@ export function PortfolioAnalyticsSection() {
 
   const resolvedAccountID = accountID || status?.default_account_id || '';
   const topCountForHook =
-    compositionTopCount === null ? 0 : compositionTopCount;
+    chartControls.compositionTopCount === null ? 0 : chartControls.compositionTopCount;
 
   const {
     loading: historyLoading,
@@ -227,11 +170,11 @@ export function PortfolioAnalyticsSection() {
     numberFormatter,
   } = usePortfolioHistory({
     accountID: resolvedAccountID,
-    rangeKey,
-    intervalKey,
-    customFrom,
-    customTill,
-    viewMode,
+    rangeKey: chartControls.rangeKey,
+    intervalKey: chartControls.intervalKey,
+    customFrom: chartControls.customFrom,
+    customTill: chartControls.customTill,
+    viewMode: chartControls.viewMode,
   });
 
   const {
@@ -244,38 +187,30 @@ export function PortfolioAnalyticsSection() {
     series,
   } = usePortfolioComposition({
     accountID: resolvedAccountID,
-    rangeKey,
-    intervalKey,
-    customFrom,
-    customTill,
-    compositionSelectionMode,
-    compositionSelectionDate,
+    rangeKey: chartControls.rangeKey,
+    intervalKey: chartControls.intervalKey,
+    customFrom: chartControls.customFrom,
+    customTill: chartControls.customTill,
+    compositionSelectionMode: chartControls.compositionSelectionMode,
+    compositionSelectionDate: chartControls.compositionSelectionDate,
     topCount: topCountForHook,
-    compositionTab,
+    compositionTab: chartControls.compositionTab,
   });
 
   const snapshotTop = snapshotItems.slice(
     0,
-    compositionTopCount === null ? snapshotItems.length : compositionTopCount
+    chartControls.compositionTopCount === null
+      ? snapshotItems.length
+      : chartControls.compositionTopCount
   );
-  const snapshotOtherWeight = useMemo(() => {
-    if (snapshotTop.length === 0) return 0;
-    const total = snapshotTop.reduce((sum, item) => sum + item.weight, 0);
-    return Math.max(0, 100 - total);
-  }, [snapshotTop]);
-  const snapshotChartItems = useMemo(() => {
-    if (snapshotOtherWeight <= 0.01) return snapshotTop;
-    return [
-      ...snapshotTop,
-      {
-        ticker: t('portfolio.composition.other'),
-        secId: '',
-        name: t('portfolio.composition.other'),
-        weight: snapshotOtherWeight,
-        tradeDate: snapshotDate ?? '',
-      },
-    ];
-  }, [snapshotDate, snapshotOtherWeight, snapshotTop, t]);
+  const { snapshotChartItems, snapshotOtherWeight } = useMemo(
+    () =>
+      buildSnapshotChartItems(snapshotTop, {
+        otherLabel: t('portfolio.composition.other'),
+        snapshotDate,
+      }),
+    [snapshotDate, snapshotTop, t]
+  );
 
   if (!connected) {
     return (
@@ -326,21 +261,21 @@ export function PortfolioAnalyticsSection() {
             className='text-sm'
           />
 
-          <TimeSeriesControls
-            translationKeyPrefix='portfolio.chart'
-            rangeKey={rangeKey}
-            setRangeKey={setRangeKey}
-            intervalKey={intervalKey}
-            setIntervalKey={setIntervalKey}
-            customFrom={customFrom}
-            setCustomFrom={setCustomFrom}
-            customTill={customTill}
-            setCustomTill={setCustomTill}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            chartType='line'
-            disableCandlestick
-            candlestickLabelKey='portfolio.chart.type.candlestickDisabled'
+            <TimeSeriesControls
+              translationKeyPrefix='portfolio.chart'
+              rangeKey={chartControls.rangeKey}
+              setRangeKey={chartControls.setRangeKey}
+              intervalKey={chartControls.intervalKey}
+              setIntervalKey={chartControls.setIntervalKey}
+              customFrom={chartControls.customFrom}
+              setCustomFrom={chartControls.setCustomFrom}
+              customTill={chartControls.customTill}
+              setCustomTill={chartControls.setCustomTill}
+              viewMode={chartControls.viewMode}
+              setViewMode={chartControls.setViewMode}
+              chartType='line'
+              disableCandlestick
+              candlestickLabelKey='portfolio.chart.type.candlestickDisabled'
             idPrefix='portfolio'
           />
 
@@ -369,21 +304,23 @@ export function PortfolioAnalyticsSection() {
         </CardHeader>
         <CardContent>
           <Tabs
-            value={compositionTab}
-            onValueChange={next => setCompositionTab(next as PortfolioCompositionTab)}
+            value={chartControls.compositionTab}
+            onValueChange={next =>
+              chartControls.setCompositionTab(next as PortfolioCompositionTab)
+            }
             className='space-y-4'
           >
             <CompositionTabsList translationKeyPrefix='portfolio.composition' />
 
             <CompositionControls
               translationKeyPrefix='portfolio.composition'
-              topCount={compositionTopCount}
-              setTopCount={setCompositionTopCount}
+              topCount={chartControls.compositionTopCount}
+              setTopCount={chartControls.setCompositionTopCount}
               topCountOptions={TOP_COUNT_OPTIONS}
-              selectionMode={compositionSelectionMode}
-              setSelectionMode={setCompositionSelectionMode}
-              selectionDate={compositionSelectionDate}
-              setSelectionDate={setCompositionSelectionDate}
+              selectionMode={chartControls.compositionSelectionMode}
+              setSelectionMode={chartControls.setCompositionSelectionMode}
+              selectionDate={chartControls.compositionSelectionDate}
+              setSelectionDate={chartControls.setCompositionSelectionDate}
               idPrefix='portfolio'
             />
 

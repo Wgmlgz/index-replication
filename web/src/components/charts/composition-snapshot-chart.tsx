@@ -8,14 +8,8 @@ import {
   type TooltipProps,
 } from 'recharts';
 import { resolveCompositionSeriesColor } from './composition-series-chart';
-
-export type CompositionSnapshotItem = {
-  ticker: string;
-  secId: string;
-  name: string;
-  weight: number;
-  tradeDate: string;
-};
+import type { CompositionSnapshotItem } from './types';
+export type { CompositionSnapshotItem } from './types';
 
 type CompositionSnapshotChartProps = {
   items: CompositionSnapshotItem[];

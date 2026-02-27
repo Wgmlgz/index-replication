@@ -6,8 +6,16 @@ import type {
   TBankPortfolioCompositionEntry,
   TBankPortfolioCompositionSeriesPoint,
 } from '@/api-client';
-import type { CompositionSnapshotItem } from '@/components/charts/composition-snapshot-chart';
-import type { CompositionSeries } from '@/components/charts/composition-series-chart';
+import {
+  buildCompositionSeries,
+  normalizeIsoDate,
+  resolveCompositionTopCountParam,
+  resolveFixedModeTickers,
+} from '@/components/charts/composition-analytics';
+import type {
+  CompositionSeries,
+  CompositionSnapshotItem,
+} from '@/components/charts/types';
 import type {
   CompositionSelectionMode,
   CompositionTab,
@@ -31,13 +39,6 @@ type PortfolioCompositionState = {
   seriesLoading: boolean;
   seriesError: boolean;
   series: CompositionSeries[];
-};
-
-const normalizeIsoDate = (value: string | null | undefined): string | undefined => {
-  const normalized = String(value ?? '').trim();
-  if (!normalized) return undefined;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return undefined;
-  return normalized;
 };
 
 export function usePortfolioComposition(options: {
@@ -102,17 +103,20 @@ export function usePortfolioComposition(options: {
       .sort((a, b) => b.weight - a.weight);
   }, [snapshotQuery.data]);
 
-  const topCountParam = useMemo(() => {
-    if (!Number.isFinite(options.topCount)) return 10;
-    if (options.topCount < 0) return 0;
-    return Math.floor(options.topCount);
-  }, [options.topCount]);
+  const topCountParam = useMemo(
+    () => resolveCompositionTopCountParam(options.topCount),
+    [options.topCount]
+  );
 
-  const fixedModeTickers = useMemo(() => {
-    if (options.compositionSelectionMode !== 'fixed') return [] as string[];
-    if (topCountParam === 0) return snapshotItems.map(item => item.ticker);
-    return snapshotItems.slice(0, topCountParam).map(item => item.ticker);
-  }, [options.compositionSelectionMode, snapshotItems, topCountParam]);
+  const fixedModeTickers = useMemo(
+    () =>
+      resolveFixedModeTickers(
+        options.compositionSelectionMode,
+        topCountParam,
+        snapshotItems
+      ),
+    [options.compositionSelectionMode, snapshotItems, topCountParam]
+  );
   const fixedModeTickersParam = useMemo(
     () => fixedModeTickers.join(','),
     [fixedModeTickers]
@@ -154,50 +158,22 @@ export function usePortfolioComposition(options: {
     retry: 1,
   });
 
-  const nameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    snapshotItems.forEach(item => {
-      map.set(item.ticker, item.name);
-    });
-    return map;
-  }, [snapshotItems]);
-
   const series = useMemo<CompositionSeries[]>(() => {
-    const data = seriesQuery.data ?? {};
-    const keys = new Set(Object.keys(data));
-    const baseOrder =
-      options.compositionSelectionMode === 'fixed'
-        ? fixedModeTickers
-        : snapshotItems.map(item => item.ticker);
-    const orderedTickers = baseOrder.filter(ticker => keys.has(ticker));
-    const leftovers = Object.keys(data)
-      .filter(ticker => !orderedTickers.includes(ticker))
-      .sort((a, b) => a.localeCompare(b));
-
-    return [...orderedTickers, ...leftovers]
-      .map(ticker => {
-        const points = (data[ticker] ?? [])
-          .map((point: TBankPortfolioCompositionSeriesPoint) => {
-            const time = point.trade_date;
-            const value = point.weight;
-            if (typeof time !== 'string' || time.length === 0) return null;
-            if (typeof value !== 'number') return null;
-            return { time, value };
-          })
-          .filter(
-            (point): point is { time: string; value: number } => point !== null
-          )
-          .sort((a, b) => a.time.localeCompare(b.time));
-        return {
-          id: ticker,
-          name: nameMap.get(ticker) ?? ticker,
-          data: points,
-        };
-      })
-      .filter(item => item.data.length > 0);
+    return buildCompositionSeries({
+      rawSeries: seriesQuery.data,
+      selectionMode: options.compositionSelectionMode,
+      fixedModeTickers,
+      snapshotItems,
+      getPoint: (point: TBankPortfolioCompositionSeriesPoint) => {
+        const time = point.trade_date;
+        const value = point.weight;
+        if (typeof time !== 'string' || time.length === 0) return null;
+        if (typeof value !== 'number') return null;
+        return { time, value };
+      },
+    });
   }, [
     fixedModeTickers,
-    nameMap,
     options.compositionSelectionMode,
     seriesQuery.data,
     snapshotItems,

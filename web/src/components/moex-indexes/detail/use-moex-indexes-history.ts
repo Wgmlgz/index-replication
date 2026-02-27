@@ -9,7 +9,14 @@ import type {
 } from '@/api-client';
 import { moexApi } from '@/lib/api';
 import type { ChartData } from '@/components/charts/index-chart';
-import { resolveDateRange, resolveIntervalDays } from './use-moex-indexes-detail.utils';
+import {
+  calculateChangeStats,
+  createViewModeNormalizer,
+} from '@/components/charts/time-series-analytics';
+import {
+  resolveDateRange,
+  resolveIntervalDays,
+} from '@/lib/charting/time-series-controls';
 import type { ChartType, ChartViewMode, IntervalKey, RangeKey } from './moex-indexes-detail.types';
 
 type NormalizedHistoryPoint = {
@@ -101,18 +108,18 @@ export function useMoexIndexHistory(
       }));
   }, [history]);
 
+  const closeValues = useMemo(
+    () => normalizedHistory.map((point) => point.close),
+    [normalizedHistory]
+  );
+  const { latestValue, change, changePercent } = useMemo(
+    () => calculateChangeStats(closeValues),
+    [closeValues]
+  );
+
   const chartData = useMemo<ChartData>(() => {
     const baseValue = normalizedHistory[0]?.close ?? null;
-    const usePercent =
-      options.viewMode === 'percent' &&
-      baseValue !== null &&
-      baseValue !== 0;
-
-    const normalizeValue = (value: number | null) => {
-      if (value === null) return null;
-      if (!usePercent) return value;
-      return ((value - baseValue) / baseValue) * 100;
-    };
+    const normalizeValue = createViewModeNormalizer(baseValue, options.viewMode);
 
     if (options.chartType === 'candlestick') {
       return normalizedHistory
@@ -160,17 +167,6 @@ export function useMoexIndexHistory(
         (point): point is { time: string; value: number } => Boolean(point)
       );
   }, [normalizedHistory, options.chartType, options.viewMode]);
-
-  const latestPoint = normalizedHistory[normalizedHistory.length - 1];
-  const previousPoint = normalizedHistory[normalizedHistory.length - 2];
-  const latestValue = latestPoint?.close ?? null;
-  const previousValue = previousPoint?.close ?? null;
-  const change =
-    latestValue !== null && previousValue !== null
-      ? latestValue - previousValue
-      : null;
-  const changePercent =
-    change !== null && previousValue ? (change / previousValue) * 100 : null;
 
   const numberFormatter = useMemo(() => {
     return new Intl.NumberFormat(i18n.language || 'en', {

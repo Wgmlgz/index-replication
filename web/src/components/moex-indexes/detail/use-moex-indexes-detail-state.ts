@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { format, subYears } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import type { MoexIndex as MoexIndex } from '@/api-client';
+import { useChartControlsState } from '@/components/charts/use-chart-controls-state';
 import type {
   ChartType,
   ChartViewMode,
@@ -47,38 +48,22 @@ export function useMoexIndexDetailState({
   const today = new Date();
   const defaultFrom = format(subYears(today, 1), 'yyyy-MM-dd');
   const defaultTill = format(today, 'yyyy-MM-dd');
-
-  const [rangeKey, setRangeKey] = useState<RangeKey>(
-    () => initial?.rangeKey ?? '1y'
-  );
-  const [intervalKey, setIntervalKey] = useState<IntervalKey>(
-    () => initial?.intervalKey ?? 'auto'
-  );
-  const [customFrom, setCustomFrom] = useState(
-    () => initial?.customFrom ?? defaultFrom
-  );
-  const [customTill, setCustomTill] = useState(
-    () => initial?.customTill ?? defaultTill
-  );
-  const [viewMode, setViewMode] = useState<ChartViewMode>(
-    () => initial?.viewMode ?? 'price'
-  );
-  const [chartType, setChartType] = useState<ChartType>(
-    () => initial?.chartType ?? 'line'
-  );
-  const [compositionTab, setCompositionTab] = useState<CompositionTab>(
-    () => initial?.compositionTab ?? 'snapshot'
-  );
-  const [compositionSelectionMode, setCompositionSelectionMode] =
-    useState<CompositionSelectionMode>(
-      () => initial?.compositionSelectionMode ?? 'fixed'
-    );
-  const [compositionSelectionDate, setCompositionSelectionDate] = useState(
-    () => initial?.compositionSelectionDate ?? ''
-  );
-  const [compositionTopCount, setCompositionTopCount] = useState<number | null>(
-    () => initial?.compositionTopCount ?? 10
-  );
+  const chartControls = useChartControlsState({
+    initial,
+    includeChartType: true,
+    defaults: {
+      rangeKey: '1y',
+      intervalKey: 'auto',
+      customFrom: defaultFrom,
+      customTill: defaultTill,
+      viewMode: 'price',
+      chartType: 'line',
+      compositionTab: 'snapshot',
+      compositionSelectionMode: 'fixed',
+      compositionSelectionDate: '',
+      compositionTopCount: 10,
+    },
+  });
 
   const selectedIndex = useMemo<MoexIndex | null>(() => {
     const findIndex = (secid: string) => {
@@ -113,12 +98,12 @@ export function useMoexIndexDetailState({
     changePercent,
     numberFormatter,
   } = useMoexIndexHistory(selectedIndex, {
-    rangeKey,
-    intervalKey,
-    customFrom,
-    customTill,
-    viewMode,
-    chartType,
+    rangeKey: chartControls.rangeKey,
+    intervalKey: chartControls.intervalKey,
+    customFrom: chartControls.customFrom,
+    customTill: chartControls.customTill,
+    viewMode: chartControls.viewMode,
+    chartType: chartControls.chartType as ChartType,
   });
 
   const selectedIndexCollections = useMemo(() => {
@@ -139,25 +124,25 @@ export function useMoexIndexDetailState({
     changePercent,
     numberFormatter,
     error,
-    rangeKey,
-    setRangeKey,
-    intervalKey,
-    setIntervalKey,
-    customFrom,
-    customTill,
-    setCustomFrom,
-    setCustomTill,
-    viewMode,
-    setViewMode,
-    chartType,
-    setChartType,
-    compositionTab,
-    setCompositionTab,
-    compositionSelectionMode,
-    setCompositionSelectionMode,
-    compositionSelectionDate,
-    setCompositionSelectionDate,
-    compositionTopCount,
-    setCompositionTopCount,
+    rangeKey: chartControls.rangeKey,
+    setRangeKey: chartControls.setRangeKey,
+    intervalKey: chartControls.intervalKey,
+    setIntervalKey: chartControls.setIntervalKey,
+    customFrom: chartControls.customFrom,
+    customTill: chartControls.customTill,
+    setCustomFrom: chartControls.setCustomFrom,
+    setCustomTill: chartControls.setCustomTill,
+    viewMode: chartControls.viewMode,
+    setViewMode: chartControls.setViewMode,
+    chartType: chartControls.chartType,
+    setChartType: chartControls.setChartType,
+    compositionTab: chartControls.compositionTab,
+    setCompositionTab: chartControls.setCompositionTab,
+    compositionSelectionMode: chartControls.compositionSelectionMode,
+    setCompositionSelectionMode: chartControls.setCompositionSelectionMode,
+    compositionSelectionDate: chartControls.compositionSelectionDate,
+    setCompositionSelectionDate: chartControls.setCompositionSelectionDate,
+    compositionTopCount: chartControls.compositionTopCount,
+    setCompositionTopCount: chartControls.setCompositionTopCount,
   };
 }

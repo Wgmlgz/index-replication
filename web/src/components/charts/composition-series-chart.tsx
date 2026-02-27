@@ -18,12 +18,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-
-export type CompositionSeries = {
-  id: string;
-  name: string;
-  data: Array<{ time: string; value: number }>;
-};
+import type { CompositionSeries } from './types';
+export type { CompositionSeries } from './types';
 
 const BASE_SERIES_COLORS = [
   'var(--chart-1)',

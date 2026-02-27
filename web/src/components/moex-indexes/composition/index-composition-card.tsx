@@ -12,7 +12,10 @@ import {
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { Tabs } from '@/components/ui/tabs';
-import type { ChartData } from '@/components/charts/index-chart';
+import {
+  buildSnapshotChartItems,
+  resolveChartDataLastDate,
+} from '@/components/charts/composition-analytics';
 import {
   IndexCompositionChart,
   OTHER_SERIES_COLOR,
@@ -34,26 +37,6 @@ const DEFAULT_ISSUE_BOARD = 'EQWY';
 
 type IndexCompositionCardProps = {
   embedded?: boolean;
-};
-
-const resolveChartDate = (chartData: ChartData): string | null => {
-  if (chartData.length === 0) return null;
-  const last = chartData[chartData.length - 1] as { time?: unknown };
-  const time = last?.time;
-  if (!time) return null;
-  if (typeof time === 'string') return time;
-  if (typeof time === 'number') {
-    return new Date(time * 1000).toISOString().slice(0, 10);
-  }
-  if (typeof time === 'object') {
-    const timeObj = time as { year?: number; month?: number; day?: number };
-    if (timeObj.year && timeObj.month && timeObj.day) {
-      const month = String(timeObj.month).padStart(2, '0');
-      const day = String(timeObj.day).padStart(2, '0');
-      return `${timeObj.year}-${month}-${day}`;
-    }
-  }
-  return null;
 };
 
 export function IndexCompositionCard({
@@ -82,7 +65,7 @@ export function IndexCompositionCard({
     topCount === null ? Number.MAX_SAFE_INTEGER : topCount;
 
   const latestTradeDate = useMemo(
-    () => resolveChartDate(chartData),
+    () => resolveChartDataLastDate(chartData),
     [chartData],
   );
   useEffect(() => {
@@ -128,28 +111,14 @@ export function IndexCompositionCard({
   }, []);
 
   const snapshotTop = snapshotItems.slice(0, resolvedTopCount);
-  const snapshotOtherWeight = useMemo(() => {
-    if (snapshotTop.length === 0) return 0;
-    const total = snapshotTop.reduce(
-      (sum, item) => sum + (item.weight ?? 0),
-      0,
-    );
-    const other = Math.max(0, 100 - total);
-    return other;
-  }, [snapshotTop]);
-  const snapshotChartItems = useMemo(() => {
-    if (snapshotOtherWeight <= 0.01) return snapshotTop;
-    return [
-      ...snapshotTop,
-      {
-        ticker: t('moex.composition.other'),
-        secId: '',
-        name: t('moex.composition.other'),
-        weight: snapshotOtherWeight,
-        tradeDate: snapshotDate ?? '',
-      },
-    ];
-  }, [snapshotOtherWeight, snapshotDate, snapshotTop, t]);
+  const { snapshotChartItems, snapshotOtherWeight } = useMemo(
+    () =>
+      buildSnapshotChartItems(snapshotTop, {
+        otherLabel: t('moex.composition.other'),
+        snapshotDate,
+      }),
+    [snapshotDate, snapshotTop, t]
+  );
   const snapshotByTicker = useMemo(() => {
     const map = new Map(snapshotItems.map(item => [item.ticker, item]));
     return map;
