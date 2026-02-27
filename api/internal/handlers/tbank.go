@@ -224,6 +224,152 @@ func (h *TBankHandler) GetOperationsHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GetPortfolioHistory godoc
+//
+//	@Summary		Get T-Bank operation-derived portfolio history
+//	@Description	Returns portfolio history reconstructed from operations and current portfolio positions.
+//	@Tags			tbank
+//	@Produce		json
+//	@Param			account_id		query		string	false	"Account id"
+//	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
+//	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
+//	@Param			intervalDays	query		int		false	"Downsample interval in days"
+//	@Success		200				{array}		dto.TBankPortfolioHistoryPoint
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		502				{object}	dto.ErrorResponse
+//	@Router			/me/tbank/portfolio/history [get]
+func (h *TBankHandler) GetPortfolioHistory(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	accountID := strings.TrimSpace(c.Query("account_id"))
+
+	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	intervalDays, err := parseIntervalDays(c.Query("intervalDays"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	resp, err := h.tbankService.GetPortfolioHistory(c.Request.Context(), userID, accountID, from, till, intervalDays)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetPortfolioComposition godoc
+//
+//	@Summary		Get T-Bank operation-derived portfolio composition snapshot
+//	@Description	Returns reconstructed composition snapshot for requested date (or latest).
+//	@Tags			tbank
+//	@Produce		json
+//	@Param			account_id	query		string	false	"Account id"
+//	@Param			date		query		string	false	"Snapshot date (YYYY-MM-DD)"
+//	@Success		200			{array}		dto.TBankPortfolioCompositionEntry
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		502			{object}	dto.ErrorResponse
+//	@Router			/me/tbank/portfolio/composition [get]
+func (h *TBankHandler) GetPortfolioComposition(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	accountID := strings.TrimSpace(c.Query("account_id"))
+	date := strings.TrimSpace(c.Query("date"))
+	if date != "" && !isValidDate(date) {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid date format"})
+		return
+	}
+
+	resp, err := h.tbankService.GetPortfolioComposition(c.Request.Context(), userID, accountID, date)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetPortfolioCompositionSeries godoc
+//
+//	@Summary		Get T-Bank operation-derived portfolio composition series
+//	@Description	Returns downsampled composition weight series reconstructed from operations and current holdings.
+//	@Tags			tbank
+//	@Produce		json
+//	@Param			account_id		query		string	false	"Account id"
+//	@Param			tickers			query		string	false	"Comma-separated list of tickers"
+//	@Param			topCount		query		int		false	"When tickers are omitted: number of top constituents (0 = all, default 10)"
+//	@Param			selectionMode	query		string	false	"Ticker auto-selection mode: fixed|rolling (default fixed)"
+//	@Param			selectionDate	query		string	false	"Top selection date for fixed mode (YYYY-MM-DD)"
+//	@Param			from			query		string	false	"Start date (YYYY-MM-DD)"
+//	@Param			till			query		string	false	"End date (YYYY-MM-DD)"
+//	@Param			intervalDays	query		int		false	"Downsample interval in days"
+//	@Success		200				{object}	map[string][]dto.TBankPortfolioCompositionSeriesPoint
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		502				{object}	dto.ErrorResponse
+//	@Router			/me/tbank/portfolio/composition/series [get]
+func (h *TBankHandler) GetPortfolioCompositionSeries(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	accountID := strings.TrimSpace(c.Query("account_id"))
+
+	tickersParam := strings.TrimSpace(c.Query("tickers"))
+	tickerParts := strings.Split(tickersParam, ",")
+	tickers := make([]string, 0, len(tickerParts))
+	for _, item := range tickerParts {
+		ticker := strings.TrimSpace(item)
+		if ticker == "" {
+			continue
+		}
+		tickers = append(tickers, ticker)
+	}
+
+	topCount, err := parseTopCount(c.Query("topCount"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	selectionMode, err := parseCompositionSelectionMode(c.Query("selectionMode"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	selectionDate := strings.TrimSpace(c.Query("selectionDate"))
+	if selectionDate != "" && !isValidDate(selectionDate) {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid selectionDate"})
+		return
+	}
+
+	from, till, err := normalizeDateRange(c.Query("from"), c.Query("till"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	intervalDays, err := parseIntervalDays(c.Query("intervalDays"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	resp, err := h.tbankService.GetPortfolioCompositionSeries(
+		c.Request.Context(),
+		userID,
+		accountID,
+		tickers,
+		topCount,
+		selectionMode,
+		selectionDate,
+		from,
+		till,
+		intervalDays,
+	)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
 // SandboxPayIn godoc
 //
 //	@Summary		Top up T-Bank sandbox account

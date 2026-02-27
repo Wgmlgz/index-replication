@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-import { tbankClient, type TBankTestBuyResponse } from "@/lib/tbank-client";
+import type { TBankTestBuyResponse } from "@/api-client";
 import { useTBankConnectionContext } from "@/components/tbank-test/tbank-connection-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/error-utils";
+import { tbankApi } from "@/lib/api";
 
 export function TBankBuyCard() {
   const { t } = useTranslation();
@@ -49,11 +50,11 @@ export function TBankBuyCard() {
     setWorking(true);
     setBuyResult(null);
     try {
-      const result = await tbankClient.testBuy({
+      const result = (await tbankApi.meTbankTestBuyPost({
         account_id: resolvedAccountID || undefined,
         instrument_id: instrumentID,
         quantity: orderQuantity,
-      });
+      })).data;
       setBuyResult(result);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.buy")));

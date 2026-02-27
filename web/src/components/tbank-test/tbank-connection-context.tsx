@@ -11,7 +11,8 @@ import {
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-import { tbankClient, type TBankConnectionStatusResponse } from "@/lib/tbank-client";
+import type { TBankConnectionStatusResponse } from "@/api-client";
+import { tbankApi } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/error-utils";
 
 export type TBankEnvironment = "sandbox" | "production";
@@ -27,7 +28,7 @@ type TBankConnectionContextValue = {
   loadingStatus: boolean;
   working: boolean;
   error: string;
-  availableAccounts: TBankConnectionStatusResponse["accounts"];
+  availableAccounts: NonNullable<TBankConnectionStatusResponse["accounts"]>;
   connected: boolean;
   refreshStatus: () => Promise<void>;
   connect: (params: ConnectParams) => Promise<void>;
@@ -63,7 +64,7 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setError("");
     setLoadingStatus(true);
     try {
-      const nextStatus = await tbankClient.getStatus();
+      const nextStatus = (await tbankApi.meTbankGet()).data;
       setStatus(nextStatus);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.status")));
@@ -80,11 +81,11 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setError("");
     setWorking(true);
     try {
-      const nextStatus = await tbankClient.connect({
+      const nextStatus = (await tbankApi.meTbankConnectPost({
         token,
         environment,
         default_account_id: defaultAccountID || undefined,
-      });
+      })).data;
       setStatus(nextStatus);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.connect")));
@@ -98,7 +99,7 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setError("");
     setWorking(true);
     try {
-      await tbankClient.disconnect();
+      await tbankApi.meTbankDisconnectPost();
       await refreshStatus();
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.disconnect")));
@@ -117,7 +118,7 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setError("");
     setWorking(true);
     try {
-      const nextStatus = await tbankClient.setDefaultAccount({ account_id: accountID.trim() });
+      const nextStatus = (await tbankApi.meTbankDefaultAccountPost({ account_id: accountID.trim() })).data;
       setStatus(nextStatus);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.defaultAccount")));

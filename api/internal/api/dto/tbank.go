@@ -149,3 +149,26 @@ type TBankInstrumentLookupResponse struct {
 	ClassCode   string                      `json:"class_code,omitempty"`
 	Instruments []TBankInstrumentLookupItem `json:"instruments"`
 } //@name TBankInstrumentLookupResponse
+
+type TBankPortfolioHistoryPoint struct {
+	TradeDate                    string  `json:"trade_date"`
+	TotalAmountPortfolio         float64 `json:"total_amount_portfolio"`
+	TotalAmountPortfolioCurrency string  `json:"total_amount_portfolio_currency,omitempty"`
+} //@name TBankPortfolioHistoryPoint
+
+type TBankPortfolioCompositionEntry struct {
+	TradeDate    string  `json:"trade_date"`
+	Ticker       string  `json:"ticker"`
+	InstrumentID string  `json:"instrument_id"`
+	Name         string  `json:"name,omitempty"`
+	Quantity     float64 `json:"quantity"`
+	CurrentPrice float64 `json:"current_price"`
+	CurrentValue float64 `json:"current_value"`
+	Currency     string  `json:"currency,omitempty"`
+	Weight       float64 `json:"weight"`
+} //@name TBankPortfolioCompositionEntry
+
+type TBankPortfolioCompositionSeriesPoint struct {
+	TradeDate string  `json:"trade_date"`
+	Weight    float64 `json:"weight"`
+} //@name TBankPortfolioCompositionSeriesPoint

@@ -4,13 +4,14 @@ import { useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-import { tbankClient, type TBankInstrumentLookupResponse } from "@/lib/tbank-client";
+import type { TBankInstrumentLookupResponse } from "@/api-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/error-utils";
+import { tbankApi } from "@/lib/api";
 
 export function TBankInstrumentLookupCard() {
   const { t } = useTranslation();
@@ -41,10 +42,10 @@ export function TBankInstrumentLookupCard() {
     setLoadingLookup(true);
     setLookupResult(null);
     try {
-      const result = await tbankClient.findInstrumentByTicker(
+      const result = (await tbankApi.meTbankInstrumentsLookupGet(
         lookupTicker.trim(),
         lookupClassCode.trim() || undefined
-      );
+      )).data;
       setLookupResult(result);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.lookup")));
@@ -98,13 +99,13 @@ export function TBankInstrumentLookupCard() {
         {lookupResult ? (
           <div className="space-y-2">
             <div className="text-sm font-medium">
-              {t("tbankTest.lookup.resultCount", { count: lookupResult.instruments.length })}
+              {t("tbankTest.lookup.resultCount", { count: (lookupResult.instruments ?? []).length })}
             </div>
             <div className="max-h-96 space-y-2 overflow-auto rounded-md border p-2">
-              {lookupResult.instruments.length === 0 ? (
+              {(lookupResult.instruments ?? []).length === 0 ? (
                 <div className="text-sm text-muted-foreground">{t("tbankTest.lookup.empty")}</div>
               ) : (
-                lookupResult.instruments.map(item => (
+                (lookupResult.instruments ?? []).map(item => (
                   <div key={`${item.instrument_id}:${item.ticker}`} className="space-y-1 rounded border p-2 text-sm">
                     <div className="font-medium">{item.name || t("tbankTest.lookup.noName")}</div>
                     <div className="text-muted-foreground">

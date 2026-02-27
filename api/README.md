@@ -166,6 +166,9 @@ Authenticated user endpoints for token connect + test buy flow:
 - `POST /api/me/tbank/disconnect`
 - `POST /api/me/tbank/default-account`
 - `GET /api/me/tbank/portfolio`
+- `GET /api/me/tbank/portfolio/history`
+- `GET /api/me/tbank/portfolio/composition`
+- `GET /api/me/tbank/portfolio/composition/series`
 - `GET /api/me/tbank/operations`
 - `POST /api/me/tbank/sandbox/pay-in`
 - `GET /api/me/tbank/instruments/lookup`

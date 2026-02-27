@@ -5,11 +5,11 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 import {
-  tbankClient,
   type TBankAccountPortfolioResponse,
   type TBankOperationHistoryItem,
   type TBankSandboxPayInResponse,
-} from "@/lib/tbank-client";
+} from "@/api-client";
+import { tbankApi } from "@/lib/api";
 import { useTBankConnectionContext } from "@/components/tbank-test/tbank-connection-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -107,9 +107,14 @@ export function TBankPortfolioCard() {
     }
 
     try {
-      const response = await tbankClient.getOperations(accountID || undefined, cursor || undefined, OPERATIONS_PAGE_SIZE);
-      setOperations(currentItems => (append ? [...currentItems, ...response.items] : response.items));
-      setOperationsHasNext(response.has_next);
+      const response = (await tbankApi.meTbankOperationsGet(
+        accountID || undefined,
+        cursor || undefined,
+        OPERATIONS_PAGE_SIZE
+      )).data;
+      const items = response.items ?? [];
+      setOperations(currentItems => (append ? [...currentItems, ...items] : items));
+      setOperationsHasNext(Boolean(response.has_next));
       setOperationsNextCursor(response.next_cursor || "");
     } catch (err) {
       setOperationsError(parseErrorMessage(err, t("tbankTest.errors.operations")));
@@ -136,7 +141,7 @@ export function TBankPortfolioCard() {
     setError("");
     setLoadingPortfolio(true);
     try {
-      const nextPortfolio = await tbankClient.getPortfolio(accountID || undefined);
+      const nextPortfolio = (await tbankApi.meTbankPortfolioGet(accountID || undefined)).data;
       setPortfolio(nextPortfolio);
       setPortfolioAccountID(nextPortfolio.account_id || "");
       await loadOperations(nextPortfolio.account_id || accountID || undefined);
@@ -166,11 +171,11 @@ export function TBankPortfolioCard() {
     setWorking(true);
     setSandboxResult(null);
     try {
-      const result = await tbankClient.sandboxPayIn({
+      const result = (await tbankApi.meTbankSandboxPayInPost({
         account_id: resolvedAccountID || undefined,
         currency: sandboxCurrency.trim() || undefined,
         units: Math.max(1, Number(sandboxUnits) || DEFAULT_SANDBOX_TOP_UP_UNITS),
-      });
+      })).data;
       setSandboxResult(result);
       await loadPortfolio(result.account_id);
     } catch (err) {
@@ -271,15 +276,15 @@ export function TBankPortfolioCard() {
             <div className="rounded-md border p-3">
               <div>
                 <span className="font-medium">{t("tbankTest.portfolio.totalLabel")} </span>
-                {formatNumber(portfolio.total_amount_portfolio)} {portfolio.total_amount_portfolio_currency || ""}
+                {formatNumber(portfolio.total_amount_portfolio ?? 0)} {portfolio.total_amount_portfolio_currency || ""}
               </div>
               <div>
                 <span className="font-medium">{t("tbankTest.portfolio.dailyYieldLabel")} </span>
-                {formatNumber(portfolio.daily_yield)}
+                {formatNumber(portfolio.daily_yield ?? 0)}
               </div>
               <div>
                 <span className="font-medium">{t("tbankTest.portfolio.dailyYieldRelativeLabel")} </span>
-                {formatPercent(portfolio.daily_yield_relative)}
+                {formatPercent(portfolio.daily_yield_relative ?? 0)}
               </div>
             </div>
 
@@ -297,20 +302,20 @@ export function TBankPortfolioCard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {portfolio.money.length === 0 ? (
+                    {(portfolio.money ?? []).length === 0 ? (
                       <tr>
                         <td className="p-2 text-muted-foreground" colSpan={5}>
                           {t("tbankTest.portfolio.moneyEmpty")}
                         </td>
                       </tr>
                     ) : (
-                      portfolio.money.map(balance => (
+                      (portfolio.money ?? []).map(balance => (
                         <tr key={balance.currency} className="border-t">
                           <td className="p-2">{balance.currency}</td>
-                          <td className="p-2">{formatNumber(balance.available)}</td>
-                          <td className="p-2">{formatNumber(balance.blocked)}</td>
-                          <td className="p-2">{formatNumber(balance.withdraw_available)}</td>
-                          <td className="p-2">{formatNumber(balance.withdraw_blocked)}</td>
+                          <td className="p-2">{formatNumber(balance.available ?? 0)}</td>
+                          <td className="p-2">{formatNumber(balance.blocked ?? 0)}</td>
+                          <td className="p-2">{formatNumber(balance.withdraw_available ?? 0)}</td>
+                          <td className="p-2">{formatNumber(balance.withdraw_blocked ?? 0)}</td>
                         </tr>
                       ))
                     )}
@@ -321,7 +326,7 @@ export function TBankPortfolioCard() {
 
             <div className="space-y-2">
               <div className="font-medium">
-                {t("tbankTest.portfolio.positionsTitle", { count: Math.min(portfolio.positions.length, 10) })}
+                {t("tbankTest.portfolio.positionsTitle", { count: Math.min((portfolio.positions ?? []).length, 10) })}
               </div>
               <div className="overflow-auto rounded-md border">
                 <table className="w-full text-left text-sm">
@@ -336,28 +341,28 @@ export function TBankPortfolioCard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {portfolio.positions.length === 0 ? (
+                    {(portfolio.positions ?? []).length === 0 ? (
                       <tr>
                         <td className="p-2 text-muted-foreground" colSpan={6}>
                           {t("tbankTest.portfolio.positionsEmpty")}
                         </td>
                       </tr>
                     ) : (
-                      portfolio.positions.slice(0, 10).map(position => (
+                      (portfolio.positions ?? []).slice(0, 10).map(position => (
                         <tr
                           key={`${position.instrument_id || position.figi || "-"}:${position.ticker || "-"}`}
                           className="border-t"
                         >
                           <td className="p-2">{position.ticker || "-"}</td>
                           <td className="p-2">{position.instrument_id || position.figi || "-"}</td>
-                          <td className="p-2">{formatNumber(position.quantity)}</td>
+                          <td className="p-2">{formatNumber(position.quantity ?? 0)}</td>
                           <td className="p-2">
-                            {formatNumber(position.current_price)} {position.currency || ""}
+                            {formatNumber(position.current_price ?? 0)} {position.currency || ""}
                           </td>
                           <td className="p-2">
-                            {formatNumber(position.current_value)} {position.currency || ""}
+                            {formatNumber(position.current_value ?? 0)} {position.currency || ""}
                           </td>
-                          <td className="p-2">{formatNumber(position.expected_yield)}</td>
+                          <td className="p-2">{formatNumber(position.expected_yield ?? 0)}</td>
                         </tr>
                       ))
                     )}
@@ -412,13 +417,13 @@ export function TBankPortfolioCard() {
                             <td className="p-2">{operation.name || operation.instrument_id || operation.figi || "-"}</td>
                             <td className="p-2">{formatNumber(operation.quantity_done || operation.quantity || 0)}</td>
                             <td className="p-2">
-                              {formatNumber(operation.price)} {operation.price_currency || ""}
+                              {formatNumber(operation.price ?? 0)} {operation.price_currency || ""}
                             </td>
                             <td className="p-2">
-                              {formatNumber(operation.payment)} {operation.payment_currency || ""}
+                              {formatNumber(operation.payment ?? 0)} {operation.payment_currency || ""}
                             </td>
                             <td className="p-2">
-                              {formatNumber(operation.commission)} {operation.commission_currency || ""}
+                              {formatNumber(operation.commission ?? 0)} {operation.commission_currency || ""}
                             </td>
                             <td className="p-2">{operation.description || "-"}</td>
                           </tr>
