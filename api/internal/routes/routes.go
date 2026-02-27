@@ -11,6 +11,7 @@ import (
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/tbank"
+	"server/internal/telegram"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -44,14 +45,14 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	// Auth routes
 	cs := services.NewCasbinService(db)
 	cs.InitializePolicies()
-	telegramService := services.NewTelegramService(cfg)
+	telegramService := telegram.NewTelegramService(cfg)
 	log.Printf(
 		"telegram config: enabled=%t bot_username_set=%t poll_timeout_sec=%d",
 		telegramService.Enabled(),
 		cfg.TelegramBotUsername != "",
 		cfg.TelegramPollTimeoutSec,
 	)
-	verificationService := services.NewVerificationService(
+	verificationService := telegram.NewVerificationService(
 		cfg,
 		repoRegistry.UserRepo,
 		repoRegistry.UserSettingsRepo,

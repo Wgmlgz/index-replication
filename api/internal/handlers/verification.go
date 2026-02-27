@@ -6,17 +6,17 @@ import (
 	"net/http"
 
 	"server/internal/api/dto"
-	"server/internal/services"
+	"server/internal/telegram"
 	"server/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 type VerificationHandler struct {
-	verificationService *services.VerificationService
+	verificationService *telegram.VerificationService
 }
 
-func NewVerificationHandler(verificationService *services.VerificationService) *VerificationHandler {
+func NewVerificationHandler(verificationService *telegram.VerificationService) *VerificationHandler {
 	return &VerificationHandler{verificationService: verificationService}
 }
 
@@ -55,7 +55,7 @@ func (h *VerificationHandler) CreateTelegramConnectLink(c *gin.Context) {
 	resp, err := h.verificationService.CreateTelegramConnectLink(userID)
 	if err != nil {
 		log.Printf("verification handler: failed to create telegram connect link user_id=%d err=%v", userID, err)
-		if errors.Is(err, services.ErrTelegramUnavailable) {
+		if errors.Is(err, telegram.ErrTelegramUnavailable) {
 			c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: "Telegram bot is unavailable"})
 			return
 		}
@@ -89,7 +89,7 @@ func (h *VerificationHandler) PatchTelegramSettings(c *gin.Context) {
 	if req.Login2FAEnabled != nil {
 		if err := h.verificationService.UpdateTelegramLogin2FA(userID, *req.Login2FAEnabled); err != nil {
 			log.Printf("verification handler: failed to patch telegram settings user_id=%d err=%v", userID, err)
-			if errors.Is(err, services.ErrTelegramNotConnected) {
+			if errors.Is(err, telegram.ErrTelegramNotConnected) {
 				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Connect Telegram before enabling login verification"})
 				return
 			}

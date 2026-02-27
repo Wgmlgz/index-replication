@@ -38,7 +38,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 
 - HTTP layer stays in `internal/handlers/` (request/response parsing, status codes).
 - API request/response DTOs live in `internal/api/dto/` (feature-grouped schema structs for handlers/OpenAPI).
-- Business logic lives in feature/service packages (mostly `internal/services/`, with MOEX isolated in `internal/moex/` and T-Bank isolated in `internal/tbank/`).
+- Business logic lives in feature/service packages (mostly `internal/services/`, with MOEX isolated in `internal/moex/`, T-Bank isolated in `internal/tbank/`, and Telegram verification isolated in `internal/telegram/`).
 - Data access is isolated in `internal/repository/` using GORM.
 - Auth is session-based (cookie) and enforced by middleware.
 - Authorization uses Casbin policies and permission constants.
@@ -54,6 +54,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `internal/moex/` contains MOEX integration logic and read services.
 - `internal/moex/domain/` contains MOEX internal/domain structs used by MOEX + repository layers.
 - `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
+- `internal/telegram/` contains Telegram bot transport and login verification integration logic.
 - `internal/repository/` contains data access (DB queries).
 - `internal/models/` defines persistence/domain models (GORM entities and domain constants).
 
@@ -62,7 +63,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 Use this mapping to locate the right layer quickly:
 
 - Add or change endpoints: `internal/routes/`, `internal/handlers/`
-- Change business rules or workflows: `internal/services/` (or feature packages like `internal/moex/` and `internal/tbank/`)
+- Change business rules or workflows: `internal/services/` (or feature packages like `internal/moex/`, `internal/tbank/`, and `internal/telegram/`)
 - Change DB queries or persistence: `internal/repository/`
 - Update API request/response structures: `internal/api/dto/`
 - Update persistence/domain structures: `internal/models/`

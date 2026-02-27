@@ -11,6 +11,7 @@ import (
 	"server/internal/models"
 	"server/internal/repository"
 	"server/internal/services"
+	"server/internal/telegram"
 	"server/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,7 @@ type AuthHandler struct {
 	userRepo            *repository.UserRepository
 	auditService        *services.AuditService
 	cs                  *services.CasbinService
-	verificationService *services.VerificationService
+	verificationService *telegram.VerificationService
 }
 
 func NewAuthHandler(db *gorm.DB,
@@ -32,7 +33,7 @@ func NewAuthHandler(db *gorm.DB,
 	userRepo *repository.UserRepository,
 	auditService *services.AuditService,
 	cs *services.CasbinService,
-	verificationService *services.VerificationService,
+	verificationService *telegram.VerificationService,
 ) *AuthHandler {
 	return &AuthHandler{
 		db:                  db,
@@ -90,11 +91,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	challenge, err := h.verificationService.CreateLoginChallengeIfEnabled(user, req.RememberMe)
 	if err != nil {
 		log.Printf("auth login: verification initialization failed user_id=%d username=%s err=%v", user.ID, user.Username, err)
-		if errors.Is(err, services.ErrTelegramNotConnected) {
+		if errors.Is(err, telegram.ErrTelegramNotConnected) {
 			c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Telegram login verification is enabled, but Telegram account is not connected"})
 			return
 		}
-		if errors.Is(err, services.ErrTelegramUnavailable) {
+		if errors.Is(err, telegram.ErrTelegramUnavailable) {
 			c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: "Login verification is temporarily unavailable"})
 			return
 		}
@@ -165,15 +166,15 @@ func (h *AuthHandler) VerifyLogin(c *gin.Context) {
 	user, rememberMe, err := h.verificationService.ConsumeApprovedLoginChallenge(req.ChallengeID)
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrVerificationPending):
+		case errors.Is(err, telegram.ErrVerificationPending):
 			c.JSON(http.StatusAccepted, dto.LoginVerifyStatusResponse{Status: models.VerificationStatusPending})
-		case errors.Is(err, services.ErrVerificationDenied):
+		case errors.Is(err, telegram.ErrVerificationDenied):
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification was denied"})
-		case errors.Is(err, services.ErrVerificationExpired):
+		case errors.Is(err, telegram.ErrVerificationExpired):
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification has expired"})
-		case errors.Is(err, services.ErrVerificationConsumed):
+		case errors.Is(err, telegram.ErrVerificationConsumed):
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification has already been used"})
-		case errors.Is(err, services.ErrVerificationNotFound):
+		case errors.Is(err, telegram.ErrVerificationNotFound):
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Login verification request not found"})
 		default:
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to verify login"})

@@ -1,4 +1,4 @@
-package services
+package telegram
 
 import (
 	"context"
@@ -49,8 +49,12 @@ type VerificationService struct {
 	userRepo         *repository.UserRepository
 	userSettingsRepo *repository.UserSettingsRepository
 	verificationRepo *repository.VerificationRepository
-	auditService     *AuditService
+	auditLogger      AuditLogger
 	telegramService  *TelegramService
+}
+
+type AuditLogger interface {
+	LogUserAction(performedBy int, action string, userID int, details interface{}) error
 }
 
 func NewVerificationService(
@@ -58,7 +62,7 @@ func NewVerificationService(
 	userRepo *repository.UserRepository,
 	userSettingsRepo *repository.UserSettingsRepository,
 	verificationRepo *repository.VerificationRepository,
-	auditService *AuditService,
+	auditLogger AuditLogger,
 	telegramService *TelegramService,
 ) *VerificationService {
 	return &VerificationService{
@@ -66,7 +70,7 @@ func NewVerificationService(
 		userRepo:         userRepo,
 		userSettingsRepo: userSettingsRepo,
 		verificationRepo: verificationRepo,
-		auditService:     auditService,
+		auditLogger:      auditLogger,
 		telegramService:  telegramService,
 	}
 }
@@ -152,7 +156,7 @@ func (s *VerificationService) CreateLoginChallengeIfEnabled(user *models.User, r
 		return nil, fmt.Errorf("failed to deliver telegram verification message: %w", err)
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		user.ID,
 		models.ActionLoginVerificationRequested,
 		user.ID,
@@ -286,7 +290,7 @@ func (s *VerificationService) UpdateTelegramLogin2FA(userID int, enabled bool) e
 		return err
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTelegram2FAUpdated,
 		userID,
@@ -305,7 +309,7 @@ func (s *VerificationService) UnlinkTelegram(userID int) error {
 		return err
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		userID,
 		models.ActionTelegramDisconnected,
 		userID,
@@ -421,7 +425,7 @@ func (s *VerificationService) handleTelegramCallback(ctx context.Context, callba
 		return
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		challenge.UserID,
 		action,
 		challenge.UserID,
@@ -479,7 +483,7 @@ func (s *VerificationService) linkTelegramWithToken(ctx context.Context, token s
 		return errors.New("failed to save connection")
 	}
 
-	_ = s.auditService.LogUserAction(
+	_ = s.auditLogger.LogUserAction(
 		connectToken.UserID,
 		models.ActionTelegramConnected,
 		connectToken.UserID,
