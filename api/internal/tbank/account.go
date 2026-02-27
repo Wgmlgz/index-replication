@@ -10,8 +10,8 @@ import (
 	"server/internal/api/dto"
 	"server/internal/models"
 
-	pb "opensource.tbank.ru/invest/invest-go/proto"
 	"google.golang.org/grpc"
+	pb "opensource.tbank.ru/invest/invest-go/proto"
 )
 
 var ErrTBankSandboxOnly = errors.New("sandbox top-up is available only in sandbox environment")
@@ -120,6 +120,63 @@ func (s *Service) GetAccountPortfolio(
 		DailyYieldRelative:           quotationToFloat(portfolioResp.GetDailyYieldRelative()),
 		Money:                        mergeMoneyBalances(positionsResp, withdrawResp),
 		Positions:                    mapPortfolioPositions(portfolioResp.GetPositions()),
+	}, nil
+}
+
+func (s *Service) GetOperationsHistory(
+	ctx context.Context,
+	userID int,
+	accountID string,
+	cursor string,
+	limit int32,
+) (*dto.TBankOperationsHistoryResponse, error) {
+	conn, err := s.getConnectedTBankConnection(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedAccountID, err := s.resolveAccountID(ctx, conn, accountID, true, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	limitValue := limit
+	if limitValue <= 0 {
+		limitValue = 50
+	}
+	if limitValue > 1000 {
+		limitValue = 1000
+	}
+
+	req := &pb.GetOperationsByCursorRequest{
+		AccountId: resolvedAccountID,
+		Limit:     &limitValue,
+	}
+	if trimmedCursor := strings.TrimSpace(cursor); trimmedCursor != "" {
+		req.Cursor = &trimmedCursor
+	}
+	state := pb.OperationState_OPERATION_STATE_EXECUTED
+	req.State = &state
+
+	var operationsResp *pb.GetOperationsByCursorResponse
+	if err := s.withConnection(ctx, conn.environment, conn.token, func(callCtx context.Context, grpcConn *grpc.ClientConn) error {
+		client := pb.NewOperationsServiceClient(grpcConn)
+		resp, callErr := client.GetOperationsByCursor(callCtx, req)
+		if callErr != nil {
+			return callErr
+		}
+		operationsResp = resp
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return &dto.TBankOperationsHistoryResponse{
+		Environment: conn.environment,
+		AccountID:   resolvedAccountID,
+		HasNext:     operationsResp.GetHasNext(),
+		NextCursor:  strings.TrimSpace(operationsResp.GetNextCursor()),
+		Items:       mapOperationsHistoryItems(operationsResp.GetItems()),
 	}, nil
 }
 
@@ -418,6 +475,51 @@ func mapPortfolioPositions(positions []*pb.PortfolioPosition) []dto.TBankPortfol
 	})
 
 	return result
+}
+
+func mapOperationsHistoryItems(items []*pb.OperationItem) []dto.TBankOperationHistoryItem {
+	result := make([]dto.TBankOperationHistoryItem, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+
+		instrumentID := strings.TrimSpace(item.GetInstrumentUid())
+		if instrumentID == "" {
+			instrumentID = strings.TrimSpace(item.GetFigi())
+		}
+
+		result = append(result, dto.TBankOperationHistoryItem{
+			Cursor:             strings.TrimSpace(item.GetCursor()),
+			ID:                 strings.TrimSpace(item.GetId()),
+			ParentOperationID:  strings.TrimSpace(item.GetParentOperationId()),
+			Date:               toTimePtr(item.GetDate()),
+			Type:               item.GetType().String(),
+			State:              item.GetState().String(),
+			Name:               strings.TrimSpace(item.GetName()),
+			Description:        strings.TrimSpace(item.GetDescription()),
+			InstrumentID:       instrumentID,
+			Figi:               strings.TrimSpace(item.GetFigi()),
+			InstrumentType:     strings.TrimSpace(item.GetInstrumentType()),
+			Quantity:           item.GetQuantity(),
+			QuantityDone:       item.GetQuantityDone(),
+			QuantityRest:       item.GetQuantityRest(),
+			Payment:            moneyValueToFloat(item.GetPayment()),
+			PaymentCurrency:    moneyValueCurrency(item.GetPayment()),
+			Price:              moneyValueToFloat(item.GetPrice()),
+			PriceCurrency:      moneyValueCurrency(item.GetPrice()),
+			Commission:         moneyValueToFloat(item.GetCommission()),
+			CommissionCurrency: moneyValueCurrency(item.GetCommission()),
+		})
+	}
+	return result
+}
+
+func moneyValueCurrency(value *pb.MoneyValue) string {
+	if value == nil {
+		return ""
+	}
+	return strings.ToUpper(strings.TrimSpace(value.GetCurrency()))
 }
 
 func tickerMatchScore(ticker, classCode string, item dto.TBankInstrumentLookupItem) int {

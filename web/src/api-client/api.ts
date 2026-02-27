@@ -60,6 +60,14 @@ export interface LoginVerifyRequest {
 export interface LoginVerifyStatusResponse {
     'status'?: string;
 }
+export interface MoexCoverageResponse {
+    'dataset'?: string;
+    'entityKey'?: string;
+    'fromDate'?: string;
+    'isComplete'?: boolean;
+    'toDate'?: string;
+    'updatedAt'?: string;
+}
 export interface MoexIndex {
     'annualHigh'?: number;
     'annualLow'?: number;
@@ -104,27 +112,7 @@ export interface MoexIndexesOverviewResponse {
     'indexes'?: Array<MoexIndex>;
     'memberships'?: { [key: string]: Array<string>; };
 }
-export interface PasswordChangeRequest {
-    'new_password'?: string;
-    'old_password'?: string;
-}
-export interface Permission {
-    'act': string;
-    'obj': string;
-}
-export interface PermissionsResponse {
-    'permissions': Array<Permission>;
-    'user': UserResponse;
-}
-export interface RepositoryMoexCoverageRow {
-    'dataset'?: string;
-    'entityKey'?: string;
-    'fromDate'?: string;
-    'isComplete'?: boolean;
-    'toDate'?: string;
-    'updatedAt'?: string;
-}
-export interface RepositoryMoexSyncRunRow {
+export interface MoexSyncRunResponse {
     'dataset'?: string;
     'details'?: string;
     'entityKey'?: string;
@@ -138,7 +126,7 @@ export interface RepositoryMoexSyncRunRow {
     'workflowId'?: string;
     'workflowRunId'?: string;
 }
-export interface RepositoryMoexSyncStateRow {
+export interface MoexSyncStateResponse {
     'checkedThroughDate'?: string;
     'dataset'?: string;
     'entityKey'?: string;
@@ -150,6 +138,18 @@ export interface RepositoryMoexSyncStateRow {
     'retryCount'?: number;
     'status'?: string;
     'updatedAt'?: string;
+}
+export interface PasswordChangeRequest {
+    'new_password'?: string;
+    'old_password'?: string;
+}
+export interface Permission {
+    'act': string;
+    'obj': string;
+}
+export interface PermissionsResponse {
+    'permissions': Array<Permission>;
+    'user': UserResponse;
 }
 export interface TBankAccount {
     'access_level'?: string;
@@ -217,6 +217,35 @@ export interface TBankMoneyBalance {
     'currency'?: string;
     'withdraw_available'?: number;
     'withdraw_blocked'?: number;
+}
+export interface TBankOperationHistoryItem {
+    'commission'?: number;
+    'commission_currency'?: string;
+    'cursor'?: string;
+    'date'?: string;
+    'description'?: string;
+    'figi'?: string;
+    'id'?: string;
+    'instrument_id'?: string;
+    'instrument_type'?: string;
+    'name'?: string;
+    'parent_operation_id'?: string;
+    'payment'?: number;
+    'payment_currency'?: string;
+    'price'?: number;
+    'price_currency'?: string;
+    'quantity'?: number;
+    'quantity_done'?: number;
+    'quantity_rest'?: number;
+    'state'?: string;
+    'type'?: string;
+}
+export interface TBankOperationsHistoryResponse {
+    'account_id'?: string;
+    'environment'?: string;
+    'has_next'?: boolean;
+    'items'?: Array<TBankOperationHistoryItem>;
+    'next_cursor'?: string;
 }
 export interface TBankPortfolioPosition {
     'currency'?: string;
@@ -1351,7 +1380,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<RepositoryMoexCoverageRow>>> {
+        async moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<MoexCoverageResponse>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexSyncCoverageGet(dataset, entityKey, from, till, limit, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexSyncCoverageGet']?.[localVarOperationServerIndex]?.url;
@@ -1367,7 +1396,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<RepositoryMoexSyncRunRow>>> {
+        async moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<MoexSyncRunResponse>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexSyncRunsGet(dataset, entityKey, status, limit, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexSyncRunsGet']?.[localVarOperationServerIndex]?.url;
@@ -1382,7 +1411,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<RepositoryMoexSyncStateRow>>> {
+        async moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<MoexSyncStateResponse>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.moexSyncStateGet(dataset, entityKey, limit, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MoexApi.moexSyncStateGet']?.[localVarOperationServerIndex]?.url;
@@ -1461,7 +1490,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<RepositoryMoexCoverageRow>> {
+        moexSyncCoverageGet(dataset?: string, entityKey?: string, from?: string, till?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<MoexCoverageResponse>> {
             return localVarFp.moexSyncCoverageGet(dataset, entityKey, from, till, limit, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1474,7 +1503,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<RepositoryMoexSyncRunRow>> {
+        moexSyncRunsGet(dataset?: string, entityKey?: string, status?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<MoexSyncRunResponse>> {
             return localVarFp.moexSyncRunsGet(dataset, entityKey, status, limit, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1486,7 +1515,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<RepositoryMoexSyncStateRow>> {
+        moexSyncStateGet(dataset?: string, entityKey?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<MoexSyncStateResponse>> {
             return localVarFp.moexSyncStateGet(dataset, entityKey, limit, options).then((request) => request(axios, basePath));
         },
     };
@@ -1939,6 +1968,51 @@ export const TbankApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
+         * Returns executed account operations (buy/sell/etc.) with cursor pagination
+         * @summary Get T-Bank account operations history
+         * @param {string} [accountId] Account id
+         * @param {string} [cursor] Cursor from previous response
+         * @param {number} [limit] Page size (1-200, default 50)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankOperationsGet: async (accountId?: string, cursor?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank/operations`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (accountId !== undefined) {
+                localVarQueryParameter['account_id'] = accountId;
+            }
+
+            if (cursor !== undefined) {
+                localVarQueryParameter['cursor'] = cursor;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns balances and positions for selected account (or default account if omitted)
          * @summary Get T-Bank account balances and portfolio
          * @param {string} [accountId] Account id
@@ -2117,6 +2191,21 @@ export const TbankApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns executed account operations (buy/sell/etc.) with cursor pagination
+         * @summary Get T-Bank account operations history
+         * @param {string} [accountId] Account id
+         * @param {string} [cursor] Cursor from previous response
+         * @param {number} [limit] Page size (1-200, default 50)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankOperationsGet(accountId?: string, cursor?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankOperationsHistoryResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankOperationsGet(accountId, cursor, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankOperationsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns balances and positions for selected account (or default account if omitted)
          * @summary Get T-Bank account balances and portfolio
          * @param {string} [accountId] Account id
@@ -2214,6 +2303,18 @@ export const TbankApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.meTbankInstrumentsLookupGet(ticker, classCode, options).then((request) => request(axios, basePath));
         },
         /**
+         * Returns executed account operations (buy/sell/etc.) with cursor pagination
+         * @summary Get T-Bank account operations history
+         * @param {string} [accountId] Account id
+         * @param {string} [cursor] Cursor from previous response
+         * @param {number} [limit] Page size (1-200, default 50)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankOperationsGet(accountId?: string, cursor?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<TBankOperationsHistoryResponse> {
+            return localVarFp.meTbankOperationsGet(accountId, cursor, limit, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns balances and positions for selected account (or default account if omitted)
          * @summary Get T-Bank account balances and portfolio
          * @param {string} [accountId] Account id
@@ -2302,6 +2403,19 @@ export class TbankApi extends BaseAPI {
      */
     public meTbankInstrumentsLookupGet(ticker: string, classCode?: string, options?: RawAxiosRequestConfig) {
         return TbankApiFp(this.configuration).meTbankInstrumentsLookupGet(ticker, classCode, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns executed account operations (buy/sell/etc.) with cursor pagination
+     * @summary Get T-Bank account operations history
+     * @param {string} [accountId] Account id
+     * @param {string} [cursor] Cursor from previous response
+     * @param {number} [limit] Page size (1-200, default 50)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankOperationsGet(accountId?: string, cursor?: string, limit?: number, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankOperationsGet(accountId, cursor, limit, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

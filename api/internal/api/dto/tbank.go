@@ -97,6 +97,37 @@ type TBankAccountPortfolioResponse struct {
 	Positions                    []TBankPortfolioPosition `json:"positions"`
 } //@name TBankAccountPortfolioResponse
 
+type TBankOperationHistoryItem struct {
+	Cursor             string     `json:"cursor,omitempty"`
+	ID                 string     `json:"id,omitempty"`
+	ParentOperationID  string     `json:"parent_operation_id,omitempty"`
+	Date               *time.Time `json:"date,omitempty"`
+	Type               string     `json:"type,omitempty"`
+	State              string     `json:"state,omitempty"`
+	Name               string     `json:"name,omitempty"`
+	Description        string     `json:"description,omitempty"`
+	InstrumentID       string     `json:"instrument_id,omitempty"`
+	Figi               string     `json:"figi,omitempty"`
+	InstrumentType     string     `json:"instrument_type,omitempty"`
+	Quantity           int64      `json:"quantity"`
+	QuantityDone       int64      `json:"quantity_done"`
+	QuantityRest       int64      `json:"quantity_rest"`
+	Payment            float64    `json:"payment"`
+	PaymentCurrency    string     `json:"payment_currency,omitempty"`
+	Price              float64    `json:"price"`
+	PriceCurrency      string     `json:"price_currency,omitempty"`
+	Commission         float64    `json:"commission"`
+	CommissionCurrency string     `json:"commission_currency,omitempty"`
+} //@name TBankOperationHistoryItem
+
+type TBankOperationsHistoryResponse struct {
+	Environment string                      `json:"environment"`
+	AccountID   string                      `json:"account_id"`
+	HasNext     bool                        `json:"has_next"`
+	NextCursor  string                      `json:"next_cursor,omitempty"`
+	Items       []TBankOperationHistoryItem `json:"items"`
+} //@name TBankOperationsHistoryResponse
+
 type TBankInstrumentLookupItem struct {
 	InstrumentID      string `json:"instrument_id"`
 	Ticker            string `json:"ticker"`

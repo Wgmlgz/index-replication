@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import {
   tbankClient,
   type TBankAccountPortfolioResponse,
+  type TBankOperationHistoryItem,
   type TBankSandboxPayInResponse,
 } from "@/lib/tbank-client";
 import { useTBankConnectionContext } from "@/components/tbank-test/tbank-connection-context";
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/error-utils";
 
 const DEFAULT_SANDBOX_TOP_UP_UNITS = 1_000_000;
+const OPERATIONS_PAGE_SIZE = 50;
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value);
@@ -27,6 +29,31 @@ function formatPercent(value: number): string {
   return `${formatNumber(value)}%`;
 }
 
+function formatDateTime(value?: string): string {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatEnumLabel(value: string | undefined, prefix: string): string {
+  if (!value) {
+    return "-";
+  }
+  const normalized = value.replace(prefix, "");
+  return normalized
+    .split("_")
+    .map(token => `${token.charAt(0)}${token.slice(1).toLowerCase()}`)
+    .join(" ");
+}
+
 export function TBankPortfolioCard() {
   const { t } = useTranslation();
   const { status, availableAccounts, connected } = useTBankConnectionContext();
@@ -34,6 +61,12 @@ export function TBankPortfolioCard() {
   const [portfolioAccountID, setPortfolioAccountID] = useState("");
   const [portfolio, setPortfolio] = useState<TBankAccountPortfolioResponse | null>(null);
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
+  const [operations, setOperations] = useState<TBankOperationHistoryItem[]>([]);
+  const [operationsHasNext, setOperationsHasNext] = useState(false);
+  const [operationsNextCursor, setOperationsNextCursor] = useState("");
+  const [loadingOperations, setLoadingOperations] = useState(false);
+  const [loadingMoreOperations, setLoadingMoreOperations] = useState(false);
+  const [operationsError, setOperationsError] = useState("");
 
   const [sandboxCurrency, setSandboxCurrency] = useState("RUB");
   const [sandboxUnits, setSandboxUnits] = useState(DEFAULT_SANDBOX_TOP_UP_UNITS);
@@ -58,6 +91,42 @@ export function TBankPortfolioCard() {
     return fallback;
   }, []);
 
+  const loadOperations = useCallback(async (accountID?: string, cursor?: string, append = false) => {
+    if (!connected) {
+      setOperations([]);
+      setOperationsHasNext(false);
+      setOperationsNextCursor("");
+      return;
+    }
+
+    if (append) {
+      setLoadingMoreOperations(true);
+    } else {
+      setLoadingOperations(true);
+      setOperationsError("");
+    }
+
+    try {
+      const response = await tbankClient.getOperations(accountID || undefined, cursor || undefined, OPERATIONS_PAGE_SIZE);
+      setOperations(currentItems => (append ? [...currentItems, ...response.items] : response.items));
+      setOperationsHasNext(response.has_next);
+      setOperationsNextCursor(response.next_cursor || "");
+    } catch (err) {
+      setOperationsError(parseErrorMessage(err, t("tbankTest.errors.operations")));
+      if (!append) {
+        setOperations([]);
+        setOperationsHasNext(false);
+        setOperationsNextCursor("");
+      }
+    } finally {
+      if (append) {
+        setLoadingMoreOperations(false);
+      } else {
+        setLoadingOperations(false);
+      }
+    }
+  }, [connected, parseErrorMessage, t]);
+
   const loadPortfolio = useCallback(async (accountID?: string) => {
     if (!connected) {
       setPortfolio(null);
@@ -70,16 +139,21 @@ export function TBankPortfolioCard() {
       const nextPortfolio = await tbankClient.getPortfolio(accountID || undefined);
       setPortfolio(nextPortfolio);
       setPortfolioAccountID(nextPortfolio.account_id || "");
+      await loadOperations(nextPortfolio.account_id || accountID || undefined);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.portfolio")));
     } finally {
       setLoadingPortfolio(false);
     }
-  }, [connected, parseErrorMessage, t]);
+  }, [connected, loadOperations, parseErrorMessage, t]);
 
   useEffect(() => {
     if (!connected) {
       setPortfolio(null);
+      setOperations([]);
+      setOperationsHasNext(false);
+      setOperationsNextCursor("");
+      setOperationsError("");
       setSandboxResult(null);
       setError("");
       return;
@@ -104,6 +178,13 @@ export function TBankPortfolioCard() {
     } finally {
       setWorking(false);
     }
+  };
+
+  const onLoadMoreOperations = () => {
+    if (!operationsHasNext || !operationsNextCursor) {
+      return;
+    }
+    void loadOperations(resolvedAccountID || undefined, operationsNextCursor, true);
   };
 
   return (
@@ -283,6 +364,83 @@ export function TBankPortfolioCard() {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="font-medium">{t("tbankTest.portfolio.operationsTitle")}</div>
+              {operationsError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>{t("common.error")}</AlertTitle>
+                  <AlertDescription>{operationsError}</AlertDescription>
+                </Alert>
+              ) : null}
+
+              {loadingOperations ? (
+                <div className="text-sm text-muted-foreground">{t("tbankTest.portfolio.operationsLoading")}</div>
+              ) : (
+                <div className="overflow-auto rounded-md border">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="p-2">{t("tbankTest.portfolio.operationDate")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationType")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationState")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationInstrument")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationQuantity")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationPrice")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationPayment")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationCommission")}</th>
+                        <th className="p-2">{t("tbankTest.portfolio.operationDescription")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {operations.length === 0 ? (
+                        <tr>
+                          <td className="p-2 text-muted-foreground" colSpan={9}>
+                            {t("tbankTest.portfolio.operationsEmpty")}
+                          </td>
+                        </tr>
+                      ) : (
+                        operations.map((operation, index) => (
+                          <tr
+                            key={`${operation.id || "op"}:${operation.cursor || index}:${operation.date || "-"}`}
+                            className="border-t"
+                          >
+                            <td className="p-2">{formatDateTime(operation.date)}</td>
+                            <td className="p-2">{formatEnumLabel(operation.type, "OPERATION_TYPE_")}</td>
+                            <td className="p-2">{formatEnumLabel(operation.state, "OPERATION_STATE_")}</td>
+                            <td className="p-2">{operation.name || operation.instrument_id || operation.figi || "-"}</td>
+                            <td className="p-2">{formatNumber(operation.quantity_done || operation.quantity || 0)}</td>
+                            <td className="p-2">
+                              {formatNumber(operation.price)} {operation.price_currency || ""}
+                            </td>
+                            <td className="p-2">
+                              {formatNumber(operation.payment)} {operation.payment_currency || ""}
+                            </td>
+                            <td className="p-2">
+                              {formatNumber(operation.commission)} {operation.commission_currency || ""}
+                            </td>
+                            <td className="p-2">{operation.description || "-"}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {operationsHasNext ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onLoadMoreOperations}
+                  disabled={loadingMoreOperations}
+                >
+                  {loadingMoreOperations
+                    ? t("tbankTest.portfolio.operationsLoadingMore")
+                    : t("tbankTest.portfolio.operationsLoadMore")}
+                </Button>
+              ) : null}
             </div>
           </div>
         ) : (

@@ -9,6 +9,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**meTbankDisconnectPost**](#metbankdisconnectpost) | **POST** /me/tbank/disconnect | Disconnect T-Bank account|
 |[**meTbankGet**](#metbankget) | **GET** /me/tbank | Get T-Bank integration status|
 |[**meTbankInstrumentsLookupGet**](#metbankinstrumentslookupget) | **GET** /me/tbank/instruments/lookup | Find T-Bank instrument id by ticker|
+|[**meTbankOperationsGet**](#metbankoperationsget) | **GET** /me/tbank/operations | Get T-Bank account operations history|
 |[**meTbankPortfolioGet**](#metbankportfolioget) | **GET** /me/tbank/portfolio | Get T-Bank account balances and portfolio|
 |[**meTbankSandboxPayInPost**](#metbanksandboxpayinpost) | **POST** /me/tbank/sandbox/pay-in | Top up T-Bank sandbox account|
 |[**meTbankTestBuyPost**](#metbanktestbuypost) | **POST** /me/tbank/test-buy | Create T-Bank test buy order|
@@ -248,6 +249,65 @@ const { status, data } = await apiInstance.meTbankInstrumentsLookupGet(
 ### Return type
 
 **TBankInstrumentLookupResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**502** | Bad Gateway |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **meTbankOperationsGet**
+> TBankOperationsHistoryResponse meTbankOperationsGet()
+
+Returns executed account operations (buy/sell/etc.) with cursor pagination
+
+### Example
+
+```typescript
+import {
+    TbankApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new TbankApi(configuration);
+
+let accountId: string; //Account id (optional) (default to undefined)
+let cursor: string; //Cursor from previous response (optional) (default to undefined)
+let limit: number; //Page size (1-200, default 50) (optional) (default to undefined)
+
+const { status, data } = await apiInstance.meTbankOperationsGet(
+    accountId,
+    cursor,
+    limit
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **accountId** | [**string**] | Account id | (optional) defaults to undefined|
+| **cursor** | [**string**] | Cursor from previous response | (optional) defaults to undefined|
+| **limit** | [**number**] | Page size (1-200, default 50) | (optional) defaults to undefined|
+
+
+### Return type
+
+**TBankOperationsHistoryResponse**
 
 ### Authorization
 

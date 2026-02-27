@@ -395,6 +395,64 @@ definitions:
       withdraw_blocked:
         type: number
     type: object
+  TBankOperationHistoryItem:
+    properties:
+      commission:
+        type: number
+      commission_currency:
+        type: string
+      cursor:
+        type: string
+      date:
+        type: string
+      description:
+        type: string
+      figi:
+        type: string
+      id:
+        type: string
+      instrument_id:
+        type: string
+      instrument_type:
+        type: string
+      name:
+        type: string
+      parent_operation_id:
+        type: string
+      payment:
+        type: number
+      payment_currency:
+        type: string
+      price:
+        type: number
+      price_currency:
+        type: string
+      quantity:
+        type: integer
+      quantity_done:
+        type: integer
+      quantity_rest:
+        type: integer
+      state:
+        type: string
+      type:
+        type: string
+    type: object
+  TBankOperationsHistoryResponse:
+    properties:
+      account_id:
+        type: string
+      environment:
+        type: string
+      has_next:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/TBankOperationHistoryItem'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   TBankPortfolioPosition:
     properties:
       currency:
@@ -1039,6 +1097,41 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Find T-Bank instrument id by ticker
+      tags:
+      - tbank
+  /me/tbank/operations:
+    get:
+      description: Returns executed account operations (buy/sell/etc.) with cursor
+        pagination
+      parameters:
+      - description: Account id
+        in: query
+        name: account_id
+        type: string
+      - description: Cursor from previous response
+        in: query
+        name: cursor
+        type: string
+      - description: Page size (1-200, default 50)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TBankOperationsHistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get T-Bank account operations history
       tags:
       - tbank
   /me/tbank/portfolio:

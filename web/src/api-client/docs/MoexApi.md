@@ -263,7 +263,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **moexSyncCoverageGet**
-> Array<RepositoryMoexCoverageRow> moexSyncCoverageGet()
+> Array<MoexCoverageResponse> moexSyncCoverageGet()
 
 Returns rows from moex_data_coverage with optional filters
 
@@ -306,7 +306,7 @@ const { status, data } = await apiInstance.moexSyncCoverageGet(
 
 ### Return type
 
-**Array<RepositoryMoexCoverageRow>**
+**Array<MoexCoverageResponse>**
 
 ### Authorization
 
@@ -328,7 +328,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **moexSyncRunsGet**
-> Array<RepositoryMoexSyncRunRow> moexSyncRunsGet()
+> Array<MoexSyncRunResponse> moexSyncRunsGet()
 
 Returns rows from moex_sync_runs with optional filters
 
@@ -368,7 +368,7 @@ const { status, data } = await apiInstance.moexSyncRunsGet(
 
 ### Return type
 
-**Array<RepositoryMoexSyncRunRow>**
+**Array<MoexSyncRunResponse>**
 
 ### Authorization
 
@@ -389,7 +389,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **moexSyncStateGet**
-> Array<RepositoryMoexSyncStateRow> moexSyncStateGet()
+> Array<MoexSyncStateResponse> moexSyncStateGet()
 
 Returns rows from moex_sync_state with optional filters
 
@@ -426,7 +426,7 @@ const { status, data } = await apiInstance.moexSyncStateGet(
 
 ### Return type
 
-**Array<RepositoryMoexSyncStateRow>**
+**Array<MoexSyncStateResponse>**
 
 ### Authorization
 

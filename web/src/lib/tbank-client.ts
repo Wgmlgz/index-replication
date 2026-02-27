@@ -90,6 +90,37 @@ export type TBankAccountPortfolioResponse = {
   positions: TBankPortfolioPosition[];
 };
 
+export type TBankOperationHistoryItem = {
+  cursor?: string;
+  id?: string;
+  parent_operation_id?: string;
+  date?: string;
+  type?: string;
+  state?: string;
+  name?: string;
+  description?: string;
+  instrument_id?: string;
+  figi?: string;
+  instrument_type?: string;
+  quantity: number;
+  quantity_done: number;
+  quantity_rest: number;
+  payment: number;
+  payment_currency?: string;
+  price: number;
+  price_currency?: string;
+  commission: number;
+  commission_currency?: string;
+};
+
+export type TBankOperationsHistoryResponse = {
+  environment: string;
+  account_id: string;
+  has_next: boolean;
+  next_cursor?: string;
+  items: TBankOperationHistoryItem[];
+};
+
 export type TBankInstrumentLookupItem = {
   instrument_id: string;
   ticker: string;
@@ -144,6 +175,20 @@ export const tbankClient = {
     const response = await axiosClient.get<TBankAccountPortfolioResponse>(
       `${getApiUrl()}/me/tbank/portfolio`,
       { params: accountID ? { account_id: accountID } : undefined }
+    );
+    return response.data;
+  },
+
+  async getOperations(accountID?: string, cursor?: string, limit = 50): Promise<TBankOperationsHistoryResponse> {
+    const response = await axiosClient.get<TBankOperationsHistoryResponse>(
+      `${getApiUrl()}/me/tbank/operations`,
+      {
+        params: {
+          account_id: accountID || undefined,
+          cursor: cursor || undefined,
+          limit,
+        },
+      }
     );
     return response.data;
   },

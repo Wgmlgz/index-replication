@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"server/internal/api/dto"
@@ -176,6 +177,46 @@ func (h *TBankHandler) GetAccountPortfolio(c *gin.Context) {
 	accountID := strings.TrimSpace(c.Query("account_id"))
 
 	resp, err := h.tbankService.GetAccountPortfolio(c.Request.Context(), userID, accountID)
+	if err != nil {
+		writeTBankServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetOperationsHistory godoc
+//
+//	@Summary		Get T-Bank account operations history
+//	@Description	Returns executed account operations (buy/sell/etc.) with cursor pagination
+//	@Tags			tbank
+//	@Produce		json
+//	@Param			account_id	query		string	false	"Account id"
+//	@Param			cursor		query		string	false	"Cursor from previous response"
+//	@Param			limit		query		int		false	"Page size (1-200, default 50)"
+//	@Success		200			{object}	dto.TBankOperationsHistoryResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		502			{object}	dto.ErrorResponse
+//	@Router			/me/tbank/operations [get]
+func (h *TBankHandler) GetOperationsHistory(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	accountID := strings.TrimSpace(c.Query("account_id"))
+	cursor := strings.TrimSpace(c.Query("cursor"))
+
+	limit := int32(50)
+	limitQuery := strings.TrimSpace(c.Query("limit"))
+	if limitQuery != "" {
+		parsedLimit, err := strconv.Atoi(limitQuery)
+		if err != nil || parsedLimit < 1 {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid limit query value"})
+			return
+		}
+		if parsedLimit > 200 {
+			parsedLimit = 200
+		}
+		limit = int32(parsedLimit)
+	}
+
+	resp, err := h.tbankService.GetOperationsHistory(c.Request.Context(), userID, accountID, cursor, limit)
 	if err != nil {
 		writeTBankServiceError(c, err)
 		return

@@ -107,6 +107,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.POST("/me/tbank/disconnect", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.Disconnect)
 		a.POST("/me/tbank/default-account", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.SetDefaultAccount)
 		a.GET("/me/tbank/portfolio", m.RPM(cs, config.SelfView), tbankHandler.GetAccountPortfolio)
+		a.GET("/me/tbank/operations", m.RPM(cs, config.SelfView), tbankHandler.GetOperationsHistory)
 		a.POST("/me/tbank/sandbox/pay-in", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.SandboxPayIn)
 		a.GET("/me/tbank/instruments/lookup", m.RPM(cs, config.SelfView), tbankHandler.FindInstrumentByTicker)
 		a.POST("/me/tbank/test-buy", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.CreateTestBuyOrder)

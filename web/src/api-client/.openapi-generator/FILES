@@ -1,6 +1,5 @@
 .gitignore
 .npmignore
-.openapi-generator-ignore
 api.ts
 base.ts
 common.ts
@@ -15,18 +14,18 @@ docs/LoginRequest.md
 docs/LoginVerifyRequest.md
 docs/LoginVerifyStatusResponse.md
 docs/MoexApi.md
+docs/MoexCoverageResponse.md
 docs/MoexIndex.md
 docs/MoexIndexCollection.md
 docs/MoexIndexCompositionEntry.md
 docs/MoexIndexHistoryPoint.md
 docs/MoexIndexTickerAnalyticsPoint.md
 docs/MoexIndexesOverviewResponse.md
+docs/MoexSyncRunResponse.md
+docs/MoexSyncStateResponse.md
 docs/PasswordChangeRequest.md
 docs/Permission.md
 docs/PermissionsResponse.md
-docs/RepositoryMoexCoverageRow.md
-docs/RepositoryMoexSyncRunRow.md
-docs/RepositoryMoexSyncStateRow.md
 docs/SettingsApi.md
 docs/TBankAccount.md
 docs/TBankAccountPortfolioResponse.md
@@ -35,6 +34,8 @@ docs/TBankConnectionStatusResponse.md
 docs/TBankInstrumentLookupItem.md
 docs/TBankInstrumentLookupResponse.md
 docs/TBankMoneyBalance.md
+docs/TBankOperationHistoryItem.md
+docs/TBankOperationsHistoryResponse.md
 docs/TBankPortfolioPosition.md
 docs/TBankSandboxPayInRequest.md
 docs/TBankSandboxPayInResponse.md
