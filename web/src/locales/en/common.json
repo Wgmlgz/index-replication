@@ -31,6 +31,10 @@
       "integrations": {
         "title": "Integrations",
         "button": "Open integrations"
+      },
+      "portfolio": {
+        "title": "Portfolio",
+        "button": "Open portfolio"
       }
     }
   },
@@ -317,9 +321,13 @@
     "loading": "Loading integrations...",
     "notAuthorized": "Not authenticated."
   },
+  "portfolio": {
+    "title": "Portfolio",
+    "description": "Review account balances and portfolio positions."
+  },
   "tbankTest": {
     "title": "T-Bank trading workspace",
-    "description": "Run test orders, manage balances, and resolve instrument ids. Configure token and account in Integrations.",
+    "description": "Run test orders and resolve instrument ids. Configure token and account in Integrations.",
     "menu": {
       "title": "T-Bank test buy",
       "button": "Open T-Bank tester"

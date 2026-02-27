@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 
 import { TBankBuyCard } from "@/components/tbank-test/buy-card";
 import { TBankInstrumentLookupCard } from "@/components/tbank-test/instrument-lookup-card";
-import { TBankPortfolioCard } from "@/components/tbank-test/portfolio-card";
 import { TBankConnectionProvider } from "@/components/tbank-test/tbank-connection-context";
 
 function TBankTestPageContent() {
@@ -19,7 +18,6 @@ function TBankTestPageContent() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <TBankBuyCard />
-        <TBankPortfolioCard />
         <TBankInstrumentLookupCard />
       </div>
     </div>

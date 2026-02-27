@@ -67,4 +67,13 @@ export const DashboardCards: DashboardCard[] = [
     href: '/tbank-test',
     permission: null,
   },
+  {
+    title: 'Portfolio',
+    titleKey: 'navigation.cards.portfolio.title',
+    icon: Wallet,
+    buttonText: 'Open portfolio',
+    buttonTextKey: 'navigation.cards.portfolio.button',
+    href: '/portfolio',
+    permission: null,
+  },
 ];
