@@ -80,6 +80,7 @@ export function useMoexIndexList({
     const key = value ?? EMPTY_FILTER_VALUE;
     return set.has(key);
   };
+  const getSecidKey = (secid: string | undefined) => (secid ?? '').toUpperCase();
 
   const filteredIndexes = useMemo(() => {
     const collectionSet = filterSets.collections;
@@ -91,8 +92,7 @@ export function useMoexIndexList({
       }
 
       if (collectionSet.size > 0) {
-        const membership =
-          collectionMemberships[index.secid.toUpperCase()] ?? [];
+        const membership = collectionMemberships[getSecidKey(index.secid)] ?? [];
         const matchesCollection =
           membership.some((name) => collectionSet.has(name)) ||
           (membership.length === 0 &&
@@ -107,7 +107,7 @@ export function useMoexIndexList({
         }
       }
 
-      if (!matchesLastActiveRange(index.lastActiveDate, lastActiveRange)) {
+      if (!matchesLastActiveRange(index.lastActiveDate ?? null, lastActiveRange)) {
         return false;
       }
       if (compositionOnly && !index.hasComposition) {
@@ -133,7 +133,7 @@ export function useMoexIndexList({
   const favoriteIndexesAll = useMemo(
     () =>
       sortedIndexes.filter((index) =>
-        favoritesSet.has(index.secid.toUpperCase())
+        favoritesSet.has(getSecidKey(index.secid))
       ),
     [sortedIndexes, favoritesSet]
   );
@@ -141,7 +141,7 @@ export function useMoexIndexList({
   const otherIndexesAll = useMemo(
     () =>
       sortedIndexes.filter(
-        (index) => !favoritesSet.has(index.secid.toUpperCase())
+        (index) => !favoritesSet.has(getSecidKey(index.secid))
       ),
     [sortedIndexes, favoritesSet]
   );
@@ -174,16 +174,18 @@ export function useMoexIndexList({
 
   const groupingOrder = useMemo(() => {
     return [...groupingCollections].sort((left, right) =>
-      compareStrings(left.title, right.title)
+      compareStrings(left.title ?? '', right.title ?? '')
     );
   }, [groupingCollections]);
 
   const collectionGroups = useMemo<IndexSection[]>(() => {
     const groups = new Map<string, IndexSection>();
     groupingOrder.forEach((collection) => {
-      groups.set(collection.name, {
-        key: collection.name,
-        title: collection.title,
+      const collectionName = collection.name ?? '';
+      if (!collectionName) return;
+      groups.set(collectionName, {
+        key: collectionName,
+        title: collection.title ?? collectionName,
         indexes: [],
       });
     });
@@ -196,8 +198,7 @@ export function useMoexIndexList({
 
     const source = showFavoritesOnly ? visibleFavorites : visibleOthers;
     source.forEach((index) => {
-      const membership =
-        collectionMemberships[index.secid.toUpperCase()] ?? [];
+      const membership = collectionMemberships[getSecidKey(index.secid)] ?? [];
       if (membership.length === 0) {
         uncategorized.indexes.push(index);
         return;
@@ -212,7 +213,9 @@ export function useMoexIndexList({
 
     const orderedGroups: IndexSection[] = [];
     groupingOrder.forEach((collection) => {
-      const group = groups.get(collection.name);
+      const collectionName = collection.name ?? '';
+      if (!collectionName) return;
+      const group = groups.get(collectionName);
       if (group && group.indexes.length > 0) {
         orderedGroups.push(group);
       }

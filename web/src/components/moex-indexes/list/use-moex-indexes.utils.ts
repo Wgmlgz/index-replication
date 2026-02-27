@@ -71,10 +71,10 @@ export const sortComparators: Record<
   SortKey,
   (a: MoexIndex, b: MoexIndex) => number
 > = {
-  'name-asc': (a, b) => compareStrings(a.name, b.name),
-  'name-desc': (a, b) => compareStrings(b.name, a.name),
-  'secid-asc': (a, b) => compareStrings(a.secid, b.secid),
-  'secid-desc': (a, b) => compareStrings(b.secid, a.secid),
+  'name-asc': (a, b) => compareNullableStrings(a.name, b.name),
+  'name-desc': (a, b) => compareNullableStrings(b.name, a.name),
+  'secid-asc': (a, b) => compareNullableStrings(a.secid, b.secid),
+  'secid-desc': (a, b) => compareNullableStrings(b.secid, a.secid),
   'currency-asc': (a, b) => compareNullableStrings(a.currency, b.currency),
   'board-asc': (a, b) => compareNullableStrings(a.boardId, b.boardId),
   'calc-asc': (a, b) => compareNullableStrings(a.calcMode, b.calcMode),

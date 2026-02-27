@@ -10,23 +10,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 import { Time } from "../ui/time"
 import { Checkbox } from "../ui/checkbox"
 import { UseUserRet } from "../user-context"
+import { UserResponse } from "@/api-client"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
-export type User = {
-  id: number
-  username: string
-  full_name: string
-  role_id: number
-  organization_id: number | null
+export type User = UserResponse & {
+  organization_id?: number | null
   organization_name?: string | null
   last_active: string | null
-  blocked_at?: string
-  is_blocked: boolean
-  phone: string
-  email: string
-  created_at: string
-  comment: string
+  blocked_at: string | null
   onEdit?: (user: User) => void
   onViewHistory?: (user: User) => void
 }

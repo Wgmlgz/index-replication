@@ -77,10 +77,16 @@ export function useMoexIndexesData(): MoexIndexesDataState {
   );
 
   const favoritesBySecid = useMemo(() => {
-    const map = new Map(indexes.map((item) => [item.secid.toUpperCase(), item]));
+    const map = new Map(
+      indexes
+        .filter((item): item is MoexIndex & { secid: string } => Boolean(item.secid))
+        .map((item) => [item.secid.toUpperCase(), item])
+    );
     return favorites
       .map((secid) => map.get(secid.toUpperCase()))
-      .filter((item): item is MoexIndex => Boolean(item));
+      .filter(
+        (item): item is MoexIndex & { secid: string } => Boolean(item)
+      );
   }, [favorites, indexes]);
 
   const updateFavorites = useMutation({

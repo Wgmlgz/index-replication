@@ -125,6 +125,22 @@ const getRecordValue = (value: unknown, key: string): unknown => {
   return (value as Record<string, unknown>)[key];
 };
 
+const toReactNode = (value: unknown): React.ReactNode => {
+  if (value === null || value === undefined) return '';
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'bigint' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+  if (React.isValidElement(value)) {
+    return value;
+  }
+  return String(JSON.stringify(value));
+};
+
 export function ChartTooltipContent({
   active,
   payload,
@@ -168,6 +184,7 @@ export function ChartTooltipContent({
             typeof item.value === 'number' && valueFormatter
               ? valueFormatter(item.value, dataKey)
               : item.value;
+          const displayLabel = configItem?.label ?? nameValue ?? dataKey;
 
           return (
             <div
@@ -193,10 +210,10 @@ export function ChartTooltipContent({
                 />
               )}
               <span className='text-muted-foreground'>
-                {configItem?.label ?? nameValue}
+                {toReactNode(displayLabel)}
               </span>
               <span className='ml-auto font-medium text-foreground'>
-                {formattedValue}
+                {toReactNode(formattedValue)}
               </span>
             </div>
           );
@@ -207,7 +224,7 @@ export function ChartTooltipContent({
 }
 
 export function ChartLegend(props: LegendProps) {
-  return <Legend {...props} />;
+  return <Legend {...(props as Omit<LegendProps, 'ref'>)} />;
 }
 
 type ChartLegendContentProps = LegendProps & {

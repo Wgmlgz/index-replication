@@ -3,7 +3,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import type { MoexIndex as MoexIndex } from '@/api-client';
+import type {
+  MoexIndex as MoexIndex,
+  MoexIndexHistoryPoint,
+} from '@/api-client';
 import { moexApi } from '@/lib/api';
 import type { ChartData } from './index-chart';
 import { resolveDateRange, resolveIntervalDays } from './use-moex-indexes-detail.utils';
@@ -25,6 +28,12 @@ type HistoryState = {
   change: number | null;
   changePercent: number | null;
   numberFormatter: Intl.NumberFormat;
+};
+
+const hasTradeDateAndClose = (
+  point: MoexIndexHistoryPoint
+): point is MoexIndexHistoryPoint & { tradeDate: string; close: number } => {
+  return typeof point.tradeDate === 'string' && typeof point.close === 'number';
 };
 
 export function useMoexIndexHistory(
@@ -81,14 +90,14 @@ export function useMoexIndexHistory(
 
   const normalizedHistory = useMemo<NormalizedHistoryPoint[]>(() => {
     return history
-      .filter((point) => point.tradeDate && point.close !== null)
+      .filter(hasTradeDateAndClose)
       .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate))
       .map((point) => ({
         tradeDate: point.tradeDate,
-        close: point.close as number,
-        open: point.open,
-        high: point.high,
-        low: point.low,
+        close: point.close,
+        open: point.open ?? null,
+        high: point.high ?? null,
+        low: point.low ?? null,
       }));
   }, [history]);
 

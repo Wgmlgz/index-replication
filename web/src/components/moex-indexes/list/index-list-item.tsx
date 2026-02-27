@@ -25,7 +25,7 @@ export function IndexListItem({ index, showCollections }: IndexListItemProps) {
   const secidKey = (index.secid ?? '').toUpperCase();
   const isActive = index.secid === selectedSecid;
   const isFavorite = favoritesSet.has(secidKey);
-  const isInactive = isIndexInactive(index.lastActiveDate);
+  const isInactive = isIndexInactive(index.lastActiveDate ?? null);
   const collectionTitles = showCollections
     ? (indexCollectionsMap[secidKey] ?? [])
     : [];
@@ -104,6 +104,7 @@ export function IndexListItem({ index, showCollections }: IndexListItemProps) {
           type='button'
           onClick={event => {
             event.stopPropagation();
+            if (!index.secid) return;
             toggleFavorite(index.secid);
           }}
           className='flex-shrink-0 rounded-full p-1 text-muted-foreground transition hover:text-amber-500'

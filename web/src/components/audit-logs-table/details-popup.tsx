@@ -38,6 +38,12 @@ export function DetailsPopup({
       return null;
     }
   }, [details]);
+  const parsedDetailsObject = useMemo(() => {
+    if (!parsedDetails || typeof parsedDetails !== 'object') {
+      return null;
+    }
+    return parsedDetails as Record<string, unknown>;
+  }, [parsedDetails]);
 
   const diffStrings = useMemo(() => {
     if (
@@ -162,13 +168,13 @@ export function DetailsPopup({
           )}
 
           {/* Details JSON (fallback) */}
-          {!diffStrings && parsedDetails && (
+          {!diffStrings && parsedDetailsObject && (
             <div>
               <label className='text-sm font-medium mb-2 block'>
                 Изменения
               </label>
               <JsonView
-                value={parsedDetails as object}
+                value={parsedDetailsObject}
                 title='Детали'
                 className='w-full'
               />

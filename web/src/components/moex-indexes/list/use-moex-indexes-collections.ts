@@ -25,7 +25,17 @@ export function useMoexIndexCollections(
   const { t } = useTranslation();
 
   const groupingCollections = useMemo(
-    () => collections.filter((collection) => collection.name !== 'stock_index_all'),
+    () =>
+      collections.filter(
+        (
+          collection
+        ): collection is MoexIndexCollection & { name: string; title: string } =>
+          Boolean(
+            collection.name &&
+              collection.title &&
+              collection.name !== 'stock_index_all'
+          )
+      ),
     [collections]
   );
 
@@ -56,8 +66,8 @@ export function useMoexIndexCollections(
 
     let uncategorized = 0;
     indexes.forEach((index) => {
-      const membership =
-        collectionMemberships[index.secid.toUpperCase()] ?? [];
+      const secidKey = (index.secid ?? '').toUpperCase();
+      const membership = collectionMemberships[secidKey] ?? [];
       if (membership.length === 0) {
         uncategorized += 1;
         return;

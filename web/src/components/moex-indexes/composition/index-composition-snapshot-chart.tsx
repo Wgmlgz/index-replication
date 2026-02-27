@@ -40,23 +40,27 @@ const TreemapTooltip = ({
   );
 };
 
-const renderTreemapContent = (props: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  index: number;
-  name: string;
-  fill: string;
-  ticker: string;
-  value: number;
-}) => {
+type TreemapContentProps = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  name?: string;
+  fill?: string;
+  ticker?: string;
+  value?: number;
+};
+
+const TreemapContent = (props: TreemapContentProps) => {
   const { x, y, width, height, fill, name, ticker, value } = props;
+  if (x === undefined || y === undefined || width === undefined || height === undefined) {
+    return null;
+  }
   const canShowLabel = width > 80 && height > 24;
-  const label = `${ticker}`;
+  const label = ticker ?? '';
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height} fill={fill} />
+      <rect x={x} y={y} width={width} height={height} fill={fill ?? 'transparent'} />
       {canShowLabel && (
         <>
           <text
@@ -74,7 +78,7 @@ const renderTreemapContent = (props: {
             fill='rgba(255,255,255,0.7)'
             fontSize={10}
           >
-            {name}
+            {name ?? ''}
           </text>
           <text
             x={x + 8}
@@ -82,7 +86,7 @@ const renderTreemapContent = (props: {
             fill='rgba(255,255,255,0.8)'
             fontSize={10}
           >
-            {value.toFixed(1)}%
+            {(value ?? 0).toFixed(1)}%
           </text>
         </>
       )}
@@ -106,7 +110,7 @@ export function IndexCompositionSnapshotChart({ items }: SnapshotChartProps) {
         data={data}
         dataKey='value'
         stroke='var(--border)'
-        content={renderTreemapContent}
+        content={<TreemapContent />}
         isAnimationActive={false}
       >
         <Tooltip content={<TreemapTooltip />} />

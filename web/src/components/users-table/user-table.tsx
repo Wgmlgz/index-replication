@@ -27,12 +27,13 @@ export type UserTableProps = {
 }
 
 const fetchUsers = async (pagination: PaginationState, sorting: SortingState, search: string, organization_id?: number) => {
+  void organization_id
   const params = {
     page: pagination.pageIndex + 1,
     pageSize: pagination.pageSize,
     search,
   };
-  const response = await api.usersGet(params.page, params.pageSize, params.search, sorting[0]?.id, sorting[0]?.desc ? "desc" : "asc", organization_id);
+  const response = await api.usersGet(params.page, params.pageSize, params.search, sorting[0]?.id, sorting[0]?.desc ? "desc" : "asc");
   if (response.status === 200 && response.data) {
     const data = response.data;
     return { data: data.users ?? [], total: data.total ?? 0 };

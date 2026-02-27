@@ -11,17 +11,6 @@ import { AuditLogResponse } from "@/api-client"
 
 // This type is used to define the shape of our data.
 export type AuditLog = {
-  id: number
-  action: string
-  entity_type: string
-  entity_id: number | undefined
-  details: string
-  timestamp: string
-  performed_by?: {
-    id: number
-    username: string
-    full_name: string
-  }
   onViewDetails?: (auditLog: AuditLog) => void
 } & AuditLogResponse
 

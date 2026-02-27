@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { User } from "lucide-react"
 import { DetailsPopup } from "../audit-logs-table/details-popup"
 import { auditLogsApi as api } from "@/lib/api";
+import type { AuditLogResponse } from "@/api-client";
 
 const fetchUserHistory = async (
   userId: number,
@@ -50,7 +51,7 @@ export function UserHistory({ userId, userName }: UserHistoryProps) {
     const result = await fetchUserHistory(userId, pagination, sorting, search)
     return {
       ...result,
-      data: result.data.map((auditLog: AuditLog) => ({
+      data: result.data.map((auditLog: AuditLogResponse) => ({
         ...auditLog,
         onViewDetails: (log: AuditLog) => {
           setSelectedAuditLog(log)
