@@ -9,6 +9,7 @@ import {
   UsersApi,
 } from "@/api-client";
 import axios from "axios";
+import type { AxiosResponse } from "axios";
 import axiosTauriApiAdapter from '@/lib/axios-tauri-proxy';
 
 export const isTauri = () => {
@@ -23,7 +24,7 @@ export const axiosClient = isTauri()
     withCredentials: true,
     adapter: async (c) => {
       console.log(c);
-      const res = await axiosTauriApiAdapter(c);
+      const res = await axiosTauriApiAdapter(c) as AxiosResponse;
       console.log('rrr', res);
       return res;
     },
@@ -100,7 +101,10 @@ const readLocalStorageBaseUrl = () => {
   }
   if (localStorageBase[0] === '"') {
     try {
-      return normalizeBaseUrl(JSON.parse(localStorageBase));
+      const parsed = JSON.parse(localStorageBase) as unknown;
+      return typeof parsed === 'string'
+        ? normalizeBaseUrl(parsed)
+        : normalizeBaseUrl(localStorageBase);
     } catch {
       return normalizeBaseUrl(localStorageBase);
     }

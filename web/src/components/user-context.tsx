@@ -6,20 +6,14 @@ import { usersApi as api, authApi } from '@/lib/api';
 import { Permission } from '@/api-client';
 import axios from 'axios';
 
-type RoleKey =
-  | string
-  | 'root'
-  | 'administrator'
-  | 'manager'
-  | 'operator'
-  | 'observer';
+type RoleKey = string;
 
 export interface User {
   id: number;
   username: string;
   full_name: string;
   role_id: number;
-  role_key: RoleKey | string;
+  role_key: RoleKey;
   organization_id?: number;
   organization_name?: string;
   phone?: string;

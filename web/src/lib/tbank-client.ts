@@ -12,7 +12,7 @@ export type TBankAccount = {
 
 export type TBankConnectionStatusResponse = {
   connected: boolean;
-  environment?: "sandbox" | "production" | string;
+  environment?: string;
   token_masked?: string;
   default_account_id?: string;
   accounts: TBankAccount[];

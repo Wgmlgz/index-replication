@@ -14,15 +14,7 @@ import {
   parseMoexIndexesUrlState,
 } from './moex-indexes-url-state';
 import { DEFAULT_PAGE_SIZE } from './list/use-moex-indexes.utils';
-import type { FilterKey, SortKey } from './list/use-moex-indexes.types';
-import type {
-  ChartType,
-  ChartViewMode,
-  CompositionTab,
-  CompositionSelectionMode,
-  IntervalKey,
-  RangeKey,
-} from './detail/moex-indexes-detail.types';
+import type { FilterKey } from './list/use-moex-indexes.types';
 
 const LIST_FILTER_KEYS = ['collections', 'currency', 'board', 'calcMode'] as const satisfies FilterKey[];
 
@@ -107,7 +99,7 @@ export function MoexIndexesProvider({
       ls.setShowFavoritesOnly(nextFavOnly);
     }
 
-    const nextSortKey = (next.list?.sortKey ?? 'name-asc') as SortKey;
+    const nextSortKey = (next.list?.sortKey ?? 'name-asc');
     if (nextSortKey !== ls.sortKey) ls.setSortKey(nextSortKey);
 
     const nextLastActiveRange = next.list?.lastActiveRange ?? '1m';
@@ -143,10 +135,10 @@ export function MoexIndexesProvider({
     const nextPageIndex = next.list?.pageIndex ?? 0;
     if (nextPageIndex !== ls.pageIndex) ls.setPageIndex(nextPageIndex);
 
-    const nextRange = (next.detail?.rangeKey ?? '1y') as RangeKey;
+    const nextRange = (next.detail?.rangeKey ?? '1y');
     if (nextRange !== ds.rangeKey) ds.setRangeKey(nextRange);
 
-    const nextInterval = (next.detail?.intervalKey ?? 'auto') as IntervalKey;
+    const nextInterval = (next.detail?.intervalKey ?? 'auto');
     if (nextInterval !== ds.intervalKey) ds.setIntervalKey(nextInterval);
 
     const nextFrom = next.detail?.customFrom;
@@ -158,16 +150,16 @@ export function MoexIndexesProvider({
       ds.setCustomTill(nextTill);
     }
 
-    const nextView = (next.detail?.viewMode ?? 'price') as ChartViewMode;
+    const nextView = (next.detail?.viewMode ?? 'price');
     if (nextView !== ds.viewMode) ds.setViewMode(nextView);
 
-    const nextType = (next.detail?.chartType ?? 'line') as ChartType;
+    const nextType = (next.detail?.chartType ?? 'line');
     if (nextType !== ds.chartType) ds.setChartType(nextType);
 
-    const nextTab = (next.detail?.compositionTab ?? 'snapshot') as CompositionTab;
+    const nextTab = (next.detail?.compositionTab ?? 'snapshot');
     if (nextTab !== ds.compositionTab) ds.setCompositionTab(nextTab);
     const nextSelectionMode = (next.detail?.compositionSelectionMode ??
-      'fixed') as CompositionSelectionMode;
+      'fixed');
     if (nextSelectionMode !== ds.compositionSelectionMode) {
       ds.setCompositionSelectionMode(nextSelectionMode);
     }
@@ -266,7 +258,7 @@ export function MoexIndexesProvider({
         ls.setShowFavoritesOnly(nextFavOnly);
       }
 
-      const nextSortKey = (next.list?.sortKey ?? 'name-asc') as SortKey;
+      const nextSortKey = (next.list?.sortKey ?? 'name-asc');
       if (nextSortKey !== ls.sortKey) ls.setSortKey(nextSortKey);
 
       const nextLastActiveRange = next.list?.lastActiveRange ?? '1m';
@@ -302,10 +294,10 @@ export function MoexIndexesProvider({
       const nextPageIndex = next.list?.pageIndex ?? 0;
       if (nextPageIndex !== ls.pageIndex) ls.setPageIndex(nextPageIndex);
 
-      const nextRange = (next.detail?.rangeKey ?? '1y') as RangeKey;
+      const nextRange = (next.detail?.rangeKey ?? '1y');
       if (nextRange !== ds.rangeKey) ds.setRangeKey(nextRange);
 
-      const nextInterval = (next.detail?.intervalKey ?? 'auto') as IntervalKey;
+      const nextInterval = (next.detail?.intervalKey ?? 'auto');
       if (nextInterval !== ds.intervalKey) ds.setIntervalKey(nextInterval);
 
       const nextFrom = next.detail?.customFrom;
@@ -317,16 +309,16 @@ export function MoexIndexesProvider({
         ds.setCustomTill(nextTill);
       }
 
-      const nextView = (next.detail?.viewMode ?? 'price') as ChartViewMode;
+      const nextView = (next.detail?.viewMode ?? 'price');
       if (nextView !== ds.viewMode) ds.setViewMode(nextView);
 
-      const nextType = (next.detail?.chartType ?? 'line') as ChartType;
+      const nextType = (next.detail?.chartType ?? 'line');
       if (nextType !== ds.chartType) ds.setChartType(nextType);
 
-      const nextTab = (next.detail?.compositionTab ?? 'snapshot') as CompositionTab;
+      const nextTab = (next.detail?.compositionTab ?? 'snapshot');
       if (nextTab !== ds.compositionTab) ds.setCompositionTab(nextTab);
       const nextSelectionMode = (next.detail?.compositionSelectionMode ??
-        'fixed') as CompositionSelectionMode;
+        'fixed');
       if (nextSelectionMode !== ds.compositionSelectionMode) {
         ds.setCompositionSelectionMode(nextSelectionMode);
       }

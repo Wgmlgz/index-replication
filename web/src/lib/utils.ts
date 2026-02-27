@@ -1,5 +1,3 @@
-import { ModelsRecognizedSkuDetection } from "@/api-client";
-import { SkuDetectionExtra } from "@/components/image-with-boxes";
 import { Badge } from "@/components/ui/badge";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -83,64 +81,4 @@ export function downloadImage(filename: string, url: string) {
     .catch(error => {
       console.error('Error downloading image:', error);
     });
-}
-
-export const filterDetects = (detects: (SkuDetectionExtra | ModelsRecognizedSkuDetection)[]): SkuDetectionExtra[] => {
-  return detects.filter(x => {
-    return x.confidence >= getDefaultThreshold();
-  })
-}
-
-export type ImageDimensions = {
-  naturalWidth: number,
-  naturalHeight: number,
-  displayWidth: number,
-  displayHeight: number,
-  xOffset: number,
-  yOffset: number,
-}
-export const getCenterDistance = (rect: ModelsRecognizedSkuDetection, imageDimensions: ImageDimensions) => {
-  const x = rect.rect.x + rect.rect.w / 2;
-  const y = rect.rect.y + rect.rect.h / 2;
-
-  const cx = imageDimensions.naturalWidth / 2;
-  const cy = imageDimensions.naturalHeight / 2;
-
-  return Math.sqrt(Math.pow(cx - x, 2) + Math.pow(cy - y, 2));
-};
-
-export const filterOneDetects = (detectsOriginal: (SkuDetectionExtra | ModelsRecognizedSkuDetection)[], imageDimensions: ImageDimensions): SkuDetectionExtra[] => {
-  const detects: ModelsRecognizedSkuDetection[] = JSON.parse(JSON.stringify(detectsOriginal));
-
-  let res: SkuDetectionExtra[] = []
-  const filtered = detects.filter(
-    x => x.confidence >= getDefaultThreshold()
-  );
-  const sorted = filtered
-    .sort((a, b) => {
-      return getCenterDistance(a, imageDimensions) - getCenterDistance(b, imageDimensions);
-    })
-    .slice(0, 1);
-
-  res = sorted;
-  if (res.length === 0) {
-    const sortedConfidence = detects.sort(
-      (a, b) => b.confidence - a.confidence
-    );
-
-    const winner = sortedConfidence.shift();
-    if (winner && winner.confidence > getDefaultThreshold() * getOneThreshold()) {
-      if (
-        sortedConfidence.every(
-          x => x.confidence < winner.confidence * getOneOtherThreshold()
-        )
-      ) {
-        (winner as SkuDetectionExtra).msg =
-          'Система не уверена, но возможно это: ';
-        res = [winner];
-      }
-    }
-  }
-
-  return res;
 }

@@ -79,16 +79,18 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [hideBlocked, setHideBlocked] = useState<boolean>(false);
 
-  const doFetch = useCallback(() => {
-    fetchData(pagination, sorting, search, hideBlocked).then(
-      ({ data, total, selectIdx }) => {
-        setData(data);
-        setTotal(total);
-        if (selectIdx !== undefined) {
-          setRowSelection({ [String(selectIdx)]: true });
-        }
-      }
+  const doFetch = useCallback(async () => {
+    const { data, total, selectIdx } = await fetchData(
+      pagination,
+      sorting,
+      search,
+      hideBlocked
     );
+    setData(data);
+    setTotal(total);
+    if (selectIdx !== undefined) {
+      setRowSelection({ [String(selectIdx)]: true });
+    }
   }, [fetchData, hideBlocked, pagination, search, sorting]);
 
   useEffect(() => {
@@ -98,7 +100,7 @@ export function DataTable<TData, TValue>({
   }, [externalRowSelection]);
 
   useEffect(() => {
-    doFetch();
+    void doFetch();
   }, [doFetch, refetchKey]);
 
   useEffect(() => {
@@ -150,7 +152,7 @@ export function DataTable<TData, TValue>({
             </div>
           </div>
         )}
-        <Button variant='outline' onClick={doFetch}>
+        <Button variant='outline' onClick={() => void doFetch()}>
           Поиск
         </Button>
         {/* <Input

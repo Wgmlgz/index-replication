@@ -1,5 +1,3 @@
-import { AuditLogResponse, ModelsRecognizedSkuDetection } from "@/api-client"
-
 // Action display names
 export const actionLabels: Record<string, string> = {
   user_created: "Пользователь создан",
@@ -47,58 +45,4 @@ export const entityTypeLabels: Record<string, string> = {
   user: "Пользователь",
   system: "Система",
   recognition: "Распознавание",
-}
-
-export const extractRectsFromLog = (log: AuditLogResponse) => {
-  const parsed = JSON.parse(log.details ?? '{}')
-  const detections = (parsed.response?.detections || parsed.response?.rects);
-  console.log(detections)
-  let res: ModelsRecognizedSkuDetection[] = []
-
-  if (detections instanceof Array) {
-    res = detections.map(x => {
-      const rect = x?.rect;
-      let res = null
-      if (rect instanceof Object &&
-        Object.hasOwn(rect, 'x') &&
-        Object.hasOwn(rect, 'y') &&
-        Object.hasOwn(rect, 'w') &&
-        Object.hasOwn(rect, 'h')) {
-        res = {
-          rect: {
-            x: rect.x,
-            y: rect.y,
-            w: rect.w,
-            h: rect.h,
-          },
-          confidence: 0,
-          sku: ''
-        }
-      }
-      if (x instanceof Object &&
-        Object.hasOwn(x, 'x') &&
-        Object.hasOwn(x, 'y') &&
-        Object.hasOwn(x, 'w') &&
-        Object.hasOwn(x, 'h')) {
-        res = {
-          rect: {
-            x: x.x,
-            y: x.y,
-            w: x.w,
-            h: x.h,
-          },
-          confidence: 0,
-          sku: ''
-        }
-      }
-      if (res && x?.confidence) {
-        res.confidence = x.confidence
-      }
-      if (res && x?.sku) {
-        res.sku = x.sku
-      }
-      return res
-    }).filter(x => x != null)
-  }
-  return res
 }

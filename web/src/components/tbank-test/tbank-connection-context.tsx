@@ -12,6 +12,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 import { tbankClient, type TBankConnectionStatusResponse } from "@/lib/tbank-client";
+import { getApiErrorMessage } from "@/lib/error-utils";
 
 export type TBankEnvironment = "sandbox" | "production";
 
@@ -50,8 +51,8 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
-      const apiError = err.response?.data?.error;
-      if (typeof apiError === "string" && apiError.length > 0) {
+      const apiError = getApiErrorMessage(err.response?.data as unknown);
+      if (apiError) {
         return apiError;
       }
     }

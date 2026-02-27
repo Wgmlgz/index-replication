@@ -165,7 +165,7 @@ export function TBankConnectCard() {
       <div className='flex flex-wrap gap-2'>
         <Button
           type='button'
-          onClick={onConnect}
+          onClick={() => void onConnect()}
           disabled={working || !connectToken.trim()}
         >
           {t('tbankTest.connect.connectButton')}
@@ -173,7 +173,7 @@ export function TBankConnectCard() {
         <Button
           type='button'
           variant='outline'
-          onClick={onSaveDefaultAccount}
+          onClick={() => void onSaveDefaultAccount()}
           disabled={working || !status?.connected || !defaultAccountID.trim()}
         >
           {t('tbankTest.connect.saveDefaultButton')}
@@ -181,7 +181,7 @@ export function TBankConnectCard() {
         <Button
           type='button'
           variant='outline'
-          onClick={onDisconnect}
+          onClick={() => void onDisconnect()}
           disabled={working || !status?.connected}
         >
           {t('tbankTest.connect.disconnectButton')}

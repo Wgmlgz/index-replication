@@ -16,12 +16,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useUser } from "@/components/user-context";
 import { authApi as auth_api, usersApi } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/error-utils";
 import { verificationClient } from "@/lib/verification-client";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_AUTHENTICATED_ROUTE, getSafeNextPath } from "@/lib/routes";
 
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+type LoginResponseData = {
+  verification_required?: boolean;
+  challenge_id?: string;
+  expires_at?: string;
+  error?: string;
+};
 
 export function LoginForm({
   className,
@@ -77,7 +85,8 @@ export function LoginForm({
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error || t("auth.login.verification.genericError"))
+        const apiError = getApiErrorMessage(err.response?.data as unknown);
+        setError(apiError ?? t("auth.login.verification.genericError"))
         return
       }
       setError(t("auth.login.verification.genericError"))
@@ -114,22 +123,24 @@ export function LoginForm({
         password,
         remember_me: rememberMe,
       });
+      const responseData = response.data as LoginResponseData | undefined;
 
       if (response.status === 200) {
         await onLoginSuccess()
       } else if (
         response.status === 202 &&
-        response.data?.verification_required &&
-        response.data?.challenge_id
+        responseData?.verification_required &&
+        responseData?.challenge_id
       ) {
-        setChallengeID(response.data.challenge_id)
-        setVerificationExpiresAt(response.data.expires_at || "")
+        setChallengeID(responseData.challenge_id)
+        setVerificationExpiresAt(responseData.expires_at || "")
       } else {
-        setError(response.data?.error || t("auth.login.genericError"))
+        setError(responseData?.error || t("auth.login.genericError"))
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error || t("auth.login.genericError"))
+        const apiError = getApiErrorMessage(err.response?.data as unknown);
+        setError(apiError ?? t("auth.login.genericError"))
       } else {
         setError(t("auth.login.genericError"))
       }
@@ -151,7 +162,11 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={event => {
+              void handleSubmit(event);
+            }}
+          >
             <div className="flex flex-col gap-6">
               {error && (
                 <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">

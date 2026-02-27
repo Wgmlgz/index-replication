@@ -105,7 +105,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           {user ? (
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout}>
+              <SidebarMenuButton onClick={() => void handleLogout()}>
                 <LogOut />
                 <span>{t('navigation.signOut')}</span>
               </SidebarMenuButton>

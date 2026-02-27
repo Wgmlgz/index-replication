@@ -118,6 +118,13 @@ type ChartTooltipContentProps = TooltipProps<number, string> & {
   valueFormatter?: (value: number, dataKey: string) => React.ReactNode;
 };
 
+const getRecordValue = (value: unknown, key: string): unknown => {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+  return (value as Record<string, unknown>)[key];
+};
+
 export function ChartTooltipContent({
   active,
   payload,
@@ -133,10 +140,10 @@ export function ChartTooltipContent({
 
   if (!active || !payload?.length) return null;
 
-  const labelText =
-    labelKey && payload?.[0]?.payload
-      ? payload[0].payload[labelKey]
-      : label ?? '';
+  const labelValue: unknown = labelKey
+    ? getRecordValue(payload?.[0]?.payload as unknown, labelKey) ?? (label as unknown)
+    : (label as unknown);
+  const labelText: React.ReactNode = (labelValue as React.ReactNode) ?? '';
 
   return (
     <div className='grid min-w-[140px] gap-1 rounded-lg border bg-background p-2 text-xs shadow-sm'>
@@ -147,7 +154,9 @@ export function ChartTooltipContent({
         {payload.map((item, index) => {
           const dataKey = String(item.dataKey ?? index);
           const nameValue =
-            (nameKey && item.payload ? item.payload[nameKey] : undefined) ??
+            (nameKey
+              ? getRecordValue(item.payload as unknown, nameKey)
+              : undefined) ??
             item.name ??
             dataKey;
           const configItem = config[dataKey];
@@ -218,10 +227,13 @@ export function ChartLegendContent({
       {payload.map((item) => {
         const key = String(item.dataKey ?? '');
         const configItem = config[key];
-        const label =
+        const legendLabelValue: unknown =
           configItem?.label ??
-          (nameKey && item.payload ? item.payload[nameKey] : undefined) ??
-          item.value;
+          (nameKey
+            ? getRecordValue(item.payload as unknown, nameKey)
+            : undefined) ??
+          (item.value as unknown);
+        const label = (legendLabelValue as React.ReactNode) ?? '';
         return (
           <div key={key} className='flex items-center gap-2'>
             <span

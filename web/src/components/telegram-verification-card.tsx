@@ -9,6 +9,7 @@ import {
   type TelegramConnectResponse,
   type TelegramStatusResponse,
 } from '@/lib/verification-client';
+import { getApiErrorMessage } from '@/lib/error-utils';
 import { Button } from '@/components/ui/button';
 import {
   IntegrationConnectionCard,
@@ -29,7 +30,7 @@ export function TelegramVerificationCard() {
 
   const getErrorMessage = useCallback((err: unknown, fallbackKey: string) => {
     if (axios.isAxiosError(err)) {
-      return err.response?.data?.error || t(fallbackKey);
+      return getApiErrorMessage(err.response?.data as unknown) ?? t(fallbackKey);
     }
     return t(fallbackKey);
   }, [t]);
@@ -131,7 +132,9 @@ export function TelegramVerificationCard() {
         <Switch
           id='telegram-login-2fa'
           checked={Boolean(status?.login_2fa_enabled)}
-          onCheckedChange={onToggle2FA}
+          onCheckedChange={checked => {
+            void onToggle2FA(checked);
+          }}
           disabled={working || !status?.connected}
         />
       </div>
@@ -139,7 +142,7 @@ export function TelegramVerificationCard() {
       <div className='flex flex-wrap gap-2'>
         <Button
           type='button'
-          onClick={onGenerateConnectLink}
+          onClick={() => void onGenerateConnectLink()}
           disabled={working}
         >
           {t('settings.telegram.generateLink')}
@@ -159,7 +162,7 @@ export function TelegramVerificationCard() {
           <Button
             type='button'
             variant='destructive'
-            onClick={onUnlinkTelegram}
+            onClick={() => void onUnlinkTelegram()}
             disabled={working}
           >
             {t('settings.telegram.unlink')}

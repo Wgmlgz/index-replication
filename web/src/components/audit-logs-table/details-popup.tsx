@@ -28,12 +28,12 @@ export function DetailsPopup({
 }: DetailsPopupProps) {
   const [diffFormat, setDiffFormat] = useState<'yaml' | 'toml'>('yaml');
   const details = auditLog?.details ?? null;
-  const parsedDetails = useMemo<unknown | null>(() => {
+  const parsedDetails = useMemo(() => {
     if (!details) {
       return null;
     }
     try {
-      return JSON.parse(details);
+      return JSON.parse(details) as unknown;
     } catch {
       return null;
     }

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getApiErrorMessage } from "@/lib/error-utils";
 
 const DEFAULT_SANDBOX_TOP_UP_UNITS = 1_000_000;
 
@@ -49,8 +50,8 @@ export function TBankPortfolioCard() {
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
-      const apiError = err.response?.data?.error;
-      if (typeof apiError === "string" && apiError.length > 0) {
+      const apiError = getApiErrorMessage(err.response?.data as unknown);
+      if (apiError) {
         return apiError;
       }
     }
@@ -165,7 +166,7 @@ export function TBankPortfolioCard() {
                 placeholder={t("tbankTest.portfolio.sandboxUnitsPlaceholder")}
                 className="w-40"
               />
-              <Button type="button" onClick={onSandboxPayIn} disabled={working || !connected}>
+              <Button type="button" onClick={() => void onSandboxPayIn()} disabled={working || !connected}>
                 {t("tbankTest.portfolio.sandboxTopUpButton")}
               </Button>
             </>

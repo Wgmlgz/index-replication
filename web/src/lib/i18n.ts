@@ -17,7 +17,7 @@ const getInitialLanguage = () => {
 export const initI18n = () => {
   if (i18next.isInitialized) return i18next;
 
-  i18next.use(initReactI18next).init({
+  void i18next.use(initReactI18next).init({
     lng: getInitialLanguage(),
     fallbackLng: 'en',
     supportedLngs: ['en'],
@@ -34,5 +34,5 @@ export const initI18n = () => {
 
 export const setLanguage = (language: string) => {
   const nextLanguage = normalizeLanguage(language);
-  initI18n().changeLanguage(nextLanguage);
+  void initI18n().changeLanguage(nextLanguage);
 };

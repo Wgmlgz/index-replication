@@ -38,6 +38,7 @@ import { LockOpen, Lock, Trash } from 'lucide-react';
 import { useUser } from '../user-context';
 import { Textarea } from '../ui/textarea';
 import axios from 'axios';
+import { getApiErrorMessage } from '@/lib/error-utils';
 
 interface UserFormProps {
   mode: 'create' | 'edit';
@@ -177,7 +178,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
     } catch (err) {
       let message = 'Network error';
       if (axios.isAxiosError(err)) {
-        message = err.response?.data?.error ?? message;
+        message = getApiErrorMessage(err.response?.data as unknown) ?? message;
       }
       setError('root', { type: 'server', message });
     }
@@ -191,7 +192,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
     } catch (err) {
       let message = 'Network error';
       if (axios.isAxiosError(err)) {
-        message = err.response?.data?.error ?? message;
+        message = getApiErrorMessage(err.response?.data as unknown) ?? message;
       }
       setError('root', { type: 'server', message });
     }
@@ -230,7 +231,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
     } catch (err) {
       let message = 'Network error';
       if (axios.isAxiosError(err)) {
-        message = err.response?.data?.error ?? message;
+        message = getApiErrorMessage(err.response?.data as unknown) ?? message;
       }
       setError('root', { type: 'server', message });
     }
@@ -239,7 +240,9 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
   return (
     <Form {...form}>
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={event => {
+          void handleSubmit(onSubmit)(event);
+        }}
         className='space-y-4 grid grid-cols-2 gap-2'
       >
         <FormField
@@ -452,7 +455,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Отмена</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
+                <AlertDialogAction onClick={() => void handleDelete()}>
                   Продолжить
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -480,7 +483,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Отмена</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBlockToggle}>
+                <AlertDialogAction onClick={() => void handleBlockToggle()}>
                   Продолжить
                 </AlertDialogAction>
               </AlertDialogFooter>

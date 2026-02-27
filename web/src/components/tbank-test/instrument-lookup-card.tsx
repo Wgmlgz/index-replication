@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getApiErrorMessage } from "@/lib/error-utils";
 
 export function TBankInstrumentLookupCard() {
   const { t } = useTranslation();
@@ -22,8 +23,8 @@ export function TBankInstrumentLookupCard() {
 
   const parseErrorMessage = (err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
-      const apiError = err.response?.data?.error;
-      if (typeof apiError === "string" && apiError.length > 0) {
+      const apiError = getApiErrorMessage(err.response?.data as unknown);
+      if (apiError) {
         return apiError;
       }
     }
@@ -88,7 +89,7 @@ export function TBankInstrumentLookupCard() {
           />
         </div>
 
-        <Button type="button" onClick={onLookupInstrument} disabled={loadingLookup || !lookupTicker.trim()}>
+        <Button type="button" onClick={() => void onLookupInstrument()} disabled={loadingLookup || !lookupTicker.trim()}>
           {t("tbankTest.lookup.searchButton")}
         </Button>
 
