@@ -110,7 +110,7 @@ export const getCenterDistance = (rect: ModelsRecognizedSkuDetection, imageDimen
 };
 
 export const filterOneDetects = (detectsOriginal: (SkuDetectionExtra | ModelsRecognizedSkuDetection)[], imageDimensions: ImageDimensions): SkuDetectionExtra[] => {
-  let detects: ModelsRecognizedSkuDetection[] = JSON.parse(JSON.stringify(detectsOriginal));
+  const detects: ModelsRecognizedSkuDetection[] = JSON.parse(JSON.stringify(detectsOriginal));
 
   let res: SkuDetectionExtra[] = []
   const filtered = detects.filter(

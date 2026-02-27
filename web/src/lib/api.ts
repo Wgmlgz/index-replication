@@ -49,7 +49,7 @@ if (isTauri()) {
     // console.log('setCookies', response.headers.toJSON())
     // console.log('raw', (response.headers as AxiosHeaders).toJSON())
     if (setCookies && setCookies.length > 0) {
-      let cookieMap: { [key: string]: string } = {};
+      const cookieMap: { [key: string]: string } = {};
 
       // Load existing cookies
       const existingStr = localStorage.getItem(COOKIE_KEY);
