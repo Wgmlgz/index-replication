@@ -453,6 +453,43 @@ definitions:
       next_cursor:
         type: string
     type: object
+  TBankPortfolioCompositionEntry:
+    properties:
+      currency:
+        type: string
+      current_price:
+        type: number
+      current_value:
+        type: number
+      instrument_id:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: number
+      ticker:
+        type: string
+      trade_date:
+        type: string
+      weight:
+        type: number
+    type: object
+  TBankPortfolioCompositionSeriesPoint:
+    properties:
+      trade_date:
+        type: string
+      weight:
+        type: number
+    type: object
+  TBankPortfolioHistoryPoint:
+    properties:
+      total_amount_portfolio:
+        type: number
+      total_amount_portfolio_currency:
+        type: string
+      trade_date:
+        type: string
+    type: object
   TBankPortfolioPosition:
     properties:
       currency:
@@ -1159,6 +1196,140 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Get T-Bank account balances and portfolio
+      tags:
+      - tbank
+  /me/tbank/portfolio/composition:
+    get:
+      description: Returns reconstructed composition snapshot for requested date (or
+        latest).
+      parameters:
+      - description: Account id
+        in: query
+        name: account_id
+        type: string
+      - description: Snapshot date (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/TBankPortfolioCompositionEntry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get T-Bank operation-derived portfolio composition snapshot
+      tags:
+      - tbank
+  /me/tbank/portfolio/composition/series:
+    get:
+      description: Returns downsampled composition weight series reconstructed from
+        operations and current holdings.
+      parameters:
+      - description: Account id
+        in: query
+        name: account_id
+        type: string
+      - description: Comma-separated list of tickers
+        in: query
+        name: tickers
+        type: string
+      - description: 'When tickers are omitted: number of top constituents (0 = all,
+          default 10)'
+        in: query
+        name: topCount
+        type: integer
+      - description: 'Ticker auto-selection mode: fixed|rolling (default fixed)'
+        in: query
+        name: selectionMode
+        type: string
+      - description: Top selection date for fixed mode (YYYY-MM-DD)
+        in: query
+        name: selectionDate
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Downsample interval in days
+        in: query
+        name: intervalDays
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/TBankPortfolioCompositionSeriesPoint'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get T-Bank operation-derived portfolio composition series
+      tags:
+      - tbank
+  /me/tbank/portfolio/history:
+    get:
+      description: Returns portfolio history reconstructed from operations and current
+        portfolio positions.
+      parameters:
+      - description: Account id
+        in: query
+        name: account_id
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Downsample interval in days
+        in: query
+        name: intervalDays
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/TBankPortfolioHistoryPoint'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get T-Bank operation-derived portfolio history
       tags:
       - tbank
   /me/tbank/sandbox/pay-in:

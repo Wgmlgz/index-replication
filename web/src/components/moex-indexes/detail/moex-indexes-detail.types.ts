@@ -1,20 +1,12 @@
 import type { MoexIndex as MoexIndex } from '@/api-client';
-import type { ChartData, ChartSeriesType } from './index-chart';
+import type { ChartData, ChartSeriesType } from '@/components/charts/index-chart';
+import type {
+  ChartViewMode,
+  IntervalKey,
+  RangeKey,
+} from '@/lib/charting/time-series-controls';
+export type { ChartViewMode, IntervalKey, RangeKey };
 
-export type RangeKey =
-  | '1m'
-  | '3m'
-  | '6m'
-  | 'ytd'
-  | '1y'
-  | '3y'
-  | '5y'
-  | 'max'
-  | 'custom';
-
-export type IntervalKey = 'auto' | '1d' | '2d' | '3d' | '1w' | '2w' | '1m';
-
-export type ChartViewMode = 'price' | 'percent';
 export type ChartType = ChartSeriesType;
 export type CompositionTab = 'snapshot' | 'trend' | 'stacked';
 export type CompositionSelectionMode = 'fixed' | 'rolling';

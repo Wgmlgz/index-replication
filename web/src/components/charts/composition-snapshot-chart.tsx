@@ -7,10 +7,17 @@ import {
   Tooltip,
   type TooltipProps,
 } from 'recharts';
-import type { CompositionSnapshotItem } from './use-moex-indexes-composition';
-import { resolveCompositionSeriesColor } from './index-composition-chart';
+import { resolveCompositionSeriesColor } from './composition-series-chart';
 
-type SnapshotChartProps = {
+export type CompositionSnapshotItem = {
+  ticker: string;
+  secId: string;
+  name: string;
+  weight: number;
+  tradeDate: string;
+};
+
+type CompositionSnapshotChartProps = {
   items: CompositionSnapshotItem[];
 };
 
@@ -94,7 +101,7 @@ const TreemapContent = (props: TreemapContentProps) => {
   );
 };
 
-export function IndexCompositionSnapshotChart({ items }: SnapshotChartProps) {
+export function CompositionSnapshotChart({ items }: CompositionSnapshotChartProps) {
   const data = useMemo<TreemapNode[]>(() => {
     return items.map((item, index) => ({
       name: item.name || item.ticker,
@@ -118,3 +125,5 @@ export function IndexCompositionSnapshotChart({ items }: SnapshotChartProps) {
     </ResponsiveContainer>
   );
 }
+
+export const IndexCompositionSnapshotChart = CompositionSnapshotChart;

@@ -753,6 +753,204 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/tbank/portfolio/composition": {
+            "get": {
+                "description": "Returns reconstructed composition snapshot for requested date (or latest).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Get T-Bank operation-derived portfolio composition snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account id",
+                        "name": "account_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Snapshot date (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/TBankPortfolioCompositionEntry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/portfolio/composition/series": {
+            "get": {
+                "description": "Returns downsampled composition weight series reconstructed from operations and current holdings.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Get T-Bank operation-derived portfolio composition series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account id",
+                        "name": "account_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated list of tickers",
+                        "name": "tickers",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "When tickers are omitted: number of top constituents (0 = all, default 10)",
+                        "name": "topCount",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ticker auto-selection mode: fixed|rolling (default fixed)",
+                        "name": "selectionMode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Top selection date for fixed mode (YYYY-MM-DD)",
+                        "name": "selectionDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Downsample interval in days",
+                        "name": "intervalDays",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/TBankPortfolioCompositionSeriesPoint"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tbank/portfolio/history": {
+            "get": {
+                "description": "Returns portfolio history reconstructed from operations and current portfolio positions.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tbank"
+                ],
+                "summary": "Get T-Bank operation-derived portfolio history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account id",
+                        "name": "account_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Downsample interval in days",
+                        "name": "intervalDays",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/TBankPortfolioHistoryPoint"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/tbank/sandbox/pay-in": {
             "post": {
                 "description": "Adds virtual money to selected sandbox account",
@@ -2425,6 +2623,63 @@ const docTemplate = `{
                     }
                 },
                 "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "TBankPortfolioCompositionEntry": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "current_price": {
+                    "type": "number"
+                },
+                "current_value": {
+                    "type": "number"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "ticker": {
+                    "type": "string"
+                },
+                "trade_date": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "TBankPortfolioCompositionSeriesPoint": {
+            "type": "object",
+            "properties": {
+                "trade_date": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "TBankPortfolioHistoryPoint": {
+            "type": "object",
+            "properties": {
+                "total_amount_portfolio": {
+                    "type": "number"
+                },
+                "total_amount_portfolio_currency": {
+                    "type": "string"
+                },
+                "trade_date": {
                     "type": "string"
                 }
             }

@@ -22,13 +22,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ChartData } from '../detail/index-chart';
+import type { ChartData } from '@/components/charts/index-chart';
 import {
   IndexCompositionChart,
   OTHER_SERIES_COLOR,
   resolveCompositionSeriesColor,
-} from './index-composition-chart';
-import { IndexCompositionSnapshotChart } from './index-composition-snapshot-chart';
+} from '@/components/charts/composition-series-chart';
+import { IndexCompositionSnapshotChart } from '@/components/charts/composition-snapshot-chart';
 import { useMoexIndexDetailContext } from '../detail/moex-indexes-detail-context';
 import { useMoexIndexComposition } from './use-moex-indexes-composition';
 import type {

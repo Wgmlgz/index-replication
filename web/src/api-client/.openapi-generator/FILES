@@ -36,6 +36,9 @@ docs/TBankInstrumentLookupResponse.md
 docs/TBankMoneyBalance.md
 docs/TBankOperationHistoryItem.md
 docs/TBankOperationsHistoryResponse.md
+docs/TBankPortfolioCompositionEntry.md
+docs/TBankPortfolioCompositionSeriesPoint.md
+docs/TBankPortfolioHistoryPoint.md
 docs/TBankPortfolioPosition.md
 docs/TBankSandboxPayInRequest.md
 docs/TBankSandboxPayInResponse.md

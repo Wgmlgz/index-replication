@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 
+import { PortfolioAnalyticsSection } from "@/components/portfolio/portfolio-analytics-section";
 import { TBankPortfolioCard } from "@/components/tbank-test/portfolio-card";
 import { TBankConnectionProvider } from "@/components/tbank-test/tbank-connection-context";
 
@@ -15,6 +16,7 @@ function PortfolioPageContent() {
         <p className="text-muted-foreground">{t("portfolio.description")}</p>
       </div>
 
+      <PortfolioAnalyticsSection />
       <TBankPortfolioCard />
     </div>
   );

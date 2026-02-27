@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/button-toggle-group';
 import { CandlestickChart, DollarSign, LineChart, Percent } from 'lucide-react';
 import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
-import { IndexChart } from './index-chart';
+import { IndexChart } from '@/components/charts/index-chart';
 import { useMoexIndexDetailContext } from './moex-indexes-detail-context';
 import {
   EXTRA_RANGE_OPTIONS,

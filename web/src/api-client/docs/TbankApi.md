@@ -10,7 +10,10 @@ All URIs are relative to *http://localhost:8080/api*
 |[**meTbankGet**](#metbankget) | **GET** /me/tbank | Get T-Bank integration status|
 |[**meTbankInstrumentsLookupGet**](#metbankinstrumentslookupget) | **GET** /me/tbank/instruments/lookup | Find T-Bank instrument id by ticker|
 |[**meTbankOperationsGet**](#metbankoperationsget) | **GET** /me/tbank/operations | Get T-Bank account operations history|
+|[**meTbankPortfolioCompositionGet**](#metbankportfoliocompositionget) | **GET** /me/tbank/portfolio/composition | Get T-Bank operation-derived portfolio composition snapshot|
+|[**meTbankPortfolioCompositionSeriesGet**](#metbankportfoliocompositionseriesget) | **GET** /me/tbank/portfolio/composition/series | Get T-Bank operation-derived portfolio composition series|
 |[**meTbankPortfolioGet**](#metbankportfolioget) | **GET** /me/tbank/portfolio | Get T-Bank account balances and portfolio|
+|[**meTbankPortfolioHistoryGet**](#metbankportfoliohistoryget) | **GET** /me/tbank/portfolio/history | Get T-Bank operation-derived portfolio history|
 |[**meTbankSandboxPayInPost**](#metbanksandboxpayinpost) | **POST** /me/tbank/sandbox/pay-in | Top up T-Bank sandbox account|
 |[**meTbankTestBuyPost**](#metbanktestbuypost) | **POST** /me/tbank/test-buy | Create T-Bank test buy order|
 
@@ -328,6 +331,136 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **meTbankPortfolioCompositionGet**
+> Array<TBankPortfolioCompositionEntry> meTbankPortfolioCompositionGet()
+
+Returns reconstructed composition snapshot for requested date (or latest).
+
+### Example
+
+```typescript
+import {
+    TbankApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new TbankApi(configuration);
+
+let accountId: string; //Account id (optional) (default to undefined)
+let date: string; //Snapshot date (YYYY-MM-DD) (optional) (default to undefined)
+
+const { status, data } = await apiInstance.meTbankPortfolioCompositionGet(
+    accountId,
+    date
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **accountId** | [**string**] | Account id | (optional) defaults to undefined|
+| **date** | [**string**] | Snapshot date (YYYY-MM-DD) | (optional) defaults to undefined|
+
+
+### Return type
+
+**Array<TBankPortfolioCompositionEntry>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**502** | Bad Gateway |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **meTbankPortfolioCompositionSeriesGet**
+> { [key: string]: Array<TBankPortfolioCompositionSeriesPoint>; } meTbankPortfolioCompositionSeriesGet()
+
+Returns downsampled composition weight series reconstructed from operations and current holdings.
+
+### Example
+
+```typescript
+import {
+    TbankApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new TbankApi(configuration);
+
+let accountId: string; //Account id (optional) (default to undefined)
+let tickers: string; //Comma-separated list of tickers (optional) (default to undefined)
+let topCount: number; //When tickers are omitted: number of top constituents (0 = all, default 10) (optional) (default to undefined)
+let selectionMode: string; //Ticker auto-selection mode: fixed|rolling (default fixed) (optional) (default to undefined)
+let selectionDate: string; //Top selection date for fixed mode (YYYY-MM-DD) (optional) (default to undefined)
+let from: string; //Start date (YYYY-MM-DD) (optional) (default to undefined)
+let till: string; //End date (YYYY-MM-DD) (optional) (default to undefined)
+let intervalDays: number; //Downsample interval in days (optional) (default to undefined)
+
+const { status, data } = await apiInstance.meTbankPortfolioCompositionSeriesGet(
+    accountId,
+    tickers,
+    topCount,
+    selectionMode,
+    selectionDate,
+    from,
+    till,
+    intervalDays
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **accountId** | [**string**] | Account id | (optional) defaults to undefined|
+| **tickers** | [**string**] | Comma-separated list of tickers | (optional) defaults to undefined|
+| **topCount** | [**number**] | When tickers are omitted: number of top constituents (0 &#x3D; all, default 10) | (optional) defaults to undefined|
+| **selectionMode** | [**string**] | Ticker auto-selection mode: fixed|rolling (default fixed) | (optional) defaults to undefined|
+| **selectionDate** | [**string**] | Top selection date for fixed mode (YYYY-MM-DD) | (optional) defaults to undefined|
+| **from** | [**string**] | Start date (YYYY-MM-DD) | (optional) defaults to undefined|
+| **till** | [**string**] | End date (YYYY-MM-DD) | (optional) defaults to undefined|
+| **intervalDays** | [**number**] | Downsample interval in days | (optional) defaults to undefined|
+
+
+### Return type
+
+**{ [key: string]: Array<TBankPortfolioCompositionSeriesPoint>; }**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**502** | Bad Gateway |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **meTbankPortfolioGet**
 > TBankAccountPortfolioResponse meTbankPortfolioGet()
 
@@ -361,6 +494,68 @@ const { status, data } = await apiInstance.meTbankPortfolioGet(
 ### Return type
 
 **TBankAccountPortfolioResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**502** | Bad Gateway |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **meTbankPortfolioHistoryGet**
+> Array<TBankPortfolioHistoryPoint> meTbankPortfolioHistoryGet()
+
+Returns portfolio history reconstructed from operations and current portfolio positions.
+
+### Example
+
+```typescript
+import {
+    TbankApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new TbankApi(configuration);
+
+let accountId: string; //Account id (optional) (default to undefined)
+let from: string; //Start date (YYYY-MM-DD) (optional) (default to undefined)
+let till: string; //End date (YYYY-MM-DD) (optional) (default to undefined)
+let intervalDays: number; //Downsample interval in days (optional) (default to undefined)
+
+const { status, data } = await apiInstance.meTbankPortfolioHistoryGet(
+    accountId,
+    from,
+    till,
+    intervalDays
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **accountId** | [**string**] | Account id | (optional) defaults to undefined|
+| **from** | [**string**] | Start date (YYYY-MM-DD) | (optional) defaults to undefined|
+| **till** | [**string**] | End date (YYYY-MM-DD) | (optional) defaults to undefined|
+| **intervalDays** | [**number**] | Downsample interval in days | (optional) defaults to undefined|
+
+
+### Return type
+
+**Array<TBankPortfolioHistoryPoint>**
 
 ### Authorization
 

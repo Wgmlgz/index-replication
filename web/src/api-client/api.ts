@@ -247,6 +247,26 @@ export interface TBankOperationsHistoryResponse {
     'items'?: Array<TBankOperationHistoryItem>;
     'next_cursor'?: string;
 }
+export interface TBankPortfolioCompositionEntry {
+    'currency'?: string;
+    'current_price'?: number;
+    'current_value'?: number;
+    'instrument_id'?: string;
+    'name'?: string;
+    'quantity'?: number;
+    'ticker'?: string;
+    'trade_date'?: string;
+    'weight'?: number;
+}
+export interface TBankPortfolioCompositionSeriesPoint {
+    'trade_date'?: string;
+    'weight'?: number;
+}
+export interface TBankPortfolioHistoryPoint {
+    'total_amount_portfolio'?: number;
+    'total_amount_portfolio_currency'?: string;
+    'trade_date'?: string;
+}
 export interface TBankPortfolioPosition {
     'currency'?: string;
     'current_price'?: number;
@@ -2013,6 +2033,116 @@ export const TbankApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
+         * Returns reconstructed composition snapshot for requested date (or latest).
+         * @summary Get T-Bank operation-derived portfolio composition snapshot
+         * @param {string} [accountId] Account id
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioCompositionGet: async (accountId?: string, date?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank/portfolio/composition`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (accountId !== undefined) {
+                localVarQueryParameter['account_id'] = accountId;
+            }
+
+            if (date !== undefined) {
+                localVarQueryParameter['date'] = date;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns downsampled composition weight series reconstructed from operations and current holdings.
+         * @summary Get T-Bank operation-derived portfolio composition series
+         * @param {string} [accountId] Account id
+         * @param {string} [tickers] Comma-separated list of tickers
+         * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
+         * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
+         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioCompositionSeriesGet: async (accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank/portfolio/composition/series`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (accountId !== undefined) {
+                localVarQueryParameter['account_id'] = accountId;
+            }
+
+            if (tickers !== undefined) {
+                localVarQueryParameter['tickers'] = tickers;
+            }
+
+            if (topCount !== undefined) {
+                localVarQueryParameter['topCount'] = topCount;
+            }
+
+            if (selectionMode !== undefined) {
+                localVarQueryParameter['selectionMode'] = selectionMode;
+            }
+
+            if (selectionDate !== undefined) {
+                localVarQueryParameter['selectionDate'] = selectionDate;
+            }
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (intervalDays !== undefined) {
+                localVarQueryParameter['intervalDays'] = intervalDays;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns balances and positions for selected account (or default account if omitted)
          * @summary Get T-Bank account balances and portfolio
          * @param {string} [accountId] Account id
@@ -2034,6 +2164,56 @@ export const TbankApiAxiosParamCreator = function (configuration?: Configuration
 
             if (accountId !== undefined) {
                 localVarQueryParameter['account_id'] = accountId;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns portfolio history reconstructed from operations and current portfolio positions.
+         * @summary Get T-Bank operation-derived portfolio history
+         * @param {string} [accountId] Account id
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioHistoryGet: async (accountId?: string, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/tbank/portfolio/history`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (accountId !== undefined) {
+                localVarQueryParameter['account_id'] = accountId;
+            }
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (intervalDays !== undefined) {
+                localVarQueryParameter['intervalDays'] = intervalDays;
             }
 
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -2206,6 +2386,40 @@ export const TbankApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns reconstructed composition snapshot for requested date (or latest).
+         * @summary Get T-Bank operation-derived portfolio composition snapshot
+         * @param {string} [accountId] Account id
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankPortfolioCompositionGet(accountId?: string, date?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<TBankPortfolioCompositionEntry>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioCompositionGet(accountId, date, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioCompositionGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns downsampled composition weight series reconstructed from operations and current holdings.
+         * @summary Get T-Bank operation-derived portfolio composition series
+         * @param {string} [accountId] Account id
+         * @param {string} [tickers] Comma-separated list of tickers
+         * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
+         * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
+         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankPortfolioCompositionSeriesGet(accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<TBankPortfolioCompositionSeriesPoint>; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioCompositionSeriesGet(accountId, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioCompositionSeriesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns balances and positions for selected account (or default account if omitted)
          * @summary Get T-Bank account balances and portfolio
          * @param {string} [accountId] Account id
@@ -2216,6 +2430,22 @@ export const TbankApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioGet(accountId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns portfolio history reconstructed from operations and current portfolio positions.
+         * @summary Get T-Bank operation-derived portfolio history
+         * @param {string} [accountId] Account id
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meTbankPortfolioHistoryGet(accountId?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<TBankPortfolioHistoryPoint>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioHistoryGet(accountId, from, till, intervalDays, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioHistoryGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2315,6 +2545,34 @@ export const TbankApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.meTbankOperationsGet(accountId, cursor, limit, options).then((request) => request(axios, basePath));
         },
         /**
+         * Returns reconstructed composition snapshot for requested date (or latest).
+         * @summary Get T-Bank operation-derived portfolio composition snapshot
+         * @param {string} [accountId] Account id
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioCompositionGet(accountId?: string, date?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<TBankPortfolioCompositionEntry>> {
+            return localVarFp.meTbankPortfolioCompositionGet(accountId, date, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns downsampled composition weight series reconstructed from operations and current holdings.
+         * @summary Get T-Bank operation-derived portfolio composition series
+         * @param {string} [accountId] Account id
+         * @param {string} [tickers] Comma-separated list of tickers
+         * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
+         * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
+         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioCompositionSeriesGet(accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<TBankPortfolioCompositionSeriesPoint>; }> {
+            return localVarFp.meTbankPortfolioCompositionSeriesGet(accountId, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns balances and positions for selected account (or default account if omitted)
          * @summary Get T-Bank account balances and portfolio
          * @param {string} [accountId] Account id
@@ -2323,6 +2581,19 @@ export const TbankApiFactory = function (configuration?: Configuration, basePath
          */
         meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig): AxiosPromise<TBankAccountPortfolioResponse> {
             return localVarFp.meTbankPortfolioGet(accountId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns portfolio history reconstructed from operations and current portfolio positions.
+         * @summary Get T-Bank operation-derived portfolio history
+         * @param {string} [accountId] Account id
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meTbankPortfolioHistoryGet(accountId?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<TBankPortfolioHistoryPoint>> {
+            return localVarFp.meTbankPortfolioHistoryGet(accountId, from, till, intervalDays, options).then((request) => request(axios, basePath));
         },
         /**
          * Adds virtual money to selected sandbox account
@@ -2419,6 +2690,36 @@ export class TbankApi extends BaseAPI {
     }
 
     /**
+     * Returns reconstructed composition snapshot for requested date (or latest).
+     * @summary Get T-Bank operation-derived portfolio composition snapshot
+     * @param {string} [accountId] Account id
+     * @param {string} [date] Snapshot date (YYYY-MM-DD)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankPortfolioCompositionGet(accountId?: string, date?: string, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankPortfolioCompositionGet(accountId, date, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns downsampled composition weight series reconstructed from operations and current holdings.
+     * @summary Get T-Bank operation-derived portfolio composition series
+     * @param {string} [accountId] Account id
+     * @param {string} [tickers] Comma-separated list of tickers
+     * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
+     * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
+     * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
+     * @param {string} [from] Start date (YYYY-MM-DD)
+     * @param {string} [till] End date (YYYY-MM-DD)
+     * @param {number} [intervalDays] Downsample interval in days
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankPortfolioCompositionSeriesGet(accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankPortfolioCompositionSeriesGet(accountId, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Returns balances and positions for selected account (or default account if omitted)
      * @summary Get T-Bank account balances and portfolio
      * @param {string} [accountId] Account id
@@ -2427,6 +2728,20 @@ export class TbankApi extends BaseAPI {
      */
     public meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig) {
         return TbankApiFp(this.configuration).meTbankPortfolioGet(accountId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns portfolio history reconstructed from operations and current portfolio positions.
+     * @summary Get T-Bank operation-derived portfolio history
+     * @param {string} [accountId] Account id
+     * @param {string} [from] Start date (YYYY-MM-DD)
+     * @param {string} [till] End date (YYYY-MM-DD)
+     * @param {number} [intervalDays] Downsample interval in days
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meTbankPortfolioHistoryGet(accountId?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
+        return TbankApiFp(this.configuration).meTbankPortfolioHistoryGet(accountId, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

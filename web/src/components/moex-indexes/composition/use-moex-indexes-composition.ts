@@ -7,6 +7,7 @@ import {
   type MoexIndexCompositionEntry as MoexIndexCompositionEntry,
   type MoexIndexTickerAnalyticsPoint as MoexIndexTickerAnalyticsPoint,
 } from '@/api-client';
+import type { CompositionSeries } from '@/components/charts/composition-series-chart';
 import { moexApi } from '@/lib/api';
 import { resolveDateRange, resolveIntervalDays } from '../detail/use-moex-indexes-detail.utils';
 import type {
@@ -22,12 +23,6 @@ export type CompositionSnapshotItem = {
   name: string;
   weight: number;
   tradeDate: string;
-};
-
-export type CompositionSeries = {
-  id: string;
-  name: string;
-  data: Array<{ time: string; value: number }>;
 };
 
 type CompositionState = {

@@ -8,7 +8,7 @@ import type {
   MoexIndexHistoryPoint,
 } from '@/api-client';
 import { moexApi } from '@/lib/api';
-import type { ChartData } from './index-chart';
+import type { ChartData } from '@/components/charts/index-chart';
 import { resolveDateRange, resolveIntervalDays } from './use-moex-indexes-detail.utils';
 import type { ChartType, ChartViewMode, IntervalKey, RangeKey } from './moex-indexes-detail.types';
 

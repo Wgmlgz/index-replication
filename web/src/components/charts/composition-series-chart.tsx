@@ -18,7 +18,12 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import type { CompositionSeries } from './use-moex-indexes-composition';
+
+export type CompositionSeries = {
+  id: string;
+  name: string;
+  data: Array<{ time: string; value: number }>;
+};
 
 const BASE_SERIES_COLORS = [
   'var(--chart-1)',
@@ -43,17 +48,17 @@ export const resolveCompositionSeriesColor = (index: number) => {
 const formatPercentTooltipValue = (value: number) => `${value.toFixed(2)}%`;
 const TOOLTIP_MIN_VALUE = 0.0001;
 
-type IndexCompositionChartProps = {
+type CompositionSeriesChartProps = {
   series: CompositionSeries[];
   variant?: 'line' | 'stacked';
   includeOther?: boolean;
 };
 
-export function IndexCompositionChart({
+export function CompositionSeriesChart({
   series,
   variant = 'line',
   includeOther = false,
-}: IndexCompositionChartProps) {
+}: CompositionSeriesChartProps) {
   const baseSeriesMeta = useMemo(
     () =>
       series.map((item, index) => ({
@@ -223,3 +228,5 @@ export function IndexCompositionChart({
     </ChartContainer>
   );
 }
+
+export const IndexCompositionChart = CompositionSeriesChart;

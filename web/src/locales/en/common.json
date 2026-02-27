@@ -323,7 +323,78 @@
   },
   "portfolio": {
     "title": "Portfolio",
-    "description": "Review account balances and portfolio positions."
+    "description": "Review account balances and portfolio positions.",
+    "analytics": {
+      "title": "Portfolio analytics",
+      "description": "Track portfolio value and composition over time.",
+      "notConnected": "Connect T-Bank in Integrations to load portfolio analytics.",
+      "accountLabel": "Account",
+      "accountDefaultOption": "Use default account"
+    },
+    "chart": {
+      "title": "Portfolio value",
+      "description": "Operation-derived value series based on current holdings.",
+      "error": "Failed to load portfolio history.",
+      "noData": "No history data to display.",
+      "range": {
+        "label": "Range",
+        "more": "More",
+        "1m": "1M",
+        "3m": "3M",
+        "6m": "6M",
+        "ytd": "YTD",
+        "1y": "1Y",
+        "3y": "3Y",
+        "5y": "5Y",
+        "max": "Max",
+        "custom": "Custom",
+        "from": "From",
+        "to": "To"
+      },
+      "interval": {
+        "label": "Interval",
+        "more": "More",
+        "auto": "Auto",
+        "1d": "1D",
+        "2d": "2D",
+        "3d": "3D",
+        "1w": "1W",
+        "2w": "2W",
+        "1m": "1M"
+      },
+      "view": {
+        "label": "View",
+        "price": "Price",
+        "percent": "Percent change"
+      },
+      "type": {
+        "label": "Chart",
+        "line": "Line",
+        "candlestickDisabled": "Candlestick (N/A)"
+      }
+    },
+    "composition": {
+      "title": "Portfolio composition",
+      "description": "Portfolio weights by ticker over time.",
+      "asOf": "As of {{date}}",
+      "topLabel": "Top",
+      "all": "All",
+      "selectionDate": "Selection date",
+      "other": "Other",
+      "error": "Failed to load portfolio composition.",
+      "noData": "No composition data to display.",
+      "noSeries": "No composition series data to display.",
+      "tabs": {
+        "snapshot": "Snapshot",
+        "trend": "Trend",
+        "stacked": "Stacked"
+      },
+      "selectionMode": {
+        "label": "Selection mode",
+        "fixed": "Fixed",
+        "rolling": "Rolling"
+      }
+    }
   },
   "tbankTest": {
     "title": "T-Bank trading workspace",
