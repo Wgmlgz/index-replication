@@ -8,6 +8,10 @@ import type {
 } from '@/api-client';
 import type { CompositionSnapshotItem } from '@/components/charts/composition-snapshot-chart';
 import type { CompositionSeries } from '@/components/charts/composition-series-chart';
+import type {
+  CompositionSelectionMode,
+  CompositionTab,
+} from '@/lib/charting/chart-controls-url-state';
 import { tbankApi } from '@/lib/api';
 import {
   resolveDateRange,
@@ -16,8 +20,8 @@ import {
   type RangeKey,
 } from '@/lib/charting/time-series-controls';
 
-export type PortfolioCompositionTab = 'snapshot' | 'trend' | 'stacked';
-export type PortfolioCompositionSelectionMode = 'fixed' | 'rolling';
+export type PortfolioCompositionTab = CompositionTab;
+export type PortfolioCompositionSelectionMode = CompositionSelectionMode;
 
 type PortfolioCompositionState = {
   snapshotLoading: boolean;

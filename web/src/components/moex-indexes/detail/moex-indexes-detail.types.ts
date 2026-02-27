@@ -5,11 +5,14 @@ import type {
   IntervalKey,
   RangeKey,
 } from '@/lib/charting/time-series-controls';
+import type {
+  CompositionSelectionMode,
+  CompositionTab,
+} from '@/lib/charting/chart-controls-url-state';
 export type { ChartViewMode, IntervalKey, RangeKey };
+export type { CompositionSelectionMode, CompositionTab };
 
 export type ChartType = ChartSeriesType;
-export type CompositionTab = 'snapshot' | 'trend' | 'stacked';
-export type CompositionSelectionMode = 'fixed' | 'rolling';
 
 export type MoexIndexDetailState = {
   selectedIndex: MoexIndex | null;

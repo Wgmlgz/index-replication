@@ -1,17 +1,18 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
-import { CandlestickChart, DollarSign, LineChart, Percent } from 'lucide-react';
 import { useTBankConnectionContext } from '@/components/tbank-test/tbank-connection-context';
-import { IndexChart } from '@/components/charts/index-chart';
 import {
   CompositionSeriesChart,
   OTHER_SERIES_COLOR,
   resolveCompositionSeriesColor,
 } from '@/components/charts/composition-series-chart';
 import { CompositionSnapshotChart } from '@/components/charts/composition-snapshot-chart';
-import { ButtonToggleGroup, type ButtonToggleGroupOption, type ButtonToggleGroupSelectOption } from '@/components/ui/button-toggle-group';
+import { TimeSeriesChartState } from '@/components/charts/time-series-chart-state';
+import { TimeSeriesControls } from '@/components/charts/time-series-controls';
+import { TimeSeriesValueSummary } from '@/components/charts/time-series-value-summary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,16 +20,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  QUICK_INTERVAL_KEYS,
-  QUICK_RANGE_KEYS,
-  buildExtraIntervalOptions,
-  buildExtraRangeOptions,
-  buildIntervalOptions,
-  buildRangeOptions,
+  applyChartControlsUrlState,
+  parseChartControlsUrlState,
+  type ChartControlsUrlCodecConfig,
+} from '@/lib/charting/chart-controls-url-state';
+import {
   type ChartViewMode,
   type IntervalKey,
   type RangeKey,
 } from '@/lib/charting/time-series-controls';
+import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
 import { usePortfolioHistory } from './use-portfolio-history';
 import {
   type PortfolioCompositionSelectionMode,
@@ -37,22 +38,179 @@ import {
 } from './use-portfolio-composition';
 
 const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
+const PORTFOLIO_URL_KEYS = {
+  accountID: 'acc',
+  rangeKey: 'r',
+  intervalKey: 'i',
+  customFrom: 'f',
+  customTill: 't',
+  viewMode: 'v',
+  compositionTab: 'ctab',
+  compositionSelectionMode: 'cmode',
+  compositionSelectionDate: 'cdate',
+  compositionTopCount: 'top',
+} as const;
+
+const PORTFOLIO_CHART_URL_CODEC = {
+  keys: {
+    rangeKey: PORTFOLIO_URL_KEYS.rangeKey,
+    intervalKey: PORTFOLIO_URL_KEYS.intervalKey,
+    customFrom: PORTFOLIO_URL_KEYS.customFrom,
+    customTill: PORTFOLIO_URL_KEYS.customTill,
+    viewMode: PORTFOLIO_URL_KEYS.viewMode,
+    compositionTab: PORTFOLIO_URL_KEYS.compositionTab,
+    compositionSelectionMode: PORTFOLIO_URL_KEYS.compositionSelectionMode,
+    compositionSelectionDate: PORTFOLIO_URL_KEYS.compositionSelectionDate,
+    compositionTopCount: PORTFOLIO_URL_KEYS.compositionTopCount,
+  },
+  defaults: {
+    rangeKey: '1y',
+    intervalKey: 'auto',
+    viewMode: 'price',
+    compositionTab: 'snapshot',
+    compositionSelectionMode: 'fixed',
+    compositionTopCount: 10,
+  },
+} satisfies ChartControlsUrlCodecConfig;
+
+const parsePortfolioUrlState = (searchParams: URLSearchParams) => {
+  const accountIDRaw = searchParams.get(PORTFOLIO_URL_KEYS.accountID);
+  const accountID = accountIDRaw?.trim();
+  const chartControls = parseChartControlsUrlState(
+    searchParams,
+    PORTFOLIO_CHART_URL_CODEC
+  );
+
+  return {
+    accountID: accountID && accountID.length > 0 ? accountID : undefined,
+    chartControls,
+  };
+};
 
 export function PortfolioAnalyticsSection() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlKey = searchParams.toString();
   const { status, availableAccounts, connected } = useTBankConnectionContext();
 
-  const [accountID, setAccountID] = useState('');
-  const [rangeKey, setRangeKey] = useState<RangeKey>('1y');
-  const [intervalKey, setIntervalKey] = useState<IntervalKey>('auto');
-  const [customFrom, setCustomFrom] = useState('');
-  const [customTill, setCustomTill] = useState('');
-  const [viewMode, setViewMode] = useState<ChartViewMode>('price');
-  const [compositionTab, setCompositionTab] = useState<PortfolioCompositionTab>('snapshot');
+  const parsedUrl = useMemo(
+    () => parsePortfolioUrlState(new URLSearchParams(urlKey)),
+    [urlKey]
+  );
+
+  const [accountID, setAccountID] = useState(() => parsedUrl.accountID ?? '');
+  const [rangeKey, setRangeKey] = useState<RangeKey>(
+    () => parsedUrl.chartControls.rangeKey ?? '1y'
+  );
+  const [intervalKey, setIntervalKey] = useState<IntervalKey>(
+    () => parsedUrl.chartControls.intervalKey ?? 'auto'
+  );
+  const [customFrom, setCustomFrom] = useState(
+    () => parsedUrl.chartControls.customFrom ?? ''
+  );
+  const [customTill, setCustomTill] = useState(
+    () => parsedUrl.chartControls.customTill ?? ''
+  );
+  const [viewMode, setViewMode] = useState<ChartViewMode>(
+    () => parsedUrl.chartControls.viewMode ?? 'price'
+  );
+  const [compositionTab, setCompositionTab] = useState<PortfolioCompositionTab>(
+    () => parsedUrl.chartControls.compositionTab ?? 'snapshot'
+  );
   const [compositionSelectionMode, setCompositionSelectionMode] =
-    useState<PortfolioCompositionSelectionMode>('fixed');
-  const [compositionSelectionDate, setCompositionSelectionDate] = useState('');
-  const [compositionTopCount, setCompositionTopCount] = useState<number | null>(10);
+    useState<PortfolioCompositionSelectionMode>(
+      () => parsedUrl.chartControls.compositionSelectionMode ?? 'fixed'
+    );
+  const [compositionSelectionDate, setCompositionSelectionDate] = useState(
+    () => parsedUrl.chartControls.compositionSelectionDate ?? ''
+  );
+  const [compositionTopCount, setCompositionTopCount] = useState<number | null>(
+    () =>
+      parsedUrl.chartControls.compositionTopCount === undefined
+        ? 10
+        : parsedUrl.chartControls.compositionTopCount
+  );
+
+  const portfolioUrlStateKey = useMemo(
+    () =>
+      JSON.stringify({
+        accountID,
+        rangeKey,
+        intervalKey,
+        customFrom,
+        customTill,
+        viewMode,
+        compositionTab,
+        compositionSelectionMode,
+        compositionSelectionDate,
+        compositionTopCount,
+      }),
+    [
+      accountID,
+      rangeKey,
+      intervalKey,
+      customFrom,
+      customTill,
+      viewMode,
+      compositionTab,
+      compositionSelectionMode,
+      compositionSelectionDate,
+      compositionTopCount,
+    ]
+  );
+
+  useUrlStateSync({
+    pathname,
+    urlKey,
+    stateKey: portfolioUrlStateKey,
+    parse: parsePortfolioUrlState,
+    applyParsedState: next => {
+      setAccountID(next.accountID ?? '');
+      setRangeKey(next.chartControls.rangeKey ?? '1y');
+      setIntervalKey(next.chartControls.intervalKey ?? 'auto');
+      setCustomFrom(next.chartControls.customFrom ?? '');
+      setCustomTill(next.chartControls.customTill ?? '');
+      setViewMode(next.chartControls.viewMode ?? 'price');
+      setCompositionTab(next.chartControls.compositionTab ?? 'snapshot');
+      setCompositionSelectionMode(
+        next.chartControls.compositionSelectionMode ?? 'fixed'
+      );
+      setCompositionSelectionDate(next.chartControls.compositionSelectionDate ?? '');
+      setCompositionTopCount(
+        next.chartControls.compositionTopCount === undefined
+          ? 10
+          : next.chartControls.compositionTopCount
+      );
+    },
+    buildSearchParams: () => {
+      const next = new URLSearchParams(window.location.search);
+      next.delete(PORTFOLIO_URL_KEYS.accountID);
+
+      const accountIDValue = accountID.trim();
+      if (accountIDValue.length > 0) {
+        next.set(PORTFOLIO_URL_KEYS.accountID, accountIDValue);
+      }
+
+      applyChartControlsUrlState(
+        next,
+        {
+          rangeKey,
+          intervalKey,
+          customFrom,
+          customTill,
+          viewMode,
+          compositionTab,
+          compositionSelectionMode,
+          compositionSelectionDate,
+          compositionTopCount,
+        },
+        PORTFOLIO_CHART_URL_CODEC
+      );
+
+      return next;
+    },
+  });
 
   const resolvedAccountID = accountID || status?.default_account_id || '';
   const topCountForHook =
@@ -95,72 +253,6 @@ export function PortfolioAnalyticsSection() {
     topCount: topCountForHook,
     compositionTab,
   });
-
-  const rangeOptions = buildRangeOptions('portfolio.chart');
-  const intervalOptions = buildIntervalOptions('portfolio.chart');
-  const extraRangeOptions = buildExtraRangeOptions('portfolio.chart');
-  const extraIntervalOptions = buildExtraIntervalOptions('portfolio.chart');
-
-  const isQuickRange = QUICK_RANGE_KEYS.includes(rangeKey);
-  const isQuickInterval = QUICK_INTERVAL_KEYS.includes(intervalKey);
-  const rangeToggleOptions: ButtonToggleGroupOption<RangeKey>[] =
-    QUICK_RANGE_KEYS.map(key => {
-      const option = rangeOptions.find(item => item.value === key);
-      if (!option) return null;
-      return {
-        value: key,
-        label: t(option.labelKey),
-        content: t(option.labelKey),
-      };
-    }).filter(option => option !== null);
-  const rangeSelectOptions: ButtonToggleGroupSelectOption<RangeKey>[] =
-    extraRangeOptions.map(option => ({
-      value: option.value,
-      label: t(option.labelKey),
-    }));
-
-  const intervalToggleOptions: ButtonToggleGroupOption<IntervalKey>[] =
-    QUICK_INTERVAL_KEYS.map(key => {
-      const option = intervalOptions.find(item => item.value === key);
-      if (!option) return null;
-      return {
-        value: key,
-        label: t(option.labelKey),
-        content: t(option.labelKey),
-      };
-    }).filter(option => option !== null);
-  const intervalSelectOptions: ButtonToggleGroupSelectOption<IntervalKey>[] =
-    extraIntervalOptions.map(option => ({
-      value: option.value,
-      label: t(option.labelKey),
-    }));
-
-  const viewModeOptions: ButtonToggleGroupOption<ChartViewMode>[] = [
-    {
-      value: 'price',
-      label: t('portfolio.chart.view.price'),
-      content: <DollarSign className='size-4' />,
-    },
-    {
-      value: 'percent',
-      label: t('portfolio.chart.view.percent'),
-      content: <Percent className='size-4' />,
-    },
-  ];
-
-  const chartTypeOptions: ButtonToggleGroupOption<'line' | 'candlestick'>[] = [
-    {
-      value: 'line',
-      label: t('portfolio.chart.type.line'),
-      content: <LineChart className='size-4' />,
-    },
-    {
-      value: 'candlestick',
-      label: t('portfolio.chart.type.candlestickDisabled'),
-      content: <CandlestickChart className='size-4' />,
-      disabled: true,
-    },
-  ];
 
   const snapshotTop = snapshotItems.slice(
     0,
@@ -224,136 +316,45 @@ export function PortfolioAnalyticsSection() {
             </select>
           </div>
 
-          <div className='space-y-2'>
-            <div className='text-sm'>
-              {latestValue !== null && (
-                <>
-                  <span className='font-medium'>
-                    {numberFormatter.format(latestValue)}
-                  </span>
-                  {currency ? ` ${currency}` : ''}
-                  {change !== null && changePercent !== null && (
-                    <span
-                      className={`ml-2 font-medium ${
-                        change > 0
-                          ? 'text-emerald-600'
-                          : change < 0
-                            ? 'text-red-600'
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      {change > 0 ? '+' : ''}
-                      {numberFormatter.format(change)} ({change > 0 ? '+' : ''}
-                      {changePercent.toFixed(2)}%)
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+          <TimeSeriesValueSummary
+            latestValue={latestValue}
+            change={change}
+            changePercent={changePercent}
+            numberFormatter={numberFormatter}
+            currency={currency || undefined}
+            loading={historyLoading}
+            className='text-sm'
+          />
 
-          <div className='space-y-2'>
-            <div className='flex flex-wrap items-center gap-2'>
-              <span className='text-xs text-muted-foreground'>
-                {t('portfolio.chart.range.label')}
-              </span>
-              <ButtonToggleGroup
-                value={rangeKey}
-                options={rangeToggleOptions}
-                onValueChange={setRangeKey}
-                select={{
-                  value: isQuickRange ? undefined : rangeKey,
-                  placeholder: t('portfolio.chart.range.more'),
-                  options: rangeSelectOptions,
-                  onValueChange: setRangeKey,
-                }}
-              />
-            </div>
-            {rangeKey === 'custom' && (
-              <div className='flex flex-wrap items-end gap-3'>
-                <div className='space-y-1'>
-                  <Label htmlFor='portfolio-chart-from' className='text-xs text-muted-foreground'>
-                    {t('portfolio.chart.range.from')}
-                  </Label>
-                  <Input
-                    id='portfolio-chart-from'
-                    type='date'
-                    value={customFrom}
-                    onChange={event => setCustomFrom(event.target.value)}
-                  />
-                </div>
-                <div className='space-y-1'>
-                  <Label htmlFor='portfolio-chart-to' className='text-xs text-muted-foreground'>
-                    {t('portfolio.chart.range.to')}
-                  </Label>
-                  <Input
-                    id='portfolio-chart-to'
-                    type='date'
-                    value={customTill}
-                    onChange={event => setCustomTill(event.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          <TimeSeriesControls
+            translationKeyPrefix='portfolio.chart'
+            rangeKey={rangeKey}
+            setRangeKey={setRangeKey}
+            intervalKey={intervalKey}
+            setIntervalKey={setIntervalKey}
+            customFrom={customFrom}
+            setCustomFrom={setCustomFrom}
+            customTill={customTill}
+            setCustomTill={setCustomTill}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            chartType='line'
+            disableCandlestick
+            candlestickLabelKey='portfolio.chart.type.candlestickDisabled'
+            idPrefix='portfolio'
+          />
 
-          <div className='space-y-2'>
-            <div className='flex flex-wrap items-center gap-2'>
-              <span className='text-xs text-muted-foreground'>
-                {t('portfolio.chart.interval.label')}
-              </span>
-              <ButtonToggleGroup
-                value={intervalKey}
-                options={intervalToggleOptions}
-                onValueChange={setIntervalKey}
-                select={{
-                  value: isQuickInterval ? undefined : intervalKey,
-                  placeholder: t('portfolio.chart.interval.more'),
-                  options: intervalSelectOptions,
-                  onValueChange: setIntervalKey,
-                }}
-              />
-            </div>
-          </div>
-
-          <div className='flex flex-wrap items-center gap-4'>
-            <div className='flex flex-wrap items-center gap-2'>
-              <span className='text-xs text-muted-foreground'>
-                {t('portfolio.chart.view.label')}
-              </span>
-              <ButtonToggleGroup
-                value={viewMode}
-                options={viewModeOptions}
-                onValueChange={setViewMode}
-              />
-            </div>
-
-            <div className='flex flex-wrap items-center gap-2'>
-              <span className='text-xs text-muted-foreground'>
-                {t('portfolio.chart.type.label')}
-              </span>
-              <ButtonToggleGroup
-                value='line'
-                options={chartTypeOptions}
-                onValueChange={() => undefined}
-              />
-            </div>
-          </div>
-
-          <div className='min-h-[240px]'>
-            {historyLoading && <Skeleton className='h-[240px] w-full' />}
-            {!historyLoading && historyError && (
-              <div className='text-sm text-muted-foreground'>{t('portfolio.chart.error')}</div>
-            )}
-            {!historyLoading && !historyError && chartData.length === 0 && (
-              <div className='text-sm text-muted-foreground'>{t('portfolio.chart.noData')}</div>
-            )}
-            {!historyLoading && !historyError && chartData.length > 0 && (
-              <div className='h-[240px]'>
-                <IndexChart data={chartData} seriesType='line' />
-              </div>
-            )}
-          </div>
+          <TimeSeriesChartState
+            loading={historyLoading}
+            hasError={historyError}
+            errorMessage={t('portfolio.chart.error')}
+            noDataMessage={t('portfolio.chart.noData')}
+            data={chartData}
+            seriesType='line'
+            containerClassName='min-h-[240px]'
+            chartWrapperClassName='h-[240px]'
+            skeletonClassName='h-[240px] w-full min-h-0'
+          />
         </CardContent>
       </Card>
 
