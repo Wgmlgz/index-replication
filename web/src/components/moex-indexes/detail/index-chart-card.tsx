@@ -1,15 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,8 +12,6 @@ import {
 } from '@/components/ui/button-toggle-group';
 import { CandlestickChart, DollarSign, LineChart, Percent } from 'lucide-react';
 import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
-import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
-import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { IndexChart } from './index-chart';
 import { useMoexIndexDetailContext } from './moex-indexes-detail-context';
 import {
@@ -39,6 +29,7 @@ type IndexChartCardProps = {
 };
 
 export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
+  void embedded;
   const {
     selectedIndex,
     selectedIndexCollections,
@@ -81,20 +72,6 @@ export function IndexChartCard({ embedded = false }: IndexChartCardProps) {
           })
       : t('moex.groups.none')
     : '';
-
-  const rangeLabel = useMemo(() => {
-    const option = RANGE_OPTIONS.find(item => item.value === rangeKey);
-    if (rangeKey !== 'custom') {
-      return option ? t(option.labelKey) : rangeKey;
-    }
-    if (customFrom && customTill) {
-      return t('moex.chart.range.customRange', {
-        from: customFrom,
-        till: customTill,
-      });
-    }
-    return option ? t(option.labelKey) : rangeKey;
-  }, [customFrom, customTill, rangeKey, t]);
 
   const isQuickRange = QUICK_RANGE_KEYS.includes(rangeKey);
   const isQuickInterval = QUICK_INTERVAL_KEYS.includes(intervalKey);

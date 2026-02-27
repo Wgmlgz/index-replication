@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { Time } from "../ui/time"
-import { actionColors, actionLabels, entityTypeLabels, extractRectsFromLog } from "@/lib/logs"
+import { actionColors, actionLabels, entityTypeLabels } from "@/lib/logs"
 import { AuditLogResponse } from "@/api-client"
 
 // This type is used to define the shape of our data.

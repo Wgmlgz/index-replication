@@ -7,7 +7,6 @@ import 'moment/locale/ru';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { Skeleton } from '@/components/ui/skeleton';
 import { QueryProvider } from '@/components/query-provider';
 import { UserProvider, useUser } from '@/components/user-context';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -36,7 +35,7 @@ function FullPageStatus({ title, description }: { title: string; description: st
 function ProtectedPageSkeleton() {
   return (
     <div className='min-h-svh p-6 sm:p-8'>
-      
+
     </div>
   );
 }

@@ -27,7 +27,6 @@ import { SearchInput } from '../search-input';
 import { Button } from '../button';
 import { Switch } from '../switch';
 import { Label } from '../label';
-import { cn } from '@/lib/utils';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

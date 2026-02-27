@@ -1,8 +1,6 @@
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { forwardRef, useCallback, useEffect, useState } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { NumericFormat, NumericFormatProps } from 'react-number-format';
-import { Button } from './ui/button';
 import { Input } from './ui/input';
 
 export interface NumberInputProps
@@ -24,7 +22,6 @@ export interface NumberInputProps
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
     {
-      stepper,
       thousandSeparator,
       placeholder,
       defaultValue,
@@ -157,3 +154,5 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     );
   }
 );
+
+NumberInput.displayName = 'NumberInput';

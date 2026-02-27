@@ -135,7 +135,6 @@ export const filterOneDetects = (detectsOriginal: (SkuDetectionExtra | ModelsRec
           x => x.confidence < winner.confidence * getOneOtherThreshold()
         )
       ) {
-        winner;
         (winner as SkuDetectionExtra).msg =
           'Система не уверена, но возможно это: ';
         res = [winner];

@@ -32,7 +32,8 @@ export type User = {
 }
 
 
-export const columns = ({ hasPermission, user }: UseUserRet): ColumnDef<User>[] => {
+export const columns = (_ctx: UseUserRet): ColumnDef<User>[] => {
+  void _ctx;
   return [
     // {
     //   header: ({ column }) => (
@@ -60,7 +61,7 @@ export const columns = ({ hasPermission, user }: UseUserRet): ColumnDef<User>[] 
       ),
       accessorKey: "role_id",
       cell: ({ row }) => {
-        let [variant, className] = (
+        const [variant, className] = (
           ({
             1: ["secondary", 'bg-blue-500 text-white dark:bg-blue-600'],
             2: ["destructive", ''],

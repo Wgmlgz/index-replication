@@ -1,6 +1,6 @@
 'use client';
 import JsonView from '@uiw/react-json-view';
-import React, { PureComponent } from 'react';
+import React from 'react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 import { useState, useEffect } from 'react';
 import {
@@ -8,15 +8,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { Eye, EyeIcon, Image, X } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Time } from '../ui/time';
-import { AuditLog } from './columns';
-import { actionColors, actionLabels, extractRectsFromLog } from '@/lib/logs';
+import { actionColors, actionLabels } from '@/lib/logs';
 import { AuditLogResponse } from '@/api-client';
 
 interface DetailsPopupProps {

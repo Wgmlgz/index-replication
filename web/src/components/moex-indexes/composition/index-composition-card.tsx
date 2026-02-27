@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,8 +65,9 @@ const resolveChartDate = (chartData: ChartData): string | null => {
 };
 
 export function IndexCompositionCard({
-  embedded = false,
+  embedded: _embedded = false,
 }: IndexCompositionCardProps) {
+  void _embedded;
   const {
     selectedIndex,
     chartData,

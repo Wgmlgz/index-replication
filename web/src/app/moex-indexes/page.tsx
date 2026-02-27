@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndexCompositionCard } from '@/components/moex-indexes/composition/index-composition-card';
 import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';

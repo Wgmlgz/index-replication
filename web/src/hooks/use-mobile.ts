@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 
 export const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -27,7 +26,6 @@ export const useIsMobile = () => {
         (isMobileUA && window.innerWidth <= 768);
 
       setIsMobile(isMobileDevice);
-      setIsLoading(false);
     };
 
     // Initial check

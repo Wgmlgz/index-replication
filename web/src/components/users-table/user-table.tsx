@@ -2,26 +2,6 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
-import { DataTablePagination } from "../ui/data-table/data-table-pagination"
 import { DataTable } from "../ui/data-table/data-table"
 import { activeActionsCol, columns, selectCol } from "./columns"
 import { type User } from "./columns"
@@ -45,12 +25,6 @@ export type UserTableProps = {
   initialSelectedId?: number,
   organization_id?: number
 }
-interface UsersResponse {
-  total: number
-  page: number
-  page_size: number
-  users: User[]
-}
 
 const fetchUsers = async (pagination: PaginationState, sorting: SortingState, search: string, organization_id?: number) => {
   const params = {
@@ -70,7 +44,7 @@ export function UserTable({ mode = "normal", onSelectionChange, initialSelectedI
   const [open, setOpen] = useState(false)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [rowSelection, setRowSelection] = useState<{ [key: string]: boolean }>({})
+  const [, setRowSelection] = useState<{ [key: string]: boolean }>({})
   const [visibleUsers, setVisibleUsers] = useState<User[]>([])
   const router = useRouter()
 
@@ -96,11 +70,6 @@ export function UserTable({ mode = "normal", onSelectionChange, initialSelectedI
   const handleAddUser = () => {
     setEditUser(null)
     setOpen(true)
-  }
-
-  const handleClose = () => {
-    setOpen(false)
-    setEditUser(null)
   }
 
   const handleSuccess = () => {

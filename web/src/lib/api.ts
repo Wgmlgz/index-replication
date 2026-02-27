@@ -8,7 +8,7 @@ import {
   SettingsApi,
   UsersApi,
 } from "@/api-client";
-import axios, { AxiosHeaders } from "axios";
+import axios from "axios";
 import axiosTauriApiAdapter from '@/lib/axios-tauri-proxy';
 
 export const isTauri = () => {
@@ -32,6 +32,9 @@ export const axiosClient = isTauri()
 
 if (isTauri()) {
   const COOKIE_KEY = 'authCookies';
+  type TauriAxiosResponse = {
+    rawHeaders?: [string, string][];
+  };
 
   axiosClient.interceptors.request.use(config => {
     const cookieStr = localStorage.getItem(COOKIE_KEY);
@@ -43,8 +46,10 @@ if (isTauri()) {
   });
 
   axiosClient.interceptors.response.use(response => {
-    // @ts-ignore
-    const setCookies = ((response as any).rawHeaders).filter(([key, val]) => key === 'set-cookie').map(([key, val]) => val);
+    const rawHeaders = (response as TauriAxiosResponse).rawHeaders ?? [];
+    const setCookies = rawHeaders
+      .filter(([key]) => key === 'set-cookie')
+      .map(([, value]) => value);
     // console.log('response', response)
     // console.log('setCookies', response.headers.toJSON())
     // console.log('raw', (response.headers as AxiosHeaders).toJSON())
