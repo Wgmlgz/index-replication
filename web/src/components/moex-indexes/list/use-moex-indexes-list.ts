@@ -62,7 +62,7 @@ export function useMoexIndexList({
   indexesLoading,
   setPageIndex,
 }: IndexListInput): IndexListState {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const normalizedQuery = query.trim().toLowerCase();
 
   const filterSets = useMemo(() => {
@@ -163,8 +163,14 @@ export function useMoexIndexList({
     return paginationTarget.slice(start, start + pageSize);
   }, [pageIndex, pageSize, paginationTarget]);
 
-  const visibleFavorites = showFavoritesOnly ? paginated : favoriteIndexesAll;
-  const visibleOthers = showFavoritesOnly ? [] : paginated;
+  const visibleFavorites = useMemo(
+    () => (showFavoritesOnly ? paginated : favoriteIndexesAll),
+    [favoriteIndexesAll, paginated, showFavoritesOnly]
+  );
+  const visibleOthers = useMemo(
+    () => (showFavoritesOnly ? [] : paginated),
+    [paginated, showFavoritesOnly]
+  );
 
   const groupingOrder = useMemo(() => {
     return [...groupingCollections].sort((left, right) =>
@@ -219,7 +225,6 @@ export function useMoexIndexList({
   }, [
     collectionMemberships,
     groupingOrder,
-    i18n.language,
     showFavoritesOnly,
     t,
     visibleFavorites,
@@ -239,7 +244,7 @@ export function useMoexIndexList({
       },
       ...collectionGroups,
     ];
-  }, [collectionGroups, favoriteIndexesAll, i18n.language, showFavoritesOnly, t]);
+  }, [collectionGroups, favoriteIndexesAll, showFavoritesOnly, t]);
 
   const foundCount = showFavoritesOnly
     ? favoriteIndexesAll.length

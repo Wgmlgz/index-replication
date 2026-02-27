@@ -42,9 +42,15 @@ export function useMoexIndexesData(): MoexIndexesDataState {
   });
 
   const overview = overviewQuery.data;
-  const indexes = overview?.indexes ?? [];
-  const collections = overview?.collections ?? [];
-  const memberships = overview?.memberships ?? {};
+  const indexes = useMemo(() => overview?.indexes ?? [], [overview?.indexes]);
+  const collections = useMemo(
+    () => overview?.collections ?? [],
+    [overview?.collections]
+  );
+  const memberships = useMemo(
+    () => overview?.memberships ?? {},
+    [overview?.memberships]
+  );
 
   const {
     groupingCollections,
@@ -61,7 +67,10 @@ export function useMoexIndexesData(): MoexIndexesDataState {
     retry: 1,
   });
 
-  const favorites = settingsQuery.data?.favorites ?? [];
+  const favorites = useMemo(
+    () => settingsQuery.data?.favorites ?? [],
+    [settingsQuery.data?.favorites]
+  );
   const favoritesSet = useMemo(
     () => new Set(favorites.map((item) => item.toUpperCase())),
     [favorites]

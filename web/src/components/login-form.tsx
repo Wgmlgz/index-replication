@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { cn } from "@/lib/utils"
@@ -20,6 +20,9 @@ import { verificationClient } from "@/lib/verification-client";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_AUTHENTICATED_ROUTE, getSafeNextPath } from "@/lib/routes";
 
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export function LoginForm({
   className,
   ...props
@@ -37,10 +40,7 @@ export function LoginForm({
   const searchParams = useSearchParams()
   const { refreshUser } = useUser();
 
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  const onLoginSuccess = async () => {
+  const onLoginSuccess = useCallback(async () => {
     setIsFinalizing(true)
     setError("")
     const nextPath = getSafeNextPath(searchParams.get("next"))
@@ -61,9 +61,9 @@ export function LoginForm({
 
     setError(t("auth.login.sessionNotReady"))
     setIsFinalizing(false)
-  };
+  }, [refreshUser, router, searchParams, t]);
 
-  const pollVerification = async () => {
+  const pollVerification = useCallback(async () => {
     if (!challengeID) {
       return;
     }
@@ -82,7 +82,7 @@ export function LoginForm({
       }
       setError(t("auth.login.verification.genericError"))
     }
-  };
+  }, [challengeID, onLoginSuccess, t]);
 
   useEffect(() => {
     if (!challengeID) {
@@ -92,7 +92,7 @@ export function LoginForm({
       void pollVerification();
     }, 3000);
     return () => clearInterval(interval);
-  }, [challengeID]);
+  }, [challengeID, pollVerification]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

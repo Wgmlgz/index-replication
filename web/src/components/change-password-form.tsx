@@ -68,8 +68,15 @@ export function ChangePasswordForm() {
       } as PasswordChangeRequest);
       toast.success(t('settings.changePassword.success'));
       form.reset();
-    } catch (error: any) {
-      toast.error(error?.body?.error || t('settings.changePassword.error'));
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' &&
+          error !== null &&
+          'body' in error &&
+          typeof (error as { body?: { error?: unknown } }).body?.error === 'string'
+          ? (error as { body: { error: string } }).body.error
+          : t('settings.changePassword.error');
+      toast.error(message);
     } finally {
       setLoading(false);
     }

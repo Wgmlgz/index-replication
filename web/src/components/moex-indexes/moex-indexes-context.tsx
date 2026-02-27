@@ -44,7 +44,10 @@ export function MoexIndexesProvider({
   const pathname = usePathname();
   const urlKey = searchParams.toString();
 
-  const parsedUrl = useMemo(() => parseMoexIndexesUrlState(searchParams), [urlKey, searchParams]);
+  const parsedUrl = useMemo(
+    () => parseMoexIndexesUrlState(new URLSearchParams(urlKey)),
+    [urlKey]
+  );
 
   const dataState = useMoexIndexesData();
   const listState = useMoexIndexListState({
@@ -77,8 +80,10 @@ export function MoexIndexesProvider({
 
   const listRef = useRef(listState);
   const detailRef = useRef(detailState);
-  listRef.current = listState;
-  detailRef.current = detailState;
+  useEffect(() => {
+    listRef.current = listState;
+    detailRef.current = detailState;
+  }, [detailState, listState]);
 
   const debouncedQuery = useDebouncedValue(listState.query, 350);
 
@@ -86,7 +91,7 @@ export function MoexIndexesProvider({
   useEffect(() => {
     const ls = listRef.current;
     const ds = detailRef.current;
-    const next = parseMoexIndexesUrlState(searchParams);
+    const next = parseMoexIndexesUrlState(new URLSearchParams(urlKey));
 
     const nextSelectedSecid =
       next.selectedSecid !== undefined ? next.selectedSecid : null;
@@ -175,7 +180,7 @@ export function MoexIndexesProvider({
     if (nextTopCount !== ds.compositionTopCount) {
       ds.setCompositionTopCount(nextTopCount);
     }
-  }, [urlKey, searchParams]);
+  }, [urlKey]);
 
   // local state -> URL (debounced for query typing).
   useEffect(() => {

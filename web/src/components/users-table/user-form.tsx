@@ -149,7 +149,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
         // blocked: false,
       });
     }
-  }, [user, mode]);
+  }, [form, mode, user]);
 
   useEffect(() => {
     if (mode === 'create') {
@@ -163,7 +163,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
         form.setValue('password', null);
       }
     }
-  }, [isChangingPassword, mode]);
+  }, [form, isChangingPassword, mode]);
 
   const handleBlockToggle = async () => {
     try {

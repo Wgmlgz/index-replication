@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
@@ -47,7 +47,7 @@ export function TBankPortfolioCard() {
     return portfolioAccountID || status?.default_account_id || "";
   }, [portfolioAccountID, status?.default_account_id]);
 
-  const parseErrorMessage = (err: unknown, fallback: string) => {
+  const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
       const apiError = err.response?.data?.error;
       if (typeof apiError === "string" && apiError.length > 0) {
@@ -55,9 +55,9 @@ export function TBankPortfolioCard() {
       }
     }
     return fallback;
-  };
+  }, []);
 
-  const loadPortfolio = async (accountID?: string) => {
+  const loadPortfolio = useCallback(async (accountID?: string) => {
     if (!connected) {
       setPortfolio(null);
       return;
@@ -74,7 +74,7 @@ export function TBankPortfolioCard() {
     } finally {
       setLoadingPortfolio(false);
     }
-  };
+  }, [connected, parseErrorMessage, t]);
 
   useEffect(() => {
     if (!connected) {
@@ -83,8 +83,8 @@ export function TBankPortfolioCard() {
       setError("");
       return;
     }
-    void loadPortfolio(portfolioAccountID || status?.default_account_id || undefined);
-  }, [connected, status?.default_account_id]);
+    void loadPortfolio(status?.default_account_id || undefined);
+  }, [connected, loadPortfolio, status?.default_account_id]);
 
   const onSandboxPayIn = async () => {
     setError("");

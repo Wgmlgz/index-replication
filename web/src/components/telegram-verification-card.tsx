@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
@@ -27,14 +27,14 @@ export function TelegramVerificationCard() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
 
-  const getErrorMessage = (err: unknown, fallbackKey: string) => {
+  const getErrorMessage = useCallback((err: unknown, fallbackKey: string) => {
     if (axios.isAxiosError(err)) {
       return err.response?.data?.error || t(fallbackKey);
     }
     return t(fallbackKey);
-  };
+  }, [t]);
 
-  const loadStatus = async () => {
+  const loadStatus = useCallback(async () => {
     try {
       const data = await verificationClient.getTelegramStatus();
       setStatus(data);
@@ -43,11 +43,11 @@ export function TelegramVerificationCard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getErrorMessage]);
 
   useEffect(() => {
     void loadStatus();
-  }, []);
+  }, [loadStatus]);
 
   const onGenerateConnectLink = async () => {
     setWorking(true);

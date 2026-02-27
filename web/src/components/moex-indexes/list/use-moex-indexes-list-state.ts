@@ -65,7 +65,7 @@ export function useMoexIndexListState({
   toggleFavorite,
   initial,
 }: ListStateInput): MoexIndexListState {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [query, setQueryState] = useState(() => initial?.query ?? '');
   const [selectedSecid, setSelectedSecid] = useState<string | null>(
     () => initial?.selectedSecid ?? null
@@ -107,7 +107,7 @@ export function useMoexIndexListState({
       options[def.key] = [];
     });
     return options;
-  }, [collectionOptions, i18n.language, indexes, t]);
+  }, [collectionOptions, indexes, t]);
 
   const setQuery = (value: string) => {
     setQueryState(value);

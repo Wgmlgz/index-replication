@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -47,7 +48,7 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
 
-  const parseErrorMessage = (err: unknown, fallback: string) => {
+  const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
       const apiError = err.response?.data?.error;
       if (typeof apiError === "string" && apiError.length > 0) {
@@ -55,9 +56,9 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
       }
     }
     return fallback;
-  };
+  }, []);
 
-  const refreshStatus = async () => {
+  const refreshStatus = useCallback(async () => {
     setError("");
     setLoadingStatus(true);
     try {
@@ -68,11 +69,11 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     } finally {
       setLoadingStatus(false);
     }
-  };
+  }, [parseErrorMessage, t]);
 
   useEffect(() => {
     void refreshStatus();
-  }, []);
+  }, [refreshStatus]);
 
   const connect = async ({ token, environment, defaultAccountID }: ConnectParams) => {
     setError("");

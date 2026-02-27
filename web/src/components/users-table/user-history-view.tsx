@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserHistory } from '@/components/user-history/user-history';
 import { ArrowLeft } from 'lucide-react';
@@ -18,15 +18,11 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchUser = useCallback(async () => {
     if (!uid || isNaN(uid)) {
       router.push('/users');
       return;
     }
-    fetchUser();
-  }, [uid]);
-
-  async function fetchUser() {
     try {
       setIsLoading(true);
       const response = await api.usersGet(
@@ -46,7 +42,11 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [router, uid]);
+
+  useEffect(() => {
+    void fetchUser();
+  }, [fetchUser]);
 
   if (isLoading) {
     return (

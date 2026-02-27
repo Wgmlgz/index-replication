@@ -75,7 +75,7 @@ export function useMoexIndexHistory(
     retry: 1,
   });
 
-  const history = historyQuery.data ?? [];
+  const history = useMemo(() => historyQuery.data ?? [], [historyQuery.data]);
   const historyLoading = historyQuery.isLoading;
   const historyError = Boolean(historyQuery.error);
 

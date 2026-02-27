@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -32,21 +32,23 @@ export function TBankConnectCard() {
   } = useTBankConnectionContext();
 
   const [connectToken, setConnectToken] = useState('');
-  const [environment, setEnvironment] = useState<TBankEnvironment>('sandbox');
-  const [defaultAccountID, setDefaultAccountID] = useState('');
-
-  useEffect(() => {
-    const nextEnvironment: TBankEnvironment =
-      status?.environment === 'production' ? 'production' : 'sandbox';
-    setEnvironment(nextEnvironment);
-    setDefaultAccountID(status?.default_account_id || '');
-  }, [status?.environment, status?.default_account_id]);
+  const [environmentOverride, setEnvironmentOverride] =
+    useState<TBankEnvironment | null>(null);
+  const [defaultAccountIDOverride, setDefaultAccountIDOverride] =
+    useState<string | null>(null);
+  const environment: TBankEnvironment =
+    environmentOverride ??
+    (status?.environment === 'production' ? 'production' : 'sandbox');
+  const defaultAccountID =
+    defaultAccountIDOverride ?? status?.default_account_id ?? '';
 
   const onConnect = async () => {
     if (!connectToken.trim()) return;
     try {
       await connect({ token: connectToken, environment, defaultAccountID });
       setConnectToken('');
+      setEnvironmentOverride(null);
+      setDefaultAccountIDOverride(null);
     } catch {
       // handled in context error state
     }
@@ -55,7 +57,8 @@ export function TBankConnectCard() {
   const onDisconnect = async () => {
     try {
       await disconnect();
-      setDefaultAccountID('');
+      setEnvironmentOverride(null);
+      setDefaultAccountIDOverride('');
     } catch {
       // handled in context error state
     }
@@ -64,6 +67,7 @@ export function TBankConnectCard() {
   const onSaveDefaultAccount = async () => {
     try {
       await saveDefaultAccount(defaultAccountID);
+      setDefaultAccountIDOverride(null);
     } catch {
       // handled in context error state
     }
@@ -110,7 +114,7 @@ export function TBankConnectCard() {
           className='border-input bg-background h-9 rounded-md border px-3 text-sm'
           value={environment}
           onChange={event =>
-            setEnvironment(event.target.value as TBankEnvironment)
+            setEnvironmentOverride(event.target.value as TBankEnvironment)
           }
         >
           <option value='sandbox'>
@@ -145,7 +149,7 @@ export function TBankConnectCard() {
           className='border-input bg-background h-9 rounded-md border px-3 text-sm'
           value={defaultAccountID}
           onChange={event => {
-            setDefaultAccountID(event.target.value);
+            setDefaultAccountIDOverride(event.target.value);
             if (error) clearError();
           }}
         >
@@ -185,7 +189,11 @@ export function TBankConnectCard() {
         <Button
           type='button'
           variant='ghost'
-          onClick={() => void refreshStatus()}
+          onClick={() => {
+            setEnvironmentOverride(null);
+            setDefaultAccountIDOverride(null);
+            void refreshStatus();
+          }}
           disabled={working}
         >
           {t('tbankTest.connect.refreshButton')}

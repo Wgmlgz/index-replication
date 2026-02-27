@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DataTablePagination } from './data-table-pagination';
-import { Key, useEffect, useState } from 'react';
+import { Key, useCallback, useEffect, useState } from 'react';
 import { SearchInput } from '../search-input';
 import { Button } from '../button';
 import { Switch } from '../switch';
@@ -79,7 +79,7 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [hideBlocked, setHideBlocked] = useState<boolean>(false);
 
-  const doFetch = () => {
+  const doFetch = useCallback(() => {
     fetchData(pagination, sorting, search, hideBlocked).then(
       ({ data, total, selectIdx }) => {
         setData(data);
@@ -89,7 +89,7 @@ export function DataTable<TData, TValue>({
         }
       }
     );
-  };
+  }, [fetchData, hideBlocked, pagination, search, sorting]);
 
   useEffect(() => {
     if (externalRowSelection) {
@@ -99,12 +99,13 @@ export function DataTable<TData, TValue>({
 
   useEffect(() => {
     doFetch();
-  }, [pagination, sorting, refetchKey]);
+  }, [doFetch, refetchKey]);
 
   useEffect(() => {
     if (onRowSelectionChange) onRowSelectionChange(rowSelection);
   }, [onRowSelectionChange, rowSelection]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

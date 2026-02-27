@@ -1,5 +1,4 @@
-
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { NumericFormat, NumericFormatProps } from 'react-number-format';
 import { Input } from './ui/input';
 
@@ -37,9 +36,11 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     },
     ref
   ) => {
-    const [value, setValue] = useState<number | undefined>(
+    const [uncontrolledValue, setUncontrolledValue] = useState<number | undefined>(
       controlledValue ?? defaultValue
     );
+    const isControlled = controlledValue !== undefined;
+    const value = isControlled ? controlledValue : uncontrolledValue;
 
     // const handleIncrement = useCallback(() => {
     //   setValue((prev) =>
@@ -76,34 +77,40 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     //   };
     // }, [handleIncrement, handleDecrement, ref]);
 
-    useEffect(() => {
-      if (controlledValue !== undefined) {
-        setValue(controlledValue);
-      }
-    }, [controlledValue]);
-
     const handleChange = (values: {
       value: string;
       floatValue: number | undefined;
     }) => {
       const newValue =
         values.floatValue === undefined ? undefined : values.floatValue;
-      setValue(newValue);
+      if (!isControlled) {
+        setUncontrolledValue(newValue);
+      }
       if (onValueChange) {
         onValueChange(newValue);
       }
     };
 
     const handleBlur = () => {
-      if (value !== undefined) {
-        if (value < min) {
-          setValue(min);
-          (ref as React.RefObject<HTMLInputElement>).current!.value =
-            String(min);
-        } else if (value > max) {
-          setValue(max);
-          (ref as React.RefObject<HTMLInputElement>).current!.value =
-            String(max);
+      if (value === undefined) {
+        return;
+      }
+
+      let clamped = value;
+      if (value < min) {
+        clamped = min;
+      } else if (value > max) {
+        clamped = max;
+      }
+
+      if (clamped !== value) {
+        if (!isControlled) {
+          setUncontrolledValue(clamped);
+        }
+        onValueChange?.(clamped);
+        const inputRef = ref as React.RefObject<HTMLInputElement>;
+        if (inputRef?.current) {
+          inputRef.current.value = String(clamped);
         }
       }
     };

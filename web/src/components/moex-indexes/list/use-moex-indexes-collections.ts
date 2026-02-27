@@ -22,7 +22,7 @@ export function useMoexIndexCollections(
   collections: MoexIndexCollection[],
   collectionMemberships: Record<string, string[]>
 ): CollectionsState {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const groupingCollections = useMemo(
     () => collections.filter((collection) => collection.name !== 'stock_index_all'),
@@ -90,7 +90,7 @@ export function useMoexIndexCollections(
     }
 
     return options;
-  }, [collectionCounts, groupingCollections, i18n.language, t]);
+  }, [collectionCounts, groupingCollections, t]);
 
   return {
     groupingCollections,

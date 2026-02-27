@@ -1,8 +1,7 @@
 'use client';
 import JsonView from '@uiw/react-json-view';
-import React from 'react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -27,51 +26,34 @@ export function DetailsPopup({
   open,
   onOpenChange,
 }: DetailsPopupProps) {
-  const [parsedDetails, setParsedDetails] = useState<any>(null);
   const [diffFormat, setDiffFormat] = useState<'yaml' | 'toml'>('yaml');
-  const [diffStrings, setDiffStrings] = useState<{
-    old: string;
-    new: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (auditLog?.details) {
-      try {
-        const parsed = JSON.parse(auditLog.details);
-        setParsedDetails(parsed);
-        // If details has old/new, prepare diff strings
-        if (
-          parsed &&
-          typeof parsed === 'object' &&
-          'old' in parsed &&
-          'new' in parsed
-        ) {
-          let oldStr = '';
-          let newStr = '';
-          // if (diffFormat === "yaml") {
-          //   oldStr = yaml.stringify(parsed.old)
-          //   newStr = yaml.stringify(parsed.new)
-          // } else if (diffFormat === "toml") {
-          //   oldStr = toml.stringify(parsed.old)
-          //   newStr = toml.stringify(parsed.new)
-          // }
-          // else {
-          oldStr = JSON.stringify(parsed.old, null, 2);
-          newStr = JSON.stringify(parsed.new, null, 2);
-          // }
-          setDiffStrings({ old: oldStr, new: newStr });
-        } else {
-          setDiffStrings(null);
-        }
-      } catch {
-        setParsedDetails(null);
-        setDiffStrings(null);
-      }
-    } else {
-      setParsedDetails(null);
-      setDiffStrings(null);
+  const details = auditLog?.details ?? null;
+  const parsedDetails = useMemo<unknown | null>(() => {
+    if (!details) {
+      return null;
     }
-  }, [auditLog?.details, diffFormat]);
+    try {
+      return JSON.parse(details);
+    } catch {
+      return null;
+    }
+  }, [details]);
+
+  const diffStrings = useMemo(() => {
+    if (
+      !parsedDetails ||
+      typeof parsedDetails !== 'object' ||
+      !('old' in parsedDetails) ||
+      !('new' in parsedDetails)
+    ) {
+      return null;
+    }
+    const detailsWithDiff = parsedDetails as { old: unknown; new: unknown };
+    return {
+      old: JSON.stringify(detailsWithDiff.old, null, 2),
+      new: JSON.stringify(detailsWithDiff.new, null, 2),
+    };
+  }, [parsedDetails]);
 
   if (!auditLog) return null;
 
@@ -186,7 +168,7 @@ export function DetailsPopup({
                 Изменения
               </label>
               <JsonView
-                value={parsedDetails}
+                value={parsedDetails as object}
                 title='Детали'
                 className='w-full'
               />

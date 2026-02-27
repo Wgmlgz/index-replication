@@ -48,7 +48,8 @@ export function ChartContainer({
   config,
   ...props
 }: ChartContainerProps) {
-  const chartId = id ?? React.useId().replace(/:/g, '');
+  const autoChartId = React.useId().replace(/:/g, '');
+  const chartId = id ?? autoChartId;
   return (
     <ChartContext.Provider value={{ config }}>
       <div

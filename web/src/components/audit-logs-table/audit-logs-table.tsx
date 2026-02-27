@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,10 +18,11 @@ import { PaginationState, SortingState } from "@tanstack/react-table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download, Filter, X } from "lucide-react"
 import { DetailsPopup } from "./details-popup"
-import { auditLogsApi as api, usersApi } from '@/lib/api'
+import { auditLogsApi as api } from '@/lib/api'
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { UserTable } from "@/components/users-table/user-table"
+import { type User } from "@/components/users-table/columns"
 import { Badge } from "../ui/badge"
 import { actionColors, actionLabels, entityTypeLabels } from "@/lib/logs"
 import { downloadTextFile } from "@/lib/utils"
@@ -59,14 +60,10 @@ const fetchAuditLogs = async (
   return { data: [], total: 0 }
 }
 
-export type AuditLogsTableProps = {
-  // Additional props if needed
-}
-
 // User picker for filters
-function BaseUserInput({ value, onChange }: { value?: string, onChange: (user: any) => void }) {
+function BaseUserInput({ value, onChange }: { value?: string, onChange: (user: User | null) => void }) {
   // const [open, setOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<any | null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   return (
     <div className="flex w-full items-center gap-2">
       <Input readOnly placeholder="Пользователь не выбран"
@@ -83,7 +80,7 @@ function BaseUserInput({ value, onChange }: { value?: string, onChange: (user: a
               {selectedUser ? `Выбран: ${selectedUser.full_name} (${selectedUser.username})` : "Пожалуйста, выберите пользователя из списка."}
             </DialogDescription>
           </DialogHeader>
-          <UserTable mode="select" onSelectionChange={(user: any) => {
+          <UserTable mode="select" onSelectionChange={(user) => {
             setSelectedUser(user)
             if (user) onChange(user)
             // setOpen(false)
@@ -97,7 +94,7 @@ function BaseUserInput({ value, onChange }: { value?: string, onChange: (user: a
   )
 }
 
-export function AuditLogsTable({ }: AuditLogsTableProps) {
+export function AuditLogsTable() {
   const [filters, setFilters] = useState({
     action: "__all__",
     entityType: "__all__",
@@ -111,23 +108,6 @@ export function AuditLogsTable({ }: AuditLogsTableProps) {
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null)
   const [displayLogs, setDisplayLogs] = useState<AuditLogResponse[]>([])
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [userOptions, setUserOptions] = useState<any[]>([])
-  const [userSearch, setUserSearch] = useState("")
-  const [isUserLoading, setIsUserLoading] = useState(false)
-
-  // Fetch users for performedBy filter
-  useEffect(() => {
-    if (userSearch.length === 0) {
-      setUserOptions([])
-      return
-    }
-    setIsUserLoading(true)
-    usersApi.usersGet(1, 10, userSearch).then((res) => {
-      setUserOptions(res.data.users || [])
-      setIsUserLoading(false)
-    })
-  }, [userSearch])
-
   const fetchAuditLogsWithFilters = async (
     pagination: PaginationState,
     sorting: SortingState,
@@ -142,15 +122,17 @@ export function AuditLogsTable({ }: AuditLogsTableProps) {
       endDate: filters.endDate,
     })
     setDisplayLogs(result.data)
+    const mappedLogs: AuditLog[] = result.data.map((auditLog) => ({
+      ...auditLog,
+      onViewDetails: (log: AuditLog) => {
+        setSelectedAuditLog(log)
+        setDetailsOpen(true)
+      },
+    }));
+
     return {
       ...result,
-      data: result.data.map((auditLog) => ({
-        ...auditLog,
-        onViewDetails: (log: AuditLog) => {
-          setSelectedAuditLog(log)
-          setDetailsOpen(true)
-        },
-      })),
+      data: mappedLogs,
     }
   }
 
@@ -317,7 +299,7 @@ export function AuditLogsTable({ }: AuditLogsTableProps) {
       <DataTable
         filterPlaceholder="Поиск по журналу аудита..."
         columns={columns}
-        fetchData={fetchAuditLogsWithFilters as any}
+        fetchData={fetchAuditLogsWithFilters}
         refetchKey={filterKey}
         extraTableOptions={{
           initialState: {
