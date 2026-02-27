@@ -18,7 +18,13 @@ import { TimeSeriesControls } from '@/components/charts/time-series-controls';
 import { TimeSeriesValueSummary } from '@/components/charts/time-series-value-summary';
 import { buildSnapshotChartItems } from '@/components/charts/composition-analytics';
 import { useChartControlsState } from '@/components/charts/use-chart-controls-state';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs } from '@/components/ui/tabs';
 import {
@@ -74,7 +80,7 @@ const parsePortfolioUrlState = (searchParams: URLSearchParams) => {
   const accountID = accountIDRaw?.trim();
   const chartControls = parseChartControlsUrlState(
     searchParams,
-    PORTFOLIO_CHART_URL_CODEC
+    PORTFOLIO_CHART_URL_CODEC,
   );
 
   return {
@@ -92,7 +98,7 @@ export function PortfolioAnalyticsSection() {
 
   const parsedUrl = useMemo(
     () => parsePortfolioUrlState(new URLSearchParams(urlKey)),
-    [urlKey]
+    [urlKey],
   );
 
   const [accountID, setAccountID] = useState(() => parsedUrl.accountID ?? '');
@@ -114,7 +120,7 @@ export function PortfolioAnalyticsSection() {
         accountID,
         chartControls: chartControls.controlsStateKey,
       }),
-    [accountID, chartControls.controlsStateKey]
+    [accountID, chartControls.controlsStateKey],
   );
 
   useUrlStateSync({
@@ -148,7 +154,7 @@ export function PortfolioAnalyticsSection() {
           compositionSelectionDate: chartControls.compositionSelectionDate,
           compositionTopCount: chartControls.compositionTopCount,
         },
-        PORTFOLIO_CHART_URL_CODEC
+        PORTFOLIO_CHART_URL_CODEC,
       );
 
       return next;
@@ -157,7 +163,9 @@ export function PortfolioAnalyticsSection() {
 
   const resolvedAccountID = accountID || status?.default_account_id || '';
   const topCountForHook =
-    chartControls.compositionTopCount === null ? 0 : chartControls.compositionTopCount;
+    chartControls.compositionTopCount === null
+      ? 0
+      : chartControls.compositionTopCount;
 
   const {
     loading: historyLoading,
@@ -201,7 +209,7 @@ export function PortfolioAnalyticsSection() {
     0,
     chartControls.compositionTopCount === null
       ? snapshotItems.length
-      : chartControls.compositionTopCount
+      : chartControls.compositionTopCount,
   );
   const { snapshotChartItems, snapshotOtherWeight } = useMemo(
     () =>
@@ -209,7 +217,7 @@ export function PortfolioAnalyticsSection() {
         otherLabel: t('portfolio.composition.other'),
         snapshotDate,
       }),
-    [snapshotDate, snapshotTop, t]
+    [snapshotDate, snapshotTop, t],
   );
 
   if (!connected) {
@@ -217,7 +225,9 @@ export function PortfolioAnalyticsSection() {
       <Card>
         <CardHeader>
           <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
-          <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
+          <CardDescription>
+            {t('portfolio.analytics.description')}
+          </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
           {t('portfolio.analytics.notConnected')}
@@ -235,14 +245,18 @@ export function PortfolioAnalyticsSection() {
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid gap-2'>
-            <Label htmlFor='portfolio-analytics-account'>{t('portfolio.analytics.accountLabel')}</Label>
+            <Label htmlFor='portfolio-analytics-account'>
+              {t('portfolio.analytics.accountLabel')}
+            </Label>
             <select
               id='portfolio-analytics-account'
               className='border-input bg-background h-9 rounded-md border px-3 text-sm'
               value={accountID}
               onChange={event => setAccountID(event.target.value)}
             >
-              <option value=''>{t('portfolio.analytics.accountDefaultOption')}</option>
+              <option value=''>
+                {t('portfolio.analytics.accountDefaultOption')}
+              </option>
               {(availableAccounts ?? []).map(account => (
                 <option key={account.id} value={account.id}>
                   {account.id}
@@ -261,21 +275,21 @@ export function PortfolioAnalyticsSection() {
             className='text-sm'
           />
 
-            <TimeSeriesControls
-              translationKeyPrefix='portfolio.chart'
-              rangeKey={chartControls.rangeKey}
-              setRangeKey={chartControls.setRangeKey}
-              intervalKey={chartControls.intervalKey}
-              setIntervalKey={chartControls.setIntervalKey}
-              customFrom={chartControls.customFrom}
-              setCustomFrom={chartControls.setCustomFrom}
-              customTill={chartControls.customTill}
-              setCustomTill={chartControls.setCustomTill}
-              viewMode={chartControls.viewMode}
-              setViewMode={chartControls.setViewMode}
-              chartType='line'
-              disableCandlestick
-              candlestickLabelKey='portfolio.chart.type.candlestickDisabled'
+          <TimeSeriesControls
+            translationKeyPrefix='portfolio.chart'
+            rangeKey={chartControls.rangeKey}
+            setRangeKey={chartControls.setRangeKey}
+            intervalKey={chartControls.intervalKey}
+            setIntervalKey={chartControls.setIntervalKey}
+            customFrom={chartControls.customFrom}
+            setCustomFrom={chartControls.setCustomFrom}
+            customTill={chartControls.customTill}
+            setCustomTill={chartControls.setCustomTill}
+            viewMode={chartControls.viewMode}
+            setViewMode={chartControls.setViewMode}
+            chartType='line'
+            disableCandlestick
+            candlestickLabelKey='portfolio.chart.type.candlestickDisabled'
             idPrefix='portfolio'
           />
 
@@ -369,7 +383,9 @@ export function PortfolioAnalyticsSection() {
                 <div key={item.id} className='flex items-center gap-2'>
                   <span
                     className='h-2.5 w-2.5 rounded-full'
-                    style={{ backgroundColor: resolveCompositionSeriesColor(index) }}
+                    style={{
+                      backgroundColor: resolveCompositionSeriesColor(index),
+                    }}
                   />
                   <span>{item.id}</span>
                 </div>
