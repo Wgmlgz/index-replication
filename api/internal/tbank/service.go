@@ -9,7 +9,7 @@ import (
 	"server/internal/models"
 
 	"github.com/google/uuid"
-	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
+	pb "opensource.tbank.ru/invest/invest-go/proto"
 	"google.golang.org/grpc"
 )
 

@@ -10,7 +10,7 @@ import (
 	"server/internal/api/dto"
 	"server/internal/models"
 
-	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
+	pb "opensource.tbank.ru/invest/invest-go/proto"
 	"google.golang.org/grpc"
 )
 
