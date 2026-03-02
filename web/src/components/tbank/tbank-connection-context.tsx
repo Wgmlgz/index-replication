@@ -5,10 +5,10 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from "react";
+import { useIsRestoring, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
@@ -44,47 +44,12 @@ type TBankConnectionProviderProps = {
   children: ReactNode;
 };
 
-const TBANK_STATUS_CACHE_KEY = "index-replication-tbank-status-v1";
-
-function readCachedTBankStatus(): TBankConnectionStatusResponse | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const raw = window.localStorage.getItem(TBANK_STATUS_CACHE_KEY);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as TBankConnectionStatusResponse | null;
-    if (!parsed || typeof parsed !== "object") {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedTBankStatus(status: TBankConnectionStatusResponse | null) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (!status || !status.connected) {
-    window.localStorage.removeItem(TBANK_STATUS_CACHE_KEY);
-    return;
-  }
-
-  window.localStorage.setItem(TBANK_STATUS_CACHE_KEY, JSON.stringify(status));
-}
+const TBANK_STATUS_QUERY_KEY = ["auth", "tbank-status"];
 
 export function TBankConnectionProvider({ children }: TBankConnectionProviderProps) {
+  const queryClient = useQueryClient();
+  const isRestoring = useIsRestoring();
   const { t } = useTranslation();
-  const cachedStatus = useMemo(() => readCachedTBankStatus(), []);
-  const [status, setStatus] = useState<TBankConnectionStatusResponse | null>(cachedStatus);
-  const [loadingStatus, setLoadingStatus] = useState(!cachedStatus);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
 
@@ -98,38 +63,52 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     return fallback;
   }, []);
 
-  const loadStatus = useCallback(async (background = false) => {
-    setError("");
-    if (!background) {
-      setLoadingStatus(true);
-    }
-    try {
-      const nextStatus = (await tbankApi.meTbankGet()).data;
-      setStatus(nextStatus);
-      writeCachedTBankStatus(nextStatus);
-    } catch (err) {
-      if (
-        axios.isAxiosError(err) &&
-        err.response?.status === axios.HttpStatusCode.Unauthorized
-      ) {
-        setStatus(null);
-        writeCachedTBankStatus(null);
+  const {
+    data: statusData,
+    isPending,
+    error: statusQueryError,
+    refetch,
+  } = useQuery<TBankConnectionStatusResponse | null>({
+    queryKey: TBANK_STATUS_QUERY_KEY,
+    queryFn: async () => {
+      try {
+        return (await tbankApi.meTbankGet()).data;
+      } catch (err) {
+        if (
+          axios.isAxiosError(err) &&
+          err.response?.status === axios.HttpStatusCode.Unauthorized
+        ) {
+          return null;
+        }
+        throw err;
       }
-      setError(parseErrorMessage(err, t("tbankTest.errors.status")));
-    } finally {
-      if (!background) {
-        setLoadingStatus(false);
-      }
-    }
-  }, [parseErrorMessage, t]);
+    },
+    retry: false,
+    initialData: () =>
+      queryClient.getQueryData<TBankConnectionStatusResponse | null>(
+        TBANK_STATUS_QUERY_KEY,
+      ),
+    refetchOnMount: "always",
+  });
 
   const refreshStatus = useCallback(async () => {
-    await loadStatus(false);
-  }, [loadStatus]);
+    setError("");
+    const result = await refetch();
+    if (result.error) {
+      setError(parseErrorMessage(result.error, t("tbankTest.errors.status")));
+    }
+  }, [parseErrorMessage, refetch, t]);
 
   useEffect(() => {
-    void loadStatus(Boolean(cachedStatus));
-  }, [cachedStatus, loadStatus]);
+    if (!statusQueryError) {
+      return;
+    }
+    setError(parseErrorMessage(statusQueryError, t("tbankTest.errors.status")));
+  }, [parseErrorMessage, statusQueryError, t]);
+
+  const status = statusData ?? null;
+  const loadingStatus =
+    (isRestoring && statusData === undefined) || (isPending && statusData === undefined);
 
   const connect = async ({ token, environment, defaultAccountID }: ConnectParams) => {
     setError("");
@@ -140,15 +119,13 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
         environment,
         default_account_id: defaultAccountID || undefined,
       })).data;
-      setStatus(nextStatus);
-      writeCachedTBankStatus(nextStatus);
+      queryClient.setQueryData(TBANK_STATUS_QUERY_KEY, nextStatus);
     } catch (err) {
       if (
         axios.isAxiosError(err) &&
         err.response?.status === axios.HttpStatusCode.Unauthorized
       ) {
-        setStatus(null);
-        writeCachedTBankStatus(null);
+        queryClient.setQueryData(TBANK_STATUS_QUERY_KEY, null);
       }
       setError(parseErrorMessage(err, t("tbankTest.errors.connect")));
       throw err;
@@ -162,8 +139,7 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setWorking(true);
     try {
       await tbankApi.meTbankDisconnectPost();
-      setStatus(null);
-      writeCachedTBankStatus(null);
+      queryClient.setQueryData(TBANK_STATUS_QUERY_KEY, null);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.disconnect")));
       throw err;
@@ -182,15 +158,13 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setWorking(true);
     try {
       const nextStatus = (await tbankApi.meTbankDefaultAccountPost({ account_id: accountID.trim() })).data;
-      setStatus(nextStatus);
-      writeCachedTBankStatus(nextStatus);
+      queryClient.setQueryData(TBANK_STATUS_QUERY_KEY, nextStatus);
     } catch (err) {
       if (
         axios.isAxiosError(err) &&
         err.response?.status === axios.HttpStatusCode.Unauthorized
       ) {
-        setStatus(null);
-        writeCachedTBankStatus(null);
+        queryClient.setQueryData(TBANK_STATUS_QUERY_KEY, null);
       }
       setError(parseErrorMessage(err, t("tbankTest.errors.defaultAccount")));
       throw err;
