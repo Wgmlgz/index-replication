@@ -21,10 +21,9 @@ export type PriceDataControls = BaseRangeControls & {
   chartType: ChartType;
 };
 
-export type CompositionDataControls = BaseRangeControls & {
+export type CompositionDataControls = {
   compositionSelectionMode: CompositionSelectionMode;
   compositionSelectionDate: string;
   compositionTab: CompositionTab;
   topCount: number | null;
 };
-

@@ -42,10 +42,6 @@ export const CHARTS_NEW_URL_KEYS = {
     chartType: 'cn_pct',
   },
   composition: {
-    rangeKey: 'cn_cr',
-    intervalKey: 'cn_ci',
-    customFrom: 'cn_cf',
-    customTill: 'cn_ct',
     selectionMode: 'cn_cm',
     selectionDate: 'cn_cd',
     tab: 'cn_tab',
@@ -145,11 +141,6 @@ export function parseChartsNewControlsUrlState(
     CHARTS_NEW_URL_KEYS.price,
     defaults.price
   );
-  const compositionBase = parseBaseRangeControls(
-    searchParams,
-    CHARTS_NEW_URL_KEYS.composition,
-    defaults.composition
-  );
 
   const viewMode =
     parseEnum(searchParams.get(CHARTS_NEW_URL_KEYS.price.viewMode), CHART_VIEW_MODES) ??
@@ -192,7 +183,6 @@ export function parseChartsNewControlsUrlState(
       chartType,
     },
     composition: {
-      ...compositionBase,
       compositionSelectionMode,
       compositionSelectionDate,
       compositionTab,
@@ -222,12 +212,6 @@ export function applyChartsNewControlsUrlState(
     params.set(CHARTS_NEW_URL_KEYS.price.chartType, state.price.chartType);
   }
 
-  applyBaseRangeControls(
-    params,
-    CHARTS_NEW_URL_KEYS.composition,
-    state.composition,
-    defaults.composition
-  );
   params.delete(CHARTS_NEW_URL_KEYS.composition.selectionMode);
   params.delete(CHARTS_NEW_URL_KEYS.composition.selectionDate);
   params.delete(CHARTS_NEW_URL_KEYS.composition.tab);
@@ -267,4 +251,3 @@ export function applyChartsNewControlsUrlState(
     );
   }
 }
-

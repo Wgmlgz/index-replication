@@ -53,8 +53,6 @@ const TEST_DEFAULT_PRICE_CONTROLS: Partial<PriceDataControls> = {
 };
 
 const TEST_DEFAULT_COMPOSITION_CONTROLS: Partial<CompositionDataControls> = {
-  rangeKey: '1y',
-  intervalKey: '1w',
   compositionSelectionMode: 'fixed',
   compositionSelectionDate: '',
   compositionTab: 'trend',
@@ -91,6 +89,12 @@ export default function ChartsNewTestPage() {
   const compositionState = useCompositionVisualizationData({
     selectedIndex: TEST_INDEX,
     latestTradeDate,
+    baseRange: {
+      rangeKey: controls.price.rangeKey,
+      intervalKey: controls.price.intervalKey,
+      customFrom: controls.price.customFrom,
+      customTill: controls.price.customTill,
+    },
     controls: controls.composition,
     provider: dataProvider,
   });
@@ -180,12 +184,6 @@ export default function ChartsNewTestPage() {
             </Badge>
             <Badge variant='secondary'>
               {`${t('chartsNewTest.labels.priceType')}: ${controls.price.chartType}`}
-            </Badge>
-            <Badge variant='secondary'>
-              {`${t('chartsNewTest.labels.compositionRange')}: ${controls.composition.rangeKey}`}
-            </Badge>
-            <Badge variant='secondary'>
-              {`${t('chartsNewTest.labels.compositionInterval')}: ${controls.composition.intervalKey}`}
             </Badge>
             <Badge variant='secondary'>
               {`${t('chartsNewTest.labels.compositionMode')}: ${controls.composition.compositionSelectionMode}`}

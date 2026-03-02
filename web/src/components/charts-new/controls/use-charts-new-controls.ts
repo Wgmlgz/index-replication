@@ -22,7 +22,6 @@ import {
   applyChartsNewControlsUrlState,
   parseChartsNewControlsUrlState,
   type ChartsNewControlsDefaults,
-  type ChartsNewControlsState,
 } from './controls-url-state';
 
 type UseChartsNewControlsOptions = {
@@ -42,10 +41,6 @@ export type PriceControlActions = {
 };
 
 export type CompositionControlActions = {
-  setRangeKey: (next: RangeKey) => void;
-  setIntervalKey: (next: IntervalKey) => void;
-  setCustomFrom: (next: string) => void;
-  setCustomTill: (next: string) => void;
   setSelectionMode: (next: CompositionSelectionMode) => void;
   setSelectionDate: (next: string) => void;
   setCompositionTab: (next: CompositionTab) => void;
@@ -77,10 +72,6 @@ function buildDefaultControls(
       ...overrides?.price,
     },
     composition: {
-      rangeKey: '1y',
-      intervalKey: 'auto',
-      customFrom: defaultFrom,
-      customTill: defaultTill,
       compositionSelectionMode: 'fixed',
       compositionSelectionDate: '',
       compositionTab: 'snapshot',
@@ -146,10 +137,6 @@ export function useChartsNewControls(options?: UseChartsNewControlsOptions) {
 
   const compositionActions = useMemo<CompositionControlActions>(
     () => ({
-      setRangeKey: next => setCompositionField('rangeKey', next),
-      setIntervalKey: next => setCompositionField('intervalKey', next),
-      setCustomFrom: next => setCompositionField('customFrom', next),
-      setCustomTill: next => setCompositionField('customTill', next),
       setSelectionMode: next => setCompositionField('compositionSelectionMode', next),
       setSelectionDate: next => setCompositionField('compositionSelectionDate', next),
       setCompositionTab: next => setCompositionField('compositionTab', next),
@@ -202,4 +189,3 @@ export function useChartsNewControls(options?: UseChartsNewControlsOptions) {
     setCompositionField,
   };
 }
-
