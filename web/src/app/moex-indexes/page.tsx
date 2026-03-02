@@ -11,8 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { IndexCompositionCard } from '@/components/moex-indexes/composition/index-composition-card';
-import { IndexChartCard } from '@/components/moex-indexes/detail/index-chart-card';
+import { MoexIndexesChartsPanel } from '@/components/moex-indexes/charts-new/moex-indexes-charts-panel';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
 import { useMoexIndexDetailContext } from '@/components/moex-indexes/detail/moex-indexes-detail-context';
@@ -22,13 +21,10 @@ import { MoexIndexesProvider } from '@/components/moex-indexes/moex-indexes-cont
 
 function MoexIndexesContent() {
   const { error: listError } = useMoexIndexListContext();
-  const { error: detailError, selectedIndex } = useMoexIndexDetailContext();
-  const error = listError ?? detailError;
+  const { selectedIndex } = useMoexIndexDetailContext();
+  const error = listError;
   const { t } = useTranslation();
   const overviewLabel = t('moex.sources.overview');
-  const showCompositionCard = selectedIndex
-    ? selectedIndex.hasComposition
-    : true;
 
   const historySourceLabel = selectedIndex
     ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
@@ -81,13 +77,8 @@ function MoexIndexesContent() {
                 />
               </CardAction>
             </CardHeader>
-            <CardContent
-              className={`grid h-full min-h-0 gap-4 ${
-                showCompositionCard ? 'grid-rows-2' : 'grid-rows-1'
-              }`}
-            >
-              <IndexChartCard />
-              {showCompositionCard && <IndexCompositionCard />}
+            <CardContent className='h-full min-h-0'>
+              <MoexIndexesChartsPanel />
             </CardContent>
           </Card>
         </div>
