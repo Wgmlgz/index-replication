@@ -40,18 +40,6 @@ import { Label } from '@/components/ui/label';
 import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
 
 const PORTFOLIO_ACCOUNT_KEY = 'cn_acc';
-const LEGACY_PORTFOLIO_URL_KEYS = [
-  'acc',
-  'r',
-  'i',
-  'f',
-  't',
-  'v',
-  'ctab',
-  'cmode',
-  'cdate',
-  'top',
-] as const;
 
 const DEFAULT_PRICE_CONTROLS: Partial<PriceDataControls> = {
   rangeKey: '1y',
@@ -85,7 +73,7 @@ const resolveLatestTradeDate = (data: PriceChartData): string | null => {
 
 const formatSignedNumber = (
   formatter: Intl.NumberFormat,
-  value: number
+  value: number,
 ): string => {
   const prefix = value > 0 ? '+' : '';
   return `${prefix}${formatter.format(value)}`;
@@ -100,7 +88,7 @@ export function PortfolioAnalyticsSection() {
 
   const parsedUrl = useMemo(
     () => parsePortfolioUrlState(new URLSearchParams(urlKey)),
-    [urlKey]
+    [urlKey],
   );
 
   const [accountID, setAccountID] = useState(() => parsedUrl.accountID ?? '');
@@ -110,14 +98,12 @@ export function PortfolioAnalyticsSection() {
       composition: DEFAULT_COMPOSITION_CONTROLS,
     },
   });
-  const portfolioChartType = controls.price.chartType;
-  const setPriceField = controls.setPriceField;
 
   // Portfolio history endpoint has no OHLC values, so enforce line chart.
   useEffect(() => {
-    if (portfolioChartType === 'line') return;
-    setPriceField('chartType', 'line');
-  }, [portfolioChartType, setPriceField]);
+    if (controls.price.chartType === 'line') return;
+    controls.setPriceField('chartType', 'line');
+  }, [controls.price.chartType, controls.setPriceField]);
 
   const accountUrlStateKey = useMemo(
     () =>
@@ -128,7 +114,7 @@ export function PortfolioAnalyticsSection() {
           composition: controls.composition,
         },
       }),
-    [accountID, controls.composition, controls.price]
+    [accountID, controls.composition, controls.price],
   );
 
   useUrlStateSync({
@@ -141,7 +127,6 @@ export function PortfolioAnalyticsSection() {
     },
     buildSearchParams: () => {
       const next = new URLSearchParams(window.location.search);
-      LEGACY_PORTFOLIO_URL_KEYS.forEach(key => next.delete(key));
       next.delete(PORTFOLIO_ACCOUNT_KEY);
 
       const accountValue = accountID.trim();
@@ -170,11 +155,11 @@ export function PortfolioAnalyticsSection() {
   const priceState = usePriceVisualizationData(
     selectedPortfolio,
     controls.price,
-    provider
+    provider,
   );
   const latestTradeDate = useMemo(
     () => resolveLatestTradeDate(priceState.data),
-    [priceState.data]
+    [priceState.data],
   );
 
   const compositionState = useCompositionVisualizationData({
@@ -194,24 +179,28 @@ export function PortfolioAnalyticsSection() {
     if (controls.composition.topCount === null) {
       return compositionState.snapshotItems;
     }
-    return compositionState.snapshotItems.slice(0, controls.composition.topCount);
+    return compositionState.snapshotItems.slice(
+      0,
+      controls.composition.topCount,
+    );
   }, [compositionState.snapshotItems, controls.composition.topCount]);
   const legendRows = useMemo(
     () =>
       buildCompositionLegendRows(
         compositionState.series,
-        compositionState.snapshotItems
+        compositionState.snapshotItems,
       ),
-    [compositionState.series, compositionState.snapshotItems]
+    [compositionState.series, compositionState.snapshotItems],
   );
   const snapshotOtherWeight = useMemo(
     () => calculateSnapshotOtherWeight(snapshotItems),
-    [snapshotItems]
+    [snapshotItems],
   );
 
   const trendLoading =
     compositionState.snapshotLoading || compositionState.seriesLoading;
-  const trendError = compositionState.snapshotError || compositionState.seriesError;
+  const trendError =
+    compositionState.snapshotError || compositionState.seriesError;
   const showOtherLegend =
     (controls.composition.compositionTab === 'stacked' ||
       controls.composition.compositionTab === 'snapshot') &&
@@ -252,7 +241,9 @@ export function PortfolioAnalyticsSection() {
       <Card>
         <CardHeader>
           <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
-          <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
+          <CardDescription>
+            {t('portfolio.analytics.description')}
+          </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
           {t('portfolio.analytics.notConnected')}
@@ -265,7 +256,9 @@ export function PortfolioAnalyticsSection() {
     <Card className='h-full min-h-0'>
       <CardHeader>
         <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
-        <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
+        <CardDescription>
+          {t('portfolio.analytics.description')}
+        </CardDescription>
       </CardHeader>
       <CardContent className='grid h-full min-h-0 gap-4 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'>
         <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
@@ -297,21 +290,25 @@ export function PortfolioAnalyticsSection() {
                   {priceState.numberFormatter.format(priceState.latestValue)}
                 </span>
                 {priceState.currency ? ` ${priceState.currency}` : ''}
-                {priceState.change !== null && priceState.changePercent !== null && (
-                  <span
-                    className={`ml-2 font-medium ${
-                      priceState.change > 0
-                        ? 'text-emerald-600'
-                        : priceState.change < 0
-                          ? 'text-red-600'
-                          : 'text-muted-foreground'
-                    }`}
-                  >
-                    {formatSignedNumber(priceState.numberFormatter, priceState.change)} (
-                    {priceState.change > 0 ? '+' : ''}
-                    {priceState.changePercent.toFixed(2)}%)
-                  </span>
-                )}
+                {priceState.change !== null &&
+                  priceState.changePercent !== null && (
+                    <span
+                      className={`ml-2 font-medium ${
+                        priceState.change > 0
+                          ? 'text-emerald-600'
+                          : priceState.change < 0
+                            ? 'text-red-600'
+                            : 'text-muted-foreground'
+                      }`}
+                    >
+                      {formatSignedNumber(
+                        priceState.numberFormatter,
+                        priceState.change,
+                      )}{' '}
+                      ({priceState.change > 0 ? '+' : ''}
+                      {priceState.changePercent.toFixed(2)}%)
+                    </span>
+                  )}
               </div>
             )}
 
@@ -371,7 +368,9 @@ export function PortfolioAnalyticsSection() {
             </div>
           </div>
 
-          <div className='flex min-h-[200px] flex-1 flex-col'>{compositionChart}</div>
+          <div className='flex min-h-[200px] flex-1 flex-col'>
+            {compositionChart}
+          </div>
         </div>
       </CardContent>
     </Card>
