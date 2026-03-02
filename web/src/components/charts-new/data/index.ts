@@ -14,6 +14,7 @@ export {
 } from './data-analytics';
 export {
   createMoexChartsDataProvider,
+  createPortfolioChartsDataProvider,
   createTbankChartsDataProvider,
 } from './providers';
 export type { ChartsDataProvider } from './providers';

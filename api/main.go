@@ -2,11 +2,15 @@ package main
 
 import (
 	"log"
+	_ "server/docs"
 	"server/internal/config"
 	"server/internal/migrations"
 	"server/internal/repository"
 	"server/internal/routes"
 	"server/internal/services"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 //	@title			Retail API
@@ -56,5 +60,6 @@ func main() {
 
 	// Create and run server
 	router := routes.SetupRouter(db, cfg, repoRegistry, auditService)
+	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	log.Fatal(router.Run(":" + cfg.ServerPort))
 }

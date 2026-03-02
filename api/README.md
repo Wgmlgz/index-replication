@@ -39,6 +39,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - HTTP layer stays in `internal/handlers/` (request/response parsing, status codes).
 - API request/response DTOs live in `internal/api/dto/` (feature-grouped schema structs for handlers/OpenAPI).
 - Business logic lives in feature/service packages (mostly `internal/services/`, with MOEX isolated in `internal/moex/`, T-Bank isolated in `internal/tbank/`, and Telegram verification isolated in `internal/telegram/`).
+- Provider-agnostic portfolio domain lives in `internal/portfolio/` (profile CRUD + provider registry/adapters).
 - Data access is isolated in `internal/repository/` using GORM.
 - Auth is session-based (cookie) and enforced by middleware.
 - Authorization uses Casbin policies and permission constants.
@@ -54,6 +55,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `internal/moex/` contains MOEX integration logic and read services.
 - `internal/moex/domain/` contains MOEX internal/domain structs used by MOEX + repository layers.
 - `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
+- `internal/portfolio/` contains unified portfolio orchestration and provider adapters (`tbank`, `mock`).
 - `internal/telegram/` contains Telegram bot transport and login verification integration logic.
 - `internal/repository/` contains data access (DB queries).
 - `internal/models/` defines persistence/domain models (GORM entities and domain constants).
@@ -71,6 +73,7 @@ Use this mapping to locate the right layer quickly:
 - Auth and session flow: `internal/handlers/auth.go`, `internal/middleware/session.go`
 - User management endpoints: `internal/handlers/users.go`, `internal/repository/users.go`
 - T-Bank integration/test trading: `internal/handlers/tbank.go`, `internal/tbank/`
+- Unified portfolio API and providers: `internal/handlers/portfolio.go`, `internal/portfolio/`, `internal/repository/portfolio_profiles.go`
 - Audit log endpoints and behavior: `internal/handlers/audit_log.go`, `internal/services/audit_service.go`
 - Bot/token auth: `internal/middleware/token.go`
 - Add or change permissions: `internal/config/permission.go`, `internal/config/model.conf`
@@ -173,6 +176,27 @@ Authenticated user endpoints for token connect + test buy flow:
 - `POST /api/me/tbank/sandbox/pay-in`
 - `GET /api/me/tbank/instruments/lookup`
 - `POST /api/me/tbank/test-buy`
+
+## Unified Portfolio Endpoints
+
+Authenticated user endpoints for provider-agnostic portfolio profiles and data:
+
+- `GET /api/me/portfolios`
+- `POST /api/me/portfolios`
+- `PATCH /api/me/portfolios/:id`
+- `DELETE /api/me/portfolios/:id`
+- `GET /api/me/portfolios/:id/summary`
+- `GET /api/me/portfolios/:id/history`
+- `GET /api/me/portfolios/:id/composition`
+- `GET /api/me/portfolios/:id/composition/series`
+- `GET /api/me/portfolios/:id/operations`
+- `POST /api/me/portfolios/:id/actions/:action`
+
+Provider model:
+
+- `portfolio_profiles` table stores per-user provider profiles (`provider`, `name`, default flag, config JSON, secret JSON).
+- `internal/portfolio.Service` resolves profile -> provider adapter via registry.
+- Current providers: `tbank` (adapter over existing `internal/tbank.Service`) and `mock` (deterministic fake data).
 
 ## T-Bank TLS CA Setup
 

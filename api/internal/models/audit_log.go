@@ -39,6 +39,10 @@ const (
 	ActionTBankDefaultAccountUpdated = "tbank_default_account_updated"
 	ActionTBankSandboxPayIn          = "tbank_sandbox_pay_in"
 	ActionTBankTestBuyCreated        = "tbank_test_buy_created"
+	ActionPortfolioProfileCreated    = "portfolio_profile_created"
+	ActionPortfolioProfileUpdated    = "portfolio_profile_updated"
+	ActionPortfolioProfileDeleted    = "portfolio_profile_deleted"
+	ActionPortfolioActionExecuted    = "portfolio_action_executed"
 )
 
 // AuditLogEntityType constants

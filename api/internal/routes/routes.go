@@ -8,6 +8,7 @@ import (
 	h "server/internal/handlers"
 	m "server/internal/middleware"
 	"server/internal/moex"
+	"server/internal/portfolio"
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/tbank"
@@ -91,6 +92,13 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 	)
 	tbankHandler := h.NewTBankHandler(tbankService)
+	portfolioService := portfolio.NewService(
+		repoRegistry.PortfolioProfilesRepo,
+		auditService,
+		portfolio.NewTBankProvider(tbankService),
+		portfolio.NewMockProvider(),
+	)
+	portfolioHandler := h.NewPortfolioHandler(portfolioService)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -114,6 +122,16 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.POST("/me/tbank/sandbox/pay-in", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.SandboxPayIn)
 		a.GET("/me/tbank/instruments/lookup", m.RPM(cs, config.SelfView), tbankHandler.FindInstrumentByTicker)
 		a.POST("/me/tbank/test-buy", m.RPM(cs, config.SelfUpdateSettings), tbankHandler.CreateTestBuyOrder)
+		a.GET("/me/portfolios", m.RPM(cs, config.SelfView), portfolioHandler.ListProfiles)
+		a.POST("/me/portfolios", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.CreateProfile)
+		a.PATCH("/me/portfolios/:id", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.PatchProfile)
+		a.DELETE("/me/portfolios/:id", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteProfile)
+		a.GET("/me/portfolios/:id/summary", m.RPM(cs, config.SelfView), portfolioHandler.GetSummary)
+		a.GET("/me/portfolios/:id/history", m.RPM(cs, config.SelfView), portfolioHandler.GetHistory)
+		a.GET("/me/portfolios/:id/composition", m.RPM(cs, config.SelfView), portfolioHandler.GetComposition)
+		a.GET("/me/portfolios/:id/composition/series", m.RPM(cs, config.SelfView), portfolioHandler.GetCompositionSeries)
+		a.GET("/me/portfolios/:id/operations", m.RPM(cs, config.SelfView), portfolioHandler.GetOperations)
+		a.POST("/me/portfolios/:id/actions/:action", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.RunAction)
 		a.GET("/me/verification/telegram", m.RPM(cs, config.SelfView), verificationHandler.GetTelegramStatus)
 		a.POST("/me/verification/telegram/connect", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.CreateTelegramConnectLink)
 		a.PATCH("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.PatchTelegramSettings)

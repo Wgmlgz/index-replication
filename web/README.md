@@ -37,6 +37,7 @@ Common tasks:
 - UI primitives live in `web/src/components/ui/` and follow shadcn/ui patterns.
 - Shared UI and features live in `web/src/components/`.
 - API access is centralized in `web/src/lib/api.ts` using a generated client.
+- Portfolio v2 (`/portfolio-v2`) uses provider-agnostic backend endpoints (`/api/me/portfolios/:id/*`) and profile selection via `portfolio_id` URL param.
 - MOEX data access is handled by backend endpoints via `web/src/lib/moex-client.ts`.
 - Generated code in `web/src/api-client/` should not be edited manually.
 - Forms use React Hook Form with Zod schemas for validation.
@@ -71,6 +72,7 @@ Feature routes (App Router):
 - `web/src/app/dashboard/page.tsx`
 - `web/src/app/moex-indexes/page.tsx`
 - `web/src/app/tbank-test/page.tsx`
+- `web/src/app/portfolio-v2/page.tsx`
 
 Telegram verification user flow is available in the Settings page. Backend/setup details are in:
 - `docs/TELEGRAM-VERIFICATION.md`

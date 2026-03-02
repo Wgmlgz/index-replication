@@ -270,6 +270,241 @@ definitions:
     - permissions
     - user
     type: object
+  PortfolioActionRequest:
+    properties:
+      payload:
+        additionalProperties: true
+        type: object
+    type: object
+  PortfolioActionResponse:
+    properties:
+      action:
+        type: string
+      result:
+        additionalProperties: true
+        type: object
+    type: object
+  PortfolioCapabilities:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/PortfolioProviderAction'
+        type: array
+    type: object
+  PortfolioCompositionEntry:
+    properties:
+      currency:
+        type: string
+      current_price:
+        type: number
+      current_value:
+        type: number
+      instrument_id:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: number
+      ticker:
+        type: string
+      trade_date:
+        type: string
+      weight:
+        type: number
+    type: object
+  PortfolioCompositionSeriesPoint:
+    properties:
+      trade_date:
+        type: string
+      weight:
+        type: number
+    type: object
+  PortfolioHistoryPoint:
+    properties:
+      currency:
+        type: string
+      total_amount_portfolio:
+        type: number
+      trade_date:
+        type: string
+    type: object
+  PortfolioOperationHistoryItem:
+    properties:
+      commission:
+        type: number
+      commission_currency:
+        type: string
+      cursor:
+        type: string
+      date:
+        type: string
+      description:
+        type: string
+      figi:
+        type: string
+      id:
+        type: string
+      instrument_id:
+        type: string
+      instrument_type:
+        type: string
+      name:
+        type: string
+      parent_operation_id:
+        type: string
+      payment:
+        type: number
+      payment_currency:
+        type: string
+      price:
+        type: number
+      price_currency:
+        type: string
+      quantity:
+        type: integer
+      quantity_done:
+        type: integer
+      quantity_rest:
+        type: integer
+      state:
+        type: string
+      type:
+        type: string
+    type: object
+  PortfolioOperationsHistoryResponse:
+    properties:
+      has_next:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/PortfolioOperationHistoryItem'
+        type: array
+      next_cursor:
+        type: string
+      portfolio_id:
+        type: integer
+      provider:
+        type: string
+    type: object
+  PortfolioProfile:
+    properties:
+      capabilities:
+        $ref: '#/definitions/PortfolioCapabilities'
+      config:
+        additionalProperties: true
+        type: object
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_default:
+        type: boolean
+      name:
+        type: string
+      provider:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  PortfolioProfileCreateRequest:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      is_default:
+        type: boolean
+      name:
+        type: string
+      provider:
+        type: string
+      secret:
+        additionalProperties: true
+        type: object
+    required:
+    - name
+    - provider
+    type: object
+  PortfolioProfilePatchRequest:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      is_default:
+        type: boolean
+      name:
+        type: string
+      secret:
+        additionalProperties: true
+        type: object
+    type: object
+  PortfolioProviderAction:
+    properties:
+      id:
+        type: string
+      label:
+        type: string
+    type: object
+  PortfolioSummaryMoneyBalance:
+    properties:
+      available:
+        type: number
+      blocked:
+        type: number
+      currency:
+        type: string
+      withdraw_available:
+        type: number
+      withdraw_blocked:
+        type: number
+    type: object
+  PortfolioSummaryPosition:
+    properties:
+      currency:
+        type: string
+      current_price:
+        type: number
+      current_value:
+        type: number
+      expected_yield:
+        type: number
+      instrument_id:
+        type: string
+      instrument_type:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: number
+      ticker:
+        type: string
+    type: object
+  PortfolioSummaryResponse:
+    properties:
+      capabilities:
+        $ref: '#/definitions/PortfolioCapabilities'
+      daily_yield:
+        type: number
+      daily_yield_relative:
+        type: number
+      money:
+        items:
+          $ref: '#/definitions/PortfolioSummaryMoneyBalance'
+        type: array
+      name:
+        type: string
+      portfolio_id:
+        type: integer
+      positions:
+        items:
+          $ref: '#/definitions/PortfolioSummaryPosition'
+        type: array
+      provider:
+        type: string
+      total_amount_currency:
+        type: string
+      total_amount_portfolio:
+        type: number
+    type: object
   TBankAccount:
     properties:
       access_level:
@@ -957,6 +1192,377 @@ paths:
       summary: Change Password
       tags:
       - auth
+  /me/portfolios:
+    get:
+      description: Returns current user portfolio profiles with provider capabilities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/PortfolioProfile'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List portfolio profiles
+      tags:
+      - portfolio
+    post:
+      consumes:
+      - application/json
+      description: Creates provider-backed portfolio profile for the current user
+      parameters:
+      - description: Portfolio profile payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/PortfolioProfileCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/PortfolioProfile'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Create portfolio profile
+      tags:
+      - portfolio
+  /me/portfolios/{id}:
+    delete:
+      description: Deletes selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete portfolio profile
+      tags:
+      - portfolio
+    patch:
+      consumes:
+      - application/json
+      description: Updates selected portfolio profile (name/default/config/secret)
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Portfolio profile patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/PortfolioProfilePatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioProfile'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update portfolio profile
+      tags:
+      - portfolio
+  /me/portfolios/{id}/actions/{action}:
+    post:
+      consumes:
+      - application/json
+      description: Executes provider-specific action for selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Provider action id
+        in: path
+        name: action
+        required: true
+        type: string
+      - description: Action payload
+        in: body
+        name: payload
+        schema:
+          $ref: '#/definitions/PortfolioActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Run provider action
+      tags:
+      - portfolio
+  /me/portfolios/{id}/composition:
+    get:
+      description: Returns composition snapshot for selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Snapshot date (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/PortfolioCompositionEntry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get portfolio composition snapshot
+      tags:
+      - portfolio
+  /me/portfolios/{id}/composition/series:
+    get:
+      description: Returns ticker composition series for selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Comma-separated tickers
+        in: query
+        name: tickers
+        type: string
+      - description: Top constituents count (0 = all)
+        in: query
+        name: topCount
+        type: integer
+      - description: 'Ticker selection mode: fixed|rolling'
+        in: query
+        name: selectionMode
+        type: string
+      - description: Selection date (YYYY-MM-DD)
+        in: query
+        name: selectionDate
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Downsample interval in days
+        in: query
+        name: intervalDays
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/PortfolioCompositionSeriesPoint'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get portfolio composition series
+      tags:
+      - portfolio
+  /me/portfolios/{id}/history:
+    get:
+      description: Returns history points for selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: till
+        type: string
+      - description: Downsample interval in days
+        in: query
+        name: intervalDays
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/PortfolioHistoryPoint'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get portfolio history
+      tags:
+      - portfolio
+  /me/portfolios/{id}/operations:
+    get:
+      description: Returns portfolio operations history with cursor pagination
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cursor from previous response
+        in: query
+        name: cursor
+        type: string
+      - description: Page size (1-200, default 50)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioOperationsHistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get portfolio operations
+      tags:
+      - portfolio
+  /me/portfolios/{id}/summary:
+    get:
+      description: Returns unified summary (balances and positions) by portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioSummaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get portfolio summary
+      tags:
+      - portfolio
   /me/settings:
     get:
       description: Returns settings for the current user, including favorites

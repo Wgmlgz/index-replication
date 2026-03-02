@@ -385,6 +385,567 @@
                 }
             }
         },
+        "/me/portfolios": {
+            "get": {
+                "description": "Returns current user portfolio profiles with provider capabilities",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "List portfolio profiles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PortfolioProfile"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates provider-backed portfolio profile for the current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Create portfolio profile",
+                "parameters": [
+                    {
+                        "description": "Portfolio profile payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioProfileCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioProfile"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}": {
+            "delete": {
+                "description": "Deletes selected portfolio profile",
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Delete portfolio profile",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Updates selected portfolio profile (name/default/config/secret)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Update portfolio profile",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Portfolio profile patch payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioProfilePatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioProfile"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/actions/{action}": {
+            "post": {
+                "description": "Executes provider-specific action for selected portfolio profile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Run provider action",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Provider action id",
+                        "name": "action",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Action payload",
+                        "name": "payload",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioActionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/composition": {
+            "get": {
+                "description": "Returns composition snapshot for selected portfolio profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get portfolio composition snapshot",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Snapshot date (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PortfolioCompositionEntry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/composition/series": {
+            "get": {
+                "description": "Returns ticker composition series for selected portfolio profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get portfolio composition series",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated tickers",
+                        "name": "tickers",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Top constituents count (0 = all)",
+                        "name": "topCount",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ticker selection mode: fixed|rolling",
+                        "name": "selectionMode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Selection date (YYYY-MM-DD)",
+                        "name": "selectionDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Downsample interval in days",
+                        "name": "intervalDays",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/PortfolioCompositionSeriesPoint"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/history": {
+            "get": {
+                "description": "Returns history points for selected portfolio profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get portfolio history",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "till",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Downsample interval in days",
+                        "name": "intervalDays",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PortfolioHistoryPoint"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/operations": {
+            "get": {
+                "description": "Returns portfolio operations history with cursor pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get portfolio operations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor from previous response",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-200, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioOperationsHistoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/summary": {
+            "get": {
+                "description": "Returns unified summary (balances and positions) by portfolio profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get portfolio summary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioSummaryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/settings": {
             "get": {
                 "description": "Returns settings for the current user, including favorites",
@@ -2340,6 +2901,362 @@
                 },
                 "user": {
                     "$ref": "#/definitions/UserResponse"
+                }
+            }
+        },
+        "PortfolioActionRequest": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "PortfolioActionResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "PortfolioCapabilities": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioProviderAction"
+                    }
+                }
+            }
+        },
+        "PortfolioCompositionEntry": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "current_price": {
+                    "type": "number"
+                },
+                "current_value": {
+                    "type": "number"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "ticker": {
+                    "type": "string"
+                },
+                "trade_date": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "PortfolioCompositionSeriesPoint": {
+            "type": "object",
+            "properties": {
+                "trade_date": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "PortfolioHistoryPoint": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "total_amount_portfolio": {
+                    "type": "number"
+                },
+                "trade_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioOperationHistoryItem": {
+            "type": "object",
+            "properties": {
+                "commission": {
+                    "type": "number"
+                },
+                "commission_currency": {
+                    "type": "string"
+                },
+                "cursor": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "figi": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "instrument_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_operation_id": {
+                    "type": "string"
+                },
+                "payment": {
+                    "type": "number"
+                },
+                "payment_currency": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "price_currency": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "quantity_done": {
+                    "type": "integer"
+                },
+                "quantity_rest": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioOperationsHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "has_next": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioOperationHistoryItem"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                },
+                "portfolio_id": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioProfile": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "$ref": "#/definitions/PortfolioCapabilities"
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioProfileCreateRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "provider"
+            ],
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "secret": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "PortfolioProfilePatchRequest": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "secret": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "PortfolioProviderAction": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioSummaryMoneyBalance": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "number"
+                },
+                "blocked": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "withdraw_available": {
+                    "type": "number"
+                },
+                "withdraw_blocked": {
+                    "type": "number"
+                }
+            }
+        },
+        "PortfolioSummaryPosition": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "current_price": {
+                    "type": "number"
+                },
+                "current_value": {
+                    "type": "number"
+                },
+                "expected_yield": {
+                    "type": "number"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "instrument_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "ticker": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "$ref": "#/definitions/PortfolioCapabilities"
+                },
+                "daily_yield": {
+                    "type": "number"
+                },
+                "daily_yield_relative": {
+                    "type": "number"
+                },
+                "money": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioSummaryMoneyBalance"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "portfolio_id": {
+                    "type": "integer"
+                },
+                "positions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioSummaryPosition"
+                    }
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "total_amount_currency": {
+                    "type": "string"
+                },
+                "total_amount_portfolio": {
+                    "type": "number"
                 }
             }
         },

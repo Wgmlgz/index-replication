@@ -73,7 +73,7 @@ export const DashboardCards: DashboardCard[] = [
     icon: Wallet,
     buttonText: 'Open portfolio',
     buttonTextKey: 'navigation.cards.portfolio.button',
-    href: '/portfolio',
+    href: '/portfolio-v2',
     permission: null,
   },
 ];
