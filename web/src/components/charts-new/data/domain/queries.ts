@@ -9,6 +9,7 @@ export type PriceHistoryQuery = {
 
 export type CompositionSnapshotQuery = {
   secid: string;
+  selectionMode?: CompositionSelectionMode;
   selectionDate?: string;
 };
 
@@ -22,4 +23,3 @@ export type CompositionSeriesQuery = {
   till?: string;
   intervalDays?: number;
 };
-

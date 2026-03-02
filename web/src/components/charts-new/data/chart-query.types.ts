@@ -12,6 +12,7 @@ export type PriceVisualizationDataState = {
   change: number | null;
   changePercent: number | null;
   numberFormatter: Intl.NumberFormat;
+  currency: string;
 };
 
 export type CompositionSnapshotDataState = {
@@ -42,4 +43,3 @@ export type CompositionVisualizationDataState = {
   seriesError: boolean;
   series: CompositionSeries[];
 };
-

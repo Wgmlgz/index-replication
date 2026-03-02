@@ -24,6 +24,7 @@ type NormalizedHistoryPoint = {
   open: number | null;
   high: number | null;
   low: number | null;
+  currency: string;
 };
 
 const hasTradeDateAndClose = (
@@ -90,6 +91,7 @@ export function usePriceVisualizationData(
         open: point.open ?? null,
         high: point.high ?? null,
         low: point.low ?? null,
+        currency: point.currency ?? '',
       }));
   }, [history]);
 
@@ -158,6 +160,7 @@ export function usePriceVisualizationData(
       maximumFractionDigits: selectedIndex?.decimals ?? 2,
     });
   }, [i18n.language, selectedIndex?.decimals]);
+  const currency = normalizedHistory[normalizedHistory.length - 1]?.currency ?? '';
 
   return {
     loading: historyQuery.isLoading,
@@ -167,5 +170,6 @@ export function usePriceVisualizationData(
     change,
     changePercent,
     numberFormatter,
+    currency,
   };
 }

@@ -55,11 +55,13 @@ export function useCompositionSnapshotData(options: {
       provider.id,
       'moex-index-composition',
       selectedIndex?.secid,
+      controls.compositionSelectionMode,
       effectiveSelectionDate ?? 'latest',
     ],
     queryFn: async () => {
       return provider.getCompositionSnapshot({
         secid: selectedIndex!.secid ?? '',
+        selectionMode: controls.compositionSelectionMode,
         selectionDate: effectiveSelectionDate,
       });
     },

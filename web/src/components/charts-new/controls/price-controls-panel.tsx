@@ -31,6 +31,7 @@ type PriceControlsPanelProps = {
   actions: PriceControlActions;
   translationKeyPrefix: string;
   idPrefix: string;
+  hideChartType?: boolean;
   className?: string;
 };
 
@@ -39,6 +40,7 @@ export function PriceControlsPanel({
   actions,
   translationKeyPrefix,
   idPrefix,
+  hideChartType = false,
   className,
 }: PriceControlsPanelProps) {
   const { t } = useTranslation();
@@ -208,16 +210,18 @@ export function PriceControlsPanel({
           />
         </div>
 
-        <div className='flex flex-wrap items-center gap-2'>
-          <span className='text-xs text-muted-foreground'>
-            {t(`${translationKeyPrefix}.type.label`)}
-          </span>
-          <ButtonToggleGroup
-            value={controls.chartType}
-            options={chartTypeOptions}
-            onValueChange={actions.setChartType}
-          />
-        </div>
+        {!hideChartType && (
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-xs text-muted-foreground'>
+              {t(`${translationKeyPrefix}.type.label`)}
+            </span>
+            <ButtonToggleGroup
+              value={controls.chartType}
+              options={chartTypeOptions}
+              onValueChange={actions.setChartType}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

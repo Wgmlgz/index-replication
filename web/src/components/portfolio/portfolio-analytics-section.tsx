@@ -1,23 +1,34 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import type { MoexIndex } from '@/api-client';
 import { useTranslation } from 'react-i18next';
 import { useTBankConnectionContext } from '@/components/tbank-test/tbank-connection-context';
 import {
-  CompositionSeriesChart,
-  OTHER_SERIES_COLOR,
-  resolveCompositionSeriesColor,
-} from '@/components/charts/composition-series-chart';
-import { CompositionControls } from '@/components/charts/composition-controls';
-import { CompositionSnapshotChart } from '@/components/charts/composition-snapshot-chart';
-import { CompositionTabPanels } from '@/components/charts/composition-tab-panels';
-import { CompositionTabsList } from '@/components/charts/composition-tabs-list';
-import { TimeSeriesChartState } from '@/components/charts/time-series-chart-state';
-import { TimeSeriesControls } from '@/components/charts/time-series-controls';
-import { TimeSeriesValueSummary } from '@/components/charts/time-series-value-summary';
-import { buildSnapshotChartItems } from '@/components/charts/composition-analytics';
-import { useChartControlsState } from '@/components/charts/use-chart-controls-state';
+  buildCompositionLegendRows,
+  calculateSnapshotOtherWeight,
+  createTbankChartsDataProvider,
+  useCompositionVisualizationData,
+  usePriceVisualizationData,
+} from '@/components/charts-new/data';
+import {
+  CompositionControlsPanel,
+  PriceControlsPanel,
+  useChartsNewControls,
+} from '@/components/charts-new/controls';
+import {
+  CompositionLegend,
+  CompositionSnapshotVisualization,
+  CompositionStackedVisualization,
+  CompositionTrendVisualization,
+  PriceVisualization,
+  type PriceChartData,
+} from '@/components/charts-new/visualization';
+import type {
+  CompositionDataControls,
+  PriceDataControls,
+} from '@/components/charts-new/types/controls';
 import {
   Card,
   CardContent,
@@ -26,67 +37,58 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Tabs } from '@/components/ui/tabs';
-import {
-  applyChartControlsUrlState,
-  parseChartControlsUrlState,
-  type ChartControlsUrlCodecConfig,
-} from '@/lib/charting/chart-controls-url-state';
 import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
-import { usePortfolioHistory } from './use-portfolio-history';
-import {
-  type PortfolioCompositionTab,
-  usePortfolioComposition,
-} from './use-portfolio-composition';
+
+const PORTFOLIO_ACCOUNT_KEY = 'cn_acc';
+const LEGACY_PORTFOLIO_URL_KEYS = [
+  'acc',
+  'r',
+  'i',
+  'f',
+  't',
+  'v',
+  'ctab',
+  'cmode',
+  'cdate',
+  'top',
+] as const;
+
+const DEFAULT_PRICE_CONTROLS: Partial<PriceDataControls> = {
+  rangeKey: '1y',
+  intervalKey: 'auto',
+  viewMode: 'price',
+  chartType: 'line',
+};
+
+const DEFAULT_COMPOSITION_CONTROLS: Partial<CompositionDataControls> = {
+  compositionSelectionMode: 'fixed',
+  compositionSelectionDate: '',
+  compositionTab: 'snapshot',
+  topCount: 10,
+};
 
 const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
-const PORTFOLIO_URL_KEYS = {
-  accountID: 'acc',
-  rangeKey: 'r',
-  intervalKey: 'i',
-  customFrom: 'f',
-  customTill: 't',
-  viewMode: 'v',
-  compositionTab: 'ctab',
-  compositionSelectionMode: 'cmode',
-  compositionSelectionDate: 'cdate',
-  compositionTopCount: 'top',
-} as const;
-
-const PORTFOLIO_CHART_URL_CODEC = {
-  keys: {
-    rangeKey: PORTFOLIO_URL_KEYS.rangeKey,
-    intervalKey: PORTFOLIO_URL_KEYS.intervalKey,
-    customFrom: PORTFOLIO_URL_KEYS.customFrom,
-    customTill: PORTFOLIO_URL_KEYS.customTill,
-    viewMode: PORTFOLIO_URL_KEYS.viewMode,
-    compositionTab: PORTFOLIO_URL_KEYS.compositionTab,
-    compositionSelectionMode: PORTFOLIO_URL_KEYS.compositionSelectionMode,
-    compositionSelectionDate: PORTFOLIO_URL_KEYS.compositionSelectionDate,
-    compositionTopCount: PORTFOLIO_URL_KEYS.compositionTopCount,
-  },
-  defaults: {
-    rangeKey: '1y',
-    intervalKey: 'auto',
-    viewMode: 'price',
-    compositionTab: 'snapshot',
-    compositionSelectionMode: 'fixed',
-    compositionTopCount: 10,
-  },
-} satisfies ChartControlsUrlCodecConfig;
 
 const parsePortfolioUrlState = (searchParams: URLSearchParams) => {
-  const accountIDRaw = searchParams.get(PORTFOLIO_URL_KEYS.accountID);
-  const accountID = accountIDRaw?.trim();
-  const chartControls = parseChartControlsUrlState(
-    searchParams,
-    PORTFOLIO_CHART_URL_CODEC,
-  );
-
+  const accountID = searchParams.get(PORTFOLIO_ACCOUNT_KEY)?.trim();
   return {
     accountID: accountID && accountID.length > 0 ? accountID : undefined,
-    chartControls,
   };
+};
+
+const resolveLatestTradeDate = (data: PriceChartData): string | null => {
+  if (data.length === 0) return null;
+  const lastPoint = data[data.length - 1];
+  if (!lastPoint || typeof lastPoint.time !== 'string') return null;
+  return lastPoint.time.length > 0 ? lastPoint.time : null;
+};
+
+const formatSignedNumber = (
+  formatter: Intl.NumberFormat,
+  value: number
+): string => {
+  const prefix = value > 0 ? '+' : '';
+  return `${prefix}${formatter.format(value)}`;
 };
 
 export function PortfolioAnalyticsSection() {
@@ -98,136 +100,159 @@ export function PortfolioAnalyticsSection() {
 
   const parsedUrl = useMemo(
     () => parsePortfolioUrlState(new URLSearchParams(urlKey)),
-    [urlKey],
+    [urlKey]
   );
 
   const [accountID, setAccountID] = useState(() => parsedUrl.accountID ?? '');
-  const chartControls = useChartControlsState({
-    initial: parsedUrl.chartControls,
+  const controls = useChartsNewControls({
     defaults: {
-      rangeKey: '1y',
-      intervalKey: 'auto',
-      viewMode: 'price',
-      compositionTab: 'snapshot',
-      compositionSelectionMode: 'fixed',
-      compositionTopCount: 10,
+      price: DEFAULT_PRICE_CONTROLS,
+      composition: DEFAULT_COMPOSITION_CONTROLS,
     },
   });
+  const portfolioChartType = controls.price.chartType;
+  const setPriceField = controls.setPriceField;
 
-  const portfolioUrlStateKey = useMemo(
+  // Portfolio history endpoint has no OHLC values, so enforce line chart.
+  useEffect(() => {
+    if (portfolioChartType === 'line') return;
+    setPriceField('chartType', 'line');
+  }, [portfolioChartType, setPriceField]);
+
+  const accountUrlStateKey = useMemo(
     () =>
       JSON.stringify({
         accountID,
-        chartControls: chartControls.controlsStateKey,
+        controls: {
+          price: controls.price,
+          composition: controls.composition,
+        },
       }),
-    [accountID, chartControls.controlsStateKey],
+    [accountID, controls.composition, controls.price]
   );
 
   useUrlStateSync({
     pathname,
     urlKey,
-    stateKey: portfolioUrlStateKey,
+    stateKey: accountUrlStateKey,
     parse: parsePortfolioUrlState,
     applyParsedState: next => {
       setAccountID(next.accountID ?? '');
-      chartControls.applyParsedControls(next.chartControls);
     },
     buildSearchParams: () => {
       const next = new URLSearchParams(window.location.search);
-      next.delete(PORTFOLIO_URL_KEYS.accountID);
+      LEGACY_PORTFOLIO_URL_KEYS.forEach(key => next.delete(key));
+      next.delete(PORTFOLIO_ACCOUNT_KEY);
 
-      const accountIDValue = accountID.trim();
-      if (accountIDValue.length > 0) {
-        next.set(PORTFOLIO_URL_KEYS.accountID, accountIDValue);
+      const accountValue = accountID.trim();
+      if (accountValue.length > 0) {
+        next.set(PORTFOLIO_ACCOUNT_KEY, accountValue);
       }
-
-      applyChartControlsUrlState(
-        next,
-        {
-          rangeKey: chartControls.rangeKey,
-          intervalKey: chartControls.intervalKey,
-          customFrom: chartControls.customFrom,
-          customTill: chartControls.customTill,
-          viewMode: chartControls.viewMode,
-          compositionTab: chartControls.compositionTab,
-          compositionSelectionMode: chartControls.compositionSelectionMode,
-          compositionSelectionDate: chartControls.compositionSelectionDate,
-          compositionTopCount: chartControls.compositionTopCount,
-        },
-        PORTFOLIO_CHART_URL_CODEC,
-      );
 
       return next;
     },
   });
 
   const resolvedAccountID = accountID || status?.default_account_id || '';
-  const topCountForHook =
-    chartControls.compositionTopCount === null
-      ? 0
-      : chartControls.compositionTopCount;
+  const selectedPortfolio = useMemo<MoexIndex | null>(() => {
+    if (!resolvedAccountID) return null;
+    return {
+      secid: resolvedAccountID,
+      name: resolvedAccountID,
+      shortName: resolvedAccountID,
+      currency: '',
+      decimals: 2,
+      hasComposition: true,
+    };
+  }, [resolvedAccountID]);
 
-  const {
-    loading: historyLoading,
-    error: historyError,
-    chartData,
-    latestValue,
-    change,
-    changePercent,
-    currency,
-    numberFormatter,
-  } = usePortfolioHistory({
-    accountID: resolvedAccountID,
-    rangeKey: chartControls.rangeKey,
-    intervalKey: chartControls.intervalKey,
-    customFrom: chartControls.customFrom,
-    customTill: chartControls.customTill,
-    viewMode: chartControls.viewMode,
-  });
-
-  const {
-    snapshotLoading,
-    snapshotError,
-    snapshotDate,
-    snapshotItems,
-    seriesLoading,
-    seriesError,
-    series,
-  } = usePortfolioComposition({
-    accountID: resolvedAccountID,
-    rangeKey: chartControls.rangeKey,
-    intervalKey: chartControls.intervalKey,
-    customFrom: chartControls.customFrom,
-    customTill: chartControls.customTill,
-    compositionSelectionMode: chartControls.compositionSelectionMode,
-    compositionSelectionDate: chartControls.compositionSelectionDate,
-    topCount: topCountForHook,
-    compositionTab: chartControls.compositionTab,
-  });
-
-  const snapshotTop = snapshotItems.slice(
-    0,
-    chartControls.compositionTopCount === null
-      ? snapshotItems.length
-      : chartControls.compositionTopCount,
+  const provider = useMemo(() => createTbankChartsDataProvider(), []);
+  const priceState = usePriceVisualizationData(
+    selectedPortfolio,
+    controls.price,
+    provider
   );
-  const { snapshotChartItems, snapshotOtherWeight } = useMemo(
+  const latestTradeDate = useMemo(
+    () => resolveLatestTradeDate(priceState.data),
+    [priceState.data]
+  );
+
+  const compositionState = useCompositionVisualizationData({
+    selectedIndex: selectedPortfolio,
+    latestTradeDate,
+    baseRange: {
+      rangeKey: controls.price.rangeKey,
+      intervalKey: controls.price.intervalKey,
+      customFrom: controls.price.customFrom,
+      customTill: controls.price.customTill,
+    },
+    controls: controls.composition,
+    provider,
+  });
+
+  const snapshotItems = useMemo(() => {
+    if (controls.composition.topCount === null) {
+      return compositionState.snapshotItems;
+    }
+    return compositionState.snapshotItems.slice(0, controls.composition.topCount);
+  }, [compositionState.snapshotItems, controls.composition.topCount]);
+  const legendRows = useMemo(
     () =>
-      buildSnapshotChartItems(snapshotTop, {
-        otherLabel: t('portfolio.composition.other'),
-        snapshotDate,
-      }),
-    [snapshotDate, snapshotTop, t],
+      buildCompositionLegendRows(
+        compositionState.series,
+        compositionState.snapshotItems
+      ),
+    [compositionState.series, compositionState.snapshotItems]
   );
+  const snapshotOtherWeight = useMemo(
+    () => calculateSnapshotOtherWeight(snapshotItems),
+    [snapshotItems]
+  );
+
+  const trendLoading =
+    compositionState.snapshotLoading || compositionState.seriesLoading;
+  const trendError = compositionState.snapshotError || compositionState.seriesError;
+  const showOtherLegend =
+    (controls.composition.compositionTab === 'stacked' ||
+      controls.composition.compositionTab === 'snapshot') &&
+    snapshotOtherWeight > 0.01;
+
+  const compositionChart =
+    controls.composition.compositionTab === 'snapshot' ? (
+      <CompositionSnapshotVisualization
+        loading={compositionState.snapshotLoading}
+        hasError={compositionState.snapshotError}
+        errorMessage={t('portfolio.composition.error')}
+        noDataMessage={t('portfolio.composition.noData')}
+        items={snapshotItems}
+        className='min-h-[200px] h-full'
+      />
+    ) : controls.composition.compositionTab === 'stacked' ? (
+      <CompositionStackedVisualization
+        loading={trendLoading}
+        hasError={trendError}
+        errorMessage={t('portfolio.composition.error')}
+        noDataMessage={t('portfolio.composition.noSeries')}
+        series={compositionState.series}
+        className='min-h-[200px] h-full'
+      />
+    ) : (
+      <CompositionTrendVisualization
+        loading={trendLoading}
+        hasError={trendError}
+        errorMessage={t('portfolio.composition.error')}
+        noDataMessage={t('portfolio.composition.noSeries')}
+        series={compositionState.series}
+        className='min-h-[200px] h-full'
+      />
+    );
 
   if (!connected) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
-          <CardDescription>
-            {t('portfolio.analytics.description')}
-          </CardDescription>
+          <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
           {t('portfolio.analytics.notConnected')}
@@ -237,172 +262,118 @@ export function PortfolioAnalyticsSection() {
   }
 
   return (
-    <div className='grid gap-6 lg:grid-cols-2'>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('portfolio.chart.title')}</CardTitle>
-          <CardDescription>{t('portfolio.chart.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <div className='grid gap-2'>
-            <Label htmlFor='portfolio-analytics-account'>
-              {t('portfolio.analytics.accountLabel')}
-            </Label>
-            <select
-              id='portfolio-analytics-account'
-              className='border-input bg-background h-9 rounded-md border px-3 text-sm'
-              value={accountID}
-              onChange={event => setAccountID(event.target.value)}
-            >
-              <option value=''>
-                {t('portfolio.analytics.accountDefaultOption')}
-              </option>
-              {(availableAccounts ?? []).map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.id}
+    <Card className='h-full min-h-0'>
+      <CardHeader>
+        <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
+        <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
+      </CardHeader>
+      <CardContent className='grid h-full min-h-0 gap-4 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'>
+        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
+          <div className='flex flex-col gap-3 lg:w-[320px]'>
+            <div className='grid gap-2'>
+              <Label htmlFor='portfolio-analytics-account'>
+                {t('portfolio.analytics.accountLabel')}
+              </Label>
+              <select
+                id='portfolio-analytics-account'
+                className='border-input bg-background h-9 rounded-md border px-3 text-sm'
+                value={accountID}
+                onChange={event => setAccountID(event.target.value)}
+              >
+                <option value=''>
+                  {t('portfolio.analytics.accountDefaultOption')}
                 </option>
-              ))}
-            </select>
+                {(availableAccounts ?? []).map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {priceState.latestValue !== null && (
+              <div className='text-sm'>
+                <span className='font-medium'>
+                  {priceState.numberFormatter.format(priceState.latestValue)}
+                </span>
+                {priceState.currency ? ` ${priceState.currency}` : ''}
+                {priceState.change !== null && priceState.changePercent !== null && (
+                  <span
+                    className={`ml-2 font-medium ${
+                      priceState.change > 0
+                        ? 'text-emerald-600'
+                        : priceState.change < 0
+                          ? 'text-red-600'
+                          : 'text-muted-foreground'
+                    }`}
+                  >
+                    {formatSignedNumber(priceState.numberFormatter, priceState.change)} (
+                    {priceState.change > 0 ? '+' : ''}
+                    {priceState.changePercent.toFixed(2)}%)
+                  </span>
+                )}
+              </div>
+            )}
+
+            <PriceControlsPanel
+              controls={controls.price}
+              actions={controls.priceActions}
+              translationKeyPrefix='portfolio.chart'
+              idPrefix='portfolio'
+              hideChartType
+            />
           </div>
 
-          <TimeSeriesValueSummary
-            latestValue={latestValue}
-            change={change}
-            changePercent={changePercent}
-            numberFormatter={numberFormatter}
-            currency={currency || undefined}
-            loading={historyLoading}
-            className='text-sm'
-          />
-
-          <TimeSeriesControls
-            translationKeyPrefix='portfolio.chart'
-            rangeKey={chartControls.rangeKey}
-            setRangeKey={chartControls.setRangeKey}
-            intervalKey={chartControls.intervalKey}
-            setIntervalKey={chartControls.setIntervalKey}
-            customFrom={chartControls.customFrom}
-            setCustomFrom={chartControls.setCustomFrom}
-            customTill={chartControls.customTill}
-            setCustomTill={chartControls.setCustomTill}
-            viewMode={chartControls.viewMode}
-            setViewMode={chartControls.setViewMode}
-            chartType='line'
-            disableCandlestick
-            candlestickLabelKey='portfolio.chart.type.candlestickDisabled'
-            idPrefix='portfolio'
-          />
-
-          <TimeSeriesChartState
-            loading={historyLoading}
-            hasError={historyError}
+          <PriceVisualization
+            loading={priceState.loading}
+            hasError={priceState.error}
             errorMessage={t('portfolio.chart.error')}
             noDataMessage={t('portfolio.chart.noData')}
-            data={chartData}
+            data={priceState.data}
             seriesType='line'
-            containerClassName='min-h-[240px]'
-            chartWrapperClassName='h-[240px]'
-            skeletonClassName='h-[240px] w-full min-h-0'
+            className='flex min-h-[200px] flex-1 items-stretch'
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('portfolio.composition.title')}</CardTitle>
-          <CardDescription>
-            {snapshotDate
-              ? t('portfolio.composition.asOf', { date: snapshotDate })
-              : t('portfolio.composition.description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs
-            value={chartControls.compositionTab}
-            onValueChange={next =>
-              chartControls.setCompositionTab(next as PortfolioCompositionTab)
-            }
-            className='space-y-4'
-          >
-            <CompositionTabsList translationKeyPrefix='portfolio.composition' />
-
-            <CompositionControls
-              translationKeyPrefix='portfolio.composition'
-              topCount={chartControls.compositionTopCount}
-              setTopCount={chartControls.setCompositionTopCount}
-              topCountOptions={TOP_COUNT_OPTIONS}
-              selectionMode={chartControls.compositionSelectionMode}
-              setSelectionMode={chartControls.setCompositionSelectionMode}
-              selectionDate={chartControls.compositionSelectionDate}
-              setSelectionDate={chartControls.setCompositionSelectionDate}
-              idPrefix='portfolio'
-            />
-
-            <CompositionTabPanels
-              translationKeyPrefix='portfolio.composition'
-              snapshotLoading={snapshotLoading}
-              snapshotError={snapshotError}
-              snapshotEmpty={snapshotTop.length === 0}
-              showSnapshotSkeleton={snapshotLoading && snapshotTop.length === 0}
-              snapshotChart={
-                <div className='h-[240px]'>
-                  <CompositionSnapshotChart items={snapshotChartItems} />
-                </div>
-              }
-              trendLoading={snapshotLoading || seriesLoading}
-              trendError={snapshotError || seriesError}
-              trendEmpty={series.length === 0}
-              showTrendSkeleton={
-                (snapshotLoading || seriesLoading) && series.length === 0
-              }
-              trendChart={
-                <div className='h-[240px]'>
-                  <CompositionSeriesChart series={series} variant='line' />
-                </div>
-              }
-              stackedChart={
-                <div className='h-[240px]'>
-                  <CompositionSeriesChart
-                    series={series}
-                    variant='stacked'
-                    includeOther
-                  />
-                </div>
-              }
-              snapshotClassName='min-h-[240px]'
-              trendClassName='min-h-[240px]'
-              stackedClassName='min-h-[240px]'
-              snapshotSkeletonClassName='h-[240px] min-h-0'
-              trendSkeletonClassName='h-[240px] min-h-0'
-            />
-          </Tabs>
-
-          {series.length > 0 && (
-            <div className='mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground'>
-              {series.map((item, index) => (
-                <div key={item.id} className='flex items-center gap-2'>
-                  <span
-                    className='h-2.5 w-2.5 rounded-full'
-                    style={{
-                      backgroundColor: resolveCompositionSeriesColor(index),
-                    }}
-                  />
-                  <span>{item.id}</span>
-                </div>
-              ))}
-              {snapshotOtherWeight > 0.01 && (
-                <div className='flex items-center gap-2'>
-                  <span
-                    className='h-2.5 w-2.5 rounded-full'
-                    style={{ backgroundColor: OTHER_SERIES_COLOR }}
-                  />
-                  <span>{t('portfolio.composition.other')}</span>
+        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
+          <div className='flex min-h-0 flex-col gap-3 lg:w-[320px]'>
+            <div className='space-y-1'>
+              <CardTitle>{t('portfolio.composition.title')}</CardTitle>
+              {compositionState.snapshotDate && (
+                <div className='text-xs text-muted-foreground'>
+                  {t('portfolio.composition.asOf', {
+                    date: compositionState.snapshotDate,
+                  })}
                 </div>
               )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+            <CompositionControlsPanel
+              controls={controls.composition}
+              actions={controls.compositionActions}
+              translationKeyPrefix='portfolio.composition'
+              idPrefix='portfolio'
+              topCountOptions={TOP_COUNT_OPTIONS}
+            />
+
+            <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
+              <CompositionLegend
+                rows={legendRows}
+                loading={trendLoading}
+                hasError={trendError}
+                errorMessage={t('portfolio.composition.error')}
+                noDataMessage={t('portfolio.composition.noSeries')}
+                translationKeyPrefix='portfolio.composition'
+                showOther={showOtherLegend}
+                otherWeight={snapshotOtherWeight}
+                linkBuilder={() => undefined}
+              />
+            </div>
+          </div>
+
+          <div className='flex min-h-[200px] flex-1 flex-col'>{compositionChart}</div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

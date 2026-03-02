@@ -393,6 +393,12 @@
         "label": "Selection mode",
         "fixed": "Fixed",
         "rolling": "Rolling"
+      },
+      "legend": {
+        "openTicker": "Open ticker page",
+        "latestWeight": "Latest weight: {{value}}%",
+        "snapshotWeight": "Snapshot weight: {{value}}%",
+        "asOf": "As of {{date}}"
       }
     }
   },

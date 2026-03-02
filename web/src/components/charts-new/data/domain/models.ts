@@ -4,6 +4,7 @@ export type ProviderPriceHistoryPoint = {
   open?: number | null;
   high?: number | null;
   low?: number | null;
+  currency?: string;
 };
 
 export type ProviderCompositionSnapshotPoint = {
@@ -23,4 +24,3 @@ export type ProviderCompositionSeriesMap = Record<
   string,
   ProviderCompositionSeriesPoint[]
 >;
-

@@ -20,6 +20,7 @@ type CompositionLegendProps = {
   showOther?: boolean;
   otherWeight?: number;
   sourceBoard?: string;
+  linkBuilder?: (ticker: string) => string | undefined;
   className?: string;
 };
 
@@ -33,10 +34,16 @@ export function CompositionLegend({
   showOther = false,
   otherWeight = 0,
   sourceBoard = 'EQWY',
+  linkBuilder,
   className,
 }: CompositionLegendProps) {
   const { t } = useTranslation();
   const showSkeleton = loading && rows.length === 0;
+
+  const resolveTickerHref = (ticker: string) => {
+    if (linkBuilder) return linkBuilder(ticker);
+    return chartsNewMoexSources.issuePage(ticker, sourceBoard);
+  };
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -57,7 +64,9 @@ export function CompositionLegend({
 
       {!showSkeleton && !hasError && (rows.length > 0 || showOther) && (
         <div className='space-y-2'>
-          {rows.map((item, index) => (
+          {rows.map((item, index) => {
+            const tickerHref = resolveTickerHref(item.ticker);
+            return (
             <div
               key={item.ticker}
               className='rounded-md border p-2 text-xs text-muted-foreground'
@@ -69,15 +78,19 @@ export function CompositionLegend({
                     backgroundColor: resolveCompositionSeriesColor(index),
                   }}
                 />
-                <a
-                  href={chartsNewMoexSources.issuePage(item.ticker, sourceBoard)}
-                  target='_blank'
-                  rel='noreferrer noopener'
-                  className='font-medium text-foreground hover:underline'
-                  aria-label={t(`${translationKeyPrefix}.legend.openTicker`)}
-                >
-                  {item.ticker}
-                </a>
+                {tickerHref ? (
+                  <a
+                    href={tickerHref}
+                    target='_blank'
+                    rel='noreferrer noopener'
+                    className='font-medium text-foreground hover:underline'
+                    aria-label={t(`${translationKeyPrefix}.legend.openTicker`)}
+                  >
+                    {item.ticker}
+                  </a>
+                ) : (
+                  <span className='font-medium text-foreground'>{item.ticker}</span>
+                )}
                 {item.name !== item.ticker && (
                   <span className='truncate'>{item.name}</span>
                 )}
@@ -104,7 +117,8 @@ export function CompositionLegend({
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
 
           {showOther && (
             <div className='rounded-md border p-2 text-xs text-muted-foreground'>
@@ -129,4 +143,3 @@ export function CompositionLegend({
     </div>
   );
 }
-
