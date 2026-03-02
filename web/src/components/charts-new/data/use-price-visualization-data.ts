@@ -3,12 +3,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import type {
-  MoexIndex,
-  MoexIndexHistoryPoint,
-} from '@/api-client';
+import type { MoexIndex } from '@/api-client';
 import type { PriceChartData } from '@/components/charts-new/visualization/chart-types';
-import { moexApi } from '@/lib/api';
+import type { ProviderPriceHistoryPoint } from '@/components/charts-new/data/domain/models';
 import {
   resolveDateRange,
   resolveIntervalDays,
@@ -19,6 +16,7 @@ import {
   calculateChangeStats,
   createViewModeNormalizer,
 } from './data-analytics';
+import type { ChartsDataProvider } from './providers';
 
 type NormalizedHistoryPoint = {
   tradeDate: string;
@@ -29,14 +27,15 @@ type NormalizedHistoryPoint = {
 };
 
 const hasTradeDateAndClose = (
-  point: MoexIndexHistoryPoint
-): point is MoexIndexHistoryPoint & { tradeDate: string; close: number } => {
+  point: ProviderPriceHistoryPoint
+): point is ProviderPriceHistoryPoint & { tradeDate: string; close: number } => {
   return typeof point.tradeDate === 'string' && typeof point.close === 'number';
 };
 
 export function usePriceVisualizationData(
   selectedIndex: MoexIndex | null,
-  controls: PriceDataControls
+  controls: PriceDataControls,
+  provider: ChartsDataProvider
 ): PriceVisualizationDataState {
   const { i18n } = useTranslation();
   const dateRange = useMemo(
@@ -56,6 +55,7 @@ export function usePriceVisualizationData(
 
   const historyQuery = useQuery({
     queryKey: [
+      provider.id,
       'moex-index-history',
       selectedIndex?.secid,
       dateRange.from,
@@ -63,13 +63,12 @@ export function usePriceVisualizationData(
       intervalDays ?? 'auto',
     ],
     queryFn: async () => {
-      const response = await moexApi.moexIndexesSecidHistoryGet(
-        selectedIndex!.secid ?? '',
-        dateRange.from,
-        dateRange.till,
-        intervalDays
-      );
-      return response.data;
+      return provider.getPriceHistory({
+        secid: selectedIndex!.secid ?? '',
+        from: dateRange.from,
+        till: dateRange.till,
+        intervalDays,
+      });
     },
     enabled: Boolean(selectedIndex?.secid),
     refetchOnWindowFocus: false,
@@ -77,7 +76,10 @@ export function usePriceVisualizationData(
     retry: 1,
   });
 
-  const history = useMemo(() => historyQuery.data ?? [], [historyQuery.data]);
+  const history = useMemo<ProviderPriceHistoryPoint[]>(
+    () => historyQuery.data ?? [],
+    [historyQuery.data]
+  );
   const normalizedHistory = useMemo<NormalizedHistoryPoint[]>(() => {
     return history
       .filter(hasTradeDateAndClose)

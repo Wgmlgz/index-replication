@@ -3,6 +3,7 @@
 import type { MoexIndex } from '@/api-client';
 import type { CompositionDataControls } from '@/components/charts-new/types/controls';
 import type { CompositionVisualizationDataState } from './chart-query.types';
+import type { ChartsDataProvider } from './providers';
 import { useCompositionSeriesData } from './use-composition-series-data';
 import { useCompositionSnapshotData } from './use-composition-snapshot-data';
 
@@ -10,10 +11,12 @@ export function useCompositionVisualizationData(options: {
   selectedIndex: MoexIndex | null;
   latestTradeDate: string | null;
   controls: CompositionDataControls;
+  provider: ChartsDataProvider;
 }): CompositionVisualizationDataState {
   const snapshotState = useCompositionSnapshotData({
     selectedIndex: options.selectedIndex,
     latestTradeDate: options.latestTradeDate,
+    provider: options.provider,
     controls: {
       rangeKey: options.controls.rangeKey,
       intervalKey: options.controls.intervalKey,
@@ -26,6 +29,7 @@ export function useCompositionVisualizationData(options: {
 
   const seriesState = useCompositionSeriesData({
     selectedIndex: options.selectedIndex,
+    provider: options.provider,
     snapshotItems: snapshotState.snapshotItems,
     effectiveSelectionDate: snapshotState.effectiveSelectionDate,
     dateRange: snapshotState.dateRange,

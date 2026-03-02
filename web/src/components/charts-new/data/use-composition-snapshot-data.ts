@@ -2,12 +2,9 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type {
-  MoexIndex,
-  MoexIndexCompositionEntry,
-} from '@/api-client';
+import type { MoexIndex } from '@/api-client';
+import type { ProviderCompositionSnapshotPoint } from '@/components/charts-new/data/domain/models';
 import type { CompositionSnapshotItem } from '@/components/charts-new/visualization/chart-types';
-import { moexApi } from '@/lib/api';
 import {
   resolveDateRange,
   resolveIntervalDays,
@@ -15,6 +12,7 @@ import {
 import type { BaseRangeControls } from '@/components/charts-new/types/controls';
 import type { CompositionSnapshotDataState } from './chart-query.types';
 import { normalizeIsoDate } from './data-analytics';
+import type { ChartsDataProvider } from './providers';
 
 type CompositionSnapshotControls = BaseRangeControls & {
   compositionSelectionMode: 'fixed' | 'rolling';
@@ -25,8 +23,9 @@ export function useCompositionSnapshotData(options: {
   selectedIndex: MoexIndex | null;
   latestTradeDate: string | null;
   controls: CompositionSnapshotControls;
+  provider: ChartsDataProvider;
 }): CompositionSnapshotDataState {
-  const { selectedIndex, latestTradeDate, controls } = options;
+  const { selectedIndex, latestTradeDate, controls, provider } = options;
   const dateRange = useMemo(
     () =>
       resolveDateRange(
@@ -53,16 +52,16 @@ export function useCompositionSnapshotData(options: {
 
   const snapshotQuery = useQuery({
     queryKey: [
+      provider.id,
       'moex-index-composition',
       selectedIndex?.secid,
       effectiveSelectionDate ?? 'latest',
     ],
     queryFn: async () => {
-      const response = await moexApi.moexIndexesSecidCompositionGet(
-        selectedIndex!.secid ?? '',
-        effectiveSelectionDate
-      );
-      return response.data;
+      return provider.getCompositionSnapshot({
+        secid: selectedIndex!.secid ?? '',
+        selectionDate: effectiveSelectionDate,
+      });
     },
     enabled: Boolean(selectedIndex?.secid && selectedIndex?.hasComposition),
     refetchOnWindowFocus: false,
@@ -71,12 +70,12 @@ export function useCompositionSnapshotData(options: {
   });
 
   const snapshotItems = useMemo<CompositionSnapshotItem[]>(() => {
-    const rows = snapshotQuery.data ?? [];
+    const rows: ProviderCompositionSnapshotPoint[] = snapshotQuery.data ?? [];
     return rows
-      .map((row: MoexIndexCompositionEntry) => ({
+      .map(row => ({
         ticker: row.ticker ?? '',
         secId: row.secId ?? '',
-        name: row.shortName || row.ticker || '',
+        name: row.name || row.ticker || '',
         weight: row.weight ?? 0,
         tradeDate: row.tradeDate ?? '',
       }))

@@ -12,3 +12,7 @@ export {
   buildCompositionLegendRows,
   calculateSnapshotOtherWeight,
 } from './data-analytics';
+export {
+  createMoexChartsDataProvider,
+} from './providers';
+export type { ChartsDataProvider } from './providers';

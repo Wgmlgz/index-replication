@@ -5,6 +5,7 @@ import type { MoexIndex } from '@/api-client';
 import {
   buildCompositionLegendRows,
   calculateSnapshotOtherWeight,
+  createMoexChartsDataProvider,
   useCompositionVisualizationData,
   usePriceVisualizationData,
 } from '@/components/charts-new/data';
@@ -69,6 +70,7 @@ const resolveLatestTradeDate = (data: PriceChartData): string | null => {
 
 export default function ChartsNewTestPage() {
   const { t } = useTranslation();
+  const dataProvider = useMemo(() => createMoexChartsDataProvider(), []);
   const controls = useChartsNewControls({
     defaults: {
       price: TEST_DEFAULT_PRICE_CONTROLS,
@@ -76,7 +78,11 @@ export default function ChartsNewTestPage() {
     },
   });
 
-  const priceState = usePriceVisualizationData(TEST_INDEX, controls.price);
+  const priceState = usePriceVisualizationData(
+    TEST_INDEX,
+    controls.price,
+    dataProvider
+  );
   const latestTradeDate = useMemo(
     () => resolveLatestTradeDate(priceState.data),
     [priceState.data]
@@ -86,6 +92,7 @@ export default function ChartsNewTestPage() {
     selectedIndex: TEST_INDEX,
     latestTradeDate,
     controls: controls.composition,
+    provider: dataProvider,
   });
 
   const snapshotItems = useMemo(() => {

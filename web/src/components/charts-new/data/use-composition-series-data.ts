@@ -2,12 +2,9 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type {
-  MoexIndex,
-  MoexIndexTickerAnalyticsPoint,
-} from '@/api-client';
+import type { MoexIndex } from '@/api-client';
+import type { ProviderCompositionSeriesPoint } from '@/components/charts-new/data/domain/models';
 import type { CompositionSnapshotItem } from '@/components/charts-new/visualization/chart-types';
-import { moexApi } from '@/lib/api';
 import type { CompositionDataControls } from '@/components/charts-new/types/controls';
 import type { CompositionSeriesDataState } from './chart-query.types';
 import {
@@ -15,6 +12,7 @@ import {
   resolveCompositionTopCountParam,
   resolveFixedModeTickers,
 } from './data-analytics';
+import type { ChartsDataProvider } from './providers';
 
 type CompositionSeriesControls = Pick<
   CompositionDataControls,
@@ -31,6 +29,7 @@ export function useCompositionSeriesData(options: {
   };
   intervalDays?: number;
   controls: CompositionSeriesControls;
+  provider: ChartsDataProvider;
 }): CompositionSeriesDataState {
   const {
     selectedIndex,
@@ -39,6 +38,7 @@ export function useCompositionSeriesData(options: {
     dateRange,
     intervalDays,
     controls,
+    provider,
   } = options;
 
   const topCountValue =
@@ -68,6 +68,7 @@ export function useCompositionSeriesData(options: {
 
   const seriesQuery = useQuery({
     queryKey: [
+      provider.id,
       'moex-index-composition-series',
       selectedIndex?.secid,
       controls.compositionSelectionMode,
@@ -79,20 +80,22 @@ export function useCompositionSeriesData(options: {
       intervalDays ?? 'auto',
     ],
     queryFn: async () => {
-      const response = await moexApi.moexIndexesSecidCompositionSeriesGet(
-        selectedIndex!.secid ?? '',
-        controls.compositionSelectionMode === 'fixed' ? fixedModeTickersParam : '',
-        topCountParam,
-        controls.compositionSelectionMode,
-        controls.compositionSelectionMode === 'fixed'
-          ? effectiveSelectionDate
-          : undefined,
-        dateRange.from,
-        dateRange.till,
+      return provider.getCompositionSeries({
+        secid: selectedIndex!.secid ?? '',
+        tickers:
+          controls.compositionSelectionMode === 'fixed'
+            ? fixedModeTickersParam
+            : '',
+        topCount: topCountParam,
+        selectionMode: controls.compositionSelectionMode,
+        selectionDate:
+          controls.compositionSelectionMode === 'fixed'
+            ? effectiveSelectionDate
+            : undefined,
+        from: dateRange.from,
+        till: dateRange.till,
         intervalDays,
-        undefined
-      );
-      return response.data;
+      });
     },
     enabled: Boolean(
       controls.compositionTab !== 'snapshot' &&
@@ -113,7 +116,7 @@ export function useCompositionSeriesData(options: {
       selectionMode: controls.compositionSelectionMode,
       fixedModeTickers,
       snapshotItems,
-      getPoint: (point: MoexIndexTickerAnalyticsPoint) => {
+      getPoint: (point: ProviderCompositionSeriesPoint) => {
         const time = point.tradeDate;
         const value = point.weight;
         if (typeof time !== 'string' || time.length === 0) return null;
