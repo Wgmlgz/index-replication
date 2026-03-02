@@ -6,31 +6,44 @@ import {
   ColorType,
   LineSeries,
   createChart,
-  type CandlestickData,
   type IChartApi,
   type ISeriesApi,
-  type LineData,
 } from 'lightweight-charts';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import type {
+  PriceChartData,
+  PriceCandlestickPoint,
+  PriceLinePoint,
+  PriceSeriesType,
+} from './chart-types';
+
+type PriceVisualizationProps = {
+  loading: boolean;
+  hasError?: boolean;
+  errorMessage?: string;
+  noDataMessage: string;
+  data: PriceChartData;
+  seriesType: PriceSeriesType;
+  className?: string;
+  skeletonClassName?: string;
+};
 
 const MIN_CHART_HEIGHT = 200;
 
-export type ChartSeriesType = 'line' | 'candlestick';
-export type LineChartPoint = LineData;
-export type CandlestickChartPoint = CandlestickData;
-export type ChartData = LineChartPoint[] | CandlestickChartPoint[];
-
-type IndexChartProps = {
-  data: ChartData;
-  seriesType: ChartSeriesType;
-};
-
-export function IndexChart({ data, seriesType }: IndexChartProps) {
+function PriceChart({
+  data,
+  seriesType,
+}: {
+  data: PriceChartData;
+  seriesType: PriceSeriesType;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null>(
     null
   );
-  const seriesTypeRef = useRef<ChartSeriesType | null>(null);
+  const seriesTypeRef = useRef<PriceSeriesType | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -108,21 +121,50 @@ export function IndexChart({ data, seriesType }: IndexChartProps) {
 
   useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
+
     if (seriesType === 'candlestick') {
       (seriesRef.current as ISeriesApi<'Candlestick'>).setData(
-        data as CandlestickChartPoint[]
+        data as PriceCandlestickPoint[]
       );
     } else {
-      (seriesRef.current as ISeriesApi<'Line'>).setData(
-        data as LineChartPoint[]
-      );
+      (seriesRef.current as ISeriesApi<'Line'>).setData(data as PriceLinePoint[]);
     }
     if (data.length > 0) {
       chartRef.current.timeScale().fitContent();
     }
   }, [data, seriesType]);
 
+  return <div ref={containerRef} className='h-full w-full' />;
+}
+
+export function PriceVisualization({
+  loading,
+  hasError = false,
+  errorMessage,
+  noDataMessage,
+  data,
+  seriesType,
+  className,
+  skeletonClassName,
+}: PriceVisualizationProps) {
+  const showSkeleton = loading && data.length === 0;
+
   return (
-    <div ref={containerRef} className='h-full w-full' />
+    <div className={cn(className)}>
+      {showSkeleton && (
+        <Skeleton
+          className={cn('h-full min-h-[200px] w-full', skeletonClassName)}
+        />
+      )}
+      {!loading && hasError && errorMessage && (
+        <div className='text-sm text-muted-foreground'>{errorMessage}</div>
+      )}
+      {!loading && !hasError && data.length === 0 && (
+        <div className='text-sm text-muted-foreground'>{noDataMessage}</div>
+      )}
+      {!showSkeleton && !hasError && data.length > 0 && (
+        <PriceChart data={data} seriesType={seriesType} />
+      )}
+    </div>
   );
 }

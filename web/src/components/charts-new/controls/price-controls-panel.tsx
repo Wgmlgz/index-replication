@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/button-toggle-group';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { PriceDataControls } from '@/components/charts-new/types/controls';
 import {
   QUICK_INTERVAL_KEYS,
   QUICK_RANGE_KEYS,
@@ -23,46 +24,25 @@ import {
   type RangeKey,
 } from '@/lib/charting/time-series-controls';
 import { cn } from '@/lib/utils';
+import type { PriceControlActions } from './use-charts-new-controls';
 
-type TimeSeriesControlsProps = {
+type PriceControlsPanelProps = {
+  controls: PriceDataControls;
+  actions: PriceControlActions;
   translationKeyPrefix: string;
-  rangeKey: RangeKey;
-  setRangeKey: (next: RangeKey) => void;
-  intervalKey: IntervalKey;
-  setIntervalKey: (next: IntervalKey) => void;
-  customFrom: string;
-  setCustomFrom: (next: string) => void;
-  customTill: string;
-  setCustomTill: (next: string) => void;
-  viewMode: ChartViewMode;
-  setViewMode: (next: ChartViewMode) => void;
-  chartType: ChartType;
-  setChartType?: (next: ChartType) => void;
-  disableCandlestick?: boolean;
-  candlestickLabelKey?: string;
   idPrefix: string;
+  hideChartType?: boolean;
   className?: string;
 };
 
-export function TimeSeriesControls({
+export function PriceControlsPanel({
+  controls,
+  actions,
   translationKeyPrefix,
-  rangeKey,
-  setRangeKey,
-  intervalKey,
-  setIntervalKey,
-  customFrom,
-  setCustomFrom,
-  customTill,
-  setCustomTill,
-  viewMode,
-  setViewMode,
-  chartType,
-  setChartType,
-  disableCandlestick = false,
-  candlestickLabelKey,
   idPrefix,
+  hideChartType = false,
   className,
-}: TimeSeriesControlsProps) {
+}: PriceControlsPanelProps) {
   const { t } = useTranslation();
 
   const rangeOptions = useMemo(
@@ -82,8 +62,8 @@ export function TimeSeriesControls({
     [translationKeyPrefix]
   );
 
-  const isQuickRange = QUICK_RANGE_KEYS.includes(rangeKey);
-  const isQuickInterval = QUICK_INTERVAL_KEYS.includes(intervalKey);
+  const isQuickRange = QUICK_RANGE_KEYS.includes(controls.rangeKey);
+  const isQuickInterval = QUICK_INTERVAL_KEYS.includes(controls.intervalKey);
 
   const rangeToggleOptions: ButtonToggleGroupOption<RangeKey>[] =
     QUICK_RANGE_KEYS.map(key => {
@@ -132,9 +112,6 @@ export function TimeSeriesControls({
     },
   ];
 
-  const resolvedCandlestickLabelKey =
-    candlestickLabelKey ?? `${translationKeyPrefix}.type.candlestick`;
-
   const chartTypeOptions: ButtonToggleGroupOption<ChartType>[] = [
     {
       value: 'line',
@@ -143,9 +120,8 @@ export function TimeSeriesControls({
     },
     {
       value: 'candlestick',
-      label: t(resolvedCandlestickLabelKey),
+      label: t(`${translationKeyPrefix}.type.candlestick`),
       content: <CandlestickChart className='size-4' />,
-      disabled: disableCandlestick,
     },
   ];
 
@@ -157,19 +133,19 @@ export function TimeSeriesControls({
             {t(`${translationKeyPrefix}.range.label`)}
           </span>
           <ButtonToggleGroup
-            value={rangeKey}
+            value={controls.rangeKey}
             options={rangeToggleOptions}
-            onValueChange={setRangeKey}
+            onValueChange={actions.setRangeKey}
             select={{
-              value: isQuickRange ? undefined : rangeKey,
+              value: isQuickRange ? undefined : controls.rangeKey,
               placeholder: t(`${translationKeyPrefix}.range.more`),
               options: rangeSelectOptions,
-              onValueChange: setRangeKey,
+              onValueChange: actions.setRangeKey,
             }}
           />
         </div>
 
-        {rangeKey === 'custom' && (
+        {controls.rangeKey === 'custom' && (
           <div className='flex flex-wrap items-end gap-3'>
             <div className='space-y-1'>
               <Label
@@ -181,8 +157,8 @@ export function TimeSeriesControls({
               <Input
                 id={`${idPrefix}-chart-from`}
                 type='date'
-                value={customFrom}
-                onChange={event => setCustomFrom(event.target.value)}
+                value={controls.customFrom}
+                onChange={event => actions.setCustomFrom(event.target.value)}
               />
             </div>
             <div className='space-y-1'>
@@ -195,8 +171,8 @@ export function TimeSeriesControls({
               <Input
                 id={`${idPrefix}-chart-to`}
                 type='date'
-                value={customTill}
-                onChange={event => setCustomTill(event.target.value)}
+                value={controls.customTill}
+                onChange={event => actions.setCustomTill(event.target.value)}
               />
             </div>
           </div>
@@ -209,14 +185,14 @@ export function TimeSeriesControls({
             {t(`${translationKeyPrefix}.interval.label`)}
           </span>
           <ButtonToggleGroup
-            value={intervalKey}
+            value={controls.intervalKey}
             options={intervalToggleOptions}
-            onValueChange={setIntervalKey}
+            onValueChange={actions.setIntervalKey}
             select={{
-              value: isQuickInterval ? undefined : intervalKey,
+              value: isQuickInterval ? undefined : controls.intervalKey,
               placeholder: t(`${translationKeyPrefix}.interval.more`),
               options: intervalSelectOptions,
-              onValueChange: setIntervalKey,
+              onValueChange: actions.setIntervalKey,
             }}
           />
         </div>
@@ -228,22 +204,24 @@ export function TimeSeriesControls({
             {t(`${translationKeyPrefix}.view.label`)}
           </span>
           <ButtonToggleGroup
-            value={viewMode}
+            value={controls.viewMode}
             options={viewModeOptions}
-            onValueChange={setViewMode}
+            onValueChange={actions.setViewMode}
           />
         </div>
 
-        <div className='flex flex-wrap items-center gap-2'>
-          <span className='text-xs text-muted-foreground'>
-            {t(`${translationKeyPrefix}.type.label`)}
-          </span>
-          <ButtonToggleGroup
-            value={chartType}
-            options={chartTypeOptions}
-            onValueChange={next => setChartType?.(next)}
-          />
-        </div>
+        {!hideChartType && (
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-xs text-muted-foreground'>
+              {t(`${translationKeyPrefix}.type.label`)}
+            </span>
+            <ButtonToggleGroup
+              value={controls.chartType}
+              options={chartTypeOptions}
+              onValueChange={actions.setChartType}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

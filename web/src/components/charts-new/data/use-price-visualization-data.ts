@@ -3,21 +3,20 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import type {
-  MoexIndex as MoexIndex,
-  MoexIndexHistoryPoint,
-} from '@/api-client';
-import { moexApi } from '@/lib/api';
-import type { ChartData } from '@/components/charts/index-chart';
-import {
-  calculateChangeStats,
-  createViewModeNormalizer,
-} from '@/components/charts/time-series-analytics';
+import type { MoexIndex } from '@/api-client';
+import type { PriceChartData } from '@/components/charts-new/visualization/chart-types';
+import type { ProviderPriceHistoryPoint } from '@/components/charts-new/data/domain/models';
 import {
   resolveDateRange,
   resolveIntervalDays,
 } from '@/lib/charting/time-series-controls';
-import type { ChartType, ChartViewMode, IntervalKey, RangeKey } from './moex-indexes-detail.types';
+import type { PriceDataControls } from '@/components/charts-new/types/controls';
+import type { PriceVisualizationDataState } from './chart-query.types';
+import {
+  calculateChangeStats,
+  createViewModeNormalizer,
+} from './data-analytics';
+import type { ChartsDataProvider } from './providers';
 
 type NormalizedHistoryPoint = {
   tradeDate: string;
@@ -25,51 +24,39 @@ type NormalizedHistoryPoint = {
   open: number | null;
   high: number | null;
   low: number | null;
-};
-
-type HistoryState = {
-  historyLoading: boolean;
-  historyError: boolean;
-  chartData: ChartData;
-  latestValue: number | null;
-  change: number | null;
-  changePercent: number | null;
-  numberFormatter: Intl.NumberFormat;
+  currency: string;
 };
 
 const hasTradeDateAndClose = (
-  point: MoexIndexHistoryPoint
-): point is MoexIndexHistoryPoint & { tradeDate: string; close: number } => {
+  point: ProviderPriceHistoryPoint
+): point is ProviderPriceHistoryPoint & { tradeDate: string; close: number } => {
   return typeof point.tradeDate === 'string' && typeof point.close === 'number';
 };
 
-export function useMoexIndexHistory(
+export function usePriceVisualizationData(
   selectedIndex: MoexIndex | null,
-  options: {
-    rangeKey: RangeKey;
-    intervalKey: IntervalKey;
-    customFrom: string;
-    customTill: string;
-    viewMode: ChartViewMode;
-    chartType: ChartType;
-  }
-): HistoryState {
+  controls: PriceDataControls,
+  provider: ChartsDataProvider
+): PriceVisualizationDataState {
   const { i18n } = useTranslation();
-  const dateRange = useMemo(() => {
-    return resolveDateRange(
-      options.rangeKey,
-      options.customFrom,
-      options.customTill
-    );
-  }, [options.customFrom, options.customTill, options.rangeKey]);
+  const dateRange = useMemo(
+    () =>
+      resolveDateRange(
+        controls.rangeKey,
+        controls.customFrom,
+        controls.customTill
+      ),
+    [controls.customFrom, controls.customTill, controls.rangeKey]
+  );
 
   const intervalDays = useMemo(
-    () => resolveIntervalDays(options.intervalKey),
-    [options.intervalKey]
+    () => resolveIntervalDays(controls.intervalKey),
+    [controls.intervalKey]
   );
 
   const historyQuery = useQuery({
     queryKey: [
+      provider.id,
       'moex-index-history',
       selectedIndex?.secid,
       dateRange.from,
@@ -77,13 +64,12 @@ export function useMoexIndexHistory(
       intervalDays ?? 'auto',
     ],
     queryFn: async () => {
-      const response = await moexApi.moexIndexesSecidHistoryGet(
-        selectedIndex!.secid ?? '',
-        dateRange.from,
-        dateRange.till,
-        intervalDays
-      );
-      return response.data;
+      return provider.getPriceHistory({
+        secid: selectedIndex!.secid ?? '',
+        from: dateRange.from,
+        till: dateRange.till,
+        intervalDays,
+      });
     },
     enabled: Boolean(selectedIndex?.secid),
     refetchOnWindowFocus: false,
@@ -91,25 +77,26 @@ export function useMoexIndexHistory(
     retry: 1,
   });
 
-  const history = useMemo(() => historyQuery.data ?? [], [historyQuery.data]);
-  const historyLoading = historyQuery.isLoading;
-  const historyError = Boolean(historyQuery.error);
-
+  const history = useMemo<ProviderPriceHistoryPoint[]>(
+    () => historyQuery.data ?? [],
+    [historyQuery.data]
+  );
   const normalizedHistory = useMemo<NormalizedHistoryPoint[]>(() => {
     return history
       .filter(hasTradeDateAndClose)
       .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate))
-      .map((point) => ({
+      .map(point => ({
         tradeDate: point.tradeDate,
         close: point.close,
         open: point.open ?? null,
         high: point.high ?? null,
         low: point.low ?? null,
+        currency: point.currency ?? '',
       }));
   }, [history]);
 
   const closeValues = useMemo(
-    () => normalizedHistory.map((point) => point.close),
+    () => normalizedHistory.map(point => point.close),
     [normalizedHistory]
   );
   const { latestValue, change, changePercent } = useMemo(
@@ -117,13 +104,13 @@ export function useMoexIndexHistory(
     [closeValues]
   );
 
-  const chartData = useMemo<ChartData>(() => {
+  const chartData = useMemo<PriceChartData>(() => {
     const baseValue = normalizedHistory[0]?.close ?? null;
-    const normalizeValue = createViewModeNormalizer(baseValue, options.viewMode);
+    const normalizeValue = createViewModeNormalizer(baseValue, controls.viewMode);
 
-    if (options.chartType === 'candlestick') {
+    if (controls.chartType === 'candlestick') {
       return normalizedHistory
-        .map((point) => {
+        .map(point => {
           const open = normalizeValue(point.open);
           const high = normalizeValue(point.high);
           const low = normalizeValue(point.low);
@@ -158,7 +145,7 @@ export function useMoexIndexHistory(
     }
 
     return normalizedHistory
-      .map((point) => {
+      .map(point => {
         const value = normalizeValue(point.close);
         if (value === null) return null;
         return { time: point.tradeDate, value };
@@ -166,21 +153,23 @@ export function useMoexIndexHistory(
       .filter(
         (point): point is { time: string; value: number } => Boolean(point)
       );
-  }, [normalizedHistory, options.chartType, options.viewMode]);
+  }, [controls.chartType, controls.viewMode, normalizedHistory]);
 
   const numberFormatter = useMemo(() => {
     return new Intl.NumberFormat(i18n.language || 'en', {
       maximumFractionDigits: selectedIndex?.decimals ?? 2,
     });
   }, [i18n.language, selectedIndex?.decimals]);
+  const currency = normalizedHistory[normalizedHistory.length - 1]?.currency ?? '';
 
   return {
-    historyLoading,
-    historyError,
-    chartData,
+    loading: historyQuery.isLoading,
+    error: Boolean(historyQuery.error),
+    data: chartData,
     latestValue,
     change,
     changePercent,
     numberFormatter,
+    currency,
   };
 }

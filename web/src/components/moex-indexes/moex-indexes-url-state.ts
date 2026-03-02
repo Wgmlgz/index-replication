@@ -6,19 +6,6 @@ import type {
   SortKey,
 } from './list/use-moex-indexes.types';
 import { createEmptyFilters, DEFAULT_PAGE_SIZE } from './list/use-moex-indexes.utils';
-import type {
-  ChartType,
-  ChartViewMode,
-  CompositionTab,
-  CompositionSelectionMode,
-  IntervalKey,
-  RangeKey,
-} from './detail/moex-indexes-detail.types';
-import {
-  applyChartControlsUrlState,
-  parseChartControlsUrlState,
-  type ChartControlsUrlCodecConfig,
-} from '@/lib/charting/chart-controls-url-state';
 import {
   isOneOf,
   normalizeList,
@@ -68,18 +55,6 @@ export type MoexIndexesUrlInitialState = {
     lastActiveRange: LastActiveRange;
     compositionOnly: boolean;
   }>;
-  detail?: Partial<{
-    rangeKey: RangeKey;
-    intervalKey: IntervalKey;
-    customFrom: string;
-    customTill: string;
-    viewMode: ChartViewMode;
-    chartType: ChartType;
-    compositionTab: CompositionTab;
-    compositionSelectionMode: CompositionSelectionMode;
-    compositionSelectionDate: string;
-    compositionTopCount: number | null;
-  }>;
 };
 
 const SORT_KEYS: SortKey[] = [
@@ -93,30 +68,6 @@ const SORT_KEYS: SortKey[] = [
 ];
 
 const LAST_ACTIVE_RANGES: LastActiveRange[] = ['1m', '3m', '6m', '1y', 'all'];
-
-const MOEX_CHART_CONTROLS_URL_CODEC = {
-  keys: {
-    rangeKey: MOEX_URL_KEYS.detailRange,
-    intervalKey: MOEX_URL_KEYS.detailInterval,
-    customFrom: MOEX_URL_KEYS.detailCustomFrom,
-    customTill: MOEX_URL_KEYS.detailCustomTill,
-    viewMode: MOEX_URL_KEYS.detailView,
-    chartType: MOEX_URL_KEYS.detailType,
-    compositionTab: MOEX_URL_KEYS.compositionTab,
-    compositionSelectionMode: MOEX_URL_KEYS.compositionSelectionMode,
-    compositionSelectionDate: MOEX_URL_KEYS.compositionSelectionDate,
-    compositionTopCount: MOEX_URL_KEYS.compositionTopN,
-  },
-  defaults: {
-    rangeKey: '1y',
-    intervalKey: 'auto',
-    viewMode: 'price',
-    chartType: 'line',
-    compositionTab: 'snapshot',
-    compositionSelectionMode: 'fixed',
-    compositionTopCount: 10,
-  },
-} satisfies ChartControlsUrlCodecConfig;
 
 export function parseMoexIndexesUrlState(
   searchParams: SearchParamsLike | null
@@ -175,11 +126,6 @@ export function parseMoexIndexesUrlState(
       } satisfies FilterState)
     : undefined;
 
-  const parsedDetail = parseChartControlsUrlState(
-    searchParams,
-    MOEX_CHART_CONTROLS_URL_CODEC
-  );
-
   const listState: MoexIndexesUrlInitialState['list'] = {};
   if (typeof query === 'string' && query.length > 0) listState.query = query;
   if (typeof showFavoritesOnly === 'boolean') listState.showFavoritesOnly = showFavoritesOnly;
@@ -192,33 +138,9 @@ export function parseMoexIndexesUrlState(
     listState.compositionOnly = compositionOnly;
   }
 
-  const detailState: MoexIndexesUrlInitialState['detail'] = {};
-  if (parsedDetail.rangeKey) detailState.rangeKey = parsedDetail.rangeKey;
-  if (parsedDetail.intervalKey) detailState.intervalKey = parsedDetail.intervalKey;
-  if (parsedDetail.customFrom) detailState.customFrom = parsedDetail.customFrom;
-  if (parsedDetail.customTill) detailState.customTill = parsedDetail.customTill;
-  if (parsedDetail.viewMode) detailState.viewMode = parsedDetail.viewMode;
-  if (parsedDetail.chartType) detailState.chartType = parsedDetail.chartType;
-  if (parsedDetail.compositionTab) {
-    detailState.compositionTab = parsedDetail.compositionTab;
-  }
-  if (parsedDetail.compositionSelectionMode) {
-    detailState.compositionSelectionMode = parsedDetail.compositionSelectionMode;
-  }
-  if (parsedDetail.compositionSelectionDate) {
-    detailState.compositionSelectionDate = parsedDetail.compositionSelectionDate;
-  }
-  if (
-    parsedDetail.compositionTopCount === null ||
-    typeof parsedDetail.compositionTopCount === 'number'
-  ) {
-    detailState.compositionTopCount = parsedDetail.compositionTopCount;
-  }
-
   return {
     selectedSecid: selectedSecid ?? null,
     list: Object.keys(listState).length > 0 ? listState : undefined,
-    detail: Object.keys(detailState).length > 0 ? detailState : undefined,
   };
 }
 
@@ -241,18 +163,6 @@ export function applyMoexIndexesUrlState(
       lastActiveRange: LastActiveRange;
       compositionOnly: boolean;
     };
-    detail: {
-      rangeKey: RangeKey;
-      intervalKey: IntervalKey;
-      customFrom: string;
-      customTill: string;
-      viewMode: ChartViewMode;
-      chartType: ChartType;
-      compositionTab: CompositionTab;
-      compositionSelectionMode: CompositionSelectionMode;
-      compositionSelectionDate: string;
-      compositionTopCount: number | null;
-    };
   }
 ) {
   const deleteKeys: string[] = [
@@ -268,6 +178,16 @@ export function applyMoexIndexesUrlState(
     MOEX_URL_KEYS.listCalcMode,
     MOEX_URL_KEYS.listLastActive,
     MOEX_URL_KEYS.listComposition,
+    MOEX_URL_KEYS.detailRange,
+    MOEX_URL_KEYS.detailInterval,
+    MOEX_URL_KEYS.detailCustomFrom,
+    MOEX_URL_KEYS.detailCustomTill,
+    MOEX_URL_KEYS.detailView,
+    MOEX_URL_KEYS.detailType,
+    MOEX_URL_KEYS.compositionTab,
+    MOEX_URL_KEYS.compositionSelectionMode,
+    MOEX_URL_KEYS.compositionSelectionDate,
+    MOEX_URL_KEYS.compositionTopN,
   ];
   deleteKeys.forEach((key) => params.delete(key));
 
@@ -302,6 +222,4 @@ export function applyMoexIndexesUrlState(
   if (state.list.compositionOnly) {
     params.set(MOEX_URL_KEYS.listComposition, '1');
   }
-
-  applyChartControlsUrlState(params, state.detail, MOEX_CHART_CONTROLS_URL_CODEC);
 }

@@ -10,54 +10,69 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { CompositionDataControls } from '@/components/charts-new/types/controls';
 import type { CompositionSelectionMode } from '@/lib/charting/chart-controls-url-state';
 import { cn } from '@/lib/utils';
+import type { CompositionControlActions } from './use-charts-new-controls';
 
-type CompositionControlsProps = {
+type CompositionControlsPanelProps = {
+  controls: CompositionDataControls;
+  actions: CompositionControlActions;
   translationKeyPrefix: string;
-  topCount: number | null;
-  setTopCount: (next: number | null) => void;
-  topCountOptions: number[];
-  selectionMode: CompositionSelectionMode;
-  setSelectionMode: (next: CompositionSelectionMode) => void;
-  selectionDate: string;
-  setSelectionDate: (next: string) => void;
-  selectionDateMax?: string;
-  dateInputWidthClassName?: string;
   idPrefix: string;
+  topCountOptions?: number[];
+  selectionDateMax?: string;
   className?: string;
 };
 
-export function CompositionControls({
+const DEFAULT_TOP_COUNT_OPTIONS = [5, 10, 20, 50];
+
+export function CompositionControlsPanel({
+  controls,
+  actions,
   translationKeyPrefix,
-  topCount,
-  setTopCount,
-  topCountOptions,
-  selectionMode,
-  setSelectionMode,
-  selectionDate,
-  setSelectionDate,
-  selectionDateMax,
-  dateInputWidthClassName = 'w-32',
   idPrefix,
+  topCountOptions = DEFAULT_TOP_COUNT_OPTIONS,
+  selectionDateMax,
   className,
-}: CompositionControlsProps) {
+}: CompositionControlsPanelProps) {
   const { t } = useTranslation();
 
   return (
     <div className={cn('space-y-3', className)}>
+      <Tabs
+        value={controls.compositionTab}
+        onValueChange={next =>
+          actions.setCompositionTab(next as typeof controls.compositionTab)
+        }
+        className='space-y-3'
+      >
+        <TabsList className='w-full justify-start'>
+          <TabsTrigger value='snapshot'>
+            {t(`${translationKeyPrefix}.tabs.snapshot`)}
+          </TabsTrigger>
+          <TabsTrigger value='trend'>
+            {t(`${translationKeyPrefix}.tabs.trend`)}
+          </TabsTrigger>
+          <TabsTrigger value='stacked'>
+            {t(`${translationKeyPrefix}.tabs.stacked`)}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className='flex flex-wrap items-center gap-4'>
         <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
           <span>{t(`${translationKeyPrefix}.topLabel`)}</span>
           <Select
-            value={topCount === null ? 'all' : String(topCount)}
+            value={controls.topCount === null ? 'all' : String(controls.topCount)}
             onValueChange={value => {
               if (value === 'all') {
-                setTopCount(null);
+                actions.setTopCount(null);
                 return;
               }
               const parsed = Number.parseInt(value, 10);
-              if (Number.isFinite(parsed)) setTopCount(parsed);
+              if (Number.isFinite(parsed)) actions.setTopCount(parsed);
             }}
           >
             <SelectTrigger size='sm' className='h-7 text-xs'>
@@ -77,9 +92,9 @@ export function CompositionControls({
         <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
           <span>{t(`${translationKeyPrefix}.selectionMode.label`)}</span>
           <Select
-            value={selectionMode}
+            value={controls.compositionSelectionMode}
             onValueChange={value =>
-              setSelectionMode(value as CompositionSelectionMode)
+              actions.setSelectionMode(value as CompositionSelectionMode)
             }
           >
             <SelectTrigger size='sm' className='h-7 text-xs'>
@@ -97,7 +112,7 @@ export function CompositionControls({
         </div>
       </div>
 
-      {selectionMode === 'fixed' && (
+      {controls.compositionSelectionMode === 'fixed' && (
         <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
           <Label
             htmlFor={`${idPrefix}-composition-selection-date`}
@@ -108,10 +123,10 @@ export function CompositionControls({
           <Input
             id={`${idPrefix}-composition-selection-date`}
             type='date'
-            className={dateInputWidthClassName}
-            value={selectionDate}
+            className='w-32'
+            value={controls.compositionSelectionDate}
             max={selectionDateMax}
-            onChange={event => setSelectionDate(event.target.value)}
+            onChange={event => actions.setSelectionDate(event.target.value)}
           />
         </div>
       )}

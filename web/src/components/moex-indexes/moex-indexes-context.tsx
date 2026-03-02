@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { MoexIndexDetailProvider } from './detail/moex-indexes-detail-context';
-import { useMoexIndexDetailState } from './detail/use-moex-indexes-detail-state';
+import { useMoexSelectedIndex } from './detail/use-moex-selected-index';
 import { MoexIndexListProvider } from './list/moex-indexes-list-context';
 import { useMoexIndexListState } from './list/use-moex-indexes-list-state';
 import { useMoexIndexesData } from './use-moex-indexes-data';
@@ -64,21 +64,18 @@ export function MoexIndexesProvider({
     },
   });
 
-  const detailState = useMoexIndexDetailState({
+  const detailState = useMoexSelectedIndex({
     indexes: dataState.indexes,
     favorites: dataState.favorites,
     favoritesBySecid: dataState.favoritesBySecid,
     selectedSecid: listState.selectedSecid,
     indexCollectionsMap: dataState.indexCollectionsMap,
-    initial: parsedUrl.detail,
   });
 
   const listRef = useRef(listState);
-  const detailRef = useRef(detailState);
   useEffect(() => {
     listRef.current = listState;
-    detailRef.current = detailState;
-  }, [detailState, listState]);
+  }, [listState]);
 
   const debouncedQuery = useDebouncedValue(listState.query, 350);
 
@@ -86,7 +83,6 @@ export function MoexIndexesProvider({
     next: ReturnType<typeof parseMoexIndexesUrlState>
   ) => {
     const ls = listRef.current;
-    const ds = detailRef.current;
 
     const nextSelectedSecid =
       next.selectedSecid !== undefined ? next.selectedSecid : null;
@@ -138,47 +134,6 @@ export function MoexIndexesProvider({
 
     const nextPageIndex = next.list?.pageIndex ?? 0;
     if (nextPageIndex !== ls.pageIndex) ls.setPageIndex(nextPageIndex);
-
-    const nextRange = next.detail?.rangeKey ?? '1y';
-    if (nextRange !== ds.rangeKey) ds.setRangeKey(nextRange);
-
-    const nextInterval = next.detail?.intervalKey ?? 'auto';
-    if (nextInterval !== ds.intervalKey) ds.setIntervalKey(nextInterval);
-
-    const nextFrom = next.detail?.customFrom;
-    if (typeof nextFrom === 'string' && nextFrom !== ds.customFrom) {
-      ds.setCustomFrom(nextFrom);
-    }
-
-    const nextTill = next.detail?.customTill;
-    if (typeof nextTill === 'string' && nextTill !== ds.customTill) {
-      ds.setCustomTill(nextTill);
-    }
-
-    const nextView = next.detail?.viewMode ?? 'price';
-    if (nextView !== ds.viewMode) ds.setViewMode(nextView);
-
-    const nextType = next.detail?.chartType ?? 'line';
-    if (nextType !== ds.chartType) ds.setChartType(nextType);
-
-    const nextTab = next.detail?.compositionTab ?? 'snapshot';
-    if (nextTab !== ds.compositionTab) ds.setCompositionTab(nextTab);
-
-    const nextSelectionMode = next.detail?.compositionSelectionMode ?? 'fixed';
-    if (nextSelectionMode !== ds.compositionSelectionMode) {
-      ds.setCompositionSelectionMode(nextSelectionMode);
-    }
-
-    const nextSelectionDate = next.detail?.compositionSelectionDate ?? '';
-    if (nextSelectionDate !== ds.compositionSelectionDate) {
-      ds.setCompositionSelectionDate(nextSelectionDate);
-    }
-
-    const parsedTopCount = next.detail?.compositionTopCount;
-    const nextTopCount = parsedTopCount === undefined ? 10 : parsedTopCount;
-    if (nextTopCount !== ds.compositionTopCount) {
-      ds.setCompositionTopCount(nextTopCount);
-    }
   };
 
   const urlStateKey = useMemo(
@@ -193,29 +148,9 @@ export function MoexIndexesProvider({
         filters: listState.filters,
         lastActiveRange: listState.lastActiveRange,
         compositionOnly: listState.compositionOnly,
-        rangeKey: detailState.rangeKey,
-        intervalKey: detailState.intervalKey,
-        customFrom: detailState.customFrom,
-        customTill: detailState.customTill,
-        viewMode: detailState.viewMode,
-        chartType: detailState.chartType,
-        compositionTab: detailState.compositionTab,
-        compositionSelectionMode: detailState.compositionSelectionMode,
-        compositionSelectionDate: detailState.compositionSelectionDate,
-        compositionTopCount: detailState.compositionTopCount,
       }),
     [
       debouncedQuery,
-      detailState.chartType,
-      detailState.compositionSelectionDate,
-      detailState.compositionSelectionMode,
-      detailState.compositionTab,
-      detailState.compositionTopCount,
-      detailState.customFrom,
-      detailState.customTill,
-      detailState.intervalKey,
-      detailState.rangeKey,
-      detailState.viewMode,
       listState.compositionOnly,
       listState.filters,
       listState.lastActiveRange,
@@ -247,18 +182,6 @@ export function MoexIndexesProvider({
           filters: listState.filters,
           lastActiveRange: listState.lastActiveRange,
           compositionOnly: listState.compositionOnly,
-        },
-        detail: {
-          rangeKey: detailState.rangeKey,
-          intervalKey: detailState.intervalKey,
-          customFrom: detailState.customFrom,
-          customTill: detailState.customTill,
-          viewMode: detailState.viewMode,
-          chartType: detailState.chartType,
-          compositionTab: detailState.compositionTab,
-          compositionSelectionMode: detailState.compositionSelectionMode,
-          compositionSelectionDate: detailState.compositionSelectionDate,
-          compositionTopCount: detailState.compositionTopCount,
         },
       });
 
