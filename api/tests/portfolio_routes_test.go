@@ -17,16 +17,54 @@ type portfolioProfileResponse struct {
 	} `json:"capabilities"`
 }
 
-func createMockPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cookie, name string) portfolioProfileResponse {
+type portfolioSummaryResponse struct {
+	TotalAmountPortfolio float64 `json:"total_amount_portfolio"`
+	Money                []struct {
+		Currency  string  `json:"currency"`
+		Available float64 `json:"available"`
+	} `json:"money"`
+	Positions []struct {
+		Ticker   string  `json:"ticker"`
+		Quantity float64 `json:"quantity"`
+	} `json:"positions"`
+}
+
+type portfolioOperationsResponse struct {
+	Items []struct {
+		Type     string `json:"type"`
+		Quantity int64  `json:"quantity"`
+	} `json:"items"`
+}
+
+type portfolioHistoryPointResponse struct {
+	TradeDate            string  `json:"trade_date"`
+	TotalAmountPortfolio float64 `json:"total_amount_portfolio"`
+}
+
+type portfolioCompositionEntryResponse struct {
+	Ticker   string  `json:"ticker"`
+	Quantity float64 `json:"quantity"`
+}
+
+func createPortfolioProfile(
+	t *testing.T,
+	ts *testServer,
+	cookie *http.Cookie,
+	provider string,
+	name string,
+	config map[string]interface{},
+) portfolioProfileResponse {
 	t.Helper()
 
+	if config == nil {
+		config = map[string]interface{}{}
+	}
+
 	resp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios", map[string]interface{}{
-		"provider":   "mock",
+		"provider":   provider,
 		"name":       name,
 		"is_default": false,
-		"config": map[string]interface{}{
-			"seed": 123,
-		},
+		"config":     config,
 	}, cookie)
 	if resp.Code != http.StatusCreated {
 		t.Fatalf("create profile status = %d, body = %s", resp.Code, resp.Body.String())
@@ -38,6 +76,18 @@ func createMockPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cooki
 		t.Fatalf("expected profile id > 0")
 	}
 	return profile
+}
+
+func createMockPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cookie, name string) portfolioProfileResponse {
+	t.Helper()
+	return createPortfolioProfile(t, ts, cookie, "mock", name, map[string]interface{}{
+		"seed": 123,
+	})
+}
+
+func createVirtualPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cookie, name string) portfolioProfileResponse {
+	t.Helper()
+	return createPortfolioProfile(t, ts, cookie, "virtual", name, nil)
 }
 
 func TestPortfolioRoutes(t *testing.T) {
@@ -67,12 +117,10 @@ func TestPortfolioRoutes(t *testing.T) {
 	})
 
 	t.Run("CreateProfile", func(t *testing.T) {
-		okResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios", map[string]interface{}{
-			"provider": "mock",
-			"name":     "Create ok",
-		}, adminCookie)
-		if okResp.Code != http.StatusCreated {
-			t.Fatalf("create profile status = %d, body = %s", okResp.Code, okResp.Body.String())
+		_ = createPortfolioProfile(t, ts, adminCookie, "mock", "Create ok", nil)
+		virtualProfile := createPortfolioProfile(t, ts, adminCookie, "virtual", "Virtual create ok", nil)
+		if virtualProfile.Provider != "virtual" {
+			t.Fatalf("expected virtual provider, got %q", virtualProfile.Provider)
 		}
 
 		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios", map[string]interface{}{
@@ -181,6 +229,131 @@ func TestPortfolioRoutes(t *testing.T) {
 		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/actions/not-available", map[string]interface{}{}, adminCookie)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid action, got %d", errResp.Code)
+		}
+	})
+
+	t.Run("VirtualStatefulFlow", func(t *testing.T) {
+		profile := createVirtualPortfolioProfile(t, ts, adminCookie, "Virtual flow")
+
+		depositResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
+			"payload": map[string]interface{}{
+				"amount":      10000,
+				"currency":    "RUB",
+				"executed_at": "2026-01-01",
+			},
+		}, adminCookie)
+		if depositResp.Code != http.StatusOK {
+			t.Fatalf("deposit action status = %d, body = %s", depositResp.Code, depositResp.Body.String())
+		}
+
+		summaryAfterDepositResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryAfterDepositResp.Code != http.StatusOK {
+			t.Fatalf("summary after deposit status = %d, body = %s", summaryAfterDepositResp.Code, summaryAfterDepositResp.Body.String())
+		}
+		var summaryAfterDeposit portfolioSummaryResponse
+		decodeJSON(t, summaryAfterDepositResp, &summaryAfterDeposit)
+		if len(summaryAfterDeposit.Money) == 0 || summaryAfterDeposit.Money[0].Available != 10000 {
+			t.Fatalf("expected RUB cash 10000 after deposit, got %+v", summaryAfterDeposit.Money)
+		}
+
+		buyResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/buy", map[string]interface{}{
+			"payload": map[string]interface{}{
+				"ticker":      "SBER",
+				"quantity":    10,
+				"price":       100,
+				"currency":    "RUB",
+				"executed_at": "2026-01-02",
+			},
+		}, adminCookie)
+		if buyResp.Code != http.StatusOK {
+			t.Fatalf("buy action status = %d, body = %s", buyResp.Code, buyResp.Body.String())
+		}
+
+		summaryAfterBuyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryAfterBuyResp.Code != http.StatusOK {
+			t.Fatalf("summary after buy status = %d, body = %s", summaryAfterBuyResp.Code, summaryAfterBuyResp.Body.String())
+		}
+		var summaryAfterBuy portfolioSummaryResponse
+		decodeJSON(t, summaryAfterBuyResp, &summaryAfterBuy)
+		if len(summaryAfterBuy.Positions) == 0 || summaryAfterBuy.Positions[0].Ticker != "SBER" || summaryAfterBuy.Positions[0].Quantity != 10 {
+			t.Fatalf("expected SBER position with qty 10 after buy, got %+v", summaryAfterBuy.Positions)
+		}
+		if len(summaryAfterBuy.Money) == 0 || summaryAfterBuy.Money[0].Available != 9000 {
+			t.Fatalf("expected RUB cash 9000 after buy, got %+v", summaryAfterBuy.Money)
+		}
+
+		oversellResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/sell", map[string]interface{}{
+			"payload": map[string]interface{}{
+				"ticker":      "SBER",
+				"quantity":    11,
+				"price":       120,
+				"currency":    "RUB",
+				"executed_at": "2026-01-03",
+			},
+		}, adminCookie)
+		if oversellResp.Code != http.StatusBadRequest {
+			t.Fatalf("expected oversell to be rejected with 400, got %d", oversellResp.Code)
+		}
+
+		sellResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/sell", map[string]interface{}{
+			"payload": map[string]interface{}{
+				"ticker":      "SBER",
+				"quantity":    4,
+				"price":       120,
+				"currency":    "RUB",
+				"executed_at": "2026-01-03",
+			},
+		}, adminCookie)
+		if sellResp.Code != http.StatusOK {
+			t.Fatalf("sell action status = %d, body = %s", sellResp.Code, sellResp.Body.String())
+		}
+
+		summaryAfterSellResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryAfterSellResp.Code != http.StatusOK {
+			t.Fatalf("summary after sell status = %d, body = %s", summaryAfterSellResp.Code, summaryAfterSellResp.Body.String())
+		}
+		var summaryAfterSell portfolioSummaryResponse
+		decodeJSON(t, summaryAfterSellResp, &summaryAfterSell)
+		if len(summaryAfterSell.Positions) == 0 || summaryAfterSell.Positions[0].Quantity != 6 {
+			t.Fatalf("expected SBER quantity 6 after sell, got %+v", summaryAfterSell.Positions)
+		}
+		if len(summaryAfterSell.Money) == 0 || summaryAfterSell.Money[0].Available != 9480 {
+			t.Fatalf("expected RUB cash 9480 after sell, got %+v", summaryAfterSell.Money)
+		}
+
+		historyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/history?from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminCookie)
+		if historyResp.Code != http.StatusOK {
+			t.Fatalf("history status = %d, body = %s", historyResp.Code, historyResp.Body.String())
+		}
+		var history []portfolioHistoryPointResponse
+		decodeJSON(t, historyResp, &history)
+		if len(history) != 3 {
+			t.Fatalf("expected 3 history points, got %d", len(history))
+		}
+
+		compositionResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/composition?date=2026-01-03", nil, adminCookie)
+		if compositionResp.Code != http.StatusOK {
+			t.Fatalf("composition status = %d, body = %s", compositionResp.Code, compositionResp.Body.String())
+		}
+		var composition []portfolioCompositionEntryResponse
+		decodeJSON(t, compositionResp, &composition)
+		if len(composition) == 0 || composition[0].Ticker != "SBER" || composition[0].Quantity != 6 {
+			t.Fatalf("unexpected composition result: %+v", composition)
+		}
+
+		seriesResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/composition/series?topCount=5&selectionMode=fixed&from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminCookie)
+		if seriesResp.Code != http.StatusOK {
+			t.Fatalf("composition series status = %d, body = %s", seriesResp.Code, seriesResp.Body.String())
+		}
+
+		operationsResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/operations?limit=20", nil, adminCookie)
+		if operationsResp.Code != http.StatusOK {
+			t.Fatalf("operations status = %d, body = %s", operationsResp.Code, operationsResp.Body.String())
+		}
+		var operations portfolioOperationsResponse
+		decodeJSON(t, operationsResp, &operations)
+		if len(operations.Items) < 3 {
+			t.Fatalf("expected at least 3 operations, got %d", len(operations.Items))
 		}
 	})
 

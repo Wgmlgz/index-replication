@@ -97,6 +97,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		portfolio.NewTBankProvider(tbankService),
 		portfolio.NewMockProvider(),
+		portfolio.NewVirtualProvider(repoRegistry.VirtualPortfolioTransactionsRepo),
 	)
 	portfolioHandler := h.NewPortfolioHandler(portfolioService)
 

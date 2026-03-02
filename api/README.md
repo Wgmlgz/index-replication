@@ -55,7 +55,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - `internal/moex/` contains MOEX integration logic and read services.
 - `internal/moex/domain/` contains MOEX internal/domain structs used by MOEX + repository layers.
 - `internal/tbank/` contains T-Bank integration logic and gRPC client operations.
-- `internal/portfolio/` contains unified portfolio orchestration and provider adapters (`tbank`, `mock`).
+- `internal/portfolio/` contains unified portfolio orchestration and provider adapters (`tbank`, `mock`, `virtual`).
 - `internal/telegram/` contains Telegram bot transport and login verification integration logic.
 - `internal/repository/` contains data access (DB queries).
 - `internal/models/` defines persistence/domain models (GORM entities and domain constants).
@@ -196,7 +196,10 @@ Provider model:
 
 - `portfolio_profiles` table stores per-user provider profiles (`provider`, `name`, default flag, config JSON, secret JSON).
 - `internal/portfolio.Service` resolves profile -> provider adapter via registry.
-- Current providers: `tbank` (adapter over existing `internal/tbank.Service`) and `mock` (deterministic fake data).
+- Current providers:
+  - `tbank` (adapter over existing `internal/tbank.Service`)
+  - `mock` (deterministic fake data)
+  - `virtual` (stateful simulated portfolio backed by persisted transactions in `virtual_portfolio_transactions`)
 
 ## T-Bank TLS CA Setup
 

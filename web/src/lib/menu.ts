@@ -1,5 +1,6 @@
 import { PermissionStr } from "@/components/user-context";
 import { History, Users, LineChart, Wallet, Plug } from "lucide-react";
+import { PORTFOLIO_V2_ROUTES } from "@/lib/portfolio-v2";
 
 export type DashboardCard = {
   title: string;
@@ -7,6 +8,12 @@ export type DashboardCard = {
   icon: React.ComponentType<{ className?: string }>;
   buttonText: string;
   buttonTextKey?: string;
+  href: string;
+  permission: PermissionStr | null;
+}
+
+export type SidebarSubItem = {
+  titleKey: string;
   href: string;
   permission: PermissionStr | null;
 }
@@ -73,7 +80,30 @@ export const DashboardCards: DashboardCard[] = [
     icon: Wallet,
     buttonText: 'Open portfolio',
     buttonTextKey: 'navigation.cards.portfolio.button',
-    href: '/portfolio-v2',
+    href: PORTFOLIO_V2_ROUTES.overview,
+    permission: null,
+  },
+];
+
+export const PortfolioSidebarSubItems: SidebarSubItem[] = [
+  {
+    titleKey: 'navigation.portfolio.overview',
+    href: PORTFOLIO_V2_ROUTES.overview,
+    permission: null,
+  },
+  {
+    titleKey: 'navigation.portfolio.analytics',
+    href: PORTFOLIO_V2_ROUTES.analytics,
+    permission: null,
+  },
+  {
+    titleKey: 'navigation.portfolio.operations',
+    href: PORTFOLIO_V2_ROUTES.operations,
+    permission: null,
+  },
+  {
+    titleKey: 'navigation.portfolio.profiles',
+    href: PORTFOLIO_V2_ROUTES.profiles,
     permission: null,
   },
 ];

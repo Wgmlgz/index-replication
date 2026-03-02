@@ -27,6 +27,7 @@ Frontend:
 - React Hook Form + Zod (i18next-backed error messages)
 - OpenAPI Generator `typescript-axios` client in `web/src/api-client`
 - Portfolio v2 UI (`/portfolio-v2`) built on provider-agnostic portfolio profiles (`/api/me/portfolios/:id/*`)
+  with providers: `tbank`, `mock`, `virtual`
 
 ## Preferred Commands
 

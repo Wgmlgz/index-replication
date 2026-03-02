@@ -36,6 +36,12 @@
         "title": "Portfolio",
         "button": "Open portfolio"
       }
+    },
+    "portfolio": {
+      "overview": "Overview",
+      "analytics": "Analytics",
+      "operations": "Operations",
+      "profiles": "Profiles"
     }
   },
   "auth": {
@@ -405,10 +411,48 @@
   "portfolioV2": {
     "title": "Portfolio v2",
     "description": "Provider-agnostic portfolio workspace powered by portfolio profiles.",
+    "subpages": {
+      "overview": "Overview",
+      "analytics": "Analytics",
+      "operations": "Operations",
+      "profiles": "Profiles"
+    },
+    "overview": {
+      "title": "Overview",
+      "description": "Summary, balances, top positions, and quick portfolio actions.",
+      "summaryTitle": "Portfolio summary",
+      "summaryDescription": "Review account state and run provider actions.",
+      "quickActionsTitle": "Quick actions",
+      "noQuickActions": "No provider actions available for this profile.",
+      "balancesTitle": "Balances"
+    },
+    "analyticsPage": {
+      "title": "Analytics",
+      "description": "Price and composition charts for the selected profile."
+    },
+    "operationsPage": {
+      "title": "Operations",
+      "description": "Operations history with cursor-based pagination."
+    },
+    "operations": {
+      "title": "Operations history",
+      "description": "Review portfolio operations and load older entries."
+    },
+    "profiles": {
+      "title": "Profiles",
+      "description": "Select, create, and delete portfolio profiles.",
+      "managerTitle": "Profile manager",
+      "selectedConfigTitle": "Selected profile config",
+      "defaultLabel": "Default profile:",
+      "defaultYes": "Yes",
+      "defaultNo": "No",
+      "accountIDLabel": "T-Bank account id:"
+    },
     "selector": {
       "title": "Portfolio profiles",
       "label": "Selected profile",
       "emptyOption": "Select profile",
+      "noProfiles": "No profiles yet. Create one to get started.",
       "defaultTag": "default",
       "deleteButton": "Delete selected",
       "refreshButton": "Refresh profiles",
@@ -442,6 +486,13 @@
       "refreshButton": "Refresh data",
       "sandboxCurrency": "Sandbox currency",
       "sandboxUnits": "Sandbox units",
+      "virtualDepositAmount": "Deposit amount",
+      "virtualTradeTicker": "Ticker",
+      "virtualTradeInstrumentID": "Instrument ID",
+      "virtualTradeQuantity": "Quantity",
+      "virtualTradePrice": "Price",
+      "virtualTradeCommission": "Commission",
+      "virtualTradeCurrency": "Currency",
       "runAction": "Run action",
       "loading": "Loading portfolio data...",
       "empty": "No portfolio data loaded yet.",

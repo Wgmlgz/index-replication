@@ -343,7 +343,7 @@ func (s *Service) RunAction(ctx context.Context, userID int, id int, action stri
 
 	result, err := provider.RunAction(ctx, profile, action, payload)
 	if err != nil {
-		if errors.Is(err, ErrInvalidAction) {
+		if errors.Is(err, ErrInvalidAction) || errors.Is(err, ErrInvalidRequest) {
 			return nil, err
 		}
 		return nil, fmt.Errorf("%w: %v", ErrProviderFailed, err)
