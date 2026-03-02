@@ -1,25 +1,32 @@
-"use client";
+'use client';
 
-import { Suspense } from "react";
-import { useTranslation } from "react-i18next";
+import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { PortfolioAnalyticsSection } from "@/components/portfolio/portfolio-analytics-section";
-import { TBankPortfolioCard } from "@/components/tbank-test/portfolio-card";
-import { TBankConnectionProvider } from "@/components/tbank-test/tbank-connection-context";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PortfolioAccountProvider } from '@/app/portfolio/portfolio-account-context';
+import { PortfolioAnalyticsSection } from '@/app/portfolio/portfolio-analytics-section';
+import { TBankPortfolioCard } from '@/app/portfolio/portfolio-card';
+import { TBankConnectionProvider } from '@/components/tbank/tbank-connection-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function PortfolioPageContent() {
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">{t("portfolio.title")}</h1>
-        <p className="text-muted-foreground">{t("portfolio.description")}</p>
+    <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
+      <div className='space-y-2'>
+        <h1 className='text-3xl font-bold'>{t('portfolio.title')}</h1>
+        <p className='text-muted-foreground'>{t('portfolio.description')}</p>
       </div>
 
-      <PortfolioAnalyticsSection />
-      <TBankPortfolioCard />
+      <div className='grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6'>
+        <div className='min-h-0'>
+          <PortfolioAnalyticsSection />
+        </div>
+        <div className='min-h-0'>
+          <TBankPortfolioCard />
+        </div>
+      </div>
     </div>
   );
 }
@@ -29,17 +36,21 @@ export default function PortfolioPage() {
     <TBankConnectionProvider>
       <Suspense
         fallback={
-          <div className="mx-auto grid max-w-6xl gap-6">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-60" />
-              <Skeleton className="h-4 w-96" />
+          <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
+            <div className='space-y-2'>
+              <Skeleton className='h-8 w-60' />
+              <Skeleton className='h-4 w-96' />
             </div>
-            <Skeleton className="h-[420px] w-full" />
-            <Skeleton className="h-[320px] w-full" />
+            <div className='grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6'>
+              <Skeleton className='h-full w-full' />
+              <Skeleton className='h-full w-full' />
+            </div>
           </div>
         }
       >
-        <PortfolioPageContent />
+        <PortfolioAccountProvider>
+          <PortfolioPageContent />
+        </PortfolioAccountProvider>
       </Suspense>
     </TBankConnectionProvider>
   );

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
 import type { MoexIndex } from '@/api-client';
 import { useTranslation } from 'react-i18next';
-import { useTBankConnectionContext } from '@/components/tbank-test/tbank-connection-context';
+import { usePortfolioAccountContext } from '@/app/portfolio/portfolio-account-context';
+import { useTBankConnectionContext } from '@/components/tbank/tbank-connection-context';
 import {
   buildCompositionLegendRows,
   calculateSnapshotOtherWeight,
@@ -36,10 +36,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
-
-const PORTFOLIO_ACCOUNT_KEY = 'cn_acc';
 
 const DEFAULT_PRICE_CONTROLS: Partial<PriceDataControls> = {
   rangeKey: '1y',
@@ -56,13 +52,6 @@ const DEFAULT_COMPOSITION_CONTROLS: Partial<CompositionDataControls> = {
 };
 
 const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
-
-const parsePortfolioUrlState = (searchParams: URLSearchParams) => {
-  const accountID = searchParams.get(PORTFOLIO_ACCOUNT_KEY)?.trim();
-  return {
-    accountID: accountID && accountID.length > 0 ? accountID : undefined,
-  };
-};
 
 const resolveLatestTradeDate = (data: PriceChartData): string | null => {
   if (data.length === 0) return null;
@@ -81,17 +70,8 @@ const formatSignedNumber = (
 
 export function PortfolioAnalyticsSection() {
   const { t } = useTranslation();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const urlKey = searchParams.toString();
-  const { status, availableAccounts, connected } = useTBankConnectionContext();
-
-  const parsedUrl = useMemo(
-    () => parsePortfolioUrlState(new URLSearchParams(urlKey)),
-    [urlKey],
-  );
-
-  const [accountID, setAccountID] = useState(() => parsedUrl.accountID ?? '');
+  const { status, connected, loadingStatus } = useTBankConnectionContext();
+  const { accountID } = usePortfolioAccountContext();
   const controls = useChartsNewControls({
     defaults: {
       price: DEFAULT_PRICE_CONTROLS,
@@ -104,39 +84,6 @@ export function PortfolioAnalyticsSection() {
     if (controls.price.chartType === 'line') return;
     controls.setPriceField('chartType', 'line');
   }, [controls.price.chartType, controls.setPriceField]);
-
-  const accountUrlStateKey = useMemo(
-    () =>
-      JSON.stringify({
-        accountID,
-        controls: {
-          price: controls.price,
-          composition: controls.composition,
-        },
-      }),
-    [accountID, controls.composition, controls.price],
-  );
-
-  useUrlStateSync({
-    pathname,
-    urlKey,
-    stateKey: accountUrlStateKey,
-    parse: parsePortfolioUrlState,
-    applyParsedState: next => {
-      setAccountID(next.accountID ?? '');
-    },
-    buildSearchParams: () => {
-      const next = new URLSearchParams(window.location.search);
-      next.delete(PORTFOLIO_ACCOUNT_KEY);
-
-      const accountValue = accountID.trim();
-      if (accountValue.length > 0) {
-        next.set(PORTFOLIO_ACCOUNT_KEY, accountValue);
-      }
-
-      return next;
-    },
-  });
 
   const resolvedAccountID = accountID || status?.default_account_id || '';
   const selectedPortfolio = useMemo<MoexIndex | null>(() => {
@@ -198,9 +145,10 @@ export function PortfolioAnalyticsSection() {
   );
 
   const trendLoading =
-    compositionState.snapshotLoading || compositionState.seriesLoading;
+    loadingStatus || compositionState.snapshotLoading || compositionState.seriesLoading;
   const trendError =
     compositionState.snapshotError || compositionState.seriesError;
+  const priceLoading = loadingStatus || priceState.loading;
   const showOtherLegend =
     (controls.composition.compositionTab === 'stacked' ||
       controls.composition.compositionTab === 'snapshot') &&
@@ -209,12 +157,12 @@ export function PortfolioAnalyticsSection() {
   const compositionChart =
     controls.composition.compositionTab === 'snapshot' ? (
       <CompositionSnapshotVisualization
-        loading={compositionState.snapshotLoading}
+        loading={loadingStatus || compositionState.snapshotLoading}
         hasError={compositionState.snapshotError}
         errorMessage={t('portfolio.composition.error')}
         noDataMessage={t('portfolio.composition.noData')}
         items={snapshotItems}
-        className='min-h-[200px] h-full'
+        className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     ) : controls.composition.compositionTab === 'stacked' ? (
       <CompositionStackedVisualization
@@ -223,7 +171,7 @@ export function PortfolioAnalyticsSection() {
         errorMessage={t('portfolio.composition.error')}
         noDataMessage={t('portfolio.composition.noSeries')}
         series={compositionState.series}
-        className='min-h-[200px] h-full'
+        className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     ) : (
       <CompositionTrendVisualization
@@ -232,11 +180,11 @@ export function PortfolioAnalyticsSection() {
         errorMessage={t('portfolio.composition.error')}
         noDataMessage={t('portfolio.composition.noSeries')}
         series={compositionState.series}
-        className='min-h-[200px] h-full'
+        className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     );
 
-  if (!connected) {
+  if (!connected && !loadingStatus) {
     return (
       <Card>
         <CardHeader>
@@ -261,29 +209,8 @@ export function PortfolioAnalyticsSection() {
         </CardDescription>
       </CardHeader>
       <CardContent className='grid h-full min-h-0 gap-4 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'>
-        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-          <div className='flex flex-col gap-3 lg:w-[320px]'>
-            <div className='grid gap-2'>
-              <Label htmlFor='portfolio-analytics-account'>
-                {t('portfolio.analytics.accountLabel')}
-              </Label>
-              <select
-                id='portfolio-analytics-account'
-                className='border-input bg-background h-9 rounded-md border px-3 text-sm'
-                value={accountID}
-                onChange={event => setAccountID(event.target.value)}
-              >
-                <option value=''>
-                  {t('portfolio.analytics.accountDefaultOption')}
-                </option>
-                {(availableAccounts ?? []).map(account => (
-                  <option key={account.id} value={account.id}>
-                    {account.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+        <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row'>
+          <div className='flex min-w-0 flex-col gap-3 lg:w-[320px]'>
             {priceState.latestValue !== null && (
               <div className='text-sm'>
                 <span className='font-medium'>
@@ -322,18 +249,18 @@ export function PortfolioAnalyticsSection() {
           </div>
 
           <PriceVisualization
-            loading={priceState.loading}
+            loading={priceLoading}
             hasError={priceState.error}
             errorMessage={t('portfolio.chart.error')}
             noDataMessage={t('portfolio.chart.noData')}
             data={priceState.data}
             seriesType='line'
-            className='flex min-h-[200px] flex-1 items-stretch'
+            className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden'
           />
         </div>
 
-        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-          <div className='flex min-h-0 flex-col gap-3 lg:w-[320px]'>
+        <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row'>
+          <div className='flex min-h-0 min-w-0 flex-col gap-3 lg:w-[320px]'>
             <div className='space-y-1'>
               <CardTitle>{t('portfolio.composition.title')}</CardTitle>
               {compositionState.snapshotDate && (
@@ -368,9 +295,7 @@ export function PortfolioAnalyticsSection() {
             </div>
           </div>
 
-          <div className='flex min-h-[200px] flex-1 flex-col'>
-            {compositionChart}
-          </div>
+          {compositionChart}
         </div>
       </CardContent>
     </Card>

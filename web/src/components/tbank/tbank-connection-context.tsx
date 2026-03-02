@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -43,10 +44,47 @@ type TBankConnectionProviderProps = {
   children: ReactNode;
 };
 
+const TBANK_STATUS_CACHE_KEY = "index-replication-tbank-status-v1";
+
+function readCachedTBankStatus(): TBankConnectionStatusResponse | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(TBANK_STATUS_CACHE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as TBankConnectionStatusResponse | null;
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedTBankStatus(status: TBankConnectionStatusResponse | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!status || !status.connected) {
+    window.localStorage.removeItem(TBANK_STATUS_CACHE_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(TBANK_STATUS_CACHE_KEY, JSON.stringify(status));
+}
+
 export function TBankConnectionProvider({ children }: TBankConnectionProviderProps) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<TBankConnectionStatusResponse | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState(true);
+  const cachedStatus = useMemo(() => readCachedTBankStatus(), []);
+  const [status, setStatus] = useState<TBankConnectionStatusResponse | null>(cachedStatus);
+  const [loadingStatus, setLoadingStatus] = useState(!cachedStatus);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
 
@@ -60,22 +98,38 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     return fallback;
   }, []);
 
-  const refreshStatus = useCallback(async () => {
+  const loadStatus = useCallback(async (background = false) => {
     setError("");
-    setLoadingStatus(true);
+    if (!background) {
+      setLoadingStatus(true);
+    }
     try {
       const nextStatus = (await tbankApi.meTbankGet()).data;
       setStatus(nextStatus);
+      writeCachedTBankStatus(nextStatus);
     } catch (err) {
+      if (
+        axios.isAxiosError(err) &&
+        err.response?.status === axios.HttpStatusCode.Unauthorized
+      ) {
+        setStatus(null);
+        writeCachedTBankStatus(null);
+      }
       setError(parseErrorMessage(err, t("tbankTest.errors.status")));
     } finally {
-      setLoadingStatus(false);
+      if (!background) {
+        setLoadingStatus(false);
+      }
     }
   }, [parseErrorMessage, t]);
 
+  const refreshStatus = useCallback(async () => {
+    await loadStatus(false);
+  }, [loadStatus]);
+
   useEffect(() => {
-    void refreshStatus();
-  }, [refreshStatus]);
+    void loadStatus(Boolean(cachedStatus));
+  }, [cachedStatus, loadStatus]);
 
   const connect = async ({ token, environment, defaultAccountID }: ConnectParams) => {
     setError("");
@@ -87,7 +141,15 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
         default_account_id: defaultAccountID || undefined,
       })).data;
       setStatus(nextStatus);
+      writeCachedTBankStatus(nextStatus);
     } catch (err) {
+      if (
+        axios.isAxiosError(err) &&
+        err.response?.status === axios.HttpStatusCode.Unauthorized
+      ) {
+        setStatus(null);
+        writeCachedTBankStatus(null);
+      }
       setError(parseErrorMessage(err, t("tbankTest.errors.connect")));
       throw err;
     } finally {
@@ -100,7 +162,8 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     setWorking(true);
     try {
       await tbankApi.meTbankDisconnectPost();
-      await refreshStatus();
+      setStatus(null);
+      writeCachedTBankStatus(null);
     } catch (err) {
       setError(parseErrorMessage(err, t("tbankTest.errors.disconnect")));
       throw err;
@@ -120,7 +183,15 @@ export function TBankConnectionProvider({ children }: TBankConnectionProviderPro
     try {
       const nextStatus = (await tbankApi.meTbankDefaultAccountPost({ account_id: accountID.trim() })).data;
       setStatus(nextStatus);
+      writeCachedTBankStatus(nextStatus);
     } catch (err) {
+      if (
+        axios.isAxiosError(err) &&
+        err.response?.status === axios.HttpStatusCode.Unauthorized
+      ) {
+        setStatus(null);
+        writeCachedTBankStatus(null);
+      }
       setError(parseErrorMessage(err, t("tbankTest.errors.defaultAccount")));
       throw err;
     } finally {

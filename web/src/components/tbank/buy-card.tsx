@@ -5,7 +5,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 import type { TBankTestBuyResponse } from "@/api-client";
-import { useTBankConnectionContext } from "@/components/tbank-test/tbank-connection-context";
+import { useTBankConnectionContext } from "@/components/tbank/tbank-connection-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

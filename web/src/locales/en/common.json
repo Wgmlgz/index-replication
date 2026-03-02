@@ -493,6 +493,12 @@
     "portfolio": {
       "title": "Account balances",
       "description": "Load account portfolio, money balances, and top positions.",
+      "tabs": {
+        "account": "Account",
+        "balance": "Balance",
+        "positions": "Top positions",
+        "operations": "Operations history"
+      },
       "accountLabel": "Account",
       "accountDefaultOption": "Use default account",
       "refreshButton": "Load balances",

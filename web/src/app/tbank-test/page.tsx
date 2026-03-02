@@ -2,9 +2,9 @@
 
 import { useTranslation } from "react-i18next";
 
-import { TBankBuyCard } from "@/components/tbank-test/buy-card";
-import { TBankInstrumentLookupCard } from "@/components/tbank-test/instrument-lookup-card";
-import { TBankConnectionProvider } from "@/components/tbank-test/tbank-connection-context";
+import { TBankBuyCard } from "@/components/tbank/buy-card";
+import { TBankInstrumentLookupCard } from "@/components/tbank/instrument-lookup-card";
+import { TBankConnectionProvider } from "@/components/tbank/tbank-connection-context";
 
 function TBankTestPageContent() {
   const { t } = useTranslation();

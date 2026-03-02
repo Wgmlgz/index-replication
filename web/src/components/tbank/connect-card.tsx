@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   useTBankConnectionContext,
   type TBankEnvironment,
-} from '@/components/tbank-test/tbank-connection-context';
+} from '@/components/tbank/tbank-connection-context';
 import {
   IntegrationConnectionCard,
   IntegrationConnectionStatus,
