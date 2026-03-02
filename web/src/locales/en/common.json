@@ -396,6 +396,41 @@
       }
     }
   },
+  "chartsNewTest": {
+    "title": "Charts New test page",
+    "description": "Experimental page to validate new chart visualizations and data hooks.",
+    "settings": {
+      "title": "Test controls",
+      "description": "These controls are managed in charts-new controls state and synced with URL.",
+      "priceControls": "Price controls",
+      "compositionControls": "Composition controls"
+    },
+    "labels": {
+      "secid": "Index",
+      "priceRange": "Price range",
+      "priceInterval": "Price interval",
+      "priceType": "Price chart type",
+      "compositionRange": "Composition range",
+      "compositionInterval": "Composition interval",
+      "compositionMode": "Selection mode",
+      "compositionTab": "Composition tab",
+      "compositionTop": "Top count"
+    },
+    "price": {
+      "title": "Price chart",
+      "error": "Failed to load chart history.",
+      "noData": "No chart data to display."
+    },
+    "composition": {
+      "snapshotTitle": "Composition snapshot",
+      "trendTitle": "Composition trend",
+      "stackedTitle": "Composition stacked",
+      "legendTitle": "Composition constituents",
+      "error": "Failed to load composition data.",
+      "noData": "No composition snapshot data to display.",
+      "noSeries": "No composition series data to display."
+    }
+  },
   "tbankTest": {
     "title": "T-Bank trading workspace",
     "description": "Run test orders and resolve instrument ids. Configure token and account in Integrations.",
