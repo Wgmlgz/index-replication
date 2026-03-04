@@ -11,6 +11,28 @@ tasks:
     cmds:
       - docker compose up --build --force-recreate
 
+  upx:
+    desc: Compose up services except web and server/api
+    cmds:
+      - SERVICES="$(docker compose config --services | grep -vE '^(web|server|api)$' | xargs)" && docker compose up -d $SERVICES
+
+  devx:
+    desc: Run upx, then start API and web in dev mode
+    cmds:
+      - task upx
+      - task dev
+
+  upxb:
+    desc: Rebuild and recreate all compose services except web and server/api
+    cmds:
+      - SERVICES="$(docker compose config --services | grep -vE '^(web|server|api)$' | xargs)" && docker compose up --build --force-recreate $SERVICES
+
+  devxb:
+    desc: Run upxb, then start API and web in dev mode
+    cmds:
+      - task upxb
+      - task dev
+
   temporal:up:
     desc: Start Temporal stack and auto-apply MOEX schedules
     cmds:

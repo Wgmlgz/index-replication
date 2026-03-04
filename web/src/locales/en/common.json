@@ -36,6 +36,14 @@
         "title": "Portfolio",
         "button": "Open portfolio"
       }
+    },
+    "portfolio": {
+      "details": "Details",
+      "overview": "Overview",
+      "actions": "Actions",
+      "analytics": "Analytics",
+      "operations": "Operations",
+      "profiles": "Profiles"
     }
   },
   "auth": {
@@ -402,6 +410,187 @@
       }
     }
   },
+  "portfolioV2": {
+    "title": "Portfolio v2",
+    "description": "Provider-agnostic portfolio workspace powered by portfolio profiles.",
+    "subpages": {
+      "overview": "Overview",
+      "actions": "Actions",
+      "analytics": "Analytics",
+      "operations": "Operations",
+      "profiles": "Profiles"
+    },
+    "overview": {
+      "title": "Overview",
+      "description": "Summary, balances, and top positions.",
+      "summaryTitle": "Portfolio summary",
+      "summaryDescription": "Review account state, balances, and top positions.",
+      "quickActionsTitle": "Actions",
+      "noQuickActions": "No provider actions available for this profile.",
+      "balancesTitle": "Balances"
+    },
+    "analyticsPage": {
+      "title": "Analytics",
+      "description": "Price and composition charts for the selected profile."
+    },
+    "operationsPage": {
+      "title": "Operations",
+      "description": "Operations history with cursor-based pagination."
+    },
+    "operations": {
+      "title": "Operations history",
+      "description": "Review portfolio operations and load older entries."
+    },
+    "profiles": {
+      "title": "Profiles",
+      "description": "Select a profile to open overview, actions, analytics, and operations.",
+      "createButton": "Create profile",
+      "createDialogTitle": "Create portfolio profile",
+      "createDialogDescription": "Choose provider and profile settings.",
+      "createNameLabel": "Profile name",
+      "createNamePlaceholder": "My portfolio profile",
+      "createProviderLabel": "Provider",
+      "providerVirtual": "Virtual",
+      "providerMock": "Mock",
+      "providerTbank": "T-Bank",
+      "createDefaultLabel": "Set as default",
+      "createAccountIDLabel": "T-Bank account id (optional)",
+      "createAccountIDPlaceholder": "Use connected default account",
+      "createSubmit": "Create",
+      "cancelButton": "Cancel",
+      "managerTitle": "Profile manager",
+      "selectedConfigTitle": "Selected profile config",
+      "defaultLabel": "Default profile:",
+      "defaultLabelShort": "Default",
+      "defaultYes": "Yes",
+      "defaultNo": "No",
+      "providerLabel": "Provider",
+      "actionsLabel": "Actions",
+      "updatedLabel": "Updated",
+      "accountIDLabel": "T-Bank account id:",
+      "overviewButton": "Overview",
+      "openButton": "Open",
+      "openAriaLabel": "Open profile {{name}}",
+      "deleteAriaLabel": "Delete profile {{name}}",
+      "deleteConfirmTitle": "Delete profile?",
+      "deleteConfirmDescription": "Profile \"{{name}}\" will be removed.",
+      "deleteConfirmAction": "Delete"
+    },
+    "selector": {
+      "title": "Portfolio profiles",
+      "label": "Selected profile",
+      "emptyOption": "Select profile",
+      "noProfiles": "No profiles yet. Create one to get started.",
+      "defaultTag": "default",
+      "deleteButton": "Delete selected",
+      "refreshButton": "Refresh profiles",
+      "createTitle": "Create profile",
+      "provider": "Provider",
+      "name": "Profile name",
+      "namePlaceholder": "My portfolio profile",
+      "isDefault": "Set as default",
+      "accountID": "T-Bank account id (optional)",
+      "accountIDPlaceholder": "Use connected default account",
+      "createButton": "Create profile"
+    },
+    "actions": {
+      "title": "Actions",
+      "description": "Run provider actions for the selected profile.",
+      "selectPrompt": "Select a portfolio profile to run actions."
+    },
+    "details": {
+      "title": "Portfolio details",
+      "description": "Overview, actions, analytics, and operations for the selected profile.",
+      "profileName": "Profile: {{name}}",
+      "profileNameFallback": "Not selected",
+      "backButton": "<-",
+      "backAriaLabel": "Back to profiles",
+      "editNameAriaLabel": "Edit profile name",
+      "editNameTitle": "Edit profile name",
+      "editNameDescription": "Update the display name for this profile.",
+      "editNameLabel": "Profile name",
+      "editNamePlaceholder": "My portfolio profile",
+      "editNameSave": "Save"
+    },
+    "analytics": {
+      "title": "Portfolio analytics",
+      "description": "Track portfolio value and composition over time.",
+      "selectPrompt": "Select or create a portfolio profile to load analytics."
+    },
+    "card": {
+      "title": "Portfolio details",
+      "description": "Unified summary, positions, operations, and provider actions.",
+      "selectPrompt": "Select or create a portfolio profile to load details.",
+      "actionResult": "Action completed: {{action}}.",
+      "tabs": {
+        "account": "Account",
+        "balance": "Balance",
+        "positions": "Top positions",
+        "operations": "Operations history"
+      },
+      "profileName": "Profile:",
+      "provider": "Provider:",
+      "refreshButton": "Refresh data",
+      "sandboxCurrency": "Sandbox currency",
+      "sandboxUnits": "Sandbox units",
+      "tbankTestBuyInstrumentID": "Instrument ID",
+      "tbankTestBuyAccountID": "Account ID",
+      "tbankTestBuyQuantity": "Quantity",
+      "virtualDepositAmount": "Deposit amount",
+      "virtualTradeTicker": "Ticker",
+      "virtualTradeInstrumentID": "Instrument ID",
+      "virtualTradeQuantity": "Quantity",
+      "virtualTradePrice": "Price",
+      "virtualTradeCommission": "Commission",
+      "virtualTradeCurrency": "Currency",
+      "virtualTradeDateTime": "Execution time",
+      "runAction": "Run action",
+      "loading": "Loading portfolio data...",
+      "empty": "No portfolio data loaded yet.",
+      "totalLabel": "Total portfolio:",
+      "dailyYieldLabel": "Daily yield:",
+      "dailyYieldRelativeLabel": "Daily yield relative:",
+      "moneyTitle": "Money balances",
+      "moneyCurrency": "Currency",
+      "moneyAvailable": "Available",
+      "moneyBlocked": "Blocked",
+      "moneyWithdrawAvailable": "Withdraw available",
+      "moneyWithdrawBlocked": "Withdraw blocked",
+      "moneyEmpty": "No money balances returned.",
+      "positionsTitle": "Top positions ({{count}})",
+      "positionsEmpty": "No positions returned.",
+      "positionTicker": "Ticker",
+      "positionInstrumentID": "Instrument ID",
+      "positionQuantity": "Quantity",
+      "positionCurrentPrice": "Current price",
+      "positionCurrentValue": "Current value",
+      "positionExpectedYield": "Expected yield",
+      "operationsTitle": "Operations history",
+      "operationsLoading": "Loading operations history...",
+      "operationsLoadMore": "Load more operations",
+      "operationsLoadingMore": "Loading more...",
+      "operationsEmpty": "No operations returned.",
+      "operationDate": "Date",
+      "operationType": "Type",
+      "operationState": "State",
+      "operationInstrument": "Instrument",
+      "operationQuantity": "Quantity",
+      "operationPrice": "Price",
+      "operationPayment": "Payment",
+      "operationCommission": "Commission",
+      "operationDescription": "Description"
+    },
+    "errors": {
+      "summary": "Failed to load portfolio summary.",
+      "operations": "Failed to load portfolio operations.",
+      "action": "Failed to execute portfolio action.",
+      "loadProfiles": "Failed to load portfolio profiles.",
+      "createProfile": "Failed to create portfolio profile.",
+      "deleteProfile": "Failed to delete portfolio profile.",
+      "updateProfile": "Failed to update portfolio profile.",
+      "profileNameRequired": "Profile name is required."
+    }
+  },
   "chartsNewTest": {
     "title": "Charts New test page",
     "description": "Experimental page to validate new chart visualizations and data hooks.",
@@ -493,6 +682,12 @@
     "portfolio": {
       "title": "Account balances",
       "description": "Load account portfolio, money balances, and top positions.",
+      "tabs": {
+        "account": "Account",
+        "balance": "Balance",
+        "positions": "Top positions",
+        "operations": "Operations history"
+      },
       "accountLabel": "Account",
       "accountDefaultOption": "Use default account",
       "refreshButton": "Load balances",

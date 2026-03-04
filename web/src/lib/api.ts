@@ -5,6 +5,7 @@ import {
   AuthApi,
   Configuration,
   MoexApi,
+  PortfolioApi,
   SettingsApi,
   TbankApi,
   UsersApi,
@@ -155,4 +156,5 @@ export const authApi = new AuthApi(config, config.basePath, axiosClient);
 export const settingsApi = new SettingsApi(config, config.basePath, axiosClient);
 export const usersApi = new UsersApi(config, config.basePath, axiosClient);
 export const moexApi = new MoexApi(config, config.basePath, axiosClient);
+export const portfolioApi = new PortfolioApi(config, config.basePath, axiosClient);
 export const tbankApi = new TbankApi(config, config.basePath, axiosClient);

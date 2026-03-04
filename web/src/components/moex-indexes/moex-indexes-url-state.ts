@@ -29,18 +29,6 @@ export const MOEX_URL_KEYS = {
   listCalcMode: 'l_calc',
   listLastActive: 'l_act',
   listComposition: 'l_comp',
-
-  detailRange: 'd_range',
-  detailInterval: 'd_interval',
-  detailCustomFrom: 'd_from',
-  detailCustomTill: 'd_till',
-  detailView: 'd_view',
-  detailType: 'd_type',
-
-  compositionTab: 'c_tab',
-  compositionSelectionMode: 'c_mode',
-  compositionSelectionDate: 'c_date',
-  compositionTopN: 'topN',
 } as const;
 
 export type MoexIndexesUrlInitialState = {
@@ -165,32 +153,6 @@ export function applyMoexIndexesUrlState(
     };
   }
 ) {
-  const deleteKeys: string[] = [
-    MOEX_URL_KEYS.selectedSecid,
-    MOEX_URL_KEYS.listQuery,
-    MOEX_URL_KEYS.listFavoritesOnly,
-    MOEX_URL_KEYS.listSort,
-    MOEX_URL_KEYS.listPage,
-    MOEX_URL_KEYS.listPageSize,
-    MOEX_URL_KEYS.listCollections,
-    MOEX_URL_KEYS.listCurrency,
-    MOEX_URL_KEYS.listBoard,
-    MOEX_URL_KEYS.listCalcMode,
-    MOEX_URL_KEYS.listLastActive,
-    MOEX_URL_KEYS.listComposition,
-    MOEX_URL_KEYS.detailRange,
-    MOEX_URL_KEYS.detailInterval,
-    MOEX_URL_KEYS.detailCustomFrom,
-    MOEX_URL_KEYS.detailCustomTill,
-    MOEX_URL_KEYS.detailView,
-    MOEX_URL_KEYS.detailType,
-    MOEX_URL_KEYS.compositionTab,
-    MOEX_URL_KEYS.compositionSelectionMode,
-    MOEX_URL_KEYS.compositionSelectionDate,
-    MOEX_URL_KEYS.compositionTopN,
-  ];
-  deleteKeys.forEach((key) => params.delete(key));
-
   if (state.selectedSecid) {
     params.set(MOEX_URL_KEYS.selectedSecid, state.selectedSecid.toUpperCase());
   }

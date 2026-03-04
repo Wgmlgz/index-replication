@@ -1,3 +1,3 @@
 export { createMoexChartsDataProvider } from './moex/provider';
-export { createTbankChartsDataProvider } from './tbank/provider';
+export { createPortfolioChartsDataProvider } from './portfolio/provider';
 export type { ChartsDataProvider } from './types';

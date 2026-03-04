@@ -3,3 +3,4 @@
 web/tmp/
 .foxy
 *.exe
+api/.env

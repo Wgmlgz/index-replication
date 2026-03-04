@@ -76,6 +76,8 @@ func ensurePostgresIdentity(db *sql.DB) error {
 		"casbin_rules",
 		"user_settings",
 		"user_favorite_indexes",
+		"portfolio_profiles",
+		"virtual_portfolio_transactions",
 	}
 	for _, table := range tables {
 		isIdentity, err := hasIdentity(db, table, "id")

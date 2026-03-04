@@ -151,6 +151,122 @@ export interface PermissionsResponse {
     'permissions': Array<Permission>;
     'user': UserResponse;
 }
+export interface PortfolioActionRequest {
+    'payload'?: { [key: string]: any; };
+}
+export interface PortfolioActionResponse {
+    'action'?: string;
+    'result'?: { [key: string]: any; };
+}
+export interface PortfolioCapabilities {
+    'actions'?: Array<PortfolioProviderAction>;
+}
+export interface PortfolioCompositionEntry {
+    'currency'?: string;
+    'current_price'?: number;
+    'current_value'?: number;
+    'instrument_id'?: string;
+    'name'?: string;
+    'quantity'?: number;
+    'ticker'?: string;
+    'trade_date'?: string;
+    'weight'?: number;
+}
+export interface PortfolioCompositionSeriesPoint {
+    'trade_date'?: string;
+    'weight'?: number;
+}
+export interface PortfolioHistoryPoint {
+    'currency'?: string;
+    'total_amount_portfolio'?: number;
+    'trade_date'?: string;
+}
+export interface PortfolioOperationHistoryItem {
+    'commission'?: number;
+    'commission_currency'?: string;
+    'cursor'?: string;
+    'date'?: string;
+    'description'?: string;
+    'figi'?: string;
+    'id'?: string;
+    'instrument_id'?: string;
+    'instrument_type'?: string;
+    'name'?: string;
+    'parent_operation_id'?: string;
+    'payment'?: number;
+    'payment_currency'?: string;
+    'price'?: number;
+    'price_currency'?: string;
+    'quantity'?: number;
+    'quantity_done'?: number;
+    'quantity_rest'?: number;
+    'state'?: string;
+    'type'?: string;
+}
+export interface PortfolioOperationsHistoryResponse {
+    'has_next'?: boolean;
+    'items'?: Array<PortfolioOperationHistoryItem>;
+    'next_cursor'?: string;
+    'portfolio_id'?: number;
+    'provider'?: string;
+}
+export interface PortfolioProfile {
+    'capabilities'?: PortfolioCapabilities;
+    'config'?: { [key: string]: any; };
+    'created_at'?: string;
+    'id'?: number;
+    'is_default'?: boolean;
+    'name'?: string;
+    'provider'?: string;
+    'updated_at'?: string;
+}
+export interface PortfolioProfileCreateRequest {
+    'config'?: { [key: string]: any; };
+    'is_default'?: boolean;
+    'name': string;
+    'provider': string;
+    'secret'?: { [key: string]: any; };
+}
+export interface PortfolioProfilePatchRequest {
+    'config'?: { [key: string]: any; };
+    'is_default'?: boolean;
+    'name'?: string;
+    'secret'?: { [key: string]: any; };
+}
+export interface PortfolioProviderAction {
+    'id'?: string;
+    'label'?: string;
+}
+export interface PortfolioSummaryMoneyBalance {
+    'available'?: number;
+    'blocked'?: number;
+    'currency'?: string;
+    'withdraw_available'?: number;
+    'withdraw_blocked'?: number;
+}
+export interface PortfolioSummaryPosition {
+    'currency'?: string;
+    'current_price'?: number;
+    'current_value'?: number;
+    'expected_yield'?: number;
+    'instrument_id'?: string;
+    'instrument_type'?: string;
+    'name'?: string;
+    'quantity'?: number;
+    'ticker'?: string;
+}
+export interface PortfolioSummaryResponse {
+    'capabilities'?: PortfolioCapabilities;
+    'daily_yield'?: number;
+    'daily_yield_relative'?: number;
+    'money'?: Array<PortfolioSummaryMoneyBalance>;
+    'name'?: string;
+    'portfolio_id'?: number;
+    'positions'?: Array<PortfolioSummaryPosition>;
+    'provider'?: string;
+    'total_amount_currency'?: string;
+    'total_amount_portfolio'?: number;
+}
 export interface TBankAccount {
     'access_level'?: string;
     'closed_at'?: string;
@@ -159,16 +275,6 @@ export interface TBankAccount {
     'opened_at'?: string;
     'status'?: string;
     'type'?: string;
-}
-export interface TBankAccountPortfolioResponse {
-    'account_id'?: string;
-    'daily_yield'?: number;
-    'daily_yield_relative'?: number;
-    'environment'?: string;
-    'money'?: Array<TBankMoneyBalance>;
-    'positions'?: Array<TBankPortfolioPosition>;
-    'total_amount_portfolio'?: number;
-    'total_amount_portfolio_currency'?: string;
 }
 export interface TBankConnectRequest {
     'default_account_id'?: string;
@@ -211,101 +317,8 @@ export interface TBankInstrumentLookupResponse {
     'instruments'?: Array<TBankInstrumentLookupItem>;
     'query'?: string;
 }
-export interface TBankMoneyBalance {
-    'available'?: number;
-    'blocked'?: number;
-    'currency'?: string;
-    'withdraw_available'?: number;
-    'withdraw_blocked'?: number;
-}
-export interface TBankOperationHistoryItem {
-    'commission'?: number;
-    'commission_currency'?: string;
-    'cursor'?: string;
-    'date'?: string;
-    'description'?: string;
-    'figi'?: string;
-    'id'?: string;
-    'instrument_id'?: string;
-    'instrument_type'?: string;
-    'name'?: string;
-    'parent_operation_id'?: string;
-    'payment'?: number;
-    'payment_currency'?: string;
-    'price'?: number;
-    'price_currency'?: string;
-    'quantity'?: number;
-    'quantity_done'?: number;
-    'quantity_rest'?: number;
-    'state'?: string;
-    'type'?: string;
-}
-export interface TBankOperationsHistoryResponse {
-    'account_id'?: string;
-    'environment'?: string;
-    'has_next'?: boolean;
-    'items'?: Array<TBankOperationHistoryItem>;
-    'next_cursor'?: string;
-}
-export interface TBankPortfolioCompositionEntry {
-    'currency'?: string;
-    'current_price'?: number;
-    'current_value'?: number;
-    'instrument_id'?: string;
-    'name'?: string;
-    'quantity'?: number;
-    'ticker'?: string;
-    'trade_date'?: string;
-    'weight'?: number;
-}
-export interface TBankPortfolioCompositionSeriesPoint {
-    'trade_date'?: string;
-    'weight'?: number;
-}
-export interface TBankPortfolioHistoryPoint {
-    'total_amount_portfolio'?: number;
-    'total_amount_portfolio_currency'?: string;
-    'trade_date'?: string;
-}
-export interface TBankPortfolioPosition {
-    'currency'?: string;
-    'current_price'?: number;
-    'current_value'?: number;
-    'expected_yield'?: number;
-    'figi'?: string;
-    'instrument_id'?: string;
-    'instrument_type'?: string;
-    'name'?: string;
-    'quantity'?: number;
-    'ticker'?: string;
-}
-export interface TBankSandboxPayInRequest {
-    'account_id'?: string;
-    'currency'?: string;
-    'units'?: number;
-}
-export interface TBankSandboxPayInResponse {
-    'account_id'?: string;
-    'currency'?: string;
-    'environment'?: string;
-    'units'?: number;
-}
 export interface TBankSetDefaultAccountRequest {
     'account_id': string;
-}
-export interface TBankTestBuyRequest {
-    'account_id'?: string;
-    'instrument_id': string;
-    'quantity': number;
-}
-export interface TBankTestBuyResponse {
-    'account_id'?: string;
-    'environment'?: string;
-    'execution_report_status'?: string;
-    'instrument_id'?: string;
-    'order_id'?: string;
-    'quantity'?: number;
-    'response'?: { [key: string]: any; };
 }
 export interface TelegramConnectResponse {
     'connect_url'?: string;
@@ -1648,6 +1661,838 @@ export class MoexApi extends BaseAPI {
 
 
 /**
+ * PortfolioApi - axios parameter creator
+ */
+export const PortfolioApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns current user portfolio profiles with provider capabilities
+         * @summary List portfolio profiles
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/portfolios`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Executes provider-specific action for selected portfolio profile
+         * @summary Run provider action
+         * @param {number} id Portfolio profile id
+         * @param {string} action Provider action id
+         * @param {PortfolioActionRequest} [payload] Action payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdActionsActionPost: async (id: number, action: string, payload?: PortfolioActionRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdActionsActionPost', 'id', id)
+            // verify required parameter 'action' is not null or undefined
+            assertParamExists('mePortfoliosIdActionsActionPost', 'action', action)
+            const localVarPath = `/me/portfolios/{id}/actions/{action}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"action"}}`, encodeURIComponent(String(action)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns composition snapshot for selected portfolio profile
+         * @summary Get portfolio composition snapshot
+         * @param {number} id Portfolio profile id
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdCompositionGet: async (id: number, date?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdCompositionGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/composition`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (date !== undefined) {
+                localVarQueryParameter['date'] = date;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns ticker composition series for selected portfolio profile
+         * @summary Get portfolio composition series
+         * @param {number} id Portfolio profile id
+         * @param {string} [tickers] Comma-separated tickers
+         * @param {number} [topCount] Top constituents count (0 &#x3D; all)
+         * @param {string} [selectionMode] Ticker selection mode: fixed|rolling
+         * @param {string} [selectionDate] Selection date (YYYY-MM-DD)
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdCompositionSeriesGet: async (id: number, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdCompositionSeriesGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/composition/series`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (tickers !== undefined) {
+                localVarQueryParameter['tickers'] = tickers;
+            }
+
+            if (topCount !== undefined) {
+                localVarQueryParameter['topCount'] = topCount;
+            }
+
+            if (selectionMode !== undefined) {
+                localVarQueryParameter['selectionMode'] = selectionMode;
+            }
+
+            if (selectionDate !== undefined) {
+                localVarQueryParameter['selectionDate'] = selectionDate;
+            }
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (intervalDays !== undefined) {
+                localVarQueryParameter['intervalDays'] = intervalDays;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Deletes selected portfolio profile
+         * @summary Delete portfolio profile
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdDelete: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdDelete', 'id', id)
+            const localVarPath = `/me/portfolios/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = '*/*';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns history points for selected portfolio profile
+         * @summary Get portfolio history
+         * @param {number} id Portfolio profile id
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdHistoryGet: async (id: number, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdHistoryGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/history`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (from !== undefined) {
+                localVarQueryParameter['from'] = from;
+            }
+
+            if (till !== undefined) {
+                localVarQueryParameter['till'] = till;
+            }
+
+            if (intervalDays !== undefined) {
+                localVarQueryParameter['intervalDays'] = intervalDays;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns portfolio operations history with cursor pagination
+         * @summary Get portfolio operations
+         * @param {number} id Portfolio profile id
+         * @param {string} [cursor] Cursor from previous response
+         * @param {number} [limit] Page size (1-200, default 50)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdOperationsGet: async (id: number, cursor?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdOperationsGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/operations`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (cursor !== undefined) {
+                localVarQueryParameter['cursor'] = cursor;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Updates selected portfolio profile (name/default/config/secret)
+         * @summary Update portfolio profile
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioProfilePatchRequest} payload Portfolio profile patch payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdPatch: async (id: number, payload: PortfolioProfilePatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdPatch', 'id', id)
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('mePortfoliosIdPatch', 'payload', payload)
+            const localVarPath = `/me/portfolios/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns unified summary (balances and positions) by portfolio profile
+         * @summary Get portfolio summary
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdSummaryGet: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdSummaryGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/summary`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates provider-backed portfolio profile for the current user
+         * @summary Create portfolio profile
+         * @param {PortfolioProfileCreateRequest} payload Portfolio profile payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosPost: async (payload: PortfolioProfileCreateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('mePortfoliosPost', 'payload', payload)
+            const localVarPath = `/me/portfolios`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * PortfolioApi - functional programming interface
+ */
+export const PortfolioApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = PortfolioApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns current user portfolio profiles with provider capabilities
+         * @summary List portfolio profiles
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<PortfolioProfile>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Executes provider-specific action for selected portfolio profile
+         * @summary Run provider action
+         * @param {number} id Portfolio profile id
+         * @param {string} action Provider action id
+         * @param {PortfolioActionRequest} [payload] Action payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdActionsActionPost(id: number, action: string, payload?: PortfolioActionRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioActionResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdActionsActionPost(id, action, payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdActionsActionPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns composition snapshot for selected portfolio profile
+         * @summary Get portfolio composition snapshot
+         * @param {number} id Portfolio profile id
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdCompositionGet(id: number, date?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<PortfolioCompositionEntry>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdCompositionGet(id, date, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdCompositionGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns ticker composition series for selected portfolio profile
+         * @summary Get portfolio composition series
+         * @param {number} id Portfolio profile id
+         * @param {string} [tickers] Comma-separated tickers
+         * @param {number} [topCount] Top constituents count (0 &#x3D; all)
+         * @param {string} [selectionMode] Ticker selection mode: fixed|rolling
+         * @param {string} [selectionDate] Selection date (YYYY-MM-DD)
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdCompositionSeriesGet(id: number, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<PortfolioCompositionSeriesPoint>; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdCompositionSeriesGet(id, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdCompositionSeriesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Deletes selected portfolio profile
+         * @summary Delete portfolio profile
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdDelete(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns history points for selected portfolio profile
+         * @summary Get portfolio history
+         * @param {number} id Portfolio profile id
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdHistoryGet(id: number, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<PortfolioHistoryPoint>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdHistoryGet(id, from, till, intervalDays, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdHistoryGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns portfolio operations history with cursor pagination
+         * @summary Get portfolio operations
+         * @param {number} id Portfolio profile id
+         * @param {string} [cursor] Cursor from previous response
+         * @param {number} [limit] Page size (1-200, default 50)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdOperationsGet(id: number, cursor?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioOperationsHistoryResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdOperationsGet(id, cursor, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdOperationsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Updates selected portfolio profile (name/default/config/secret)
+         * @summary Update portfolio profile
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioProfilePatchRequest} payload Portfolio profile patch payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdPatch(id: number, payload: PortfolioProfilePatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioProfile>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdPatch(id, payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdPatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns unified summary (balances and positions) by portfolio profile
+         * @summary Get portfolio summary
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdSummaryGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioSummaryResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdSummaryGet(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdSummaryGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates provider-backed portfolio profile for the current user
+         * @summary Create portfolio profile
+         * @param {PortfolioProfileCreateRequest} payload Portfolio profile payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosPost(payload: PortfolioProfileCreateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioProfile>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosPost(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * PortfolioApi - factory interface
+ */
+export const PortfolioApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = PortfolioApiFp(configuration)
+    return {
+        /**
+         * Returns current user portfolio profiles with provider capabilities
+         * @summary List portfolio profiles
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosGet(options?: RawAxiosRequestConfig): AxiosPromise<Array<PortfolioProfile>> {
+            return localVarFp.mePortfoliosGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Executes provider-specific action for selected portfolio profile
+         * @summary Run provider action
+         * @param {number} id Portfolio profile id
+         * @param {string} action Provider action id
+         * @param {PortfolioActionRequest} [payload] Action payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdActionsActionPost(id: number, action: string, payload?: PortfolioActionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioActionResponse> {
+            return localVarFp.mePortfoliosIdActionsActionPost(id, action, payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns composition snapshot for selected portfolio profile
+         * @summary Get portfolio composition snapshot
+         * @param {number} id Portfolio profile id
+         * @param {string} [date] Snapshot date (YYYY-MM-DD)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdCompositionGet(id: number, date?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<PortfolioCompositionEntry>> {
+            return localVarFp.mePortfoliosIdCompositionGet(id, date, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns ticker composition series for selected portfolio profile
+         * @summary Get portfolio composition series
+         * @param {number} id Portfolio profile id
+         * @param {string} [tickers] Comma-separated tickers
+         * @param {number} [topCount] Top constituents count (0 &#x3D; all)
+         * @param {string} [selectionMode] Ticker selection mode: fixed|rolling
+         * @param {string} [selectionDate] Selection date (YYYY-MM-DD)
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdCompositionSeriesGet(id: number, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<PortfolioCompositionSeriesPoint>; }> {
+            return localVarFp.mePortfoliosIdCompositionSeriesGet(id, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Deletes selected portfolio profile
+         * @summary Delete portfolio profile
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdDelete(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.mePortfoliosIdDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns history points for selected portfolio profile
+         * @summary Get portfolio history
+         * @param {number} id Portfolio profile id
+         * @param {string} [from] Start date (YYYY-MM-DD)
+         * @param {string} [till] End date (YYYY-MM-DD)
+         * @param {number} [intervalDays] Downsample interval in days
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdHistoryGet(id: number, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<PortfolioHistoryPoint>> {
+            return localVarFp.mePortfoliosIdHistoryGet(id, from, till, intervalDays, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns portfolio operations history with cursor pagination
+         * @summary Get portfolio operations
+         * @param {number} id Portfolio profile id
+         * @param {string} [cursor] Cursor from previous response
+         * @param {number} [limit] Page size (1-200, default 50)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdOperationsGet(id: number, cursor?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioOperationsHistoryResponse> {
+            return localVarFp.mePortfoliosIdOperationsGet(id, cursor, limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates selected portfolio profile (name/default/config/secret)
+         * @summary Update portfolio profile
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioProfilePatchRequest} payload Portfolio profile patch payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdPatch(id: number, payload: PortfolioProfilePatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioProfile> {
+            return localVarFp.mePortfoliosIdPatch(id, payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns unified summary (balances and positions) by portfolio profile
+         * @summary Get portfolio summary
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdSummaryGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioSummaryResponse> {
+            return localVarFp.mePortfoliosIdSummaryGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates provider-backed portfolio profile for the current user
+         * @summary Create portfolio profile
+         * @param {PortfolioProfileCreateRequest} payload Portfolio profile payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosPost(payload: PortfolioProfileCreateRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioProfile> {
+            return localVarFp.mePortfoliosPost(payload, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * PortfolioApi - object-oriented interface
+ */
+export class PortfolioApi extends BaseAPI {
+    /**
+     * Returns current user portfolio profiles with provider capabilities
+     * @summary List portfolio profiles
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosGet(options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Executes provider-specific action for selected portfolio profile
+     * @summary Run provider action
+     * @param {number} id Portfolio profile id
+     * @param {string} action Provider action id
+     * @param {PortfolioActionRequest} [payload] Action payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdActionsActionPost(id: number, action: string, payload?: PortfolioActionRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdActionsActionPost(id, action, payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns composition snapshot for selected portfolio profile
+     * @summary Get portfolio composition snapshot
+     * @param {number} id Portfolio profile id
+     * @param {string} [date] Snapshot date (YYYY-MM-DD)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdCompositionGet(id: number, date?: string, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdCompositionGet(id, date, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns ticker composition series for selected portfolio profile
+     * @summary Get portfolio composition series
+     * @param {number} id Portfolio profile id
+     * @param {string} [tickers] Comma-separated tickers
+     * @param {number} [topCount] Top constituents count (0 &#x3D; all)
+     * @param {string} [selectionMode] Ticker selection mode: fixed|rolling
+     * @param {string} [selectionDate] Selection date (YYYY-MM-DD)
+     * @param {string} [from] Start date (YYYY-MM-DD)
+     * @param {string} [till] End date (YYYY-MM-DD)
+     * @param {number} [intervalDays] Downsample interval in days
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdCompositionSeriesGet(id: number, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdCompositionSeriesGet(id, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Deletes selected portfolio profile
+     * @summary Delete portfolio profile
+     * @param {number} id Portfolio profile id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdDelete(id: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns history points for selected portfolio profile
+     * @summary Get portfolio history
+     * @param {number} id Portfolio profile id
+     * @param {string} [from] Start date (YYYY-MM-DD)
+     * @param {string} [till] End date (YYYY-MM-DD)
+     * @param {number} [intervalDays] Downsample interval in days
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdHistoryGet(id: number, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdHistoryGet(id, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns portfolio operations history with cursor pagination
+     * @summary Get portfolio operations
+     * @param {number} id Portfolio profile id
+     * @param {string} [cursor] Cursor from previous response
+     * @param {number} [limit] Page size (1-200, default 50)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdOperationsGet(id: number, cursor?: string, limit?: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdOperationsGet(id, cursor, limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates selected portfolio profile (name/default/config/secret)
+     * @summary Update portfolio profile
+     * @param {number} id Portfolio profile id
+     * @param {PortfolioProfilePatchRequest} payload Portfolio profile patch payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdPatch(id: number, payload: PortfolioProfilePatchRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdPatch(id, payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns unified summary (balances and positions) by portfolio profile
+     * @summary Get portfolio summary
+     * @param {number} id Portfolio profile id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdSummaryGet(id: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdSummaryGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates provider-backed portfolio profile for the current user
+     * @summary Create portfolio profile
+     * @param {PortfolioProfileCreateRequest} payload Portfolio profile payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosPost(payload: PortfolioProfileCreateRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosPost(payload, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * SettingsApi - axios parameter creator
  */
 export const SettingsApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -1851,7 +2696,7 @@ export const TbankApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Sets connected account to use by default for test-buy and portfolio actions
+         * Sets connected account to use by default for portfolio actions
          * @summary Set T-Bank default account
          * @param {TBankSetDefaultAccountRequest} payload Default account payload
          * @param {*} [options] Override http request option.
@@ -1987,316 +2832,6 @@ export const TbankApiAxiosParamCreator = function (configuration?: Configuration
                 options: localVarRequestOptions,
             };
         },
-        /**
-         * Returns executed account operations (buy/sell/etc.) with cursor pagination
-         * @summary Get T-Bank account operations history
-         * @param {string} [accountId] Account id
-         * @param {string} [cursor] Cursor from previous response
-         * @param {number} [limit] Page size (1-200, default 50)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankOperationsGet: async (accountId?: string, cursor?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/tbank/operations`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (accountId !== undefined) {
-                localVarQueryParameter['account_id'] = accountId;
-            }
-
-            if (cursor !== undefined) {
-                localVarQueryParameter['cursor'] = cursor;
-            }
-
-            if (limit !== undefined) {
-                localVarQueryParameter['limit'] = limit;
-            }
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns reconstructed composition snapshot for requested date (or latest).
-         * @summary Get T-Bank operation-derived portfolio composition snapshot
-         * @param {string} [accountId] Account id
-         * @param {string} [date] Snapshot date (YYYY-MM-DD)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioCompositionGet: async (accountId?: string, date?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/tbank/portfolio/composition`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (accountId !== undefined) {
-                localVarQueryParameter['account_id'] = accountId;
-            }
-
-            if (date !== undefined) {
-                localVarQueryParameter['date'] = date;
-            }
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns downsampled composition weight series reconstructed from operations and current holdings.
-         * @summary Get T-Bank operation-derived portfolio composition series
-         * @param {string} [accountId] Account id
-         * @param {string} [tickers] Comma-separated list of tickers
-         * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
-         * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
-         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
-         * @param {string} [from] Start date (YYYY-MM-DD)
-         * @param {string} [till] End date (YYYY-MM-DD)
-         * @param {number} [intervalDays] Downsample interval in days
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioCompositionSeriesGet: async (accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/tbank/portfolio/composition/series`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (accountId !== undefined) {
-                localVarQueryParameter['account_id'] = accountId;
-            }
-
-            if (tickers !== undefined) {
-                localVarQueryParameter['tickers'] = tickers;
-            }
-
-            if (topCount !== undefined) {
-                localVarQueryParameter['topCount'] = topCount;
-            }
-
-            if (selectionMode !== undefined) {
-                localVarQueryParameter['selectionMode'] = selectionMode;
-            }
-
-            if (selectionDate !== undefined) {
-                localVarQueryParameter['selectionDate'] = selectionDate;
-            }
-
-            if (from !== undefined) {
-                localVarQueryParameter['from'] = from;
-            }
-
-            if (till !== undefined) {
-                localVarQueryParameter['till'] = till;
-            }
-
-            if (intervalDays !== undefined) {
-                localVarQueryParameter['intervalDays'] = intervalDays;
-            }
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns balances and positions for selected account (or default account if omitted)
-         * @summary Get T-Bank account balances and portfolio
-         * @param {string} [accountId] Account id
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioGet: async (accountId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/tbank/portfolio`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (accountId !== undefined) {
-                localVarQueryParameter['account_id'] = accountId;
-            }
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns portfolio history reconstructed from operations and current portfolio positions.
-         * @summary Get T-Bank operation-derived portfolio history
-         * @param {string} [accountId] Account id
-         * @param {string} [from] Start date (YYYY-MM-DD)
-         * @param {string} [till] End date (YYYY-MM-DD)
-         * @param {number} [intervalDays] Downsample interval in days
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioHistoryGet: async (accountId?: string, from?: string, till?: string, intervalDays?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/tbank/portfolio/history`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (accountId !== undefined) {
-                localVarQueryParameter['account_id'] = accountId;
-            }
-
-            if (from !== undefined) {
-                localVarQueryParameter['from'] = from;
-            }
-
-            if (till !== undefined) {
-                localVarQueryParameter['till'] = till;
-            }
-
-            if (intervalDays !== undefined) {
-                localVarQueryParameter['intervalDays'] = intervalDays;
-            }
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Adds virtual money to selected sandbox account
-         * @summary Top up T-Bank sandbox account
-         * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankSandboxPayInPost: async (payload: TBankSandboxPayInRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'payload' is not null or undefined
-            assertParamExists('meTbankSandboxPayInPost', 'payload', payload)
-            const localVarPath = `/me/tbank/sandbox/pay-in`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Places a market buy order using the connected user T-Bank account
-         * @summary Create T-Bank test buy order
-         * @param {TBankTestBuyRequest} payload T-Bank test buy payload
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankTestBuyPost: async (payload: TBankTestBuyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'payload' is not null or undefined
-            assertParamExists('meTbankTestBuyPost', 'payload', payload)
-            const localVarPath = `/me/tbank/test-buy`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
     }
 };
 
@@ -2320,7 +2855,7 @@ export const TbankApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Sets connected account to use by default for test-buy and portfolio actions
+         * Sets connected account to use by default for portfolio actions
          * @summary Set T-Bank default account
          * @param {TBankSetDefaultAccountRequest} payload Default account payload
          * @param {*} [options] Override http request option.
@@ -2370,110 +2905,6 @@ export const TbankApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankInstrumentsLookupGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
-        /**
-         * Returns executed account operations (buy/sell/etc.) with cursor pagination
-         * @summary Get T-Bank account operations history
-         * @param {string} [accountId] Account id
-         * @param {string} [cursor] Cursor from previous response
-         * @param {number} [limit] Page size (1-200, default 50)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankOperationsGet(accountId?: string, cursor?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankOperationsHistoryResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankOperationsGet(accountId, cursor, limit, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankOperationsGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns reconstructed composition snapshot for requested date (or latest).
-         * @summary Get T-Bank operation-derived portfolio composition snapshot
-         * @param {string} [accountId] Account id
-         * @param {string} [date] Snapshot date (YYYY-MM-DD)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankPortfolioCompositionGet(accountId?: string, date?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<TBankPortfolioCompositionEntry>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioCompositionGet(accountId, date, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioCompositionGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns downsampled composition weight series reconstructed from operations and current holdings.
-         * @summary Get T-Bank operation-derived portfolio composition series
-         * @param {string} [accountId] Account id
-         * @param {string} [tickers] Comma-separated list of tickers
-         * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
-         * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
-         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
-         * @param {string} [from] Start date (YYYY-MM-DD)
-         * @param {string} [till] End date (YYYY-MM-DD)
-         * @param {number} [intervalDays] Downsample interval in days
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankPortfolioCompositionSeriesGet(accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: Array<TBankPortfolioCompositionSeriesPoint>; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioCompositionSeriesGet(accountId, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioCompositionSeriesGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns balances and positions for selected account (or default account if omitted)
-         * @summary Get T-Bank account balances and portfolio
-         * @param {string} [accountId] Account id
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankAccountPortfolioResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioGet(accountId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns portfolio history reconstructed from operations and current portfolio positions.
-         * @summary Get T-Bank operation-derived portfolio history
-         * @param {string} [accountId] Account id
-         * @param {string} [from] Start date (YYYY-MM-DD)
-         * @param {string} [till] End date (YYYY-MM-DD)
-         * @param {number} [intervalDays] Downsample interval in days
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankPortfolioHistoryGet(accountId?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<TBankPortfolioHistoryPoint>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankPortfolioHistoryGet(accountId, from, till, intervalDays, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankPortfolioHistoryGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Adds virtual money to selected sandbox account
-         * @summary Top up T-Bank sandbox account
-         * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankSandboxPayInPost(payload: TBankSandboxPayInRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankSandboxPayInResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankSandboxPayInPost(payload, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankSandboxPayInPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Places a market buy order using the connected user T-Bank account
-         * @summary Create T-Bank test buy order
-         * @param {TBankTestBuyRequest} payload T-Bank test buy payload
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meTbankTestBuyPost(payload: TBankTestBuyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TBankTestBuyResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meTbankTestBuyPost(payload, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['TbankApi.meTbankTestBuyPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
     }
 };
 
@@ -2494,7 +2925,7 @@ export const TbankApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.meTbankConnectPost(payload, options).then((request) => request(axios, basePath));
         },
         /**
-         * Sets connected account to use by default for test-buy and portfolio actions
+         * Sets connected account to use by default for portfolio actions
          * @summary Set T-Bank default account
          * @param {TBankSetDefaultAccountRequest} payload Default account payload
          * @param {*} [options] Override http request option.
@@ -2532,89 +2963,6 @@ export const TbankApiFactory = function (configuration?: Configuration, basePath
         meTbankInstrumentsLookupGet(ticker: string, classCode?: string, options?: RawAxiosRequestConfig): AxiosPromise<TBankInstrumentLookupResponse> {
             return localVarFp.meTbankInstrumentsLookupGet(ticker, classCode, options).then((request) => request(axios, basePath));
         },
-        /**
-         * Returns executed account operations (buy/sell/etc.) with cursor pagination
-         * @summary Get T-Bank account operations history
-         * @param {string} [accountId] Account id
-         * @param {string} [cursor] Cursor from previous response
-         * @param {number} [limit] Page size (1-200, default 50)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankOperationsGet(accountId?: string, cursor?: string, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<TBankOperationsHistoryResponse> {
-            return localVarFp.meTbankOperationsGet(accountId, cursor, limit, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns reconstructed composition snapshot for requested date (or latest).
-         * @summary Get T-Bank operation-derived portfolio composition snapshot
-         * @param {string} [accountId] Account id
-         * @param {string} [date] Snapshot date (YYYY-MM-DD)
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioCompositionGet(accountId?: string, date?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<TBankPortfolioCompositionEntry>> {
-            return localVarFp.meTbankPortfolioCompositionGet(accountId, date, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns downsampled composition weight series reconstructed from operations and current holdings.
-         * @summary Get T-Bank operation-derived portfolio composition series
-         * @param {string} [accountId] Account id
-         * @param {string} [tickers] Comma-separated list of tickers
-         * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
-         * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
-         * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
-         * @param {string} [from] Start date (YYYY-MM-DD)
-         * @param {string} [till] End date (YYYY-MM-DD)
-         * @param {number} [intervalDays] Downsample interval in days
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioCompositionSeriesGet(accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: Array<TBankPortfolioCompositionSeriesPoint>; }> {
-            return localVarFp.meTbankPortfolioCompositionSeriesGet(accountId, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns balances and positions for selected account (or default account if omitted)
-         * @summary Get T-Bank account balances and portfolio
-         * @param {string} [accountId] Account id
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig): AxiosPromise<TBankAccountPortfolioResponse> {
-            return localVarFp.meTbankPortfolioGet(accountId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns portfolio history reconstructed from operations and current portfolio positions.
-         * @summary Get T-Bank operation-derived portfolio history
-         * @param {string} [accountId] Account id
-         * @param {string} [from] Start date (YYYY-MM-DD)
-         * @param {string} [till] End date (YYYY-MM-DD)
-         * @param {number} [intervalDays] Downsample interval in days
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankPortfolioHistoryGet(accountId?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<TBankPortfolioHistoryPoint>> {
-            return localVarFp.meTbankPortfolioHistoryGet(accountId, from, till, intervalDays, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Adds virtual money to selected sandbox account
-         * @summary Top up T-Bank sandbox account
-         * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankSandboxPayInPost(payload: TBankSandboxPayInRequest, options?: RawAxiosRequestConfig): AxiosPromise<TBankSandboxPayInResponse> {
-            return localVarFp.meTbankSandboxPayInPost(payload, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Places a market buy order using the connected user T-Bank account
-         * @summary Create T-Bank test buy order
-         * @param {TBankTestBuyRequest} payload T-Bank test buy payload
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meTbankTestBuyPost(payload: TBankTestBuyRequest, options?: RawAxiosRequestConfig): AxiosPromise<TBankTestBuyResponse> {
-            return localVarFp.meTbankTestBuyPost(payload, options).then((request) => request(axios, basePath));
-        },
     };
 };
 
@@ -2634,7 +2982,7 @@ export class TbankApi extends BaseAPI {
     }
 
     /**
-     * Sets connected account to use by default for test-buy and portfolio actions
+     * Sets connected account to use by default for portfolio actions
      * @summary Set T-Bank default account
      * @param {TBankSetDefaultAccountRequest} payload Default account payload
      * @param {*} [options] Override http request option.
@@ -2674,96 +3022,6 @@ export class TbankApi extends BaseAPI {
      */
     public meTbankInstrumentsLookupGet(ticker: string, classCode?: string, options?: RawAxiosRequestConfig) {
         return TbankApiFp(this.configuration).meTbankInstrumentsLookupGet(ticker, classCode, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns executed account operations (buy/sell/etc.) with cursor pagination
-     * @summary Get T-Bank account operations history
-     * @param {string} [accountId] Account id
-     * @param {string} [cursor] Cursor from previous response
-     * @param {number} [limit] Page size (1-200, default 50)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankOperationsGet(accountId?: string, cursor?: string, limit?: number, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankOperationsGet(accountId, cursor, limit, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns reconstructed composition snapshot for requested date (or latest).
-     * @summary Get T-Bank operation-derived portfolio composition snapshot
-     * @param {string} [accountId] Account id
-     * @param {string} [date] Snapshot date (YYYY-MM-DD)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankPortfolioCompositionGet(accountId?: string, date?: string, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankPortfolioCompositionGet(accountId, date, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns downsampled composition weight series reconstructed from operations and current holdings.
-     * @summary Get T-Bank operation-derived portfolio composition series
-     * @param {string} [accountId] Account id
-     * @param {string} [tickers] Comma-separated list of tickers
-     * @param {number} [topCount] When tickers are omitted: number of top constituents (0 &#x3D; all, default 10)
-     * @param {string} [selectionMode] Ticker auto-selection mode: fixed|rolling (default fixed)
-     * @param {string} [selectionDate] Top selection date for fixed mode (YYYY-MM-DD)
-     * @param {string} [from] Start date (YYYY-MM-DD)
-     * @param {string} [till] End date (YYYY-MM-DD)
-     * @param {number} [intervalDays] Downsample interval in days
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankPortfolioCompositionSeriesGet(accountId?: string, tickers?: string, topCount?: number, selectionMode?: string, selectionDate?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankPortfolioCompositionSeriesGet(accountId, tickers, topCount, selectionMode, selectionDate, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns balances and positions for selected account (or default account if omitted)
-     * @summary Get T-Bank account balances and portfolio
-     * @param {string} [accountId] Account id
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankPortfolioGet(accountId?: string, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankPortfolioGet(accountId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns portfolio history reconstructed from operations and current portfolio positions.
-     * @summary Get T-Bank operation-derived portfolio history
-     * @param {string} [accountId] Account id
-     * @param {string} [from] Start date (YYYY-MM-DD)
-     * @param {string} [till] End date (YYYY-MM-DD)
-     * @param {number} [intervalDays] Downsample interval in days
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankPortfolioHistoryGet(accountId?: string, from?: string, till?: string, intervalDays?: number, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankPortfolioHistoryGet(accountId, from, till, intervalDays, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Adds virtual money to selected sandbox account
-     * @summary Top up T-Bank sandbox account
-     * @param {TBankSandboxPayInRequest} payload Sandbox pay-in payload
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankSandboxPayInPost(payload: TBankSandboxPayInRequest, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankSandboxPayInPost(payload, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Places a market buy order using the connected user T-Bank account
-     * @summary Create T-Bank test buy order
-     * @param {TBankTestBuyRequest} payload T-Bank test buy payload
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meTbankTestBuyPost(payload: TBankTestBuyRequest, options?: RawAxiosRequestConfig) {
-        return TbankApiFp(this.configuration).meTbankTestBuyPost(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

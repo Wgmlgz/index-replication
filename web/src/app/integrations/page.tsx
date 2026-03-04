@@ -3,8 +3,8 @@
 import { useTranslation } from "react-i18next";
 
 import { TelegramVerificationCard } from "@/components/telegram-verification-card";
-import { TBankConnectCard } from "@/components/tbank-test/connect-card";
-import { TBankConnectionProvider } from "@/components/tbank-test/tbank-connection-context";
+import { TBankConnectCard } from "@/components/tbank/connect-card";
+import { TBankConnectionProvider } from "@/components/tbank/tbank-connection-context";
 import { useUser } from "@/components/user-context";
 
 export default function IntegrationsPage() {

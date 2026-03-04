@@ -1,12 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { LogIn, LogOut, Package, PanelLeftIcon } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { LogIn, LogOut, Package, PanelLeftIcon, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/components/user-context';
 import { ModeToggle } from '@/components/ui/mode-toggle';
-import { DashboardCards } from '@/lib/menu';
+import {
+  DashboardCards,
+  PortfolioSidebarSubItems,
+  type SidebarSubItem,
+} from '@/lib/menu';
+import {
+  buildPortfolioHref,
+  parsePortfolioID,
+  PORTFOLIO_ID_QUERY_KEY,
+  PORTFOLIO_V2_ROUTES,
+} from '@/lib/portfolio-v2';
 import {
   Sidebar,
   SidebarContent,
@@ -18,15 +28,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { user, hasPermission, logoutUser } = useUser();
   const { state, toggleSidebar } = useSidebar();
+  const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
+  const selectedPortfolioTab = searchParams.get('tab');
+  const isPortfolioSectionActive = pathname.startsWith('/portfolio-v2');
 
   const handleLogout = async () => {
     try {
@@ -34,6 +51,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     } finally {
       router.push('/login');
     }
+  };
+
+  const isPortfolioSubItemActive = (item: SidebarSubItem): boolean => {
+    const itemPathname = item.activePathname ?? item.href.split('?')[0];
+    if (pathname !== itemPathname) {
+      return false;
+    }
+
+    if (!item.activeTab) {
+      return true;
+    }
+
+    if (item.activeTab === 'overview') {
+      return !selectedPortfolioTab || selectedPortfolioTab === 'overview';
+    }
+
+    return selectedPortfolioTab === item.activeTab;
   };
 
   return (
@@ -69,6 +103,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 const isVisible =
                   !item.permission || hasPermission(item.permission);
                 if (!isVisible) return null;
+                const isPortfolioCard = item.titleKey === 'navigation.cards.portfolio.title';
+                if (isPortfolioCard) return null;
 
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -87,6 +123,48 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuItem>
                 );
               })}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isPortfolioSectionActive}
+                  tooltip={t('navigation.cards.portfolio.title')}
+                >
+                  <Link href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.profiles, selectedPortfolioID)}>
+                    <Wallet className='size-4' />
+                    <span>{t('navigation.cards.portfolio.title')}</span>
+                  </Link>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  {PortfolioSidebarSubItems.map(item => {
+                    if (item.kind === 'label') {
+                      return (
+                        <SidebarMenuSubItem key={item.titleKey}>
+                          <div className='px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                            {t(item.titleKey)}
+                          </div>
+                        </SidebarMenuSubItem>
+                      );
+                    }
+
+                    const isVisible = !item.permission || hasPermission(item.permission);
+                    if (!isVisible) return null;
+
+                    return (
+                      <SidebarMenuSubItem key={item.href}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isPortfolioSubItemActive(item)}
+                        >
+                          <Link href={buildPortfolioHref(item.href, selectedPortfolioID)}>
+                            <span>{t(item.titleKey)}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    );
+                  })}
+                </SidebarMenuSub>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
