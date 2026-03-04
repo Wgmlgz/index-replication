@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatNumber, formatPercent } from "@/app/portfolio-v2/components/portfolio-formatting";
+import { formatNumber, formatPercent } from "@/app/portfolio/components/portfolio-formatting";
 
 type PortfolioSummaryPanelProps = {
   portfolioID: number | null;
@@ -47,7 +47,7 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
         ).data;
         setSummary(nextSummary);
       } catch (err) {
-        setError(parseErrorMessage(err, t("portfolioV2.errors.summary")));
+        setError(parseErrorMessage(err, t("portfolio.errors.summary")));
       } finally {
         setLoadingSummary(false);
       }
@@ -69,13 +69,13 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("portfolioV2.overview.summaryTitle")}</CardTitle>
+          <CardTitle>{t("portfolio.overview.summaryTitle")}</CardTitle>
           <CardDescription>
-            {t("portfolioV2.overview.summaryDescription")}
+            {t("portfolio.overview.summaryDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          {t("portfolioV2.card.selectPrompt")}
+          {t("portfolio.card.selectPrompt")}
         </CardContent>
       </Card>
     );
@@ -84,9 +84,9 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
   return (
     <Card className="h-full min-h-0 overflow-hidden">
       <CardHeader>
-        <CardTitle>{t("portfolioV2.overview.summaryTitle")}</CardTitle>
+        <CardTitle>{t("portfolio.overview.summaryTitle")}</CardTitle>
         <CardDescription>
-          {t("portfolioV2.overview.summaryDescription")}
+          {t("portfolio.overview.summaryDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm">
@@ -99,31 +99,31 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
 
         {loadingSummary ? (
           <div className="text-muted-foreground">
-            {t("portfolioV2.card.loading")}
+            {t("portfolio.card.loading")}
           </div>
         ) : summary ? (
           <>
             <div className="space-y-2">
               <div className="font-medium">
-                {t("portfolioV2.overview.balancesTitle")}
+                {t("portfolio.overview.balancesTitle")}
               </div>
               <div className="rounded-md border p-3">
                 <div>
                   <span className="font-medium">
-                    {t("portfolioV2.card.totalLabel")}{" "}
+                    {t("portfolio.card.totalLabel")}{" "}
                   </span>
                   {formatNumber(summary.total_amount_portfolio ?? 0)}{" "}
                   {summary.total_amount_currency || ""}
                 </div>
                 <div>
                   <span className="font-medium">
-                    {t("portfolioV2.card.dailyYieldLabel")}{" "}
+                    {t("portfolio.card.dailyYieldLabel")}{" "}
                   </span>
                   {formatNumber(summary.daily_yield ?? 0)}
                 </div>
                 <div>
                   <span className="font-medium">
-                    {t("portfolioV2.card.dailyYieldRelativeLabel")}{" "}
+                    {t("portfolio.card.dailyYieldRelativeLabel")}{" "}
                   </span>
                   {formatPercent(summary.daily_yield_relative ?? 0)}
                 </div>
@@ -134,19 +134,19 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="p-2">
-                        {t("portfolioV2.card.moneyCurrency")}
+                        {t("portfolio.card.moneyCurrency")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.moneyAvailable")}
+                        {t("portfolio.card.moneyAvailable")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.moneyBlocked")}
+                        {t("portfolio.card.moneyBlocked")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.moneyWithdrawAvailable")}
+                        {t("portfolio.card.moneyWithdrawAvailable")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.moneyWithdrawBlocked")}
+                        {t("portfolio.card.moneyWithdrawBlocked")}
                       </th>
                     </tr>
                   </thead>
@@ -154,7 +154,7 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
                     {(summary.money ?? []).length === 0 ? (
                       <tr>
                         <td className="p-2 text-muted-foreground" colSpan={5}>
-                          {t("portfolioV2.card.moneyEmpty")}
+                          {t("portfolio.card.moneyEmpty")}
                         </td>
                       </tr>
                     ) : (
@@ -183,7 +183,7 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
 
             <div className="space-y-2">
               <div className="font-medium">
-                {t("portfolioV2.card.positionsTitle", {
+                {t("portfolio.card.positionsTitle", {
                   count: Math.min((summary.positions ?? []).length, 10),
                 })}
               </div>
@@ -192,22 +192,22 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="p-2">
-                        {t("portfolioV2.card.positionTicker")}
+                        {t("portfolio.card.positionTicker")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.positionInstrumentID")}
+                        {t("portfolio.card.positionInstrumentID")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.positionQuantity")}
+                        {t("portfolio.card.positionQuantity")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.positionCurrentPrice")}
+                        {t("portfolio.card.positionCurrentPrice")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.positionCurrentValue")}
+                        {t("portfolio.card.positionCurrentValue")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.positionExpectedYield")}
+                        {t("portfolio.card.positionExpectedYield")}
                       </th>
                     </tr>
                   </thead>
@@ -215,7 +215,7 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
                     {(summary.positions ?? []).length === 0 ? (
                       <tr>
                         <td className="p-2 text-muted-foreground" colSpan={6}>
-                          {t("portfolioV2.card.positionsEmpty")}
+                          {t("portfolio.card.positionsEmpty")}
                         </td>
                       </tr>
                     ) : (
@@ -252,7 +252,7 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
           </>
         ) : (
           <div className="text-muted-foreground">
-            {t("portfolioV2.card.empty")}
+            {t("portfolio.card.empty")}
           </div>
         )}
       </CardContent>

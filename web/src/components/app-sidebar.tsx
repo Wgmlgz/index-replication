@@ -16,7 +16,7 @@ import {
   parsePortfolioID,
   PORTFOLIO_ID_QUERY_KEY,
   PORTFOLIO_V2_ROUTES,
-} from '@/lib/portfolio-v2';
+} from '@/lib/portfolio';
 import {
   Sidebar,
   SidebarContent,
@@ -43,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, toggleSidebar } = useSidebar();
   const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
   const selectedPortfolioTab = searchParams.get('tab');
-  const isPortfolioSectionActive = pathname.startsWith('/portfolio-v2');
+  const isPortfolioSectionActive = pathname.startsWith('/portfolio');
 
   const handleLogout = async () => {
     try {

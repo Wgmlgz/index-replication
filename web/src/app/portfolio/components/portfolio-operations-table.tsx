@@ -20,7 +20,7 @@ import {
   formatDateTime,
   formatEnumLabel,
   formatNumber,
-} from '@/app/portfolio-v2/components/portfolio-formatting';
+} from '@/app/portfolio/components/portfolio-formatting';
 
 const OPERATIONS_PAGE_SIZE = 50;
 
@@ -72,7 +72,7 @@ export function PortfolioOperationsTable({
         setOperationsHasNext(Boolean(response.has_next));
         setOperationsNextCursor(response.next_cursor || '');
       } catch (err) {
-        setOperationsError(parseErrorMessage(err, t('portfolioV2.errors.operations')));
+        setOperationsError(parseErrorMessage(err, t('portfolio.errors.operations')));
         if (!append) {
           setOperations([]);
           setOperationsHasNext(false);
@@ -113,11 +113,11 @@ export function PortfolioOperationsTable({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('portfolioV2.operations.title')}</CardTitle>
-          <CardDescription>{t('portfolioV2.operations.description')}</CardDescription>
+          <CardTitle>{t('portfolio.operations.title')}</CardTitle>
+          <CardDescription>{t('portfolio.operations.description')}</CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
-          {t('portfolioV2.card.selectPrompt')}
+          {t('portfolio.card.selectPrompt')}
         </CardContent>
       </Card>
     );
@@ -126,8 +126,8 @@ export function PortfolioOperationsTable({
   return (
     <Card className='h-full min-h-0 overflow-hidden'>
       <CardHeader>
-        <CardTitle>{t('portfolioV2.operations.title')}</CardTitle>
-        <CardDescription>{t('portfolioV2.operations.description')}</CardDescription>
+        <CardTitle>{t('portfolio.operations.title')}</CardTitle>
+        <CardDescription>{t('portfolio.operations.description')}</CardDescription>
       </CardHeader>
       <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
         {operationsError ? (
@@ -138,28 +138,28 @@ export function PortfolioOperationsTable({
         ) : null}
 
         {loadingOperations ? (
-          <div className='text-muted-foreground'>{t('portfolioV2.card.operationsLoading')}</div>
+          <div className='text-muted-foreground'>{t('portfolio.card.operationsLoading')}</div>
         ) : (
           <div className='overflow-auto rounded-md border'>
             <table className='w-full text-left text-sm'>
               <thead className='bg-muted/50'>
                 <tr>
-                  <th className='p-2'>{t('portfolioV2.card.operationDate')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationType')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationState')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationInstrument')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationQuantity')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationPrice')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationPayment')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationCommission')}</th>
-                  <th className='p-2'>{t('portfolioV2.card.operationDescription')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationDate')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationType')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationState')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationInstrument')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationQuantity')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationPrice')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationPayment')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationCommission')}</th>
+                  <th className='p-2'>{t('portfolio.card.operationDescription')}</th>
                 </tr>
               </thead>
               <tbody>
                 {operations.length === 0 ? (
                   <tr>
                     <td className='p-2 text-muted-foreground' colSpan={9}>
-                      {t('portfolioV2.card.operationsEmpty')}
+                      {t('portfolio.card.operationsEmpty')}
                     </td>
                   </tr>
                 ) : (
@@ -207,8 +207,8 @@ export function PortfolioOperationsTable({
             disabled={loadingMoreOperations}
           >
             {loadingMoreOperations
-              ? t('portfolioV2.card.operationsLoadingMore')
-              : t('portfolioV2.card.operationsLoadMore')}
+              ? t('portfolio.card.operationsLoadingMore')
+              : t('portfolio.card.operationsLoadMore')}
           </Button>
         ) : null}
       </CardContent>

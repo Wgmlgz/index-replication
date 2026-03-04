@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PortfolioSimpleActionProps } from "@/app/portfolio-v2/components/portfolio-summary-actions/types";
+import type { PortfolioSimpleActionProps } from "@/app/portfolio/components/portfolio-summary-actions/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +19,11 @@ export function PortfolioTBankTestBuyAction({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-tbank-test-buy-instrument">
-          {t("portfolioV2.card.tbankTestBuyInstrumentID")}
+        <Label htmlFor="portfolio-tbank-test-buy-instrument">
+          {t("portfolio.card.tbankTestBuyInstrumentID")}
         </Label>
         <Input
-          id="portfolio-v2-tbank-test-buy-instrument"
+          id="portfolio-tbank-test-buy-instrument"
           type="text"
           value={instrumentID}
           onChange={(event) => setInstrumentID(event.target.value)}
@@ -31,11 +31,11 @@ export function PortfolioTBankTestBuyAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-tbank-test-buy-account">
-          {t("portfolioV2.card.tbankTestBuyAccountID")}
+        <Label htmlFor="portfolio-tbank-test-buy-account">
+          {t("portfolio.card.tbankTestBuyAccountID")}
         </Label>
         <Input
-          id="portfolio-v2-tbank-test-buy-account"
+          id="portfolio-tbank-test-buy-account"
           type="text"
           value={accountID}
           onChange={(event) => setAccountID(event.target.value)}
@@ -43,11 +43,11 @@ export function PortfolioTBankTestBuyAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-tbank-test-buy-quantity">
-          {t("portfolioV2.card.tbankTestBuyQuantity")}
+        <Label htmlFor="portfolio-tbank-test-buy-quantity">
+          {t("portfolio.card.tbankTestBuyQuantity")}
         </Label>
         <Input
-          id="portfolio-v2-tbank-test-buy-quantity"
+          id="portfolio-tbank-test-buy-quantity"
           type="number"
           min={1}
           value={quantity}
@@ -66,7 +66,7 @@ export function PortfolioTBankTestBuyAction({
         }
         disabled={working || !instrumentID.trim()}
       >
-        {action.label || t("portfolioV2.card.runAction")}
+        {action.label || t("portfolio.card.runAction")}
       </Button>
     </div>
   );

@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio-v2';
+import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
 
-export default function PortfolioV2EntryPage() {
+export default function PortfolioEntryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 

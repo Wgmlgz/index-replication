@@ -16,7 +16,7 @@ import {
   parsePortfolioUrlState,
   PORTFOLIO_ID_QUERY_KEY,
   PORTFOLIO_V2_PROFILES_QUERY_KEY,
-} from '@/lib/portfolio-v2';
+} from '@/lib/portfolio';
 import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
 
 export type NormalizedPortfolioProfile = PortfolioProfile & {
@@ -35,7 +35,7 @@ function normalizeProfiles(profiles: PortfolioProfile[]): NormalizedPortfolioPro
   );
 }
 
-export function usePortfolioV2() {
+export function usePortfolio() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const pathname = usePathname();
@@ -150,7 +150,7 @@ export function usePortfolioV2() {
         await createMutation.mutateAsync(payload);
         return true;
       } catch (err) {
-        setError(parseErrorMessage(err, t('portfolioV2.errors.createProfile')));
+        setError(parseErrorMessage(err, t('portfolio.errors.createProfile')));
         return false;
       }
     },
@@ -167,7 +167,7 @@ export function usePortfolioV2() {
       await deleteMutation.mutateAsync(effectiveSelectedPortfolioID);
       return true;
     } catch (err) {
-      setError(parseErrorMessage(err, t('portfolioV2.errors.deleteProfile')));
+      setError(parseErrorMessage(err, t('portfolio.errors.deleteProfile')));
       return false;
     }
   }, [deleteMutation, effectiveSelectedPortfolioID, parseErrorMessage, t]);

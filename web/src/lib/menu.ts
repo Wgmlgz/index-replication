@@ -1,6 +1,6 @@
 import { PermissionStr } from "@/components/user-context";
 import { History, Users, LineChart, Wallet, Plug } from "lucide-react";
-import { PORTFOLIO_V2_ROUTES } from "@/lib/portfolio-v2";
+import { PORTFOLIO_V2_ROUTES } from "@/lib/portfolio";
 
 export type DashboardCard = {
   title: string;

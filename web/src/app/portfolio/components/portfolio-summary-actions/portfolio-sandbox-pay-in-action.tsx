@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PortfolioSimpleActionProps } from "@/app/portfolio-v2/components/portfolio-summary-actions/types";
-import { DEFAULT_SANDBOX_TOP_UP_UNITS } from "@/app/portfolio-v2/components/portfolio-formatting";
+import type { PortfolioSimpleActionProps } from "@/app/portfolio/components/portfolio-summary-actions/types";
+import { DEFAULT_SANDBOX_TOP_UP_UNITS } from "@/app/portfolio/components/portfolio-formatting";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +19,11 @@ export function PortfolioSandboxPayInAction({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-sandbox-currency">
-          {t("portfolioV2.card.sandboxCurrency")}
+        <Label htmlFor="portfolio-sandbox-currency">
+          {t("portfolio.card.sandboxCurrency")}
         </Label>
         <Input
-          id="portfolio-v2-sandbox-currency"
+          id="portfolio-sandbox-currency"
           type="text"
           value={currency}
           onChange={(event) => setCurrency(event.target.value.toUpperCase())}
@@ -31,9 +31,9 @@ export function PortfolioSandboxPayInAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-sandbox-units">{t("portfolioV2.card.sandboxUnits")}</Label>
+        <Label htmlFor="portfolio-sandbox-units">{t("portfolio.card.sandboxUnits")}</Label>
         <Input
-          id="portfolio-v2-sandbox-units"
+          id="portfolio-sandbox-units"
           type="number"
           min={1}
           value={units}
@@ -58,7 +58,7 @@ export function PortfolioSandboxPayInAction({
         }
         disabled={working}
       >
-        {action.label || t("portfolioV2.card.runAction")}
+        {action.label || t("portfolio.card.runAction")}
       </Button>
     </div>
   );
