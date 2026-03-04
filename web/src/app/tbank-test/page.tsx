@@ -2,7 +2,6 @@
 
 import { useTranslation } from "react-i18next";
 
-import { TBankBuyCard } from "@/components/tbank/buy-card";
 import { TBankInstrumentLookupCard } from "@/components/tbank/instrument-lookup-card";
 import { TBankConnectionProvider } from "@/components/tbank/tbank-connection-context";
 
@@ -16,8 +15,7 @@ function TBankTestPageContent() {
         <p className="text-muted-foreground">{t("tbankTest.description")}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TBankBuyCard />
+      <div className="grid gap-6">
         <TBankInstrumentLookupCard />
       </div>
     </div>

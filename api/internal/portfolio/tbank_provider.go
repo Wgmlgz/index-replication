@@ -29,6 +29,10 @@ func (p *TBankProvider) Capabilities(_ context.Context, _ *Profile) dto.Portfoli
 				ID:    "sandbox_pay_in",
 				Label: "Sandbox top up",
 			},
+			{
+				ID:    "test_buy",
+				Label: "Test buy",
+			},
 		},
 	}
 }
@@ -218,7 +222,7 @@ func (p *TBankProvider) RunAction(
 ) (map[string]interface{}, error) {
 	switch action {
 	case "sandbox_pay_in":
-		req := &dto.TBankSandboxPayInRequest{
+		req := &tbank.SandboxPayInRequest{
 			AccountID: profileAccountID(profile),
 			Currency:  "RUB",
 			Units:     1_000_000,
@@ -244,6 +248,40 @@ func (p *TBankProvider) RunAction(
 			"currency":    req.Currency,
 			"units":       req.Units,
 			"environment": resp.Environment,
+		}, nil
+	case "test_buy":
+		req := &tbank.TestBuyRequest{
+			AccountID:    profileAccountID(profile),
+			InstrumentID: "",
+			Quantity:     1,
+		}
+		if payload != nil {
+			if accountID := stringValue(payload["account_id"]); accountID != "" {
+				req.AccountID = accountID
+			}
+			if instrumentID := strings.ToUpper(stringValue(payload["instrument_id"])); instrumentID != "" {
+				req.InstrumentID = instrumentID
+			}
+			if quantity := int64Value(payload["quantity"]); quantity > 0 {
+				req.Quantity = quantity
+			}
+		}
+		if req.InstrumentID == "" {
+			return nil, ErrInvalidRequest
+		}
+
+		resp, err := p.service.CreateTestBuyOrder(ctx, profile.UserID, req)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{
+			"environment":             resp.Environment,
+			"account_id":              resp.AccountID,
+			"instrument_id":           resp.InstrumentID,
+			"quantity":                resp.Quantity,
+			"order_id":                resp.OrderID,
+			"execution_report_status": resp.ExecutionReportStatus,
+			"response":                resp.Response,
 		}, nil
 	default:
 		return nil, ErrInvalidAction

@@ -9,8 +9,8 @@ import (
 	"server/internal/models"
 
 	"github.com/google/uuid"
-	pb "opensource.tbank.ru/invest/invest-go/proto"
 	"google.golang.org/grpc"
+	pb "opensource.tbank.ru/invest/invest-go/proto"
 )
 
 const (
@@ -198,8 +198,8 @@ func (s *Service) Disconnect(userID int) error {
 func (s *Service) CreateTestBuyOrder(
 	ctx context.Context,
 	userID int,
-	req *dto.TBankTestBuyRequest,
-) (*dto.TBankTestBuyResponse, error) {
+	req *TestBuyRequest,
+) (*TestBuyResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -270,7 +270,7 @@ func (s *Service) CreateTestBuyOrder(
 		return nil, err
 	}
 
-	resp := &dto.TBankTestBuyResponse{
+	resp := &TestBuyResponse{
 		Environment:           environment,
 		AccountID:             accountID,
 		InstrumentID:          instrumentID,

@@ -162,20 +162,18 @@ The API now exposes DB-backed sync state endpoints:
 
 ## T-Bank Test Trading Endpoints
 
-Authenticated user endpoints for token connect + test buy flow:
+Authenticated user endpoints for integration status, connection, and instrument lookup:
 
 - `GET /api/me/tbank`
 - `POST /api/me/tbank/connect`
 - `POST /api/me/tbank/disconnect`
 - `POST /api/me/tbank/default-account`
-- `GET /api/me/tbank/portfolio`
-- `GET /api/me/tbank/portfolio/history`
-- `GET /api/me/tbank/portfolio/composition`
-- `GET /api/me/tbank/portfolio/composition/series`
-- `GET /api/me/tbank/operations`
-- `POST /api/me/tbank/sandbox/pay-in`
 - `GET /api/me/tbank/instruments/lookup`
-- `POST /api/me/tbank/test-buy`
+
+Trading/top-up operations are exposed through unified portfolio profile actions:
+
+- `POST /api/me/portfolios/:id/actions/sandbox_pay_in`
+- `POST /api/me/portfolios/:id/actions/test_buy`
 
 ## Unified Portfolio Endpoints
 

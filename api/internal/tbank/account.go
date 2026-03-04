@@ -71,7 +71,7 @@ func (s *Service) GetAccountPortfolio(
 	ctx context.Context,
 	userID int,
 	accountID string,
-) (*dto.TBankAccountPortfolioResponse, error) {
+) (*AccountPortfolioResponse, error) {
 	conn, err := s.getConnectedTBankConnection(userID)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (s *Service) GetAccountPortfolio(
 		return nil, err
 	}
 
-	return &dto.TBankAccountPortfolioResponse{
+	return &AccountPortfolioResponse{
 		Environment:                  conn.environment,
 		AccountID:                    resolvedAccountID,
 		TotalAmountPortfolio:         moneyValueToFloat(portfolioResp.GetTotalAmountPortfolio()),
@@ -129,7 +129,7 @@ func (s *Service) GetOperationsHistory(
 	accountID string,
 	cursor string,
 	limit int32,
-) (*dto.TBankOperationsHistoryResponse, error) {
+) (*OperationsHistoryResponse, error) {
 	conn, err := s.getConnectedTBankConnection(userID)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (s *Service) GetOperationsHistory(
 		return nil, err
 	}
 
-	return &dto.TBankOperationsHistoryResponse{
+	return &OperationsHistoryResponse{
 		Environment: conn.environment,
 		AccountID:   resolvedAccountID,
 		HasNext:     operationsResp.GetHasNext(),
@@ -183,8 +183,8 @@ func (s *Service) GetOperationsHistory(
 func (s *Service) SandboxPayIn(
 	ctx context.Context,
 	userID int,
-	req *dto.TBankSandboxPayInRequest,
-) (*dto.TBankSandboxPayInResponse, error) {
+	req *SandboxPayInRequest,
+) (*SandboxPayInResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -230,7 +230,7 @@ func (s *Service) SandboxPayIn(
 		},
 	)
 
-	return &dto.TBankSandboxPayInResponse{
+	return &SandboxPayInResponse{
 		Environment: conn.environment,
 		AccountID:   resolvedAccountID,
 		Currency:    currency,
@@ -394,10 +394,10 @@ func (s *Service) resolveAccountID(
 	return "", ErrTBankNoAccountFound
 }
 
-func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLimitsResponse) []dto.TBankMoneyBalance {
-	byCurrency := map[string]*dto.TBankMoneyBalance{}
+func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLimitsResponse) []MoneyBalance {
+	byCurrency := map[string]*MoneyBalance{}
 
-	ensure := func(currency string) *dto.TBankMoneyBalance {
+	ensure := func(currency string) *MoneyBalance {
 		currency = strings.ToUpper(strings.TrimSpace(currency))
 		if currency == "" {
 			currency = "UNKNOWN"
@@ -405,7 +405,7 @@ func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLi
 		if existing, ok := byCurrency[currency]; ok {
 			return existing
 		}
-		entry := &dto.TBankMoneyBalance{Currency: currency}
+		entry := &MoneyBalance{Currency: currency}
 		byCurrency[currency] = entry
 		return entry
 	}
@@ -432,7 +432,7 @@ func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLi
 		}
 	}
 
-	result := make([]dto.TBankMoneyBalance, 0, len(byCurrency))
+	result := make([]MoneyBalance, 0, len(byCurrency))
 	for _, entry := range byCurrency {
 		result = append(result, *entry)
 	}
@@ -442,8 +442,8 @@ func mergeMoneyBalances(positions *pb.PositionsResponse, withdraw *pb.WithdrawLi
 	return result
 }
 
-func mapPortfolioPositions(positions []*pb.PortfolioPosition) []dto.TBankPortfolioPosition {
-	result := make([]dto.TBankPortfolioPosition, 0, len(positions))
+func mapPortfolioPositions(positions []*pb.PortfolioPosition) []PortfolioPosition {
+	result := make([]PortfolioPosition, 0, len(positions))
 	for _, position := range positions {
 		if position == nil {
 			continue
@@ -457,7 +457,7 @@ func mapPortfolioPositions(positions []*pb.PortfolioPosition) []dto.TBankPortfol
 			instrumentID = strings.TrimSpace(position.GetFigi())
 		}
 
-		result = append(result, dto.TBankPortfolioPosition{
+		result = append(result, PortfolioPosition{
 			Ticker:         strings.TrimSpace(position.GetTicker()),
 			InstrumentID:   instrumentID,
 			Figi:           strings.TrimSpace(position.GetFigi()),
@@ -477,8 +477,8 @@ func mapPortfolioPositions(positions []*pb.PortfolioPosition) []dto.TBankPortfol
 	return result
 }
 
-func mapOperationsHistoryItems(items []*pb.OperationItem) []dto.TBankOperationHistoryItem {
-	result := make([]dto.TBankOperationHistoryItem, 0, len(items))
+func mapOperationsHistoryItems(items []*pb.OperationItem) []OperationHistoryItem {
+	result := make([]OperationHistoryItem, 0, len(items))
 	for _, item := range items {
 		if item == nil {
 			continue
@@ -489,7 +489,7 @@ func mapOperationsHistoryItems(items []*pb.OperationItem) []dto.TBankOperationHi
 			instrumentID = strings.TrimSpace(item.GetFigi())
 		}
 
-		result = append(result, dto.TBankOperationHistoryItem{
+		result = append(result, OperationHistoryItem{
 			Cursor:             strings.TrimSpace(item.GetCursor()),
 			ID:                 strings.TrimSpace(item.GetId()),
 			ParentOperationID:  strings.TrimSpace(item.GetParentOperationId()),

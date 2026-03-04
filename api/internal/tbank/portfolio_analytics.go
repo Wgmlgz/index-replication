@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"server/internal/api/dto"
-
 	"google.golang.org/grpc"
 	pb "opensource.tbank.ru/invest/invest-go/proto"
 )
@@ -54,7 +52,7 @@ func (s *Service) GetPortfolioHistory(
 	from string,
 	till string,
 	intervalDays int,
-) ([]dto.TBankPortfolioHistoryPoint, error) {
+) ([]PortfolioHistoryPoint, error) {
 	fromDate, tillDate, err := parseDateRangePointers(from, till)
 	if err != nil {
 		return nil, err
@@ -81,11 +79,11 @@ func (s *Service) GetPortfolioHistory(
 	anchors := resolveAnalyticsAnchors(operations, fromDate, tillDate)
 	anchors = downsampleDateStrings(anchors, intervalDays)
 	if len(anchors) == 0 {
-		return []dto.TBankPortfolioHistoryPoint{}, nil
+		return []PortfolioHistoryPoint{}, nil
 	}
 
 	snapshots := buildCompositionSnapshotsByDate(portfolio, operations, anchors)
-	points := make([]dto.TBankPortfolioHistoryPoint, 0, len(anchors))
+	points := make([]PortfolioHistoryPoint, 0, len(anchors))
 	currency := strings.ToUpper(strings.TrimSpace(portfolio.TotalAmountPortfolioCurrency))
 	for _, date := range anchors {
 		entries := snapshots[date]
@@ -95,7 +93,7 @@ func (s *Service) GetPortfolioHistory(
 				total += entry.CurrentValue
 			}
 		}
-		points = append(points, dto.TBankPortfolioHistoryPoint{
+		points = append(points, PortfolioHistoryPoint{
 			TradeDate:                    date,
 			TotalAmountPortfolio:         total,
 			TotalAmountPortfolioCurrency: currency,
@@ -109,7 +107,7 @@ func (s *Service) GetPortfolioComposition(
 	userID int,
 	accountID string,
 	date string,
-) ([]dto.TBankPortfolioCompositionEntry, error) {
+) ([]PortfolioCompositionEntry, error) {
 	preferredDate, err := parseOptionalDate(date)
 	if err != nil {
 		return nil, err
@@ -135,21 +133,21 @@ func (s *Service) GetPortfolioComposition(
 
 	anchors := resolveAnalyticsAnchors(operations, nil, nil)
 	if len(anchors) == 0 {
-		return []dto.TBankPortfolioCompositionEntry{}, nil
+		return []PortfolioCompositionEntry{}, nil
 	}
 	targetDate := anchors[len(anchors)-1]
 	if preferredDate != nil {
 		targetDate = targetDateAtOrBefore(anchors, *preferredDate)
 		if targetDate == "" {
-			return []dto.TBankPortfolioCompositionEntry{}, nil
+			return []PortfolioCompositionEntry{}, nil
 		}
 	}
 
 	snapshots := buildCompositionSnapshotsByDate(portfolio, operations, []string{targetDate})
 	entries := snapshots[targetDate]
-	result := make([]dto.TBankPortfolioCompositionEntry, 0, len(entries))
+	result := make([]PortfolioCompositionEntry, 0, len(entries))
 	for _, entry := range entries {
-		result = append(result, dto.TBankPortfolioCompositionEntry{
+		result = append(result, PortfolioCompositionEntry{
 			TradeDate:    entry.TradeDate,
 			Ticker:       entry.Ticker,
 			InstrumentID: entry.InstrumentID,
@@ -175,7 +173,7 @@ func (s *Service) GetPortfolioCompositionSeries(
 	from string,
 	till string,
 	intervalDays int,
-) (map[string][]dto.TBankPortfolioCompositionSeriesPoint, error) {
+) (map[string][]PortfolioCompositionSeriesPoint, error) {
 	fromDate, tillDate, err := parseDateRangePointers(from, till)
 	if err != nil {
 		return nil, err
@@ -217,7 +215,7 @@ func (s *Service) GetPortfolioCompositionSeries(
 	anchors := resolveAnalyticsAnchors(operations, fromDate, tillDate)
 	anchors = downsampleDateStrings(anchors, intervalDays)
 	if len(anchors) == 0 {
-		return map[string][]dto.TBankPortfolioCompositionSeriesPoint{}, nil
+		return map[string][]PortfolioCompositionSeriesPoint{}, nil
 	}
 
 	snapshots := buildCompositionSnapshotsByDate(portfolio, operations, anchors)
@@ -241,7 +239,7 @@ func (s *Service) GetPortfolioCompositionSeries(
 		}
 	}
 
-	series := make(map[string][]dto.TBankPortfolioCompositionSeriesPoint)
+	series := make(map[string][]PortfolioCompositionSeriesPoint)
 	if mode == "rolling" && len(selectedTickers) == 0 {
 		selectedPerDate := make(map[string]map[string]float64, len(anchors))
 		unique := make(map[string]struct{})
@@ -268,13 +266,13 @@ func (s *Service) GetPortfolioCompositionSeries(
 		}
 		sort.Strings(tickerList)
 		for _, ticker := range tickerList {
-			points := make([]dto.TBankPortfolioCompositionSeriesPoint, 0, len(anchors))
+			points := make([]PortfolioCompositionSeriesPoint, 0, len(anchors))
 			for _, date := range anchors {
 				weight := 0.0
 				if weights, ok := selectedPerDate[date]; ok {
 					weight = weights[ticker]
 				}
-				points = append(points, dto.TBankPortfolioCompositionSeriesPoint{
+				points = append(points, PortfolioCompositionSeriesPoint{
 					TradeDate: date,
 					Weight:    weight,
 				})
@@ -285,11 +283,11 @@ func (s *Service) GetPortfolioCompositionSeries(
 	}
 
 	if len(selectedTickers) == 0 {
-		return map[string][]dto.TBankPortfolioCompositionSeriesPoint{}, nil
+		return map[string][]PortfolioCompositionSeriesPoint{}, nil
 	}
 
 	for _, ticker := range selectedTickers {
-		series[ticker] = make([]dto.TBankPortfolioCompositionSeriesPoint, 0, len(anchors))
+		series[ticker] = make([]PortfolioCompositionSeriesPoint, 0, len(anchors))
 	}
 	for _, date := range anchors {
 		weights := make(map[string]float64, len(snapshots[date]))
@@ -297,7 +295,7 @@ func (s *Service) GetPortfolioCompositionSeries(
 			weights[entry.Ticker] = entry.Weight
 		}
 		for _, ticker := range selectedTickers {
-			series[ticker] = append(series[ticker], dto.TBankPortfolioCompositionSeriesPoint{
+			series[ticker] = append(series[ticker], PortfolioCompositionSeriesPoint{
 				TradeDate: date,
 				Weight:    weights[ticker],
 			})
@@ -311,7 +309,7 @@ func (s *Service) getAllExecutedOperations(
 	environment string,
 	token string,
 	accountID string,
-) ([]dto.TBankOperationHistoryItem, error) {
+) ([]OperationHistoryItem, error) {
 	items := make([]*pb.OperationItem, 0, 256)
 	err := s.withConnection(ctx, environment, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
 		client := pb.NewOperationsServiceClient(conn)
@@ -357,8 +355,8 @@ func (s *Service) getAllExecutedOperations(
 }
 
 func buildCompositionSnapshotsByDate(
-	portfolio *dto.TBankAccountPortfolioResponse,
-	operations []dto.TBankOperationHistoryItem,
+	portfolio *AccountPortfolioResponse,
+	operations []OperationHistoryItem,
 	dates []string,
 ) map[string][]analyticsSeriesEntry {
 	snapshots := make(map[string][]analyticsSeriesEntry, len(dates))
@@ -389,8 +387,8 @@ func buildCompositionSnapshotsByDate(
 }
 
 func buildCurrentHoldings(
-	portfolio *dto.TBankAccountPortfolioResponse,
-	operations []dto.TBankOperationHistoryItem,
+	portfolio *AccountPortfolioResponse,
+	operations []OperationHistoryItem,
 ) map[string]*analyticsHolding {
 	holdings := make(map[string]*analyticsHolding)
 	for _, position := range portfolio.Positions {
@@ -461,7 +459,7 @@ func buildCurrentHoldings(
 	return holdings
 }
 
-func buildAnalyticsOperations(operations []dto.TBankOperationHistoryItem) []analyticsOperation {
+func buildAnalyticsOperations(operations []OperationHistoryItem) []analyticsOperation {
 	result := make([]analyticsOperation, 0, len(operations))
 	for _, item := range operations {
 		if item.Date == nil {
@@ -498,7 +496,7 @@ func buildAnalyticsOperations(operations []dto.TBankOperationHistoryItem) []anal
 	return result
 }
 
-func resolveReverseDelta(item dto.TBankOperationHistoryItem, quantity float64) (float64, bool) {
+func resolveReverseDelta(item OperationHistoryItem, quantity float64) (float64, bool) {
 	payment := item.Payment
 	if payment < 0 {
 		return -quantity, true
@@ -609,7 +607,7 @@ func composeEntriesForDate(
 }
 
 func resolveAnalyticsAnchors(
-	operations []dto.TBankOperationHistoryItem,
+	operations []OperationHistoryItem,
 	fromDate *time.Time,
 	tillDate *time.Time,
 ) []string {
