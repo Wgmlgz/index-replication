@@ -16,6 +16,8 @@ const (
 	virtualDefaultOperationLimit = 50
 	virtualMaxOperationLimit     = 200
 	virtualDateLayout            = "2006-01-02"
+	virtualDateTimeLayoutMinute  = "2006-01-02T15:04"
+	virtualDateTimeLayoutSecond  = "2006-01-02T15:04:05"
 )
 
 type VirtualTransactionsRepository interface {
@@ -314,7 +316,7 @@ func (p *VirtualProvider) RunAction(
 	}
 	state := buildVirtualState(transactions, nil)
 
-	executedAt, err := parseExecutedAt(payload["executed_at"])
+	executedAt, err := parseExecutedAtPayload(payload)
 	if err != nil {
 		return nil, ErrInvalidRequest
 	}
@@ -323,7 +325,7 @@ func (p *VirtualProvider) RunAction(
 	case "deposit_cash":
 		currency := normalizeCurrency(stringValue(payload["currency"]))
 		amount, ok := float64Payload(payload["amount"])
-		if !ok || amount <= 0 {
+		if !ok || math.Abs(amount) <= 1e-9 {
 			return nil, ErrInvalidRequest
 		}
 		txn := &models.VirtualPortfolioTransaction{
@@ -920,6 +922,21 @@ func normalizeCurrency(value string) string {
 	return currency
 }
 
+func parseExecutedAtPayload(payload map[string]interface{}) (time.Time, error) {
+	if payload == nil {
+		return time.Now().UTC(), nil
+	}
+
+	// Keep backward compatibility with "executed_at" and allow a simpler "date" alias.
+	if hasPayloadTimeValue(payload, "executed_at") {
+		return parseExecutedAt(payload["executed_at"])
+	}
+	if hasPayloadTimeValue(payload, "date") {
+		return parseExecutedAt(payload["date"])
+	}
+	return time.Now().UTC(), nil
+}
+
 func parseExecutedAt(value interface{}) (time.Time, error) {
 	if value == nil {
 		return time.Now().UTC(), nil
@@ -931,10 +948,24 @@ func parseExecutedAt(value interface{}) (time.Time, error) {
 	if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
 		return parsed.UTC(), nil
 	}
+	if parsed, err := time.ParseInLocation(virtualDateTimeLayoutSecond, raw, time.Local); err == nil {
+		return parsed.UTC(), nil
+	}
+	if parsed, err := time.ParseInLocation(virtualDateTimeLayoutMinute, raw, time.Local); err == nil {
+		return parsed.UTC(), nil
+	}
 	if parsed, err := time.Parse(virtualDateLayout, raw); err == nil {
 		return parsed.UTC(), nil
 	}
 	return time.Time{}, ErrInvalidRequest
+}
+
+func hasPayloadTimeValue(payload map[string]interface{}, key string) bool {
+	raw, ok := payload[key]
+	if !ok || raw == nil {
+		return false
+	}
+	return strings.TrimSpace(stringValue(raw)) != ""
 }
 
 func virtualPositionKey(ticker string, instrumentID string) string {

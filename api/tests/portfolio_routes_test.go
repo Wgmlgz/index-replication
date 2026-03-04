@@ -258,11 +258,11 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		buyResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/buy", map[string]interface{}{
 			"payload": map[string]interface{}{
-				"ticker":      "SBER",
-				"quantity":    10,
-				"price":       100,
-				"currency":    "RUB",
-				"executed_at": "2026-01-02",
+				"ticker":   "SBER",
+				"quantity": 10,
+				"price":    100,
+				"currency": "RUB",
+				"date":     "2026-01-02",
 			},
 		}, adminCookie)
 		if buyResp.Code != http.StatusOK {
@@ -321,6 +321,27 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("expected RUB cash 9480 after sell, got %+v", summaryAfterSell.Money)
 		}
 
+		negativeDepositResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
+			"payload": map[string]interface{}{
+				"amount":   -100,
+				"currency": "RUB",
+				"date":     "2026-01-04",
+			},
+		}, adminCookie)
+		if negativeDepositResp.Code != http.StatusOK {
+			t.Fatalf("negative deposit status = %d, body = %s", negativeDepositResp.Code, negativeDepositResp.Body.String())
+		}
+
+		summaryAfterNegativeDepositResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryAfterNegativeDepositResp.Code != http.StatusOK {
+			t.Fatalf("summary after negative deposit status = %d, body = %s", summaryAfterNegativeDepositResp.Code, summaryAfterNegativeDepositResp.Body.String())
+		}
+		var summaryAfterNegativeDeposit portfolioSummaryResponse
+		decodeJSON(t, summaryAfterNegativeDepositResp, &summaryAfterNegativeDeposit)
+		if len(summaryAfterNegativeDeposit.Money) == 0 || summaryAfterNegativeDeposit.Money[0].Available != 9380 {
+			t.Fatalf("expected RUB cash 9380 after negative deposit, got %+v", summaryAfterNegativeDeposit.Money)
+		}
+
 		historyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/history?from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminCookie)
 		if historyResp.Code != http.StatusOK {
 			t.Fatalf("history status = %d, body = %s", historyResp.Code, historyResp.Body.String())
@@ -352,8 +373,8 @@ func TestPortfolioRoutes(t *testing.T) {
 		}
 		var operations portfolioOperationsResponse
 		decodeJSON(t, operationsResp, &operations)
-		if len(operations.Items) < 3 {
-			t.Fatalf("expected at least 3 operations, got %d", len(operations.Items))
+		if len(operations.Items) < 4 {
+			t.Fatalf("expected at least 4 operations, got %d", len(operations.Items))
 		}
 	})
 

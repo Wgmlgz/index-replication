@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"server/internal/repository"
 	"server/internal/testutil"
@@ -150,6 +151,13 @@ func TestVirtualProvider_RejectsInvalidActions(t *testing.T) {
 		t.Fatalf("deposit failed: %v", err)
 	}
 
+	_, err = provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
+		"amount": -300,
+	})
+	if err != nil {
+		t.Fatalf("negative deposit failed: %v", err)
+	}
+
 	_, err = provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
 		"ticker":   "GAZP",
 		"quantity": 10,
@@ -166,5 +174,53 @@ func TestVirtualProvider_RejectsInvalidActions(t *testing.T) {
 	})
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Fatalf("expected oversell to return ErrInvalidRequest, got %v", err)
+	}
+
+	summary, err := provider.GetSummary(context.Background(), profile)
+	if err != nil {
+		t.Fatalf("summary failed: %v", err)
+	}
+	if len(summary.Money) != 1 || summary.Money[0].Available != 3700 {
+		t.Fatalf("expected RUB cash 3700 after negative deposit and buy, got %+v", summary.Money)
+	}
+}
+
+func TestParseExecutedAtPayload_DateAlias(t *testing.T) {
+	value, err := parseExecutedAtPayload(map[string]interface{}{
+		"date": "2026-03-01",
+	})
+	if err != nil {
+		t.Fatalf("expected date alias to parse, got %v", err)
+	}
+
+	expected := time.Date(2026, time.March, 1, 0, 0, 0, 0, time.UTC)
+	if !value.Equal(expected) {
+		t.Fatalf("expected %s, got %s", expected.Format(time.RFC3339), value.Format(time.RFC3339))
+	}
+}
+
+func TestParseExecutedAtPayload_ExecutedAtTakesPrecedence(t *testing.T) {
+	_, err := parseExecutedAtPayload(map[string]interface{}{
+		"executed_at": "bad-value",
+		"date":        "2026-03-01",
+	})
+	if !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("expected invalid executed_at to fail, got %v", err)
+	}
+}
+
+func TestParseExecutedAt_LocalDateTime(t *testing.T) {
+	raw := "2026-03-01T10:30"
+	actual, err := parseExecutedAt(raw)
+	if err != nil {
+		t.Fatalf("expected local datetime to parse, got %v", err)
+	}
+
+	expected, parseErr := time.ParseInLocation("2006-01-02T15:04", raw, time.Local)
+	if parseErr != nil {
+		t.Fatalf("failed to parse expected value: %v", parseErr)
+	}
+	if !actual.Equal(expected.UTC()) {
+		t.Fatalf("expected %s, got %s", expected.UTC().Format(time.RFC3339), actual.Format(time.RFC3339))
 	}
 }

@@ -38,7 +38,9 @@
       }
     },
     "portfolio": {
+      "details": "Details",
       "overview": "Overview",
+      "actions": "Actions",
       "analytics": "Analytics",
       "operations": "Operations",
       "profiles": "Profiles"
@@ -413,16 +415,17 @@
     "description": "Provider-agnostic portfolio workspace powered by portfolio profiles.",
     "subpages": {
       "overview": "Overview",
+      "actions": "Actions",
       "analytics": "Analytics",
       "operations": "Operations",
       "profiles": "Profiles"
     },
     "overview": {
       "title": "Overview",
-      "description": "Summary, balances, top positions, and quick portfolio actions.",
+      "description": "Summary, balances, and top positions.",
       "summaryTitle": "Portfolio summary",
-      "summaryDescription": "Review account state and run provider actions.",
-      "quickActionsTitle": "Quick actions",
+      "summaryDescription": "Review account state, balances, and top positions.",
+      "quickActionsTitle": "Actions",
       "noQuickActions": "No provider actions available for this profile.",
       "balancesTitle": "Balances"
     },
@@ -440,13 +443,38 @@
     },
     "profiles": {
       "title": "Profiles",
-      "description": "Select, create, and delete portfolio profiles.",
+      "description": "Select a profile to open overview, actions, analytics, and operations.",
+      "createButton": "Create profile",
+      "createDialogTitle": "Create portfolio profile",
+      "createDialogDescription": "Choose provider and profile settings.",
+      "createNameLabel": "Profile name",
+      "createNamePlaceholder": "My portfolio profile",
+      "createProviderLabel": "Provider",
+      "providerVirtual": "Virtual",
+      "providerMock": "Mock",
+      "providerTbank": "T-Bank",
+      "createDefaultLabel": "Set as default",
+      "createAccountIDLabel": "T-Bank account id (optional)",
+      "createAccountIDPlaceholder": "Use connected default account",
+      "createSubmit": "Create",
+      "cancelButton": "Cancel",
       "managerTitle": "Profile manager",
       "selectedConfigTitle": "Selected profile config",
       "defaultLabel": "Default profile:",
+      "defaultLabelShort": "Default",
       "defaultYes": "Yes",
       "defaultNo": "No",
-      "accountIDLabel": "T-Bank account id:"
+      "providerLabel": "Provider",
+      "actionsLabel": "Actions",
+      "updatedLabel": "Updated",
+      "accountIDLabel": "T-Bank account id:",
+      "overviewButton": "Overview",
+      "openButton": "Open",
+      "openAriaLabel": "Open profile {{name}}",
+      "deleteAriaLabel": "Delete profile {{name}}",
+      "deleteConfirmTitle": "Delete profile?",
+      "deleteConfirmDescription": "Profile \"{{name}}\" will be removed.",
+      "deleteConfirmAction": "Delete"
     },
     "selector": {
       "title": "Portfolio profiles",
@@ -464,6 +492,25 @@
       "accountID": "T-Bank account id (optional)",
       "accountIDPlaceholder": "Use connected default account",
       "createButton": "Create profile"
+    },
+    "actions": {
+      "title": "Actions",
+      "description": "Run provider actions for the selected profile.",
+      "selectPrompt": "Select a portfolio profile to run actions."
+    },
+    "details": {
+      "title": "Portfolio details",
+      "description": "Overview, actions, analytics, and operations for the selected profile.",
+      "profileName": "Profile: {{name}}",
+      "profileNameFallback": "Not selected",
+      "backButton": "<-",
+      "backAriaLabel": "Back to profiles",
+      "editNameAriaLabel": "Edit profile name",
+      "editNameTitle": "Edit profile name",
+      "editNameDescription": "Update the display name for this profile.",
+      "editNameLabel": "Profile name",
+      "editNamePlaceholder": "My portfolio profile",
+      "editNameSave": "Save"
     },
     "analytics": {
       "title": "Portfolio analytics",
@@ -493,6 +540,7 @@
       "virtualTradePrice": "Price",
       "virtualTradeCommission": "Commission",
       "virtualTradeCurrency": "Currency",
+      "virtualTradeDateTime": "Execution time",
       "runAction": "Run action",
       "loading": "Loading portfolio data...",
       "empty": "No portfolio data loaded yet.",
@@ -533,8 +581,10 @@
       "summary": "Failed to load portfolio summary.",
       "operations": "Failed to load portfolio operations.",
       "action": "Failed to execute portfolio action.",
+      "loadProfiles": "Failed to load portfolio profiles.",
       "createProfile": "Failed to create portfolio profile.",
       "deleteProfile": "Failed to delete portfolio profile.",
+      "updateProfile": "Failed to update portfolio profile.",
       "profileNameRequired": "Profile name is required."
     }
   },

@@ -5,8 +5,6 @@ export const PORTFOLIO_V2_PROFILES_QUERY_KEY = ['portfolio-v2', 'profiles'] as c
 export const PORTFOLIO_V2_ROUTES = {
   root: '/portfolio-v2',
   overview: '/portfolio-v2/overview',
-  analytics: '/portfolio-v2/analytics',
-  operations: '/portfolio-v2/operations',
   profiles: '/portfolio-v2/profiles',
 } as const;
 
@@ -34,11 +32,15 @@ export function parsePortfolioUrlState(searchParams: URLSearchParams): Portfolio
 }
 
 export function buildPortfolioHref(pathname: string, portfolioID?: number | null): string {
+  const [basePath, queryString = ''] = pathname.split('?');
+  const params = new URLSearchParams(queryString);
+
   if (!portfolioID) {
-    return pathname;
+    params.delete(PORTFOLIO_ID_QUERY_KEY);
+  } else {
+    params.set(PORTFOLIO_ID_QUERY_KEY, String(portfolioID));
   }
 
-  const params = new URLSearchParams();
-  params.set(PORTFOLIO_ID_QUERY_KEY, String(portfolioID));
-  return `${pathname}?${params.toString()}`;
+  const nextQuery = params.toString();
+  return nextQuery ? `${basePath}?${nextQuery}` : basePath;
 }

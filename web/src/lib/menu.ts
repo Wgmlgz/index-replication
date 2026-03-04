@@ -13,10 +13,20 @@ export type DashboardCard = {
 }
 
 export type SidebarSubItem = {
+  kind: "item";
   titleKey: string;
   href: string;
+  activePathname?: string;
+  activeTab?: string;
   permission: PermissionStr | null;
 }
+
+export type SidebarSubLabel = {
+  kind: "label";
+  titleKey: string;
+};
+
+export type SidebarSubEntry = SidebarSubItem | SidebarSubLabel;
 
 
 export const DashboardCards: DashboardCard[] = [
@@ -80,30 +90,53 @@ export const DashboardCards: DashboardCard[] = [
     icon: Wallet,
     buttonText: 'Open portfolio',
     buttonTextKey: 'navigation.cards.portfolio.button',
-    href: PORTFOLIO_V2_ROUTES.overview,
+    href: PORTFOLIO_V2_ROUTES.profiles,
     permission: null,
   },
 ];
 
-export const PortfolioSidebarSubItems: SidebarSubItem[] = [
+export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
   {
-    titleKey: 'navigation.portfolio.overview',
-    href: PORTFOLIO_V2_ROUTES.overview,
-    permission: null,
-  },
-  {
-    titleKey: 'navigation.portfolio.analytics',
-    href: PORTFOLIO_V2_ROUTES.analytics,
-    permission: null,
-  },
-  {
-    titleKey: 'navigation.portfolio.operations',
-    href: PORTFOLIO_V2_ROUTES.operations,
-    permission: null,
-  },
-  {
+    kind: "item",
     titleKey: 'navigation.portfolio.profiles',
     href: PORTFOLIO_V2_ROUTES.profiles,
+    activePathname: PORTFOLIO_V2_ROUTES.profiles,
+    permission: null,
+  },
+  {
+    kind: "label",
+    titleKey: "navigation.portfolio.details",
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.overview',
+    href: PORTFOLIO_V2_ROUTES.overview,
+    activePathname: PORTFOLIO_V2_ROUTES.overview,
+    activeTab: "overview",
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.actions',
+    href: `${PORTFOLIO_V2_ROUTES.overview}?tab=actions`,
+    activePathname: PORTFOLIO_V2_ROUTES.overview,
+    activeTab: "actions",
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.analytics',
+    href: `${PORTFOLIO_V2_ROUTES.overview}?tab=analytics`,
+    activePathname: PORTFOLIO_V2_ROUTES.overview,
+    activeTab: "analytics",
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.operations',
+    href: `${PORTFOLIO_V2_ROUTES.overview}?tab=operations`,
+    activePathname: PORTFOLIO_V2_ROUTES.overview,
+    activeTab: "operations",
     permission: null,
   },
 ];

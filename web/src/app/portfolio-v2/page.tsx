@@ -12,8 +12,8 @@ export default function PortfolioV2EntryPage() {
   useEffect(() => {
     const query = searchParams.toString();
     const href = query
-      ? `${PORTFOLIO_V2_ROUTES.overview}?${query}`
-      : PORTFOLIO_V2_ROUTES.overview;
+      ? `${PORTFOLIO_V2_ROUTES.profiles}?${query}`
+      : PORTFOLIO_V2_ROUTES.profiles;
 
     router.replace(href);
   }, [router, searchParams]);
