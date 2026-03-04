@@ -337,7 +337,8 @@
       "description": "Track portfolio value and composition over time.",
       "notConnected": "Connect T-Bank in Integrations to load portfolio analytics.",
       "accountLabel": "Account",
-      "accountDefaultOption": "Use default account"
+      "accountDefaultOption": "Use default account",
+      "selectPrompt": "Select or create a portfolio profile to load analytics."
     },
     "chart": {
       "title": "Portfolio value",
@@ -408,11 +409,7 @@
         "snapshotWeight": "Snapshot weight: {{value}}%",
         "asOf": "As of {{date}}"
       }
-    }
-  },
-  "portfolio": {
-    "title": "Portfolio",
-    "description": "Provider-agnostic portfolio workspace powered by portfolio profiles.",
+    },
     "subpages": {
       "overview": "Overview",
       "actions": "Actions",
@@ -511,11 +508,6 @@
       "editNameLabel": "Profile name",
       "editNamePlaceholder": "My portfolio profile",
       "editNameSave": "Save"
-    },
-    "analytics": {
-      "title": "Portfolio analytics",
-      "description": "Track portfolio value and composition over time.",
-      "selectPrompt": "Select or create a portfolio profile to load analytics."
     },
     "card": {
       "title": "Portfolio details",
