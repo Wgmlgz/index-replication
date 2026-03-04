@@ -8,10 +8,10 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
-import { PortfolioAnalyticsSection } from '@/app/portfolio-v2/portfolio-analytics-section';
-import { PortfolioActionsPanel } from '@/app/portfolio-v2/components/portfolio-actions-panel';
-import { PortfolioOperationsTable } from '@/app/portfolio-v2/components/portfolio-operations-table';
-import { usePortfolioV2 } from '@/app/portfolio-v2/use-portfolio-v2';
+import { PortfolioAnalyticsSection } from '@/app/portfolio/portfolio-analytics-section';
+import { PortfolioActionsPanel } from '@/app/portfolio/components/portfolio-actions-panel';
+import { PortfolioOperationsTable } from '@/app/portfolio/components/portfolio-operations-table';
+import { usePortfolio } from '@/app/portfolio/use-portfolio';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,11 +24,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PortfolioSummaryPanel } from '@/app/portfolio-v2/components/portfolio-summary-panel';
+import { PortfolioSummaryPanel } from '@/app/portfolio/components/portfolio-summary-panel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
-import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio-v2';
+import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
 
 type DetailsTab = 'overview' | 'actions' | 'analytics' | 'operations';
 
@@ -40,7 +40,7 @@ function resolveDetailsTab(tab: string | null): DetailsTab {
   return 'overview';
 }
 
-export default function PortfolioV2OverviewPage() {
+export default function PortfolioOverviewPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -51,7 +51,7 @@ export default function PortfolioV2OverviewPage() {
     selectedPortfolioID,
     selectedProfile,
     refreshProfiles,
-  } = usePortfolioV2();
+  } = usePortfolio();
   const [editOpen, setEditOpen] = useState(false);
   const [profileNameDraft, setProfileNameDraft] = useState('');
 
@@ -91,7 +91,7 @@ export default function PortfolioV2OverviewPage() {
 
       const trimmedName = profileNameDraft.trim();
       if (!trimmedName) {
-        setError(t('portfolioV2.errors.profileNameRequired'));
+        setError(t('portfolio.errors.profileNameRequired'));
         return;
       }
 
@@ -102,7 +102,7 @@ export default function PortfolioV2OverviewPage() {
           name: trimmedName,
         });
       } catch (err) {
-        setError(parseErrorMessage(err, t('portfolioV2.errors.updateProfile')));
+        setError(parseErrorMessage(err, t('portfolio.errors.updateProfile')));
       }
     },
     [
@@ -141,12 +141,12 @@ export default function PortfolioV2OverviewPage() {
     <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
       <div className='flex items-start justify-between gap-3'>
         <div className='space-y-2'>
-          <h1 className='text-3xl font-bold'>{t('portfolioV2.details.title')}</h1>
-          <p className='text-muted-foreground text-sm'>{t('portfolioV2.details.description')}</p>
+          <h1 className='text-3xl font-bold'>{t('portfolio.details.title')}</h1>
+          <p className='text-muted-foreground text-sm'>{t('portfolio.details.description')}</p>
           <div className='flex items-center gap-2'>
             <p className='text-sm text-muted-foreground'>
-              {t('portfolioV2.details.profileName', {
-                name: selectedProfile?.name || t('portfolioV2.details.profileNameFallback'),
+              {t('portfolio.details.profileName', {
+                name: selectedProfile?.name || t('portfolio.details.profileNameFallback'),
               })}
             </p>
             <Button
@@ -154,7 +154,7 @@ export default function PortfolioV2OverviewPage() {
               variant='outline'
               size='icon'
               onClick={onEditOpen}
-              aria-label={t('portfolioV2.details.editNameAriaLabel')}
+              aria-label={t('portfolio.details.editNameAriaLabel')}
               disabled={!selectedPortfolioID || renameMutation.isPending}
             >
               <Pencil className='size-4' />
@@ -164,7 +164,7 @@ export default function PortfolioV2OverviewPage() {
         <Button asChild variant='outline' size='icon'>
           <Link
             href={PORTFOLIO_V2_ROUTES.profiles}
-            aria-label={t('portfolioV2.details.backAriaLabel')}
+            aria-label={t('portfolio.details.backAriaLabel')}
           >
             <ArrowLeft />
           </Link>
@@ -184,10 +184,10 @@ export default function PortfolioV2OverviewPage() {
         className='min-h-0 flex-1'
       >
         <TabsList className='grid h-auto w-full grid-cols-4'>
-          <TabsTrigger value='overview'>{t('portfolioV2.subpages.overview')}</TabsTrigger>
-          <TabsTrigger value='actions'>{t('portfolioV2.subpages.actions')}</TabsTrigger>
-          <TabsTrigger value='analytics'>{t('portfolioV2.subpages.analytics')}</TabsTrigger>
-          <TabsTrigger value='operations'>{t('portfolioV2.subpages.operations')}</TabsTrigger>
+          <TabsTrigger value='overview'>{t('portfolio.subpages.overview')}</TabsTrigger>
+          <TabsTrigger value='actions'>{t('portfolio.subpages.actions')}</TabsTrigger>
+          <TabsTrigger value='analytics'>{t('portfolio.subpages.analytics')}</TabsTrigger>
+          <TabsTrigger value='operations'>{t('portfolio.subpages.operations')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value='overview' className='min-h-0 flex-1'>
@@ -216,8 +216,8 @@ export default function PortfolioV2OverviewPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>{t('portfolioV2.details.editNameTitle')}</DialogTitle>
-            <DialogDescription>{t('portfolioV2.details.editNameDescription')}</DialogDescription>
+            <DialogTitle>{t('portfolio.details.editNameTitle')}</DialogTitle>
+            <DialogDescription>{t('portfolio.details.editNameDescription')}</DialogDescription>
           </DialogHeader>
 
           <form
@@ -227,14 +227,14 @@ export default function PortfolioV2OverviewPage() {
             }}
           >
             <div className='grid gap-2'>
-              <Label htmlFor='portfolio-v2-rename-profile-name'>
-                {t('portfolioV2.details.editNameLabel')}
+              <Label htmlFor='portfolio-rename-profile-name'>
+                {t('portfolio.details.editNameLabel')}
               </Label>
               <Input
-                id='portfolio-v2-rename-profile-name'
+                id='portfolio-rename-profile-name'
                 value={profileNameDraft}
                 onChange={event => setProfileNameDraft(event.target.value)}
-                placeholder={t('portfolioV2.details.editNamePlaceholder')}
+                placeholder={t('portfolio.details.editNamePlaceholder')}
                 disabled={renameMutation.isPending}
               />
             </div>
@@ -245,10 +245,10 @@ export default function PortfolioV2OverviewPage() {
                 onClick={() => setEditOpen(false)}
                 disabled={renameMutation.isPending}
               >
-                {t('portfolioV2.profiles.cancelButton')}
+                {t('portfolio.profiles.cancelButton')}
               </Button>
               <Button type='submit' disabled={renameMutation.isPending}>
-                {t('portfolioV2.details.editNameSave')}
+                {t('portfolio.details.editNameSave')}
               </Button>
             </DialogFooter>
           </form>

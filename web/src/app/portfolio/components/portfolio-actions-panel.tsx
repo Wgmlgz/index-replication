@@ -5,8 +5,8 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 import type { PortfolioActionResponse } from "@/api-client";
-import { PortfolioSummaryActions } from "@/app/portfolio-v2/components/portfolio-summary-actions";
-import type { NormalizedPortfolioProfile } from "@/app/portfolio-v2/use-portfolio-v2";
+import { PortfolioSummaryActions } from "@/app/portfolio/components/portfolio-summary-actions";
+import type { NormalizedPortfolioProfile } from "@/app/portfolio/use-portfolio";
 import { portfolioApi } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/error-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -49,7 +49,7 @@ export function PortfolioActionsPanel({
       try {
         await portfolioApi.mePortfoliosIdSummaryGet(targetPortfolioID);
       } catch (err) {
-        setError(parseErrorMessage(err, t("portfolioV2.errors.summary")));
+        setError(parseErrorMessage(err, t("portfolio.errors.summary")));
       } finally {
         setLoadingRefresh(false);
       }
@@ -74,7 +74,7 @@ export function PortfolioActionsPanel({
         setActionResult(response);
         await refreshData(portfolioID);
       } catch (err) {
-        setError(parseErrorMessage(err, t("portfolioV2.errors.action")));
+        setError(parseErrorMessage(err, t("portfolio.errors.action")));
       } finally {
         setWorking(false);
       }
@@ -86,11 +86,11 @@ export function PortfolioActionsPanel({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("portfolioV2.actions.title")}</CardTitle>
-          <CardDescription>{t("portfolioV2.actions.description")}</CardDescription>
+          <CardTitle>{t("portfolio.actions.title")}</CardTitle>
+          <CardDescription>{t("portfolio.actions.description")}</CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          {t("portfolioV2.actions.selectPrompt")}
+          {t("portfolio.actions.selectPrompt")}
         </CardContent>
       </Card>
     );
@@ -99,8 +99,8 @@ export function PortfolioActionsPanel({
   return (
     <Card className="h-full min-h-0 overflow-hidden">
       <CardHeader>
-        <CardTitle>{t("portfolioV2.actions.title")}</CardTitle>
-        <CardDescription>{t("portfolioV2.actions.description")}</CardDescription>
+        <CardTitle>{t("portfolio.actions.title")}</CardTitle>
+        <CardDescription>{t("portfolio.actions.description")}</CardDescription>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm">
         {error ? (
@@ -112,7 +112,7 @@ export function PortfolioActionsPanel({
 
         {actionResult ? (
           <div className="rounded-md border bg-muted/40 p-3">
-            {t("portfolioV2.card.actionResult", { action: actionResult.action || "-" })}
+            {t("portfolio.card.actionResult", { action: actionResult.action || "-" })}
           </div>
         ) : null}
 

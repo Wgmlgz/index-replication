@@ -138,7 +138,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
         setOperationsNextCursor(response.next_cursor || "");
       } catch (err) {
         setOperationsError(
-          parseErrorMessage(err, t("portfolioV2.errors.operations")),
+          parseErrorMessage(err, t("portfolio.errors.operations")),
         );
         if (!append) {
           setOperations([]);
@@ -168,7 +168,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
         setSummary(nextSummary);
         await loadOperations(targetPortfolioID);
       } catch (err) {
-        setError(parseErrorMessage(err, t("portfolioV2.errors.summary")));
+        setError(parseErrorMessage(err, t("portfolio.errors.summary")));
       } finally {
         setLoadingSummary(false);
       }
@@ -219,7 +219,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
       setActionResult(response);
       await loadSummary(portfolioID);
     } catch (err) {
-      setError(parseErrorMessage(err, t("portfolioV2.errors.action")));
+      setError(parseErrorMessage(err, t("portfolio.errors.action")));
     } finally {
       setWorking(false);
     }
@@ -229,11 +229,11 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
     return (
       <Card className="h-full min-h-0 overflow-hidden">
         <CardHeader>
-          <CardTitle>{t("portfolioV2.card.title")}</CardTitle>
-          <CardDescription>{t("portfolioV2.card.description")}</CardDescription>
+          <CardTitle>{t("portfolio.card.title")}</CardTitle>
+          <CardDescription>{t("portfolio.card.description")}</CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          {t("portfolioV2.card.selectPrompt")}
+          {t("portfolio.card.selectPrompt")}
         </CardContent>
       </Card>
     );
@@ -242,8 +242,8 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
   return (
     <Card className="h-full min-h-0 overflow-hidden">
       <CardHeader>
-        <CardTitle>{t("portfolioV2.card.title")}</CardTitle>
-        <CardDescription>{t("portfolioV2.card.description")}</CardDescription>
+        <CardTitle>{t("portfolio.card.title")}</CardTitle>
+        <CardDescription>{t("portfolio.card.description")}</CardDescription>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {error ? (
@@ -255,7 +255,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
 
         {actionResult ? (
           <div className="rounded-md border bg-muted/40 p-3 text-sm">
-            {t("portfolioV2.card.actionResult", {
+            {t("portfolio.card.actionResult", {
               action: actionResult.action || "-",
             })}
           </div>
@@ -267,16 +267,16 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
         >
           <TabsList className="grid h-auto w-full grid-cols-4">
             <TabsTrigger value="account">
-              {t("portfolioV2.card.tabs.account")}
+              {t("portfolio.card.tabs.account")}
             </TabsTrigger>
             <TabsTrigger value="balance">
-              {t("portfolioV2.card.tabs.balance")}
+              {t("portfolio.card.tabs.balance")}
             </TabsTrigger>
             <TabsTrigger value="positions">
-              {t("portfolioV2.card.tabs.positions")}
+              {t("portfolio.card.tabs.positions")}
             </TabsTrigger>
             <TabsTrigger value="operations">
-              {t("portfolioV2.card.tabs.operations")}
+              {t("portfolio.card.tabs.operations")}
             </TabsTrigger>
           </TabsList>
 
@@ -284,13 +284,13 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
             <div className="rounded-md border p-3 space-y-1">
               <div>
                 <span className="font-medium">
-                  {t("portfolioV2.card.profileName")}{" "}
+                  {t("portfolio.card.profileName")}{" "}
                 </span>
                 {profile?.name || "-"}
               </div>
               <div>
                 <span className="font-medium">
-                  {t("portfolioV2.card.provider")}{" "}
+                  {t("portfolio.card.provider")}{" "}
                 </span>
                 {profile?.provider || "-"}
               </div>
@@ -303,7 +303,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                 onClick={() => portfolioID && void loadSummary(portfolioID)}
                 disabled={loadingSummary}
               >
-                {t("portfolioV2.card.refreshButton")}
+                {t("portfolio.card.refreshButton")}
               </Button>
             </div>
 
@@ -315,11 +315,11 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     className="flex flex-wrap items-end gap-2"
                   >
                     <div className="grid gap-2">
-                      <Label htmlFor="portfolio-v2-sandbox-currency">
-                        {t("portfolioV2.card.sandboxCurrency")}
+                      <Label htmlFor="portfolio-sandbox-currency">
+                        {t("portfolio.card.sandboxCurrency")}
                       </Label>
                       <Input
-                        id="portfolio-v2-sandbox-currency"
+                        id="portfolio-sandbox-currency"
                         type="text"
                         value={sandboxCurrency}
                         onChange={(event) =>
@@ -329,11 +329,11 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="portfolio-v2-sandbox-units">
-                        {t("portfolioV2.card.sandboxUnits")}
+                      <Label htmlFor="portfolio-sandbox-units">
+                        {t("portfolio.card.sandboxUnits")}
                       </Label>
                       <Input
-                        id="portfolio-v2-sandbox-units"
+                        id="portfolio-sandbox-units"
                         type="number"
                         min={1}
                         value={sandboxUnits}
@@ -363,7 +363,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                       }
                       disabled={working}
                     >
-                      {action.label || t("portfolioV2.card.runAction")}
+                      {action.label || t("portfolio.card.runAction")}
                     </Button>
                   </div>
                 );
@@ -376,11 +376,11 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     className="flex flex-wrap items-end gap-2"
                   >
                     <div className="grid gap-2">
-                      <Label htmlFor="portfolio-v2-virtual-currency">
-                        {t("portfolioV2.card.virtualTradeCurrency")}
+                      <Label htmlFor="portfolio-virtual-currency">
+                        {t("portfolio.card.virtualTradeCurrency")}
                       </Label>
                       <Input
-                        id="portfolio-v2-virtual-currency"
+                        id="portfolio-virtual-currency"
                         type="text"
                         value={virtualCurrency}
                         onChange={(event) =>
@@ -390,11 +390,11 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="portfolio-v2-virtual-amount">
-                        {t("portfolioV2.card.virtualDepositAmount")}
+                      <Label htmlFor="portfolio-virtual-amount">
+                        {t("portfolio.card.virtualDepositAmount")}
                       </Label>
                       <Input
-                        id="portfolio-v2-virtual-amount"
+                        id="portfolio-virtual-amount"
                         type="number"
                         min={0.01}
                         step="0.01"
@@ -415,7 +415,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                       }
                       disabled={working}
                     >
-                      {action.label || t("portfolioV2.card.runAction")}
+                      {action.label || t("portfolio.card.runAction")}
                     </Button>
                   </div>
                 );
@@ -429,12 +429,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                   >
                     <div className="grid gap-2">
                       <Label
-                        htmlFor={`portfolio-v2-virtual-ticker-${action.id}`}
+                        htmlFor={`portfolio-virtual-ticker-${action.id}`}
                       >
-                        {t("portfolioV2.card.virtualTradeTicker")}
+                        {t("portfolio.card.virtualTradeTicker")}
                       </Label>
                       <Input
-                        id={`portfolio-v2-virtual-ticker-${action.id}`}
+                        id={`portfolio-virtual-ticker-${action.id}`}
                         type="text"
                         value={virtualTicker}
                         onChange={(event) =>
@@ -445,12 +445,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     </div>
                     <div className="grid gap-2">
                       <Label
-                        htmlFor={`portfolio-v2-virtual-instrument-${action.id}`}
+                        htmlFor={`portfolio-virtual-instrument-${action.id}`}
                       >
-                        {t("portfolioV2.card.virtualTradeInstrumentID")}
+                        {t("portfolio.card.virtualTradeInstrumentID")}
                       </Label>
                       <Input
-                        id={`portfolio-v2-virtual-instrument-${action.id}`}
+                        id={`portfolio-virtual-instrument-${action.id}`}
                         type="text"
                         value={virtualInstrumentID}
                         onChange={(event) =>
@@ -463,12 +463,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     </div>
                     <div className="grid gap-2">
                       <Label
-                        htmlFor={`portfolio-v2-virtual-quantity-${action.id}`}
+                        htmlFor={`portfolio-virtual-quantity-${action.id}`}
                       >
-                        {t("portfolioV2.card.virtualTradeQuantity")}
+                        {t("portfolio.card.virtualTradeQuantity")}
                       </Label>
                       <Input
-                        id={`portfolio-v2-virtual-quantity-${action.id}`}
+                        id={`portfolio-virtual-quantity-${action.id}`}
                         type="number"
                         min={0.0001}
                         step="0.0001"
@@ -481,12 +481,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     </div>
                     <div className="grid gap-2">
                       <Label
-                        htmlFor={`portfolio-v2-virtual-price-${action.id}`}
+                        htmlFor={`portfolio-virtual-price-${action.id}`}
                       >
-                        {t("portfolioV2.card.virtualTradePrice")}
+                        {t("portfolio.card.virtualTradePrice")}
                       </Label>
                       <Input
-                        id={`portfolio-v2-virtual-price-${action.id}`}
+                        id={`portfolio-virtual-price-${action.id}`}
                         type="number"
                         min={0.0001}
                         step="0.0001"
@@ -499,12 +499,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     </div>
                     <div className="grid gap-2">
                       <Label
-                        htmlFor={`portfolio-v2-virtual-commission-${action.id}`}
+                        htmlFor={`portfolio-virtual-commission-${action.id}`}
                       >
-                        {t("portfolioV2.card.virtualTradeCommission")}
+                        {t("portfolio.card.virtualTradeCommission")}
                       </Label>
                       <Input
-                        id={`portfolio-v2-virtual-commission-${action.id}`}
+                        id={`portfolio-virtual-commission-${action.id}`}
                         type="number"
                         min={0}
                         step="0.01"
@@ -517,12 +517,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     </div>
                     <div className="grid gap-2">
                       <Label
-                        htmlFor={`portfolio-v2-virtual-currency-${action.id}`}
+                        htmlFor={`portfolio-virtual-currency-${action.id}`}
                       >
-                        {t("portfolioV2.card.virtualTradeCurrency")}
+                        {t("portfolio.card.virtualTradeCurrency")}
                       </Label>
                       <Input
-                        id={`portfolio-v2-virtual-currency-${action.id}`}
+                        id={`portfolio-virtual-currency-${action.id}`}
                         type="text"
                         value={virtualCurrency}
                         onChange={(event) =>
@@ -557,7 +557,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     >
                       {action.label ||
                         action.id ||
-                        t("portfolioV2.card.runAction")}
+                        t("portfolio.card.runAction")}
                     </Button>
                   </div>
                 );
@@ -571,14 +571,14 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                   onClick={() => void runAction(action.id || "")}
                   disabled={working || !action.id}
                 >
-                  {action.label || action.id || t("portfolioV2.card.runAction")}
+                  {action.label || action.id || t("portfolio.card.runAction")}
                 </Button>
               );
             })}
 
             {loadingSummary ? (
               <div className="text-sm text-muted-foreground">
-                {t("portfolioV2.card.loading")}
+                {t("portfolio.card.loading")}
               </div>
             ) : null}
           </TabsContent>
@@ -586,27 +586,27 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
           <TabsContent value="balance" className="space-y-4 text-sm">
             {loadingSummary ? (
               <div className="text-sm text-muted-foreground">
-                {t("portfolioV2.card.loading")}
+                {t("portfolio.card.loading")}
               </div>
             ) : summary ? (
               <>
                 <div className="rounded-md border p-3">
                   <div>
                     <span className="font-medium">
-                      {t("portfolioV2.card.totalLabel")}{" "}
+                      {t("portfolio.card.totalLabel")}{" "}
                     </span>
                     {formatNumber(summary.total_amount_portfolio ?? 0)}{" "}
                     {summary.total_amount_currency || ""}
                   </div>
                   <div>
                     <span className="font-medium">
-                      {t("portfolioV2.card.dailyYieldLabel")}{" "}
+                      {t("portfolio.card.dailyYieldLabel")}{" "}
                     </span>
                     {formatNumber(summary.daily_yield ?? 0)}
                   </div>
                   <div>
                     <span className="font-medium">
-                      {t("portfolioV2.card.dailyYieldRelativeLabel")}{" "}
+                      {t("portfolio.card.dailyYieldRelativeLabel")}{" "}
                     </span>
                     {formatPercent(summary.daily_yield_relative ?? 0)}
                   </div>
@@ -614,26 +614,26 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
 
                 <div className="space-y-2">
                   <div className="font-medium">
-                    {t("portfolioV2.card.moneyTitle")}
+                    {t("portfolio.card.moneyTitle")}
                   </div>
                   <div className="overflow-auto rounded-md border">
                     <table className="w-full text-left text-sm">
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="p-2">
-                            {t("portfolioV2.card.moneyCurrency")}
+                            {t("portfolio.card.moneyCurrency")}
                           </th>
                           <th className="p-2">
-                            {t("portfolioV2.card.moneyAvailable")}
+                            {t("portfolio.card.moneyAvailable")}
                           </th>
                           <th className="p-2">
-                            {t("portfolioV2.card.moneyBlocked")}
+                            {t("portfolio.card.moneyBlocked")}
                           </th>
                           <th className="p-2">
-                            {t("portfolioV2.card.moneyWithdrawAvailable")}
+                            {t("portfolio.card.moneyWithdrawAvailable")}
                           </th>
                           <th className="p-2">
-                            {t("portfolioV2.card.moneyWithdrawBlocked")}
+                            {t("portfolio.card.moneyWithdrawBlocked")}
                           </th>
                         </tr>
                       </thead>
@@ -644,7 +644,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                               className="p-2 text-muted-foreground"
                               colSpan={5}
                             >
-                              {t("portfolioV2.card.moneyEmpty")}
+                              {t("portfolio.card.moneyEmpty")}
                             </td>
                           </tr>
                         ) : (
@@ -673,7 +673,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
               </>
             ) : (
               <div className="text-sm text-muted-foreground">
-                {t("portfolioV2.card.empty")}
+                {t("portfolio.card.empty")}
               </div>
             )}
           </TabsContent>
@@ -681,12 +681,12 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
           <TabsContent value="positions" className="space-y-4 text-sm">
             {loadingSummary ? (
               <div className="text-sm text-muted-foreground">
-                {t("portfolioV2.card.loading")}
+                {t("portfolio.card.loading")}
               </div>
             ) : summary ? (
               <div className="space-y-2">
                 <div className="font-medium">
-                  {t("portfolioV2.card.positionsTitle", {
+                  {t("portfolio.card.positionsTitle", {
                     count: Math.min((summary.positions ?? []).length, 10),
                   })}
                 </div>
@@ -695,22 +695,22 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="p-2">
-                          {t("portfolioV2.card.positionTicker")}
+                          {t("portfolio.card.positionTicker")}
                         </th>
                         <th className="p-2">
-                          {t("portfolioV2.card.positionInstrumentID")}
+                          {t("portfolio.card.positionInstrumentID")}
                         </th>
                         <th className="p-2">
-                          {t("portfolioV2.card.positionQuantity")}
+                          {t("portfolio.card.positionQuantity")}
                         </th>
                         <th className="p-2">
-                          {t("portfolioV2.card.positionCurrentPrice")}
+                          {t("portfolio.card.positionCurrentPrice")}
                         </th>
                         <th className="p-2">
-                          {t("portfolioV2.card.positionCurrentValue")}
+                          {t("portfolio.card.positionCurrentValue")}
                         </th>
                         <th className="p-2">
-                          {t("portfolioV2.card.positionExpectedYield")}
+                          {t("portfolio.card.positionExpectedYield")}
                         </th>
                       </tr>
                     </thead>
@@ -718,7 +718,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                       {(summary.positions ?? []).length === 0 ? (
                         <tr>
                           <td className="p-2 text-muted-foreground" colSpan={6}>
-                            {t("portfolioV2.card.positionsEmpty")}
+                            {t("portfolio.card.positionsEmpty")}
                           </td>
                         </tr>
                       ) : (
@@ -756,14 +756,14 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                {t("portfolioV2.card.empty")}
+                {t("portfolio.card.empty")}
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="operations" className="space-y-4 text-sm">
             <div className="font-medium">
-              {t("portfolioV2.card.operationsTitle")}
+              {t("portfolio.card.operationsTitle")}
             </div>
             {operationsError ? (
               <Alert variant="destructive">
@@ -774,7 +774,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
 
             {loadingOperations ? (
               <div className="text-sm text-muted-foreground">
-                {t("portfolioV2.card.operationsLoading")}
+                {t("portfolio.card.operationsLoading")}
               </div>
             ) : (
               <div className="overflow-auto rounded-md border">
@@ -782,31 +782,31 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationDate")}
+                        {t("portfolio.card.operationDate")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationType")}
+                        {t("portfolio.card.operationType")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationState")}
+                        {t("portfolio.card.operationState")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationInstrument")}
+                        {t("portfolio.card.operationInstrument")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationQuantity")}
+                        {t("portfolio.card.operationQuantity")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationPrice")}
+                        {t("portfolio.card.operationPrice")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationPayment")}
+                        {t("portfolio.card.operationPayment")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationCommission")}
+                        {t("portfolio.card.operationCommission")}
                       </th>
                       <th className="p-2">
-                        {t("portfolioV2.card.operationDescription")}
+                        {t("portfolio.card.operationDescription")}
                       </th>
                     </tr>
                   </thead>
@@ -814,7 +814,7 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                     {operations.length === 0 ? (
                       <tr>
                         <td className="p-2 text-muted-foreground" colSpan={9}>
-                          {t("portfolioV2.card.operationsEmpty")}
+                          {t("portfolio.card.operationsEmpty")}
                         </td>
                       </tr>
                     ) : (
@@ -879,8 +879,8 @@ export function PortfolioCard({ portfolioID, profile }: PortfolioCardProps) {
                 disabled={loadingMoreOperations}
               >
                 {loadingMoreOperations
-                  ? t("portfolioV2.card.operationsLoadingMore")
-                  : t("portfolioV2.card.operationsLoadMore")}
+                  ? t("portfolio.card.operationsLoadingMore")
+                  : t("portfolio.card.operationsLoadMore")}
               </Button>
             ) : null}
           </TabsContent>

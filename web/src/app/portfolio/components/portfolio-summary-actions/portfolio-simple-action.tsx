@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import type { PortfolioSimpleActionProps } from "@/app/portfolio-v2/components/portfolio-summary-actions/types";
+import type { PortfolioSimpleActionProps } from "@/app/portfolio/components/portfolio-summary-actions/types";
 import { Button } from "@/components/ui/button";
 
 export function PortfolioSimpleAction({
@@ -17,7 +17,7 @@ export function PortfolioSimpleAction({
       onClick={() => void onRunAction(action.id || "")}
       disabled={working || !action.id}
     >
-      {action.label || action.id || t("portfolioV2.card.runAction")}
+      {action.label || action.id || t("portfolio.card.runAction")}
     </Button>
   );
 }

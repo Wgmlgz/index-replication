@@ -210,13 +210,13 @@ export function PortfolioAnalyticsSection({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('portfolioV2.analytics.title')}</CardTitle>
+          <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
           <CardDescription>
-            {t('portfolioV2.analytics.description')}
+            {t('portfolio.analytics.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
-          {t('portfolioV2.analytics.selectPrompt')}
+          {t('portfolio.analytics.selectPrompt')}
         </CardContent>
       </Card>
     );
@@ -225,8 +225,8 @@ export function PortfolioAnalyticsSection({
   return (
     <Card className='h-full min-h-0'>
       <CardHeader>
-        <CardTitle>{t('portfolioV2.analytics.title')}</CardTitle>
-        <CardDescription>{t('portfolioV2.analytics.description')}</CardDescription>
+        <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
+        <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
       </CardHeader>
       <CardContent className='grid h-full min-h-0 gap-4 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'>
         <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row'>
@@ -263,7 +263,7 @@ export function PortfolioAnalyticsSection({
               controls={controls.price}
               actions={controls.priceActions}
               translationKeyPrefix='portfolio.chart'
-              idPrefix='portfolio-v2'
+              idPrefix='portfolio'
               hideChartType
             />
           </div>
@@ -296,7 +296,7 @@ export function PortfolioAnalyticsSection({
               controls={controls.composition}
               actions={controls.compositionActions}
               translationKeyPrefix='portfolio.composition'
-              idPrefix='portfolio-v2'
+              idPrefix='portfolio'
               topCountOptions={TOP_COUNT_OPTIONS}
             />
 

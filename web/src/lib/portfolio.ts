@@ -1,11 +1,11 @@
 export const PORTFOLIO_ID_QUERY_KEY = 'portfolio_id';
 
-export const PORTFOLIO_V2_PROFILES_QUERY_KEY = ['portfolio-v2', 'profiles'] as const;
+export const PORTFOLIO_V2_PROFILES_QUERY_KEY = ['portfolio', 'profiles'] as const;
 
 export const PORTFOLIO_V2_ROUTES = {
-  root: '/portfolio-v2',
-  overview: '/portfolio-v2/overview',
-  profiles: '/portfolio-v2/profiles',
+  root: '/portfolio',
+  overview: '/portfolio/overview',
+  profiles: '/portfolio/profiles',
 } as const;
 
 export type PortfolioUrlState = {

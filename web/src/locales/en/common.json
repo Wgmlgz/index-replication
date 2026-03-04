@@ -410,8 +410,8 @@
       }
     }
   },
-  "portfolioV2": {
-    "title": "Portfolio v2",
+  "portfolio": {
+    "title": "Portfolio",
     "description": "Provider-agnostic portfolio workspace powered by portfolio profiles.",
     "subpages": {
       "overview": "Overview",

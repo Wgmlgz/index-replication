@@ -38,7 +38,7 @@ import {
   buildPortfolioHref,
   PORTFOLIO_V2_PROFILES_QUERY_KEY,
   PORTFOLIO_V2_ROUTES,
-} from '@/lib/portfolio-v2';
+} from '@/lib/portfolio';
 
 type NormalizedPortfolioProfile = PortfolioProfile & {
   id: number;
@@ -46,7 +46,7 @@ type NormalizedPortfolioProfile = PortfolioProfile & {
   provider: string;
 };
 
-export default function PortfolioV2ProfilesPage() {
+export default function PortfolioProfilesPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
@@ -126,7 +126,7 @@ export default function PortfolioV2ProfilesPage() {
       event.preventDefault();
       const trimmedName = createName.trim();
       if (!trimmedName) {
-        setError(t('portfolioV2.errors.profileNameRequired'));
+        setError(t('portfolio.errors.profileNameRequired'));
         return;
       }
 
@@ -145,7 +145,7 @@ export default function PortfolioV2ProfilesPage() {
         await createMutation.mutateAsync(payload);
         onCreateOpenChange(false);
       } catch (err) {
-        setError(parseErrorMessage(err, t('portfolioV2.errors.createProfile')));
+        setError(parseErrorMessage(err, t('portfolio.errors.createProfile')));
       }
     },
     [
@@ -167,7 +167,7 @@ export default function PortfolioV2ProfilesPage() {
         await deleteMutation.mutateAsync(profile.id);
         setDeleteTarget(null);
       } catch (err) {
-        setError(parseErrorMessage(err, t('portfolioV2.errors.deleteProfile')));
+        setError(parseErrorMessage(err, t('portfolio.errors.deleteProfile')));
       }
     },
     [deleteMutation, parseErrorMessage, t],
@@ -193,21 +193,21 @@ export default function PortfolioV2ProfilesPage() {
     <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
       <div className='flex items-start justify-between gap-4'>
         <div className='space-y-2'>
-          <h1 className='text-3xl font-bold'>{t('portfolioV2.profiles.title')}</h1>
-          <p className='text-muted-foreground text-sm'>{t('portfolioV2.profiles.description')}</p>
+          <h1 className='text-3xl font-bold'>{t('portfolio.profiles.title')}</h1>
+          <p className='text-muted-foreground text-sm'>{t('portfolio.profiles.description')}</p>
         </div>
 
         <Dialog open={createOpen} onOpenChange={onCreateOpenChange}>
           <DialogTrigger asChild>
             <Button>
               <Plus className='size-4' />
-              {t('portfolioV2.profiles.createButton')}
+              {t('portfolio.profiles.createButton')}
             </Button>
           </DialogTrigger>
           <DialogContent className='sm:max-w-md'>
             <DialogHeader>
-              <DialogTitle>{t('portfolioV2.profiles.createDialogTitle')}</DialogTitle>
-              <DialogDescription>{t('portfolioV2.profiles.createDialogDescription')}</DialogDescription>
+              <DialogTitle>{t('portfolio.profiles.createDialogTitle')}</DialogTitle>
+              <DialogDescription>{t('portfolio.profiles.createDialogDescription')}</DialogDescription>
             </DialogHeader>
 
             <form
@@ -217,24 +217,24 @@ export default function PortfolioV2ProfilesPage() {
               }}
             >
               <div className='grid gap-2'>
-                <Label htmlFor='portfolio-v2-create-name'>
-                  {t('portfolioV2.profiles.createNameLabel')}
+                <Label htmlFor='portfolio-create-name'>
+                  {t('portfolio.profiles.createNameLabel')}
                 </Label>
                 <Input
-                  id='portfolio-v2-create-name'
+                  id='portfolio-create-name'
                   value={createName}
                   onChange={event => setCreateName(event.target.value)}
-                  placeholder={t('portfolioV2.profiles.createNamePlaceholder')}
+                  placeholder={t('portfolio.profiles.createNamePlaceholder')}
                   disabled={createMutation.isPending}
                 />
               </div>
 
               <div className='grid gap-2'>
-                <Label htmlFor='portfolio-v2-create-provider'>
-                  {t('portfolioV2.profiles.createProviderLabel')}
+                <Label htmlFor='portfolio-create-provider'>
+                  {t('portfolio.profiles.createProviderLabel')}
                 </Label>
                 <select
-                  id='portfolio-v2-create-provider'
+                  id='portfolio-create-provider'
                   className='border-input bg-background h-9 rounded-md border px-3 text-sm'
                   value={createProvider}
                   onChange={event =>
@@ -242,22 +242,22 @@ export default function PortfolioV2ProfilesPage() {
                   }
                   disabled={createMutation.isPending}
                 >
-                  <option value='virtual'>{t('portfolioV2.profiles.providerVirtual')}</option>
-                  <option value='mock'>{t('portfolioV2.profiles.providerMock')}</option>
-                  <option value='tbank'>{t('portfolioV2.profiles.providerTbank')}</option>
+                  <option value='virtual'>{t('portfolio.profiles.providerVirtual')}</option>
+                  <option value='mock'>{t('portfolio.profiles.providerMock')}</option>
+                  <option value='tbank'>{t('portfolio.profiles.providerTbank')}</option>
                 </select>
               </div>
 
               {createProvider === 'tbank' ? (
                 <div className='grid gap-2'>
-                  <Label htmlFor='portfolio-v2-create-account-id'>
-                    {t('portfolioV2.profiles.createAccountIDLabel')}
+                  <Label htmlFor='portfolio-create-account-id'>
+                    {t('portfolio.profiles.createAccountIDLabel')}
                   </Label>
                   <Input
-                    id='portfolio-v2-create-account-id'
+                    id='portfolio-create-account-id'
                     value={createAccountID}
                     onChange={event => setCreateAccountID(event.target.value)}
-                    placeholder={t('portfolioV2.profiles.createAccountIDPlaceholder')}
+                    placeholder={t('portfolio.profiles.createAccountIDPlaceholder')}
                     disabled={createMutation.isPending}
                   />
                 </div>
@@ -270,7 +270,7 @@ export default function PortfolioV2ProfilesPage() {
                   onChange={event => setCreateIsDefault(event.target.checked)}
                   disabled={createMutation.isPending}
                 />
-                <span>{t('portfolioV2.profiles.createDefaultLabel')}</span>
+                <span>{t('portfolio.profiles.createDefaultLabel')}</span>
               </label>
 
               <DialogFooter>
@@ -280,10 +280,10 @@ export default function PortfolioV2ProfilesPage() {
                   onClick={() => onCreateOpenChange(false)}
                   disabled={createMutation.isPending}
                 >
-                  {t('portfolioV2.profiles.cancelButton')}
+                  {t('portfolio.profiles.cancelButton')}
                 </Button>
                 <Button type='submit' disabled={createMutation.isPending}>
-                  {t('portfolioV2.profiles.createSubmit')}
+                  {t('portfolio.profiles.createSubmit')}
                 </Button>
               </DialogFooter>
             </form>
@@ -300,7 +300,7 @@ export default function PortfolioV2ProfilesPage() {
       {profilesQuery.error ? (
         <Alert variant='destructive'>
           <AlertTitle>{t('common.error')}</AlertTitle>
-          <AlertDescription>{t('portfolioV2.errors.loadProfiles')}</AlertDescription>
+          <AlertDescription>{t('portfolio.errors.loadProfiles')}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -311,7 +311,7 @@ export default function PortfolioV2ProfilesPage() {
           ) : null}
 
           {!profilesQuery.isLoading && profiles.length === 0 ? (
-            <p className='text-sm text-muted-foreground'>{t('portfolioV2.selector.noProfiles')}</p>
+            <p className='text-sm text-muted-foreground'>{t('portfolio.selector.noProfiles')}</p>
           ) : null}
 
           {profiles.length > 0 ? (
@@ -328,20 +328,20 @@ export default function PortfolioV2ProfilesPage() {
                     </div>
                     <div className='space-y-1 text-sm text-muted-foreground'>
                       <p>
-                        {t('portfolioV2.profiles.providerLabel')}: {profile.provider}
+                        {t('portfolio.profiles.providerLabel')}: {profile.provider}
                       </p>
                       <p>
-                        {t('portfolioV2.profiles.defaultLabelShort')}:{' '}
+                        {t('portfolio.profiles.defaultLabelShort')}:{' '}
                         {profile.is_default
-                          ? t('portfolioV2.profiles.defaultYes')
-                          : t('portfolioV2.profiles.defaultNo')}
+                          ? t('portfolio.profiles.defaultYes')
+                          : t('portfolio.profiles.defaultNo')}
                       </p>
                       <p>
-                        {t('portfolioV2.profiles.actionsLabel')}:{' '}
+                        {t('portfolio.profiles.actionsLabel')}:{' '}
                         {profile.capabilities?.actions?.length ?? 0}
                       </p>
                       <p>
-                        {t('portfolioV2.profiles.updatedLabel')}: {formatDateTime(profile.updated_at)}
+                        {t('portfolio.profiles.updatedLabel')}: {formatDateTime(profile.updated_at)}
                       </p>
                     </div>
                   </div>
@@ -350,12 +350,12 @@ export default function PortfolioV2ProfilesPage() {
                     <Button asChild size='sm' variant='outline'>
                       <Link
                         href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.overview, profile.id)}
-                        aria-label={t('portfolioV2.profiles.openAriaLabel', {
+                        aria-label={t('portfolio.profiles.openAriaLabel', {
                           name: profile.name,
                         })}
                         className='inline-flex items-center gap-1'
                       >
-                        {t('portfolioV2.profiles.overviewButton')}
+                        {t('portfolio.profiles.overviewButton')}
                         <ArrowUpRight className='size-4' />
                       </Link>
                     </Button>
@@ -364,7 +364,7 @@ export default function PortfolioV2ProfilesPage() {
                       size='icon'
                       variant='outline'
                       onClick={() => setDeleteTarget(profile)}
-                      aria-label={t('portfolioV2.profiles.deleteAriaLabel', {
+                      aria-label={t('portfolio.profiles.deleteAriaLabel', {
                         name: profile.name,
                       })}
                       disabled={deleteMutation.isPending}
@@ -389,15 +389,15 @@ export default function PortfolioV2ProfilesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('portfolioV2.profiles.deleteConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('portfolio.profiles.deleteConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('portfolioV2.profiles.deleteConfirmDescription', {
+              {t('portfolio.profiles.deleteConfirmDescription', {
                 name: deleteTarget?.name || '',
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('portfolioV2.profiles.cancelButton')}</AlertDialogCancel>
+            <AlertDialogCancel>{t('portfolio.profiles.cancelButton')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deleteTarget) {
@@ -406,7 +406,7 @@ export default function PortfolioV2ProfilesPage() {
               }}
               disabled={deleteMutation.isPending}
             >
-              {t('portfolioV2.profiles.deleteConfirmAction')}
+              {t('portfolio.profiles.deleteConfirmAction')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

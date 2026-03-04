@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import {
   dateTimeLocalValueToISOString,
   nowAsDateTimeLocalValue,
-} from "@/app/portfolio-v2/components/portfolio-formatting";
-import type { PortfolioSimpleActionProps } from "@/app/portfolio-v2/components/portfolio-summary-actions/types";
+} from "@/app/portfolio/components/portfolio-formatting";
+import type { PortfolioSimpleActionProps } from "@/app/portfolio/components/portfolio-summary-actions/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,11 +27,11 @@ export function PortfolioTradeAction({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-ticker-${action.id}`}>
-          {t("portfolioV2.card.virtualTradeTicker")}
+        <Label htmlFor={`portfolio-virtual-ticker-${action.id}`}>
+          {t("portfolio.card.virtualTradeTicker")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-ticker-${action.id}`}
+          id={`portfolio-virtual-ticker-${action.id}`}
           type="text"
           value={ticker}
           onChange={(event) => setTicker(event.target.value.toUpperCase())}
@@ -39,11 +39,11 @@ export function PortfolioTradeAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-instrument-${action.id}`}>
-          {t("portfolioV2.card.virtualTradeInstrumentID")}
+        <Label htmlFor={`portfolio-virtual-instrument-${action.id}`}>
+          {t("portfolio.card.virtualTradeInstrumentID")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-instrument-${action.id}`}
+          id={`portfolio-virtual-instrument-${action.id}`}
           type="text"
           value={instrumentID}
           onChange={(event) => setInstrumentID(event.target.value.toUpperCase())}
@@ -51,11 +51,11 @@ export function PortfolioTradeAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-quantity-${action.id}`}>
-          {t("portfolioV2.card.virtualTradeQuantity")}
+        <Label htmlFor={`portfolio-virtual-quantity-${action.id}`}>
+          {t("portfolio.card.virtualTradeQuantity")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-quantity-${action.id}`}
+          id={`portfolio-virtual-quantity-${action.id}`}
           type="number"
           min={0.0001}
           step="0.0001"
@@ -65,11 +65,11 @@ export function PortfolioTradeAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-price-${action.id}`}>
-          {t("portfolioV2.card.virtualTradePrice")}
+        <Label htmlFor={`portfolio-virtual-price-${action.id}`}>
+          {t("portfolio.card.virtualTradePrice")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-price-${action.id}`}
+          id={`portfolio-virtual-price-${action.id}`}
           type="number"
           min={0.0001}
           step="0.0001"
@@ -79,11 +79,11 @@ export function PortfolioTradeAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-commission-${action.id}`}>
-          {t("portfolioV2.card.virtualTradeCommission")}
+        <Label htmlFor={`portfolio-virtual-commission-${action.id}`}>
+          {t("portfolio.card.virtualTradeCommission")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-commission-${action.id}`}
+          id={`portfolio-virtual-commission-${action.id}`}
           type="number"
           min={0}
           step="0.01"
@@ -93,11 +93,11 @@ export function PortfolioTradeAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-currency-${action.id}`}>
-          {t("portfolioV2.card.virtualTradeCurrency")}
+        <Label htmlFor={`portfolio-virtual-currency-${action.id}`}>
+          {t("portfolio.card.virtualTradeCurrency")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-currency-${action.id}`}
+          id={`portfolio-virtual-currency-${action.id}`}
           type="text"
           value={currency}
           onChange={(event) => setCurrency(event.target.value.toUpperCase())}
@@ -105,11 +105,11 @@ export function PortfolioTradeAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`portfolio-v2-virtual-date-${action.id}`}>
-          {t("portfolioV2.card.virtualTradeDateTime")}
+        <Label htmlFor={`portfolio-virtual-date-${action.id}`}>
+          {t("portfolio.card.virtualTradeDateTime")}
         </Label>
         <Input
-          id={`portfolio-v2-virtual-date-${action.id}`}
+          id={`portfolio-virtual-date-${action.id}`}
           type="datetime-local"
           value={executedAt}
           onChange={(event) => setExecutedAt(event.target.value)}
@@ -131,7 +131,7 @@ export function PortfolioTradeAction({
         }
         disabled={working || !action.id}
       >
-        {action.label || action.id || t("portfolioV2.card.runAction")}
+        {action.label || action.id || t("portfolio.card.runAction")}
       </Button>
     </div>
   );

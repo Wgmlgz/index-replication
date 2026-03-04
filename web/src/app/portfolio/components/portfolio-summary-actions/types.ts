@@ -1,5 +1,5 @@
 import type { PortfolioProviderAction } from "@/api-client";
-import type { NormalizedPortfolioProfile } from "@/app/portfolio-v2/use-portfolio-v2";
+import type { NormalizedPortfolioProfile } from "@/app/portfolio/use-portfolio";
 
 export type RunActionFn = (
   actionID: string,

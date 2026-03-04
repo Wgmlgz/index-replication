@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PortfolioSimpleActionProps } from "@/app/portfolio-v2/components/portfolio-summary-actions/types";
+import type { PortfolioSimpleActionProps } from "@/app/portfolio/components/portfolio-summary-actions/types";
 import {
   dateTimeLocalValueToISOString,
   nowAsDateTimeLocalValue,
-} from "@/app/portfolio-v2/components/portfolio-formatting";
+} from "@/app/portfolio/components/portfolio-formatting";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,11 +23,11 @@ export function PortfolioDepositCashAction({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-virtual-currency">
-          {t("portfolioV2.card.virtualTradeCurrency")}
+        <Label htmlFor="portfolio-virtual-currency">
+          {t("portfolio.card.virtualTradeCurrency")}
         </Label>
         <Input
-          id="portfolio-v2-virtual-currency"
+          id="portfolio-virtual-currency"
           type="text"
           value={currency}
           onChange={(event) => setCurrency(event.target.value.toUpperCase())}
@@ -35,11 +35,11 @@ export function PortfolioDepositCashAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-virtual-amount">
-          {t("portfolioV2.card.virtualDepositAmount")}
+        <Label htmlFor="portfolio-virtual-amount">
+          {t("portfolio.card.virtualDepositAmount")}
         </Label>
         <Input
-          id="portfolio-v2-virtual-amount"
+          id="portfolio-virtual-amount"
           type="number"
           step="0.01"
           value={amount}
@@ -48,11 +48,11 @@ export function PortfolioDepositCashAction({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="portfolio-v2-virtual-date-deposit_cash">
-          {t("portfolioV2.card.virtualTradeDateTime")}
+        <Label htmlFor="portfolio-virtual-date-deposit_cash">
+          {t("portfolio.card.virtualTradeDateTime")}
         </Label>
         <Input
-          id="portfolio-v2-virtual-date-deposit_cash"
+          id="portfolio-virtual-date-deposit_cash"
           type="datetime-local"
           value={executedAt}
           onChange={(event) => setExecutedAt(event.target.value)}
@@ -70,7 +70,7 @@ export function PortfolioDepositCashAction({
         }
         disabled={working || amount === 0}
       >
-        {action.label || t("portfolioV2.card.runAction")}
+        {action.label || t("portfolio.card.runAction")}
       </Button>
     </div>
   );
