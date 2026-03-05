@@ -307,15 +307,6 @@ func (s *Service) UpsertReplicationConfig(
 	}
 
 	benchmarkSecid := normalizeOptionalString(req.BenchmarkSecid)
-	if benchmarkSecid != nil {
-		exists, err := s.replicationRepo.BenchmarkExists(*benchmarkSecid)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, ErrInvalidBenchmark
-		}
-	}
 
 	modeKey := strings.TrimSpace(req.ModeKey)
 	if modeKey == "" {

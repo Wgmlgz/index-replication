@@ -68,7 +68,7 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 		}
 	})
 
-	t.Run("fk to moex_indexes secid", func(t *testing.T) {
+	t.Run("benchmark secid is plain ticker without moex fk", func(t *testing.T) {
 		profileID := createPortfolioProfileRow(t, db, 1002)
 		err := db.Exec(
 			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params) VALUES (?, ?, ?, ?, ?)",
@@ -78,8 +78,8 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 			"full",
 			"{}",
 		).Error
-		if err == nil {
-			t.Fatalf("expected fk violation for missing benchmark secid")
+		if err != nil {
+			t.Fatalf("expected benchmark ticker insert without fk violation, got: %v", err)
 		}
 	})
 

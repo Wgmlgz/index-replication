@@ -3,7 +3,7 @@ x-temporal-admin-tools-build: &temporal_admin_tools_build
     context: .
     dockerfile: scripts/temporal/admin-tools.Dockerfile
     args:
-      TEMPORAL_ADMINTOOLS_VERSION: ${TEMPORAL_ADMINTOOLS_VERSION:-1.30.1}
+      TEMPORAL_VERSION: ${TEMPORAL_VERSION:-1.30.1}
 
 x-temporal-server-build: &temporal_server_build
   build:

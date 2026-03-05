@@ -309,12 +309,17 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("unexpected summary replication payload: %+v", summaryPopulated.Replication)
 		}
 
-		invalidBenchmarkResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
+		plainTickerResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
 			"is_enabled":      true,
 			"benchmark_secid": "UNKNOWN",
 		}, adminCookie)
-		if invalidBenchmarkResp.Code != http.StatusBadRequest {
-			t.Fatalf("expected bad request for invalid benchmark, got %d", invalidBenchmarkResp.Code)
+		if plainTickerResp.Code != http.StatusOK {
+			t.Fatalf("expected plain ticker benchmark to be accepted, got %d body=%s", plainTickerResp.Code, plainTickerResp.Body.String())
+		}
+		var plainTickerConfig portfolioReplicationConfigResponse
+		decodeJSON(t, plainTickerResp, &plainTickerConfig)
+		if plainTickerConfig.BenchmarkSecid == nil || *plainTickerConfig.BenchmarkSecid != "UNKNOWN" {
+			t.Fatalf("expected UNKNOWN benchmark ticker to persist, got %+v", plainTickerConfig)
 		}
 
 		deleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, adminCookie)
