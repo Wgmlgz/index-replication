@@ -12,20 +12,18 @@ type PortfolioCapabilities struct {
 } //@name PortfolioCapabilities
 
 type PortfolioReplicationConfig struct {
-	IsEnabled       bool                   `json:"is_enabled"`
-	BenchmarkSecid  *string                `json:"benchmark_secid"`
-	ModeKey         string                 `json:"mode_key"`
-	ModeParams      map[string]interface{} `json:"mode_params"`
-	ExcludedTickers []string               `json:"excluded_tickers"`
-	UpdatedAt       time.Time              `json:"updated_at"`
+	IsEnabled      bool                   `json:"is_enabled"`
+	BenchmarkSecid *string                `json:"benchmark_secid"`
+	ModeKey        string                 `json:"mode_key"`
+	ModeParams     map[string]interface{} `json:"mode_params"`
+	UpdatedAt      time.Time              `json:"updated_at"`
 } //@name PortfolioReplicationConfig
 
 type PortfolioReplicationConfigUpsertRequest struct {
-	IsEnabled       bool                   `json:"is_enabled"`
-	BenchmarkSecid  *string                `json:"benchmark_secid"`
-	ModeKey         string                 `json:"mode_key"`
-	ModeParams      map[string]interface{} `json:"mode_params"`
-	ExcludedTickers []string               `json:"excluded_tickers"`
+	IsEnabled      bool                   `json:"is_enabled"`
+	BenchmarkSecid *string                `json:"benchmark_secid"`
+	ModeKey        string                 `json:"mode_key"`
+	ModeParams     map[string]interface{} `json:"mode_params"`
 } //@name PortfolioReplicationConfigUpsertRequest
 
 type PortfolioProfile struct {

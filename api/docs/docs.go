@@ -2892,12 +2892,6 @@ const docTemplate = `{
                 "benchmark_secid": {
                     "type": "string"
                 },
-                "excluded_tickers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "is_enabled": {
                     "type": "boolean"
                 },
@@ -2918,12 +2912,6 @@ const docTemplate = `{
             "properties": {
                 "benchmark_secid": {
                     "type": "string"
-                },
-                "excluded_tickers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "is_enabled": {
                     "type": "boolean"

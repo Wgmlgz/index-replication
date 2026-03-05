@@ -450,10 +450,6 @@ definitions:
     properties:
       benchmark_secid:
         type: string
-      excluded_tickers:
-        items:
-          type: string
-        type: array
       is_enabled:
         type: boolean
       mode_key:
@@ -468,10 +464,6 @@ definitions:
     properties:
       benchmark_secid:
         type: string
-      excluded_tickers:
-        items:
-          type: string
-        type: array
       is_enabled:
         type: boolean
       mode_key:

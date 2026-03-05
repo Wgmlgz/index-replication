@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
+import type { MoexIndex } from '@/api-client';
 import type { NormalizedPortfolioProfile, PortfolioReplicationConfig } from '@/app/portfolio/use-portfolio';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MoexIndexSelectorDialog } from '@/components/moex-indexes/list/moex-index-selector-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { getApiUrl, axiosClient } from '@/lib/api';
@@ -26,7 +28,6 @@ type ReplicationFormState = {
   benchmarkSecid: string;
   modeKey: string;
   modeParamsRaw: string;
-  excludedTickersRaw: string;
   updatedAt: string;
 };
 
@@ -35,9 +36,10 @@ const EMPTY_FORM_STATE: ReplicationFormState = {
   benchmarkSecid: '',
   modeKey: 'full',
   modeParamsRaw: '{}',
-  excludedTickersRaw: '',
   updatedAt: '',
 };
+
+const REPLICATION_MODE_OPTIONS = ['full', 'sampled'] as const;
 
 function toFormState(config: PortfolioReplicationConfig | null): ReplicationFormState {
   if (!config) {
@@ -49,25 +51,8 @@ function toFormState(config: PortfolioReplicationConfig | null): ReplicationForm
     benchmarkSecid: config.benchmark_secid ?? '',
     modeKey: config.mode_key || 'full',
     modeParamsRaw: JSON.stringify(config.mode_params ?? {}, null, 2),
-    excludedTickersRaw: (config.excluded_tickers ?? []).join(', '),
     updatedAt: config.updated_at || '',
   };
-}
-
-function normalizeExcludedTickers(value: string): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-
-  for (const token of value.split(',')) {
-    const trimmed = token.trim();
-    if (!trimmed || seen.has(trimmed)) {
-      continue;
-    }
-    seen.add(trimmed);
-    normalized.push(trimmed);
-  }
-
-  return normalized;
 }
 
 export function PortfolioReplicationPanel({
@@ -79,6 +64,7 @@ export function PortfolioReplicationPanel({
   const [form, setForm] = useState<ReplicationFormState>({ ...EMPTY_FORM_STATE });
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
 
   useEffect(() => {
     setForm(toFormState(profile?.replication ?? null));
@@ -137,7 +123,6 @@ export function PortfolioReplicationPanel({
       benchmark_secid: form.benchmarkSecid.trim() || null,
       mode_key: modeKey,
       mode_params: modeParams,
-      excluded_tickers: normalizeExcludedTickers(form.excludedTickersRaw),
     };
 
     setWorking(true);
@@ -174,6 +159,13 @@ export function PortfolioReplicationPanel({
       setWorking(false);
     }
   }, [parseErrorMessage, portfolioID, refreshProfiles, t]);
+
+  const onSelectBenchmark = useCallback((index: MoexIndex) => {
+    setForm(prev => ({
+      ...prev,
+      benchmarkSecid: index.secid ?? '',
+    }));
+  }, []);
 
   if (!portfolioID) {
     return (
@@ -218,29 +210,58 @@ export function PortfolioReplicationPanel({
           </div>
 
           <div className='grid gap-2'>
-            <Label htmlFor='portfolio-replication-benchmark'>
+            <Label>
               {t('portfolio.replication.benchmarkLabel')}
             </Label>
-            <Input
-              id='portfolio-replication-benchmark'
-              value={form.benchmarkSecid}
-              onChange={event => setForm(prev => ({ ...prev, benchmarkSecid: event.target.value }))}
-              placeholder={t('portfolio.replication.benchmarkPlaceholder')}
-              disabled={working}
-            />
+            <div className='flex flex-wrap items-center gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => setSelectorOpen(true)}
+                disabled={working}
+              >
+                {form.benchmarkSecid
+                  ? t('portfolio.replication.changeBenchmarkButton')
+                  : t('portfolio.replication.selectBenchmarkButton')}
+              </Button>
+              <Button
+                type='button'
+                variant='ghost'
+                onClick={() => setForm(prev => ({ ...prev, benchmarkSecid: '' }))}
+                disabled={working || !form.benchmarkSecid}
+              >
+                {t('portfolio.replication.clearBenchmarkButton')}
+              </Button>
+            </div>
+            <div className='text-xs text-muted-foreground'>
+              {form.benchmarkSecid
+                ? t('portfolio.replication.selectedBenchmarkValue', {
+                    secid: form.benchmarkSecid,
+                  })
+                : t('portfolio.replication.selectedBenchmarkEmpty')}
+            </div>
           </div>
 
           <div className='grid gap-2'>
             <Label htmlFor='portfolio-replication-mode'>
               {t('portfolio.replication.modeKeyLabel')}
             </Label>
-            <Input
-              id='portfolio-replication-mode'
-              value={form.modeKey}
-              onChange={event => setForm(prev => ({ ...prev, modeKey: event.target.value }))}
-              placeholder='full'
+            <Select
+              value={form.modeKey || 'full'}
+              onValueChange={value => setForm(prev => ({ ...prev, modeKey: value }))}
               disabled={working}
-            />
+            >
+              <SelectTrigger id='portfolio-replication-mode'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REPLICATION_MODE_OPTIONS.map(mode => (
+                  <SelectItem key={mode} value={mode}>
+                    {t(`portfolio.replication.modeOptions.${mode}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className='grid gap-2'>
@@ -253,21 +274,6 @@ export function PortfolioReplicationPanel({
               onChange={event => setForm(prev => ({ ...prev, modeParamsRaw: event.target.value }))}
               placeholder='{}'
               rows={6}
-              disabled={working}
-            />
-          </div>
-
-          <div className='grid gap-2'>
-            <Label htmlFor='portfolio-replication-excluded'>
-              {t('portfolio.replication.excludedTickersLabel')}
-            </Label>
-            <Input
-              id='portfolio-replication-excluded'
-              value={form.excludedTickersRaw}
-              onChange={event =>
-                setForm(prev => ({ ...prev, excludedTickersRaw: event.target.value }))
-              }
-              placeholder={t('portfolio.replication.excludedTickersPlaceholder')}
               disabled={working}
             />
           </div>
@@ -286,6 +292,15 @@ export function PortfolioReplicationPanel({
           </Button>
         </div>
       </CardContent>
+
+      {selectorOpen ? (
+        <MoexIndexSelectorDialog
+          open={selectorOpen}
+          value={form.benchmarkSecid || null}
+          onOpenChange={setSelectorOpen}
+          onSelect={onSelectBenchmark}
+        />
+      ) : null}
     </Card>
   );
 }

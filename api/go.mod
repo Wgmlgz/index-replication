@@ -6,7 +6,6 @@ toolchain go1.23.10
 
 require (
 	github.com/casbin/gorm-adapter/v3 v3.33.0
-	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/swaggo/swag v1.16.4
 	go.temporal.io/api v1.43.0

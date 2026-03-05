@@ -3,41 +3,18 @@
 import { useTranslation } from 'react-i18next';
 import { Suspense } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MoexIndexesChartsPanel } from '@/components/moex-indexes/charts-new/moex-indexes-charts-panel';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
-import { useMoexIndexDetailContext } from '@/components/moex-indexes/detail/moex-indexes-detail-context';
-import { IndexListCard } from '@/components/moex-indexes/list/index-list-card';
+import { MoexIndexesWorkspace } from '@/components/moex-indexes/moex-indexes-workspace';
 import { useMoexIndexListContext } from '@/components/moex-indexes/list/moex-indexes-list-context';
 import { MoexIndexesProvider } from '@/components/moex-indexes/moex-indexes-context';
 
 function MoexIndexesContent() {
   const { error: listError } = useMoexIndexListContext();
-  const { selectedIndex } = useMoexIndexDetailContext();
   const error = listError;
   const { t } = useTranslation();
   const overviewLabel = t('moex.sources.overview');
-
-  const historySourceLabel = selectedIndex
-    ? t('moex.sources.indexPage', { secid: selectedIndex.secid })
-    : t('moex.sources.selectIndex');
-  const chartTitle = selectedIndex
-    ? `${selectedIndex.name || selectedIndex.shortName || selectedIndex.secid}${
-        selectedIndex.currency ? ` ${selectedIndex.currency}` : ''
-      }`
-    : t('moex.chart.title');
-  const historyHref =
-    selectedIndex && selectedIndex.secid
-      ? moexSourceLinks.indexPage(selectedIndex.secid)
-      : undefined;
 
   return (
     <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 flex-col gap-6 overflow-hidden'>
@@ -60,29 +37,7 @@ function MoexIndexesContent() {
         </Alert>
       )}
 
-      <div className='grid flex-1 min-h-0 grid-cols-1 gap-6 grid-rows-[minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[480px_minmax(0,1fr)]'>
-        <IndexListCard />
-        <div className='min-h-0'>
-          <Card className='h-full min-h-0'>
-            <CardHeader>
-              <CardTitle>
-                {selectedIndex && selectedIndex.secid} - {chartTitle}
-              </CardTitle>
-              <CardAction>
-                <MoexSourceButton
-                  href={historyHref}
-                  label={historySourceLabel}
-                  tooltip={historySourceLabel}
-                  disabledTooltip={t('moex.sources.selectIndex')}
-                />
-              </CardAction>
-            </CardHeader>
-            <CardContent className='h-full min-h-0'>
-              <MoexIndexesChartsPanel />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <MoexIndexesWorkspace />
     </div>
   );
 }

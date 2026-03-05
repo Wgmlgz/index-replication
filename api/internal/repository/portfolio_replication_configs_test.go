@@ -41,12 +41,11 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 		insertReplicationConfigRow(t, db, profileID, strPtr("IMOEX"))
 
 		err := db.Exec(
-			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params, excluded_tickers) VALUES (?, ?, ?, ?, ?, ?)",
+			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params) VALUES (?, ?, ?, ?, ?)",
 			profileID,
 			true,
 			"IMOEX",
 			"full",
-			"{}",
 			"{}",
 		).Error
 		if err == nil {
@@ -57,12 +56,11 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 	t.Run("fk to portfolio_profiles", func(t *testing.T) {
 		seedMoexIndex(t, db, "IRUS")
 		err := db.Exec(
-			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params, excluded_tickers) VALUES (?, ?, ?, ?, ?, ?)",
+			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params) VALUES (?, ?, ?, ?, ?)",
 			999999,
 			true,
 			"IRUS",
 			"full",
-			"{}",
 			"{}",
 		).Error
 		if err == nil {
@@ -73,12 +71,11 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 	t.Run("fk to moex_indexes secid", func(t *testing.T) {
 		profileID := createPortfolioProfileRow(t, db, 1002)
 		err := db.Exec(
-			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params, excluded_tickers) VALUES (?, ?, ?, ?, ?, ?)",
+			"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params) VALUES (?, ?, ?, ?, ?)",
 			profileID,
 			true,
 			"UNKNOWN",
 			"full",
-			"{}",
 			"{}",
 		).Error
 		if err == nil {
@@ -123,7 +120,6 @@ func TestPortfolioReplicationConfigsRepository_UpsertAndDelete(t *testing.T) {
 		BenchmarkSecid:     strPtr("IMOEX"),
 		ModeKey:            "full",
 		ModeParams:         map[string]interface{}{"target_count": 15.0},
-		ExcludedTickers:    []string{"GAZP", "SBER"},
 	})
 	if err != nil {
 		t.Fatalf("upsert create: %v", err)
@@ -138,7 +134,6 @@ func TestPortfolioReplicationConfigsRepository_UpsertAndDelete(t *testing.T) {
 		BenchmarkSecid:     strPtr("IMOEX"),
 		ModeKey:            "sampled",
 		ModeParams:         map[string]interface{}{"target_count": 10.0},
-		ExcludedTickers:    []string{"SBER"},
 	})
 	if err != nil {
 		t.Fatalf("upsert update: %v", err)
@@ -211,12 +206,11 @@ func seedMoexIndex(t *testing.T, db *gorm.DB, secid string) {
 func insertReplicationConfigRow(t *testing.T, db *gorm.DB, profileID int, benchmarkSecid *string) {
 	t.Helper()
 	if err := db.Exec(
-		"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params, excluded_tickers) VALUES (?, ?, ?, ?, ?, ?)",
+		"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params) VALUES (?, ?, ?, ?, ?)",
 		profileID,
 		true,
 		benchmarkSecid,
 		"full",
-		"{}",
 		"{}",
 	).Error; err != nil {
 		t.Fatalf("insert replication config: %v", err)

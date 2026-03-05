@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/lib/pq"
 	"gorm.io/datatypes"
 )
 
@@ -14,7 +13,6 @@ type PortfolioReplicationConfig struct {
 	BenchmarkSecid     *string           `gorm:"column:benchmark_secid"`
 	ModeKey            string            `gorm:"column:mode_key;not null;default:full"`
 	ModeParams         datatypes.JSONMap `gorm:"column:mode_params;type:jsonb;not null;default:'{}'"`
-	ExcludedTickers    pq.StringArray    `gorm:"column:excluded_tickers;type:text[];not null;default:'{}'"`
 	CreatedAt          time.Time         `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt          time.Time         `gorm:"column:updated_at;autoUpdateTime"`
 }

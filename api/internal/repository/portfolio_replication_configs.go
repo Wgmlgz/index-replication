@@ -58,20 +58,16 @@ func (r *PortfolioReplicationConfigsRepository) Upsert(config *models.PortfolioR
 	if config.ModeParams == nil {
 		config.ModeParams = datatypes.JSONMap{}
 	}
-	if config.ExcludedTickers == nil {
-		config.ExcludedTickers = []string{}
-	}
 
 	now := time.Now().UTC()
 	err := r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "portfolio_profile_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"is_enabled":       config.IsEnabled,
-			"benchmark_secid":  config.BenchmarkSecid,
-			"mode_key":         config.ModeKey,
-			"mode_params":      config.ModeParams,
-			"excluded_tickers": config.ExcludedTickers,
-			"updated_at":       now,
+			"is_enabled":      config.IsEnabled,
+			"benchmark_secid": config.BenchmarkSecid,
+			"mode_key":        config.ModeKey,
+			"mode_params":     config.ModeParams,
+			"updated_at":      now,
 		}),
 	}).Create(config).Error
 	if err != nil {

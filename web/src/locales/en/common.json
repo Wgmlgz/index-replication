@@ -503,7 +503,16 @@
       "isEnabledLabel": "Enable replication mode",
       "benchmarkLabel": "Benchmark SECID",
       "benchmarkPlaceholder": "IMOEX",
+      "selectBenchmarkButton": "Select index from MOEX",
+      "changeBenchmarkButton": "Change selected index",
+      "clearBenchmarkButton": "Clear selected index",
+      "selectedBenchmarkValue": "Selected benchmark: {{secid}}",
+      "selectedBenchmarkEmpty": "No benchmark index selected.",
       "modeKeyLabel": "Mode key",
+      "modeOptions": {
+        "full": "Full replication",
+        "sampled": "Sampled replication"
+      },
       "modeParamsLabel": "Mode params (JSON object)",
       "excludedTickersLabel": "Excluded tickers",
       "excludedTickersPlaceholder": "GAZP, SBER",
@@ -511,6 +520,14 @@
       "updatedAtEmpty": "Not set",
       "saveButton": "Save config",
       "clearButton": "Clear config",
+      "selector": {
+        "title": "Select MOEX benchmark index",
+        "description": "Browse MOEX indexes and confirm selection.",
+        "selectedValue": "Selected: {{secid}}",
+        "noSelection": "No index selected.",
+        "cancelButton": "Cancel",
+        "selectButton": "Select index"
+      },
       "errors": {
         "save": "Failed to save replication config.",
         "clear": "Failed to clear replication config.",

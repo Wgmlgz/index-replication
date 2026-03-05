@@ -49,12 +49,11 @@ type portfolioCompositionEntryResponse struct {
 }
 
 type portfolioReplicationConfigResponse struct {
-	IsEnabled       bool                   `json:"is_enabled"`
-	BenchmarkSecid  *string                `json:"benchmark_secid"`
-	ModeKey         string                 `json:"mode_key"`
-	ModeParams      map[string]interface{} `json:"mode_params"`
-	ExcludedTickers []string               `json:"excluded_tickers"`
-	UpdatedAt       string                 `json:"updated_at"`
+	IsEnabled      bool                   `json:"is_enabled"`
+	BenchmarkSecid *string                `json:"benchmark_secid"`
+	ModeKey        string                 `json:"mode_key"`
+	ModeParams     map[string]interface{} `json:"mode_params"`
+	UpdatedAt      string                 `json:"updated_at"`
 }
 
 func createPortfolioProfile(
@@ -223,11 +222,10 @@ func TestPortfolioRoutes(t *testing.T) {
 		}
 
 		putPayload := map[string]interface{}{
-			"is_enabled":       true,
-			"benchmark_secid":  "IMOEX",
-			"mode_key":         "full",
-			"mode_params":      map[string]interface{}{"lot_size": 1},
-			"excluded_tickers": []string{"GAZP", "SBER"},
+			"is_enabled":      true,
+			"benchmark_secid": "IMOEX",
+			"mode_key":        "full",
+			"mode_params":     map[string]interface{}{"lot_size": 1},
 		}
 		putResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", putPayload, adminCookie)
 		if putResp.Code != http.StatusOK {
@@ -243,11 +241,10 @@ func TestPortfolioRoutes(t *testing.T) {
 		}
 
 		updatePayload := map[string]interface{}{
-			"is_enabled":       false,
-			"benchmark_secid":  "IMOEX",
-			"mode_key":         "sampled",
-			"mode_params":      map[string]interface{}{"top_n": 10},
-			"excluded_tickers": []string{"SBER"},
+			"is_enabled":      false,
+			"benchmark_secid": "IMOEX",
+			"mode_key":        "sampled",
+			"mode_params":     map[string]interface{}{"top_n": 10},
 		}
 		updateResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
 		if updateResp.Code != http.StatusOK {
@@ -257,9 +254,6 @@ func TestPortfolioRoutes(t *testing.T) {
 		decodeJSON(t, updateResp, &updatedConfig)
 		if updatedConfig.ModeKey != "sampled" || updatedConfig.IsEnabled {
 			t.Fatalf("unexpected updated config: %+v", updatedConfig)
-		}
-		if len(updatedConfig.ExcludedTickers) != 1 || updatedConfig.ExcludedTickers[0] != "SBER" {
-			t.Fatalf("unexpected excluded tickers after update: %+v", updatedConfig.ExcludedTickers)
 		}
 
 		idempotentResp1 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
@@ -276,9 +270,6 @@ func TestPortfolioRoutes(t *testing.T) {
 		decodeJSON(t, idempotentResp2, &idem2)
 		if idem1.ModeKey != idem2.ModeKey || idem1.IsEnabled != idem2.IsEnabled {
 			t.Fatalf("expected repeated PUT to keep config state stable: %+v vs %+v", idem1, idem2)
-		}
-		if len(idem2.ExcludedTickers) != 1 || idem2.ExcludedTickers[0] != "SBER" {
-			t.Fatalf("unexpected idempotent excluded tickers: %+v", idem2.ExcludedTickers)
 		}
 
 		listPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)

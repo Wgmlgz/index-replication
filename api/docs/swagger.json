@@ -2886,12 +2886,6 @@
                 "benchmark_secid": {
                     "type": "string"
                 },
-                "excluded_tickers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "is_enabled": {
                     "type": "boolean"
                 },
@@ -2912,12 +2906,6 @@
             "properties": {
                 "benchmark_secid": {
                     "type": "string"
-                },
-                "excluded_tickers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "is_enabled": {
                     "type": "boolean"

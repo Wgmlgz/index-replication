@@ -11,7 +11,6 @@ import (
 	"server/internal/models"
 	"server/internal/repository"
 
-	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -328,14 +327,12 @@ func (s *Service) UpsertReplicationConfig(
 		modeParams = map[string]interface{}{}
 	}
 
-	excludedTickers := normalizeStringList(req.ExcludedTickers)
 	config := &models.PortfolioReplicationConfig{
 		PortfolioProfileID: id,
 		IsEnabled:          req.IsEnabled,
 		BenchmarkSecid:     benchmarkSecid,
 		ModeKey:            modeKey,
 		ModeParams:         datatypes.JSONMap(modeParams),
-		ExcludedTickers:    pq.StringArray(excludedTickers),
 	}
 
 	saved, err := s.replicationRepo.Upsert(config)
@@ -573,16 +570,12 @@ func (s *Service) toReplicationDTO(
 		modeParams = map[string]interface{}(config.ModeParams)
 	}
 
-	excludedTickers := make([]string, len(config.ExcludedTickers))
-	copy(excludedTickers, config.ExcludedTickers)
-
 	return &dto.PortfolioReplicationConfig{
-		IsEnabled:       config.IsEnabled,
-		BenchmarkSecid:  config.BenchmarkSecid,
-		ModeKey:         config.ModeKey,
-		ModeParams:      modeParams,
-		ExcludedTickers: excludedTickers,
-		UpdatedAt:       config.UpdatedAt,
+		IsEnabled:      config.IsEnabled,
+		BenchmarkSecid: config.BenchmarkSecid,
+		ModeKey:        config.ModeKey,
+		ModeParams:     modeParams,
+		UpdatedAt:      config.UpdatedAt,
 	}
 }
 
@@ -595,26 +588,6 @@ func normalizeOptionalString(value *string) *string {
 		return nil
 	}
 	return &trimmed
-}
-
-func normalizeStringList(values []string) []string {
-	if len(values) == 0 {
-		return []string{}
-	}
-	seen := make(map[string]struct{}, len(values))
-	result := make([]string, 0, len(values))
-	for _, value := range values {
-		trimmed := strings.TrimSpace(value)
-		if trimmed == "" {
-			continue
-		}
-		if _, ok := seen[trimmed]; ok {
-			continue
-		}
-		seen[trimmed] = struct{}{}
-		result = append(result, trimmed)
-	}
-	return result
 }
 
 func encodeJSONMap(payload map[string]interface{}) (string, error) {

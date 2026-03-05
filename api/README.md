@@ -212,7 +212,7 @@ Provider model:
 
 - `portfolio_profiles` table stores per-user provider profiles (`provider`, `name`, default flag, config JSON, secret JSON).
 - `portfolio_replication_configs` stores optional per-profile replication config
-  (`is_enabled`, `benchmark_secid`, `mode_key`, `mode_params`, `excluded_tickers`).
+  (`is_enabled`, `benchmark_secid`, `mode_key`, `mode_params`).
 - `internal/portfolio.Service` resolves profile -> provider adapter via registry.
 - `GET /api/me/portfolios` and `GET /api/me/portfolios/:id/summary` now embed `replication` block
   (or `null` when config is absent), so the frontend can read replication config without extra read endpoints.
