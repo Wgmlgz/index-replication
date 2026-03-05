@@ -5,6 +5,13 @@ x-temporal-admin-tools-build: &temporal_admin_tools_build
     args:
       TEMPORAL_ADMINTOOLS_VERSION: ${TEMPORAL_ADMINTOOLS_VERSION:-1.30.1}
 
+x-temporal-server-build: &temporal_server_build
+  build:
+    context: .
+    dockerfile: scripts/temporal/server.Dockerfile
+    args:
+      TEMPORAL_VERSION: ${TEMPORAL_VERSION:-1.30.1}
+
 services:
   temporal-admin-tools:
     <<: *temporal_admin_tools_build
@@ -23,7 +30,7 @@ services:
     command: /scripts/setup-postgres.sh
 
   temporal:
-    image: temporalio/server:${TEMPORAL_VERSION:-1.30.1}
+    <<: *temporal_server_build
     depends_on:
       temporal-admin-tools:
         condition: service_completed_successfully
@@ -34,8 +41,7 @@ services:
       - POSTGRES_PWD=${POSTGRES_PASSWORD}
       - POSTGRES_SEEDS=postgres
       - BIND_ON_IP=0.0.0.0
-    volumes:
-      - ./scripts/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/docker.yaml
     ports:
       - "${TEMPORAL_GRPC_PORT:-7233}:7233"
     healthcheck:
