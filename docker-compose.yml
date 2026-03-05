@@ -68,7 +68,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   postgres:
-    image: postgres:16
+    image: postgres:18.3
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -165,7 +165,7 @@ services:
       - "traefik.http.routers.web.priority=1"
 
   adminer:
-    image: adminer:4
+    image: adminer:5.4.2
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
     depends_on:
