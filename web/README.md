@@ -41,6 +41,8 @@ Common tasks:
 - Shared UI and features live in `web/src/components/`.
 - API access is centralized in `web/src/lib/api.ts` using a generated client.
 - Portfolio (`/portfolio`) uses provider-agnostic backend endpoints (`/api/me/portfolios/:id/*`) and profile selection via `portfolio_id` URL param.
+- Portfolio overview now includes a Replication tab (config CRUD only) that reads replication data embedded in
+  `GET /api/me/portfolios` / `GET /api/me/portfolios/:id/summary` and writes via PUT/DELETE replication endpoints.
 - MOEX data access is handled by backend endpoints via `web/src/lib/moex-client.ts`.
 - Generated code in `web/src/api-client/` should not be edited manually.
 - Forms use React Hook Form with Zod schemas for validation.

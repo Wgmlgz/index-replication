@@ -403,6 +403,8 @@ definitions:
         type: string
       provider:
         type: string
+      replication:
+        $ref: '#/definitions/PortfolioReplicationConfig'
       updated_at:
         type: string
     type: object
@@ -443,6 +445,40 @@ definitions:
         type: string
       label:
         type: string
+    type: object
+  PortfolioReplicationConfig:
+    properties:
+      benchmark_secid:
+        type: string
+      excluded_tickers:
+        items:
+          type: string
+        type: array
+      is_enabled:
+        type: boolean
+      mode_key:
+        type: string
+      mode_params:
+        additionalProperties: true
+        type: object
+      updated_at:
+        type: string
+    type: object
+  PortfolioReplicationConfigUpsertRequest:
+    properties:
+      benchmark_secid:
+        type: string
+      excluded_tickers:
+        items:
+          type: string
+        type: array
+      is_enabled:
+        type: boolean
+      mode_key:
+        type: string
+      mode_params:
+        additionalProperties: true
+        type: object
     type: object
   PortfolioSummaryMoneyBalance:
     properties:
@@ -500,6 +536,8 @@ definitions:
         type: array
       provider:
         type: string
+      replication:
+        $ref: '#/definitions/PortfolioReplicationConfig'
       total_amount_currency:
         type: string
       total_amount_portfolio:
@@ -1325,6 +1363,71 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Get portfolio operations
+      tags:
+      - portfolio
+  /me/portfolios/{id}/replication:
+    delete:
+      description: Deletes replication config for selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete portfolio replication config
+      tags:
+      - portfolio
+    put:
+      consumes:
+      - application/json
+      description: Creates or updates replication config for selected portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Replication config payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/PortfolioReplicationConfigUpsertRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioReplicationConfig'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Upsert portfolio replication config
       tags:
       - portfolio
   /me/portfolios/{id}/summary:

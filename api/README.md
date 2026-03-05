@@ -199,6 +199,8 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `POST /api/me/portfolios`
 - `PATCH /api/me/portfolios/:id`
 - `DELETE /api/me/portfolios/:id`
+- `PUT /api/me/portfolios/:id/replication`
+- `DELETE /api/me/portfolios/:id/replication`
 - `GET /api/me/portfolios/:id/summary`
 - `GET /api/me/portfolios/:id/history`
 - `GET /api/me/portfolios/:id/composition`
@@ -209,7 +211,11 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 Provider model:
 
 - `portfolio_profiles` table stores per-user provider profiles (`provider`, `name`, default flag, config JSON, secret JSON).
+- `portfolio_replication_configs` stores optional per-profile replication config
+  (`is_enabled`, `benchmark_secid`, `mode_key`, `mode_params`, `excluded_tickers`).
 - `internal/portfolio.Service` resolves profile -> provider adapter via registry.
+- `GET /api/me/portfolios` and `GET /api/me/portfolios/:id/summary` now embed `replication` block
+  (or `null` when config is absent), so the frontend can read replication config without extra read endpoints.
 - Current providers:
   - `tbank` (adapter over existing `internal/tbank.Service`)
   - `mock` (deterministic fake data)

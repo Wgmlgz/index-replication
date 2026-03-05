@@ -6,11 +6,13 @@ toolchain go1.23.10
 
 require (
 	github.com/casbin/gorm-adapter/v3 v3.33.0
+	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/swaggo/swag v1.16.4
 	go.temporal.io/api v1.43.0
 	go.temporal.io/sdk v1.31.0
 	google.golang.org/grpc v1.66.0
+	gorm.io/datatypes v1.2.7
 	opensource.tbank.ru/invest/invest-go v1.44.0
 )
 
@@ -100,7 +102,7 @@ require (
 	golang.org/x/arch v0.18.0 // indirect
 	golang.org/x/crypto v0.40.0
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.16.0
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/protobuf v1.36.6

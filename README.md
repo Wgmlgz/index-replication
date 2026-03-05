@@ -28,6 +28,7 @@ Frontend:
 - OpenAPI Generator `typescript-axios` client in `web/src/api-client`
 - Portfolio UI (`/portfolio`) built on provider-agnostic portfolio profiles (`/api/me/portfolios/:id/*`)
   with providers: `tbank`, `mock`, `virtual`
+  and optional per-profile replication config (benchmark/mode/exclusions) embedded in portfolio list/summary responses.
 
 ## Preferred Commands
 

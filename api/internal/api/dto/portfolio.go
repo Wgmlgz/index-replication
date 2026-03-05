@@ -11,15 +11,33 @@ type PortfolioCapabilities struct {
 	Actions []PortfolioProviderAction `json:"actions"`
 } //@name PortfolioCapabilities
 
+type PortfolioReplicationConfig struct {
+	IsEnabled       bool                   `json:"is_enabled"`
+	BenchmarkSecid  *string                `json:"benchmark_secid"`
+	ModeKey         string                 `json:"mode_key"`
+	ModeParams      map[string]interface{} `json:"mode_params"`
+	ExcludedTickers []string               `json:"excluded_tickers"`
+	UpdatedAt       time.Time              `json:"updated_at"`
+} //@name PortfolioReplicationConfig
+
+type PortfolioReplicationConfigUpsertRequest struct {
+	IsEnabled       bool                   `json:"is_enabled"`
+	BenchmarkSecid  *string                `json:"benchmark_secid"`
+	ModeKey         string                 `json:"mode_key"`
+	ModeParams      map[string]interface{} `json:"mode_params"`
+	ExcludedTickers []string               `json:"excluded_tickers"`
+} //@name PortfolioReplicationConfigUpsertRequest
+
 type PortfolioProfile struct {
-	ID           int                    `json:"id"`
-	Provider     string                 `json:"provider"`
-	Name         string                 `json:"name"`
-	IsDefault    bool                   `json:"is_default"`
-	Config       map[string]interface{} `json:"config"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
-	Capabilities PortfolioCapabilities  `json:"capabilities"`
+	ID           int                         `json:"id"`
+	Provider     string                      `json:"provider"`
+	Name         string                      `json:"name"`
+	IsDefault    bool                        `json:"is_default"`
+	Config       map[string]interface{}      `json:"config"`
+	Replication  *PortfolioReplicationConfig `json:"replication"`
+	CreatedAt    time.Time                   `json:"created_at"`
+	UpdatedAt    time.Time                   `json:"updated_at"`
+	Capabilities PortfolioCapabilities       `json:"capabilities"`
 } //@name PortfolioProfile
 
 type PortfolioProfileCreateRequest struct {
@@ -67,6 +85,7 @@ type PortfolioSummaryResponse struct {
 	DailyYieldRelative   float64                        `json:"daily_yield_relative"`
 	Money                []PortfolioSummaryMoneyBalance `json:"money"`
 	Positions            []PortfolioSummaryPosition     `json:"positions"`
+	Replication          *PortfolioReplicationConfig    `json:"replication"`
 	Capabilities         PortfolioCapabilities          `json:"capabilities"`
 } //@name PortfolioSummaryResponse
 

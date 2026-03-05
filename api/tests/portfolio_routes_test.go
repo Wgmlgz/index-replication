@@ -6,10 +6,11 @@ import (
 )
 
 type portfolioProfileResponse struct {
-	ID           int    `json:"id"`
-	Provider     string `json:"provider"`
-	Name         string `json:"name"`
-	IsDefault    bool   `json:"is_default"`
+	ID           int                                 `json:"id"`
+	Provider     string                              `json:"provider"`
+	Name         string                              `json:"name"`
+	IsDefault    bool                                `json:"is_default"`
+	Replication  *portfolioReplicationConfigResponse `json:"replication"`
 	Capabilities struct {
 		Actions []struct {
 			ID string `json:"id"`
@@ -18,7 +19,8 @@ type portfolioProfileResponse struct {
 }
 
 type portfolioSummaryResponse struct {
-	TotalAmountPortfolio float64 `json:"total_amount_portfolio"`
+	TotalAmountPortfolio float64                             `json:"total_amount_portfolio"`
+	Replication          *portfolioReplicationConfigResponse `json:"replication"`
 	Money                []struct {
 		Currency  string  `json:"currency"`
 		Available float64 `json:"available"`
@@ -44,6 +46,15 @@ type portfolioHistoryPointResponse struct {
 type portfolioCompositionEntryResponse struct {
 	Ticker   string  `json:"ticker"`
 	Quantity float64 `json:"quantity"`
+}
+
+type portfolioReplicationConfigResponse struct {
+	IsEnabled       bool                   `json:"is_enabled"`
+	BenchmarkSecid  *string                `json:"benchmark_secid"`
+	ModeKey         string                 `json:"mode_key"`
+	ModeParams      map[string]interface{} `json:"mode_params"`
+	ExcludedTickers []string               `json:"excluded_tickers"`
+	UpdatedAt       string                 `json:"updated_at"`
 }
 
 func createPortfolioProfile(
@@ -88,6 +99,19 @@ func createMockPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cooki
 func createVirtualPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cookie, name string) portfolioProfileResponse {
 	t.Helper()
 	return createPortfolioProfile(t, ts, cookie, "virtual", name, nil)
+}
+
+func seedMoexIndex(t *testing.T, ts *testServer, secid string) {
+	t.Helper()
+	result := ts.db.Exec(
+		"INSERT INTO moex_indexes (secid, short_name, name, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+		secid,
+		secid,
+		secid+" index",
+	)
+	if result.Error != nil {
+		t.Fatalf("seed moex index %s: %v", secid, result.Error)
+	}
 }
 
 func TestPortfolioRoutes(t *testing.T) {
@@ -153,6 +177,210 @@ func TestPortfolioRoutes(t *testing.T) {
 		}, adminCookie)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid patch payload, got %d", errResp.Code)
+		}
+	})
+
+	t.Run("ReplicationConfigCRUDAndContracts", func(t *testing.T) {
+		profile := createMockPortfolioProfile(t, ts, adminCookie, "Replication profile")
+		seedMoexIndex(t, ts, "IMOEX")
+
+		listInitialResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		if listInitialResp.Code != http.StatusOK {
+			t.Fatalf("initial list status = %d, body = %s", listInitialResp.Code, listInitialResp.Body.String())
+		}
+		var initialProfiles []portfolioProfileResponse
+		decodeJSON(t, listInitialResp, &initialProfiles)
+		foundInitial := false
+		for _, item := range initialProfiles {
+			if item.ID != profile.ID {
+				continue
+			}
+			foundInitial = true
+			if item.Replication != nil {
+				t.Fatalf("expected replication=null when absent, got %+v", item.Replication)
+			}
+			// Regression guard: existing fields should remain populated.
+			if item.Provider == "" || item.Name == "" {
+				t.Fatalf("expected existing profile fields unchanged, got provider=%q name=%q", item.Provider, item.Name)
+			}
+			break
+		}
+		if !foundInitial {
+			t.Fatalf("profile not found in list response")
+		}
+
+		summaryInitialResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryInitialResp.Code != http.StatusOK {
+			t.Fatalf("initial summary status = %d, body = %s", summaryInitialResp.Code, summaryInitialResp.Body.String())
+		}
+		var summaryInitial portfolioSummaryResponse
+		decodeJSON(t, summaryInitialResp, &summaryInitial)
+		if summaryInitial.Replication != nil {
+			t.Fatalf("expected summary replication=null when absent, got %+v", summaryInitial.Replication)
+		}
+		if summaryInitial.TotalAmountPortfolio <= 0 {
+			t.Fatalf("expected summary total amount to stay populated")
+		}
+
+		putPayload := map[string]interface{}{
+			"is_enabled":       true,
+			"benchmark_secid":  "IMOEX",
+			"mode_key":         "full",
+			"mode_params":      map[string]interface{}{"lot_size": 1},
+			"excluded_tickers": []string{"GAZP", "SBER"},
+		}
+		putResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", putPayload, adminCookie)
+		if putResp.Code != http.StatusOK {
+			t.Fatalf("replication create status = %d, body = %s", putResp.Code, putResp.Body.String())
+		}
+		var createdConfig portfolioReplicationConfigResponse
+		decodeJSON(t, putResp, &createdConfig)
+		if !createdConfig.IsEnabled || createdConfig.BenchmarkSecid == nil || *createdConfig.BenchmarkSecid != "IMOEX" {
+			t.Fatalf("unexpected created replication config: %+v", createdConfig)
+		}
+		if createdConfig.UpdatedAt == "" {
+			t.Fatalf("expected updated_at to be set")
+		}
+
+		updatePayload := map[string]interface{}{
+			"is_enabled":       false,
+			"benchmark_secid":  "IMOEX",
+			"mode_key":         "sampled",
+			"mode_params":      map[string]interface{}{"top_n": 10},
+			"excluded_tickers": []string{"SBER"},
+		}
+		updateResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
+		if updateResp.Code != http.StatusOK {
+			t.Fatalf("replication update status = %d, body = %s", updateResp.Code, updateResp.Body.String())
+		}
+		var updatedConfig portfolioReplicationConfigResponse
+		decodeJSON(t, updateResp, &updatedConfig)
+		if updatedConfig.ModeKey != "sampled" || updatedConfig.IsEnabled {
+			t.Fatalf("unexpected updated config: %+v", updatedConfig)
+		}
+		if len(updatedConfig.ExcludedTickers) != 1 || updatedConfig.ExcludedTickers[0] != "SBER" {
+			t.Fatalf("unexpected excluded tickers after update: %+v", updatedConfig.ExcludedTickers)
+		}
+
+		idempotentResp1 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
+		if idempotentResp1.Code != http.StatusOK {
+			t.Fatalf("idempotent put #1 status = %d, body = %s", idempotentResp1.Code, idempotentResp1.Body.String())
+		}
+		idempotentResp2 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
+		if idempotentResp2.Code != http.StatusOK {
+			t.Fatalf("idempotent put #2 status = %d, body = %s", idempotentResp2.Code, idempotentResp2.Body.String())
+		}
+		var idem1 portfolioReplicationConfigResponse
+		var idem2 portfolioReplicationConfigResponse
+		decodeJSON(t, idempotentResp1, &idem1)
+		decodeJSON(t, idempotentResp2, &idem2)
+		if idem1.ModeKey != idem2.ModeKey || idem1.IsEnabled != idem2.IsEnabled {
+			t.Fatalf("expected repeated PUT to keep config state stable: %+v vs %+v", idem1, idem2)
+		}
+		if len(idem2.ExcludedTickers) != 1 || idem2.ExcludedTickers[0] != "SBER" {
+			t.Fatalf("unexpected idempotent excluded tickers: %+v", idem2.ExcludedTickers)
+		}
+
+		listPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		if listPopulatedResp.Code != http.StatusOK {
+			t.Fatalf("list populated status = %d, body = %s", listPopulatedResp.Code, listPopulatedResp.Body.String())
+		}
+		var populatedProfiles []portfolioProfileResponse
+		decodeJSON(t, listPopulatedResp, &populatedProfiles)
+		foundPopulated := false
+		for _, item := range populatedProfiles {
+			if item.ID != profile.ID {
+				continue
+			}
+			foundPopulated = true
+			if item.Replication == nil {
+				t.Fatalf("expected replication config to be populated in profiles list")
+			}
+			if item.Replication.ModeKey != "sampled" {
+				t.Fatalf("unexpected list replication payload: %+v", item.Replication)
+			}
+			break
+		}
+		if !foundPopulated {
+			t.Fatalf("profile not found in populated list response")
+		}
+
+		summaryPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryPopulatedResp.Code != http.StatusOK {
+			t.Fatalf("summary populated status = %d, body = %s", summaryPopulatedResp.Code, summaryPopulatedResp.Body.String())
+		}
+		var summaryPopulated portfolioSummaryResponse
+		decodeJSON(t, summaryPopulatedResp, &summaryPopulated)
+		if summaryPopulated.Replication == nil {
+			t.Fatalf("expected summary replication config to be populated")
+		}
+		if summaryPopulated.Replication.ModeKey != "sampled" {
+			t.Fatalf("unexpected summary replication payload: %+v", summaryPopulated.Replication)
+		}
+
+		invalidBenchmarkResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
+			"is_enabled":      true,
+			"benchmark_secid": "UNKNOWN",
+		}, adminCookie)
+		if invalidBenchmarkResp.Code != http.StatusBadRequest {
+			t.Fatalf("expected bad request for invalid benchmark, got %d", invalidBenchmarkResp.Code)
+		}
+
+		deleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, adminCookie)
+		if deleteResp.Code != http.StatusNoContent {
+			t.Fatalf("replication delete status = %d, body = %s", deleteResp.Code, deleteResp.Body.String())
+		}
+
+		listAfterDeleteResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		if listAfterDeleteResp.Code != http.StatusOK {
+			t.Fatalf("list after delete status = %d, body = %s", listAfterDeleteResp.Code, listAfterDeleteResp.Body.String())
+		}
+		var afterDeleteProfiles []portfolioProfileResponse
+		decodeJSON(t, listAfterDeleteResp, &afterDeleteProfiles)
+		for _, item := range afterDeleteProfiles {
+			if item.ID == profile.ID && item.Replication != nil {
+				t.Fatalf("expected replication to be null after delete")
+			}
+		}
+
+		summaryAfterDeleteResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		if summaryAfterDeleteResp.Code != http.StatusOK {
+			t.Fatalf("summary after delete status = %d, body = %s", summaryAfterDeleteResp.Code, summaryAfterDeleteResp.Body.String())
+		}
+		var summaryAfterDelete portfolioSummaryResponse
+		decodeJSON(t, summaryAfterDeleteResp, &summaryAfterDelete)
+		if summaryAfterDelete.Replication != nil {
+			t.Fatalf("expected summary replication to be null after delete")
+		}
+	})
+
+	t.Run("ReplicationPermissionEnforcement", func(t *testing.T) {
+		profile := createMockPortfolioProfile(t, ts, adminCookie, "Forbidden replication")
+		seedMoexIndex(t, ts, "MXRW")
+
+		if err := ts.db.Exec(
+			"INSERT INTO roles (id, key, name, description) VALUES (?, ?, ?, ?)",
+			99,
+			"no_portfolio_write",
+			"No Portfolio Write",
+			"No self update settings permission",
+		).Error; err != nil {
+			t.Fatalf("insert custom role: %v", err)
+		}
+		insertUser(t, ts, "portfolio_forbidden_user", "password123", "No Portfolio Write User", 99)
+		forbiddenCookie := login(t, ts.router, "portfolio_forbidden_user", "password123")
+
+		forbiddenResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
+			"is_enabled":      true,
+			"benchmark_secid": "MXRW",
+		}, forbiddenCookie)
+		if forbiddenResp.Code != http.StatusForbidden {
+			t.Fatalf("expected forbidden for replication put, got %d", forbiddenResp.Code)
+		}
+
+		forbiddenDeleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, forbiddenCookie)
+		if forbiddenDeleteResp.Code != http.StatusForbidden {
+			t.Fatalf("expected forbidden for replication delete, got %d", forbiddenDeleteResp.Code)
 		}
 	})
 

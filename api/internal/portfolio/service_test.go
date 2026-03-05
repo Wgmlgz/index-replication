@@ -122,6 +122,61 @@ func (f *fakeAudit) LogUserAction(_ int, _ string, _ int, _ interface{}) error {
 	return nil
 }
 
+type fakeReplicationRepo struct {
+	configs    map[int]models.PortfolioReplicationConfig
+	benchmarks map[string]bool
+}
+
+func newFakeReplicationRepo() *fakeReplicationRepo {
+	return &fakeReplicationRepo{
+		configs:    make(map[int]models.PortfolioReplicationConfig),
+		benchmarks: map[string]bool{"IMOEX": true},
+	}
+}
+
+func (r *fakeReplicationRepo) ListByPortfolioProfileIDs(profileIDs []int) (map[int]models.PortfolioReplicationConfig, error) {
+	result := make(map[int]models.PortfolioReplicationConfig)
+	for _, profileID := range profileIDs {
+		if row, ok := r.configs[profileID]; ok {
+			result[profileID] = row
+		}
+	}
+	return result, nil
+}
+
+func (r *fakeReplicationRepo) GetByPortfolioProfileID(profileID int) (*models.PortfolioReplicationConfig, error) {
+	row, ok := r.configs[profileID]
+	if !ok {
+		return nil, gorm.ErrRecordNotFound
+	}
+	copy := row
+	return &copy, nil
+}
+
+func (r *fakeReplicationRepo) Upsert(config *models.PortfolioReplicationConfig) (*models.PortfolioReplicationConfig, error) {
+	if config == nil {
+		return nil, gorm.ErrInvalidData
+	}
+	next := *config
+	next.ID = config.PortfolioProfileID
+	next.UpdatedAt = time.Now().UTC()
+	r.configs[config.PortfolioProfileID] = next
+	copy := next
+	return &copy, nil
+}
+
+func (r *fakeReplicationRepo) DeleteByPortfolioProfileID(profileID int) (bool, error) {
+	if _, ok := r.configs[profileID]; !ok {
+		return false, nil
+	}
+	delete(r.configs, profileID)
+	return true, nil
+}
+
+func (r *fakeReplicationRepo) BenchmarkExists(secid string) (bool, error) {
+	return r.benchmarks[secid], nil
+}
+
 type fakeProvider struct {
 	calledSummary bool
 }
@@ -165,8 +220,9 @@ func (p *fakeProvider) RunAction(_ context.Context, _ *Profile, _ string, _ map[
 
 func TestService_RoutesToProvider(t *testing.T) {
 	repo := newFakeRepo()
+	replicationRepo := newFakeReplicationRepo()
 	provider := &fakeProvider{}
-	service := NewService(repo, &fakeAudit{}, provider)
+	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
 
 	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "mock",
@@ -190,7 +246,8 @@ func TestService_RoutesToProvider(t *testing.T) {
 
 func TestService_ProviderSelectionErrors(t *testing.T) {
 	repo := newFakeRepo()
-	service := NewService(repo, &fakeAudit{}, &fakeProvider{})
+	replicationRepo := newFakeReplicationRepo()
+	service := NewService(repo, replicationRepo, &fakeAudit{}, &fakeProvider{})
 
 	_, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "unknown",

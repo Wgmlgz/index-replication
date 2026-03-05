@@ -11,6 +11,8 @@ import (
 	"server/internal/models"
 	"server/internal/repository"
 
+	"github.com/lib/pq"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -29,21 +31,36 @@ type AuditLogger interface {
 	LogUserAction(performedBy int, action string, userID int, details interface{}) error
 }
 
-type Service struct {
-	repo      ProfilesRepository
-	audit     AuditLogger
-	providers map[string]Provider
+type ReplicationConfigsRepository interface {
+	ListByPortfolioProfileIDs(profileIDs []int) (map[int]models.PortfolioReplicationConfig, error)
+	GetByPortfolioProfileID(profileID int) (*models.PortfolioReplicationConfig, error)
+	Upsert(config *models.PortfolioReplicationConfig) (*models.PortfolioReplicationConfig, error)
+	DeleteByPortfolioProfileID(profileID int) (bool, error)
+	BenchmarkExists(secid string) (bool, error)
 }
 
-func NewService(repo ProfilesRepository, audit AuditLogger, providers ...Provider) *Service {
+type Service struct {
+	repo            ProfilesRepository
+	replicationRepo ReplicationConfigsRepository
+	audit           AuditLogger
+	providers       map[string]Provider
+}
+
+func NewService(
+	repo ProfilesRepository,
+	replicationRepo ReplicationConfigsRepository,
+	audit AuditLogger,
+	providers ...Provider,
+) *Service {
 	registry := make(map[string]Provider, len(providers))
 	for _, provider := range providers {
 		registry[strings.ToLower(strings.TrimSpace(provider.Name()))] = provider
 	}
 	return &Service{
-		repo:      repo,
-		audit:     audit,
-		providers: registry,
+		repo:            repo,
+		replicationRepo: replicationRepo,
+		audit:           audit,
+		providers:       registry,
 	}
 }
 
@@ -53,19 +70,33 @@ func (s *Service) ListProfiles(ctx context.Context, userID int) ([]dto.Portfolio
 		return nil, err
 	}
 
+	replicationByProfileID := map[int]*dto.PortfolioReplicationConfig{}
+	if s.replicationRepo != nil && len(rows) > 0 {
+		profileIDs := make([]int, 0, len(rows))
+		for _, row := range rows {
+			profileIDs = append(profileIDs, row.ID)
+		}
+		replicationRows, listErr := s.replicationRepo.ListByPortfolioProfileIDs(profileIDs)
+		if listErr != nil {
+			return nil, listErr
+		}
+		replicationByProfileID = s.toReplicationDTOMap(replicationRows)
+	}
+
 	result := make([]dto.PortfolioProfile, 0, len(rows))
 	for _, row := range rows {
 		parsed, err := s.parseModel(&row)
 		if err != nil {
 			return nil, err
 		}
+		replication := replicationByProfileID[row.ID]
 		provider, ok := s.providerByName(parsed.Provider)
 		if !ok {
 			// Keep profile visible even if provider is no longer available.
-			result = append(result, s.toProfileDTO(&row, parsed.Config, dto.PortfolioCapabilities{}))
+			result = append(result, s.toProfileDTO(&row, parsed.Config, dto.PortfolioCapabilities{}, replication))
 			continue
 		}
-		result = append(result, s.toProfileDTO(&row, parsed.Config, provider.Capabilities(ctx, parsed)))
+		result = append(result, s.toProfileDTO(&row, parsed.Config, provider.Capabilities(ctx, parsed), replication))
 	}
 	return result, nil
 }
@@ -133,7 +164,7 @@ func (s *Service) CreateProfile(ctx context.Context, userID int, req *dto.Portfo
 		"config_keys": sortedKeys(parsed.Config),
 	})
 
-	resp := s.toProfileDTO(model, parsed.Config, provider.Capabilities(ctx, parsed))
+	resp := s.toProfileDTO(model, parsed.Config, provider.Capabilities(ctx, parsed), nil)
 	return &resp, nil
 }
 
@@ -215,7 +246,7 @@ func (s *Service) PatchProfile(ctx context.Context, userID int, id int, req *dto
 	if provider != nil {
 		capabilities = provider.Capabilities(ctx, parsed)
 	}
-	resp := s.toProfileDTO(model, parsed.Config, capabilities)
+	resp := s.toProfileDTO(model, parsed.Config, capabilities, nil)
 	return &resp, nil
 }
 
@@ -254,6 +285,86 @@ func (s *Service) DeleteProfile(userID int, id int) error {
 	return nil
 }
 
+func (s *Service) UpsertReplicationConfig(
+	userID int,
+	id int,
+	req *dto.PortfolioReplicationConfigUpsertRequest,
+) (*dto.PortfolioReplicationConfig, error) {
+	if id <= 0 {
+		return nil, ErrInvalidProfileID
+	}
+	if req == nil {
+		return nil, ErrInvalidRequest
+	}
+	if s.replicationRepo == nil {
+		return nil, ErrInvalidRequest
+	}
+
+	if _, err := s.repo.GetByID(userID, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProfileNotFound
+		}
+		return nil, err
+	}
+
+	benchmarkSecid := normalizeOptionalString(req.BenchmarkSecid)
+	if benchmarkSecid != nil {
+		exists, err := s.replicationRepo.BenchmarkExists(*benchmarkSecid)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, ErrInvalidBenchmark
+		}
+	}
+
+	modeKey := strings.TrimSpace(req.ModeKey)
+	if modeKey == "" {
+		modeKey = "full"
+	}
+
+	modeParams := req.ModeParams
+	if modeParams == nil {
+		modeParams = map[string]interface{}{}
+	}
+
+	excludedTickers := normalizeStringList(req.ExcludedTickers)
+	config := &models.PortfolioReplicationConfig{
+		PortfolioProfileID: id,
+		IsEnabled:          req.IsEnabled,
+		BenchmarkSecid:     benchmarkSecid,
+		ModeKey:            modeKey,
+		ModeParams:         datatypes.JSONMap(modeParams),
+		ExcludedTickers:    pq.StringArray(excludedTickers),
+	}
+
+	saved, err := s.replicationRepo.Upsert(config)
+	if err != nil {
+		return nil, err
+	}
+	resp := s.toReplicationDTO(saved)
+	return resp, nil
+}
+
+func (s *Service) DeleteReplicationConfig(userID int, id int) error {
+	if id <= 0 {
+		return ErrInvalidProfileID
+	}
+	if s.replicationRepo == nil {
+		return nil
+	}
+
+	if _, err := s.repo.GetByID(userID, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrProfileNotFound
+		}
+		return err
+	}
+
+	_, err := s.replicationRepo.DeleteByPortfolioProfileID(id)
+	return err
+}
+
 func (s *Service) GetSummary(ctx context.Context, userID int, id int) (*dto.PortfolioSummaryResponse, error) {
 	provider, profile, err := s.resolveProviderProfile(userID, id)
 	if err != nil {
@@ -267,6 +378,15 @@ func (s *Service) GetSummary(ctx context.Context, userID int, id int) (*dto.Port
 	resp.Provider = profile.Provider
 	resp.Name = profile.Name
 	resp.Capabilities = provider.Capabilities(ctx, profile)
+	if s.replicationRepo != nil {
+		replication, cfgErr := s.replicationRepo.GetByPortfolioProfileID(profile.ID)
+		if cfgErr != nil && !errors.Is(cfgErr, gorm.ErrRecordNotFound) {
+			return nil, cfgErr
+		}
+		if cfgErr == nil {
+			resp.Replication = s.toReplicationDTO(replication)
+		}
+	}
 	return resp, nil
 }
 
@@ -412,6 +532,7 @@ func (s *Service) toProfileDTO(
 	model *models.PortfolioProfile,
 	config map[string]interface{},
 	capabilities dto.PortfolioCapabilities,
+	replication *dto.PortfolioReplicationConfig,
 ) dto.PortfolioProfile {
 	return dto.PortfolioProfile{
 		ID:           model.ID,
@@ -419,10 +540,81 @@ func (s *Service) toProfileDTO(
 		Name:         model.Name,
 		IsDefault:    model.IsDefault,
 		Config:       config,
+		Replication:  replication,
 		CreatedAt:    model.CreatedAt,
 		UpdatedAt:    model.UpdatedAt,
 		Capabilities: capabilities,
 	}
+}
+
+func (s *Service) toReplicationDTOMap(
+	rows map[int]models.PortfolioReplicationConfig,
+) map[int]*dto.PortfolioReplicationConfig {
+	if len(rows) == 0 {
+		return map[int]*dto.PortfolioReplicationConfig{}
+	}
+	result := make(map[int]*dto.PortfolioReplicationConfig, len(rows))
+	for profileID, row := range rows {
+		copyRow := row
+		result[profileID] = s.toReplicationDTO(&copyRow)
+	}
+	return result
+}
+
+func (s *Service) toReplicationDTO(
+	config *models.PortfolioReplicationConfig,
+) *dto.PortfolioReplicationConfig {
+	if config == nil {
+		return nil
+	}
+
+	modeParams := map[string]interface{}{}
+	if config.ModeParams != nil {
+		modeParams = map[string]interface{}(config.ModeParams)
+	}
+
+	excludedTickers := make([]string, len(config.ExcludedTickers))
+	copy(excludedTickers, config.ExcludedTickers)
+
+	return &dto.PortfolioReplicationConfig{
+		IsEnabled:       config.IsEnabled,
+		BenchmarkSecid:  config.BenchmarkSecid,
+		ModeKey:         config.ModeKey,
+		ModeParams:      modeParams,
+		ExcludedTickers: excludedTickers,
+		UpdatedAt:       config.UpdatedAt,
+	}
+}
+
+func normalizeOptionalString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+func normalizeStringList(values []string) []string {
+	if len(values) == 0 {
+		return []string{}
+	}
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		result = append(result, trimmed)
+	}
+	return result
 }
 
 func encodeJSONMap(payload map[string]interface{}) (string, error) {

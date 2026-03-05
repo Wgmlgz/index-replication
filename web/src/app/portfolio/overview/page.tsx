@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Pencil,
   PlayCircle,
+  SlidersHorizontal,
   Wallet,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -32,15 +33,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PortfolioSummaryPanel } from '@/app/portfolio/components/portfolio-summary-panel';
+import { PortfolioReplicationPanel } from '@/app/portfolio/components/portfolio-replication-panel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
 
-type DetailsTab = 'overview' | 'actions' | 'analytics' | 'operations';
+type DetailsTab = 'overview' | 'actions' | 'analytics' | 'operations' | 'replication';
 
 function resolveDetailsTab(tab: string | null): DetailsTab {
-  if (tab === 'actions' || tab === 'analytics' || tab === 'operations') {
+  if (tab === 'actions' || tab === 'analytics' || tab === 'operations' || tab === 'replication') {
     return tab;
   }
 
@@ -186,7 +188,7 @@ export default function PortfolioOverviewPage() {
               </Button>
             </div>
 
-            <TabsList className='grid h-auto w-full grid-cols-2 lg:w-auto lg:grid-cols-4'>
+            <TabsList className='grid h-auto w-full grid-cols-2 lg:w-auto lg:grid-cols-5'>
               <TabsTrigger value='overview'>
                 <Wallet className='size-4' />
                 {t('portfolio.subpages.overview')}
@@ -202,6 +204,10 @@ export default function PortfolioOverviewPage() {
               <TabsTrigger value='operations'>
                 <ClipboardList className='size-4' />
                 {t('portfolio.subpages.operations')}
+              </TabsTrigger>
+              <TabsTrigger value='replication'>
+                <SlidersHorizontal className='size-4' />
+                {t('portfolio.subpages.replication')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -234,6 +240,14 @@ export default function PortfolioOverviewPage() {
 
         <TabsContent value='operations' className='min-h-0 flex-1'>
           <PortfolioOperationsTable portfolioID={selectedPortfolioID} />
+        </TabsContent>
+
+        <TabsContent value='replication' className='min-h-0 flex-1'>
+          <PortfolioReplicationPanel
+            portfolioID={selectedPortfolioID}
+            profile={selectedProfile}
+            refreshProfiles={refreshProfiles}
+          />
         </TabsContent>
       </Tabs>
 

@@ -129,6 +129,66 @@ func (h *PortfolioHandler) DeleteProfile(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// UpsertReplicationConfig godoc
+//
+//	@Summary		Upsert portfolio replication config
+//	@Description	Creates or updates replication config for selected portfolio profile
+//	@Tags			portfolio
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int											true	"Portfolio profile id"
+//	@Param			payload	body		dto.PortfolioReplicationConfigUpsertRequest	true	"Replication config payload"
+//	@Success		200		{object}	dto.PortfolioReplicationConfig
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/replication [put]
+func (h *PortfolioHandler) UpsertReplicationConfig(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	id, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	var req dto.PortfolioReplicationConfigUpsertRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
+		return
+	}
+
+	resp, err := h.service.UpsertReplicationConfig(userID, id, &req)
+	if err != nil {
+		writePortfolioServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// DeleteReplicationConfig godoc
+//
+//	@Summary		Delete portfolio replication config
+//	@Description	Deletes replication config for selected portfolio profile
+//	@Tags			portfolio
+//	@Param			id	path	int	true	"Portfolio profile id"
+//	@Success		204
+//	@Failure		400	{object}	dto.ErrorResponse
+//	@Failure		404	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/replication [delete]
+func (h *PortfolioHandler) DeleteReplicationConfig(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	id, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	if err := h.service.DeleteReplicationConfig(userID, id); err != nil {
+		writePortfolioServiceError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // GetSummary godoc
 //
 //	@Summary		Get portfolio summary
@@ -405,7 +465,7 @@ func parsePortfolioID(c *gin.Context) (int, bool) {
 
 func writePortfolioServiceError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, portfolio.ErrInvalidProfileID), errors.Is(err, portfolio.ErrInvalidProvider), errors.Is(err, portfolio.ErrInvalidRequest), errors.Is(err, portfolio.ErrInvalidAction):
+	case errors.Is(err, portfolio.ErrInvalidProfileID), errors.Is(err, portfolio.ErrInvalidProvider), errors.Is(err, portfolio.ErrInvalidRequest), errors.Is(err, portfolio.ErrInvalidAction), errors.Is(err, portfolio.ErrInvalidBenchmark):
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid portfolio request"})
 	case errors.Is(err, portfolio.ErrProfileNotFound):
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Portfolio profile not found"})

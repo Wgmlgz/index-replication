@@ -1,0 +1,291 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+
+import type { NormalizedPortfolioProfile, PortfolioReplicationConfig } from '@/app/portfolio/use-portfolio';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { getApiUrl, axiosClient } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/error-utils';
+
+type PortfolioReplicationPanelProps = {
+  portfolioID: number | null;
+  profile: NormalizedPortfolioProfile | null;
+  refreshProfiles: () => Promise<void>;
+};
+
+type ReplicationFormState = {
+  isEnabled: boolean;
+  benchmarkSecid: string;
+  modeKey: string;
+  modeParamsRaw: string;
+  excludedTickersRaw: string;
+  updatedAt: string;
+};
+
+const EMPTY_FORM_STATE: ReplicationFormState = {
+  isEnabled: false,
+  benchmarkSecid: '',
+  modeKey: 'full',
+  modeParamsRaw: '{}',
+  excludedTickersRaw: '',
+  updatedAt: '',
+};
+
+function toFormState(config: PortfolioReplicationConfig | null): ReplicationFormState {
+  if (!config) {
+    return { ...EMPTY_FORM_STATE };
+  }
+
+  return {
+    isEnabled: config.is_enabled,
+    benchmarkSecid: config.benchmark_secid ?? '',
+    modeKey: config.mode_key || 'full',
+    modeParamsRaw: JSON.stringify(config.mode_params ?? {}, null, 2),
+    excludedTickersRaw: (config.excluded_tickers ?? []).join(', '),
+    updatedAt: config.updated_at || '',
+  };
+}
+
+function normalizeExcludedTickers(value: string): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const token of value.split(',')) {
+    const trimmed = token.trim();
+    if (!trimmed || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+
+  return normalized;
+}
+
+export function PortfolioReplicationPanel({
+  portfolioID,
+  profile,
+  refreshProfiles,
+}: PortfolioReplicationPanelProps) {
+  const { t, i18n } = useTranslation();
+  const [form, setForm] = useState<ReplicationFormState>({ ...EMPTY_FORM_STATE });
+  const [error, setError] = useState('');
+  const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    setForm(toFormState(profile?.replication ?? null));
+    setError('');
+  }, [profile?.id, profile?.replication]);
+
+  const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
+    if (axios.isAxiosError(err)) {
+      const apiError = getApiErrorMessage(err.response?.data as unknown);
+      if (apiError) {
+        return apiError;
+      }
+    }
+
+    return fallback;
+  }, []);
+
+  const formattedUpdatedAt = useMemo(() => {
+    if (!form.updatedAt) {
+      return t('portfolio.replication.updatedAtEmpty');
+    }
+
+    const date = new Date(form.updatedAt);
+    if (Number.isNaN(date.getTime())) {
+      return t('portfolio.replication.updatedAtEmpty');
+    }
+
+    return new Intl.DateTimeFormat(i18n.language || 'en', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date);
+  }, [form.updatedAt, i18n.language, t]);
+
+  const onSave = useCallback(async () => {
+    if (!portfolioID) {
+      return;
+    }
+
+    const modeKey = form.modeKey.trim() || 'full';
+
+    let modeParams: Record<string, unknown> = {};
+    try {
+      const parsed = JSON.parse(form.modeParamsRaw || '{}') as unknown;
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        setError(t('portfolio.replication.errors.modeParamsObject'));
+        return;
+      }
+      modeParams = parsed as Record<string, unknown>;
+    } catch {
+      setError(t('portfolio.replication.errors.modeParamsJson'));
+      return;
+    }
+
+    const payload = {
+      is_enabled: form.isEnabled,
+      benchmark_secid: form.benchmarkSecid.trim() || null,
+      mode_key: modeKey,
+      mode_params: modeParams,
+      excluded_tickers: normalizeExcludedTickers(form.excludedTickersRaw),
+    };
+
+    setWorking(true);
+    setError('');
+    try {
+      const response = await axiosClient.put(
+        `${getApiUrl()}/me/portfolios/${portfolioID}/replication`,
+        payload,
+      );
+      const data = response.data as PortfolioReplicationConfig;
+      setForm(toFormState(data));
+      await refreshProfiles();
+    } catch (err) {
+      setError(parseErrorMessage(err, t('portfolio.replication.errors.save')));
+    } finally {
+      setWorking(false);
+    }
+  }, [form, parseErrorMessage, portfolioID, refreshProfiles, t]);
+
+  const onClear = useCallback(async () => {
+    if (!portfolioID) {
+      return;
+    }
+
+    setWorking(true);
+    setError('');
+    try {
+      await axiosClient.delete(`${getApiUrl()}/me/portfolios/${portfolioID}/replication`);
+      setForm({ ...EMPTY_FORM_STATE });
+      await refreshProfiles();
+    } catch (err) {
+      setError(parseErrorMessage(err, t('portfolio.replication.errors.clear')));
+    } finally {
+      setWorking(false);
+    }
+  }, [parseErrorMessage, portfolioID, refreshProfiles, t]);
+
+  if (!portfolioID) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('portfolio.replication.title')}</CardTitle>
+          <CardDescription>{t('portfolio.replication.description')}</CardDescription>
+        </CardHeader>
+        <CardContent className='text-sm text-muted-foreground'>
+          {t('portfolio.replication.selectPrompt')}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className='h-full min-h-0 overflow-hidden'>
+      <CardHeader>
+        <CardTitle>{t('portfolio.replication.title')}</CardTitle>
+        <CardDescription>{t('portfolio.replication.description')}</CardDescription>
+      </CardHeader>
+
+      <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
+        {error ? (
+          <Alert variant='destructive'>
+            <AlertTitle>{t('common.error')}</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className='grid gap-4 rounded-md border p-4'>
+          <div className='flex items-center justify-between gap-3'>
+            <Label htmlFor='portfolio-replication-enabled'>
+              {t('portfolio.replication.isEnabledLabel')}
+            </Label>
+            <Switch
+              id='portfolio-replication-enabled'
+              checked={form.isEnabled}
+              onCheckedChange={checked => setForm(prev => ({ ...prev, isEnabled: checked }))}
+              disabled={working}
+            />
+          </div>
+
+          <div className='grid gap-2'>
+            <Label htmlFor='portfolio-replication-benchmark'>
+              {t('portfolio.replication.benchmarkLabel')}
+            </Label>
+            <Input
+              id='portfolio-replication-benchmark'
+              value={form.benchmarkSecid}
+              onChange={event => setForm(prev => ({ ...prev, benchmarkSecid: event.target.value }))}
+              placeholder={t('portfolio.replication.benchmarkPlaceholder')}
+              disabled={working}
+            />
+          </div>
+
+          <div className='grid gap-2'>
+            <Label htmlFor='portfolio-replication-mode'>
+              {t('portfolio.replication.modeKeyLabel')}
+            </Label>
+            <Input
+              id='portfolio-replication-mode'
+              value={form.modeKey}
+              onChange={event => setForm(prev => ({ ...prev, modeKey: event.target.value }))}
+              placeholder='full'
+              disabled={working}
+            />
+          </div>
+
+          <div className='grid gap-2'>
+            <Label htmlFor='portfolio-replication-mode-params'>
+              {t('portfolio.replication.modeParamsLabel')}
+            </Label>
+            <Textarea
+              id='portfolio-replication-mode-params'
+              value={form.modeParamsRaw}
+              onChange={event => setForm(prev => ({ ...prev, modeParamsRaw: event.target.value }))}
+              placeholder='{}'
+              rows={6}
+              disabled={working}
+            />
+          </div>
+
+          <div className='grid gap-2'>
+            <Label htmlFor='portfolio-replication-excluded'>
+              {t('portfolio.replication.excludedTickersLabel')}
+            </Label>
+            <Input
+              id='portfolio-replication-excluded'
+              value={form.excludedTickersRaw}
+              onChange={event =>
+                setForm(prev => ({ ...prev, excludedTickersRaw: event.target.value }))
+              }
+              placeholder={t('portfolio.replication.excludedTickersPlaceholder')}
+              disabled={working}
+            />
+          </div>
+
+          <div className='text-xs text-muted-foreground'>
+            {t('portfolio.replication.updatedAtLabel')}: {formattedUpdatedAt}
+          </div>
+        </div>
+
+        <div className='flex flex-wrap gap-2'>
+          <Button type='button' onClick={() => void onSave()} disabled={working}>
+            {t('portfolio.replication.saveButton')}
+          </Button>
+          <Button type='button' variant='outline' onClick={() => void onClear()} disabled={working}>
+            {t('portfolio.replication.clearButton')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

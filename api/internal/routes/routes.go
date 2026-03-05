@@ -102,6 +102,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	tbankHandler := h.NewTBankHandler(tbankService)
 	portfolioService := portfolio.NewService(
 		repoRegistry.PortfolioProfilesRepo,
+		repoRegistry.PortfolioReplicationConfigsRepo,
 		auditService,
 		portfolio.NewTBankProvider(tbankService),
 		portfolio.NewMockProvider(),
@@ -128,6 +129,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.POST("/me/portfolios", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.CreateProfile)
 		a.PATCH("/me/portfolios/:id", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.PatchProfile)
 		a.DELETE("/me/portfolios/:id", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteProfile)
+		a.PUT("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.UpsertReplicationConfig)
+		a.DELETE("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteReplicationConfig)
 		a.GET("/me/portfolios/:id/summary", m.RPM(cs, config.SelfView), portfolioHandler.GetSummary)
 		a.GET("/me/portfolios/:id/history", m.RPM(cs, config.SelfView), portfolioHandler.GetHistory)
 		a.GET("/me/portfolios/:id/composition", m.RPM(cs, config.SelfView), portfolioHandler.GetComposition)

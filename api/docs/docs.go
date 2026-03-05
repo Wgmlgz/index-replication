@@ -905,6 +905,104 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/portfolios/{id}/replication": {
+            "put": {
+                "description": "Creates or updates replication config for selected portfolio profile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Upsert portfolio replication config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Replication config payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioReplicationConfigUpsertRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioReplicationConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes replication config for selected portfolio profile",
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Delete portfolio replication config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/portfolios/{id}/summary": {
             "get": {
                 "description": "Returns unified summary (balances and positions) by portfolio profile",
@@ -2724,6 +2822,9 @@ const docTemplate = `{
                 "provider": {
                     "type": "string"
                 },
+                "replication": {
+                    "$ref": "#/definitions/PortfolioReplicationConfig"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -2782,6 +2883,57 @@ const docTemplate = `{
                 },
                 "label": {
                     "type": "string"
+                }
+            }
+        },
+        "PortfolioReplicationConfig": {
+            "type": "object",
+            "properties": {
+                "benchmark_secid": {
+                    "type": "string"
+                },
+                "excluded_tickers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "mode_key": {
+                    "type": "string"
+                },
+                "mode_params": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioReplicationConfigUpsertRequest": {
+            "type": "object",
+            "properties": {
+                "benchmark_secid": {
+                    "type": "string"
+                },
+                "excluded_tickers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "mode_key": {
+                    "type": "string"
+                },
+                "mode_params": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         },
@@ -2869,6 +3021,9 @@ const docTemplate = `{
                 },
                 "provider": {
                     "type": "string"
+                },
+                "replication": {
+                    "$ref": "#/definitions/PortfolioReplicationConfig"
                 },
                 "total_amount_currency": {
                     "type": "string"

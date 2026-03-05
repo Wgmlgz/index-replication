@@ -415,6 +415,7 @@
       "actions": "Actions",
       "analytics": "Analytics",
       "operations": "Operations",
+      "replication": "Replication",
       "profiles": "Profiles"
     },
     "overview": {
@@ -494,6 +495,28 @@
       "title": "Actions",
       "description": "Run provider actions for the selected profile.",
       "selectPrompt": "Select a portfolio profile to run actions."
+    },
+    "replication": {
+      "title": "Replication config",
+      "description": "Configure benchmark and mode parameters for future replication workflows.",
+      "selectPrompt": "Select a portfolio profile to configure replication.",
+      "isEnabledLabel": "Enable replication mode",
+      "benchmarkLabel": "Benchmark SECID",
+      "benchmarkPlaceholder": "IMOEX",
+      "modeKeyLabel": "Mode key",
+      "modeParamsLabel": "Mode params (JSON object)",
+      "excludedTickersLabel": "Excluded tickers",
+      "excludedTickersPlaceholder": "GAZP, SBER",
+      "updatedAtLabel": "Last updated",
+      "updatedAtEmpty": "Not set",
+      "saveButton": "Save config",
+      "clearButton": "Clear config",
+      "errors": {
+        "save": "Failed to save replication config.",
+        "clear": "Failed to clear replication config.",
+        "modeParamsJson": "Mode params must be valid JSON.",
+        "modeParamsObject": "Mode params must be a JSON object."
+      }
     },
     "details": {
       "title": "Portfolio details",
