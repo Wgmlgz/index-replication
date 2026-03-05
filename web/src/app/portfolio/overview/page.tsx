@@ -141,18 +141,16 @@ export default function PortfolioOverviewPage() {
     <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
       <div className='flex items-start justify-between gap-3'>
         <div className='space-y-2'>
-          <h1 className='text-3xl font-bold'>{t('portfolio.details.title')}</h1>
-          <p className='text-muted-foreground text-sm'>{t('portfolio.details.description')}</p>
-          <div className='flex items-center gap-2'>
-            <p className='text-sm text-muted-foreground'>
-              {t('portfolio.details.profileName', {
-                name: selectedProfile?.name || t('portfolio.details.profileNameFallback'),
-              })}
-            </p>
+          <div className='flex flex-wrap items-center gap-2'>
+            <h1 className='text-3xl font-bold'>
+              {selectedProfile?.name ||
+                t('portfolio.details.profileNameFallback')}
+            </h1>
             <Button
               type='button'
-              variant='outline'
+              variant='ghost'
               size='icon'
+              className='h-8 w-8'
               onClick={onEditOpen}
               aria-label={t('portfolio.details.editNameAriaLabel')}
               disabled={!selectedPortfolioID || renameMutation.isPending}
@@ -160,6 +158,9 @@ export default function PortfolioOverviewPage() {
               <Pencil className='size-4' />
             </Button>
           </div>
+          <p className='text-muted-foreground text-sm'>
+            {t('portfolio.details.description')}
+          </p>
         </div>
         <Button asChild variant='outline' size='icon'>
           <Link
@@ -184,10 +185,18 @@ export default function PortfolioOverviewPage() {
         className='min-h-0 flex-1'
       >
         <TabsList className='grid h-auto w-full grid-cols-4'>
-          <TabsTrigger value='overview'>{t('portfolio.subpages.overview')}</TabsTrigger>
-          <TabsTrigger value='actions'>{t('portfolio.subpages.actions')}</TabsTrigger>
-          <TabsTrigger value='analytics'>{t('portfolio.subpages.analytics')}</TabsTrigger>
-          <TabsTrigger value='operations'>{t('portfolio.subpages.operations')}</TabsTrigger>
+          <TabsTrigger value='overview'>
+            {t('portfolio.subpages.overview')}
+          </TabsTrigger>
+          <TabsTrigger value='actions'>
+            {t('portfolio.subpages.actions')}
+          </TabsTrigger>
+          <TabsTrigger value='analytics'>
+            {t('portfolio.subpages.analytics')}
+          </TabsTrigger>
+          <TabsTrigger value='operations'>
+            {t('portfolio.subpages.operations')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='overview' className='min-h-0 flex-1'>
@@ -217,7 +226,9 @@ export default function PortfolioOverviewPage() {
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>{t('portfolio.details.editNameTitle')}</DialogTitle>
-            <DialogDescription>{t('portfolio.details.editNameDescription')}</DialogDescription>
+            <DialogDescription>
+              {t('portfolio.details.editNameDescription')}
+            </DialogDescription>
           </DialogHeader>
 
           <form
