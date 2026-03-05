@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { FormEvent, useCallback, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import {
+  ArrowLeft,
+  BarChart3,
+  ClipboardList,
+  Pencil,
+  PlayCircle,
+  Wallet,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
@@ -139,65 +146,73 @@ export default function PortfolioOverviewPage() {
 
   return (
     <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
-      <div className='flex items-start justify-between gap-3'>
-        <div className='space-y-2'>
-          <div className='flex flex-wrap items-center gap-2'>
-            <h1 className='text-3xl font-bold'>
-              {selectedProfile?.name ||
-                t('portfolio.details.profileNameFallback')}
-            </h1>
-            <Button
-              type='button'
-              variant='ghost'
-              size='icon'
-              className='h-8 w-8'
-              onClick={onEditOpen}
-              aria-label={t('portfolio.details.editNameAriaLabel')}
-              disabled={!selectedPortfolioID || renameMutation.isPending}
-            >
-              <Pencil className='size-4' />
-            </Button>
-          </div>
-          <p className='text-muted-foreground text-sm'>
-            {t('portfolio.details.description')}
-          </p>
-        </div>
-        <Button asChild variant='outline' size='icon'>
-          <Link
-            href={PORTFOLIO_V2_ROUTES.profiles}
-            aria-label={t('portfolio.details.backAriaLabel')}
-          >
-            <ArrowLeft />
-          </Link>
-        </Button>
-      </div>
-
-      {error ? (
-        <Alert variant='destructive'>
-          <AlertTitle>{t('common.error')}</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
-
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className='min-h-0 flex-1'
+        className='min-h-0 flex-1 gap-6'
       >
-        <TabsList className='grid h-auto w-full grid-cols-4'>
-          <TabsTrigger value='overview'>
-            {t('portfolio.subpages.overview')}
-          </TabsTrigger>
-          <TabsTrigger value='actions'>
-            {t('portfolio.subpages.actions')}
-          </TabsTrigger>
-          <TabsTrigger value='analytics'>
-            {t('portfolio.subpages.analytics')}
-          </TabsTrigger>
-          <TabsTrigger value='operations'>
-            {t('portfolio.subpages.operations')}
-          </TabsTrigger>
-        </TabsList>
+        <div className='space-y-4'>
+          <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start'>
+            <div className='flex items-start justify-between gap-4'>
+              <div className='space-y-2'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <h1 className='text-3xl font-bold'>
+                    {selectedProfile?.name ||
+                      t('portfolio.details.profileNameFallback')}
+                  </h1>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='h-8 w-8'
+                    onClick={onEditOpen}
+                    aria-label={t('portfolio.details.editNameAriaLabel')}
+                    disabled={!selectedPortfolioID || renameMutation.isPending}
+                  >
+                    <Pencil className='size-4' />
+                  </Button>
+                </div>
+                <p className='text-muted-foreground text-sm'>
+                  {t('portfolio.details.description')}
+                </p>
+              </div>
+              <Button asChild variant='outline' size='icon'>
+                <Link
+                  href={PORTFOLIO_V2_ROUTES.profiles}
+                  aria-label={t('portfolio.details.backAriaLabel')}
+                >
+                  <ArrowLeft />
+                </Link>
+              </Button>
+            </div>
+
+            <TabsList className='grid h-auto w-full grid-cols-2 lg:w-auto lg:grid-cols-4'>
+              <TabsTrigger value='overview'>
+                <Wallet className='size-4' />
+                {t('portfolio.subpages.overview')}
+              </TabsTrigger>
+              <TabsTrigger value='actions'>
+                <PlayCircle className='size-4' />
+                {t('portfolio.subpages.actions')}
+              </TabsTrigger>
+              <TabsTrigger value='analytics'>
+                <BarChart3 className='size-4' />
+                {t('portfolio.subpages.analytics')}
+              </TabsTrigger>
+              <TabsTrigger value='operations'>
+                <ClipboardList className='size-4' />
+                {t('portfolio.subpages.operations')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
+
+        {error ? (
+          <Alert variant='destructive'>
+            <AlertTitle>{t('common.error')}</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
 
         <TabsContent value='overview' className='min-h-0 flex-1'>
           <PortfolioSummaryPanel portfolioID={selectedPortfolioID} />
