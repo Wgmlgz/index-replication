@@ -36,7 +36,7 @@ tasks:
   temporal:up:
     desc: Start Temporal stack and auto-apply MOEX schedules
     cmds:
-      - docker compose up postgres temporal-admin-tools temporal temporal-create-namespace temporal-register-search-attributes temporal-apply-schedules temporal-ui
+      - docker compose up postgres temporal-admin-tools temporal temporal-setup temporal-ui
 
   temporal:cli:
     desc: Open Temporal admin-tools shell

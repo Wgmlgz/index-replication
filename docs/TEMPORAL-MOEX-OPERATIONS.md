@@ -4,7 +4,7 @@ This runbook explains what happens, when it happens, and where to check state fo
 
 ## Scope
 
-- Services: `temporal`, `temporal-admin-tools`, `temporal-create-namespace`, `temporal-apply-schedules`, `moex-worker`
+- Services: `temporal`, `temporal-admin-tools`, `temporal-setup`, `moex-worker`
 - Workflows: `moex.meta_refresh`, `moex.daily_sync`
 - Storage: `moex_sync_state`, `moex_data_coverage`, `moex_sync_runs`, plus MOEX data tables
 
@@ -18,27 +18,24 @@ sequenceDiagram
     participant PG as postgres
     participant TA as temporal-admin-tools
     participant TS as temporal
-    participant NS as temporal-create-namespace
-    participant SA as temporal-register-search-attributes
-    participant SCH as temporal-apply-schedules
+    participant SET as temporal-setup
     participant W as moex-worker
 
     DC->>PG: start + wait healthy
     DC->>TA: run setup-postgres.sh
     TA->>PG: create/update temporal DB schemas
     DC->>TS: start temporal server
-    DC->>NS: run create-namespace.sh
-    NS->>TS: ensure namespace exists (default: moex-sync)
-    DC->>SA: run register-search-attributes.sh
-    DC->>SCH: run ./moex-scheduler (one-shot)
-    SCH->>TS: upsert schedules
-    DC->>W: start worker after schedule apply exits 0
+    DC->>SET: run ./temporal-setup (one-shot)
+    SET->>TS: ensure namespace exists (default: moex-sync)
+    SET->>TS: ensure custom search attributes
+    SET->>TS: upsert schedules
+    DC->>W: start worker after temporal setup exits 0
 ```
 
 Important notes:
 
-- `temporal-apply-schedules` is one-shot and should end with exit code `0`.
-- `moex-worker` waits for schedule apply completion.
+- `temporal-setup` is one-shot and should end with exit code `0`.
+- `moex-worker` waits for temporal setup completion.
 - If API migrations did not run yet, workflows can start but fail on missing tables.
 - Custom Temporal search attributes are opt-in via `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=true` (default is off for compatibility).
 
@@ -170,21 +167,21 @@ You can see schedules in Temporal UI but no workflow runs yet if:
 Trigger schedules now:
 
 ```bash
-docker compose exec -T temporal tctl --address temporal:7233 --ns moex-sync schedule trigger --sid moex-meta-refresh-6h
-docker compose exec -T temporal tctl --address temporal:7233 --ns moex-sync schedule trigger --sid moex-daily-sync
+docker compose run --rm --entrypoint temporal temporal-admin-tools schedule trigger --address temporal:7233 --namespace moex-sync --schedule-id moex-meta-refresh-6h
+docker compose run --rm --entrypoint temporal temporal-admin-tools schedule trigger --address temporal:7233 --namespace moex-sync --schedule-id moex-daily-sync
 ```
 
 List open workflows:
 
 ```bash
-docker compose exec -T temporal tctl --address temporal:7233 --ns moex-sync workflow list --open
+docker compose run --rm --entrypoint temporal temporal-admin-tools workflow list --address temporal:7233 --namespace moex-sync --query "ExecutionStatus='Running'"
 ```
 
-Check worker and scheduler logs:
+Check worker and setup logs:
 
 ```bash
 docker compose logs --tail=200 moex-worker
-docker compose logs --tail=200 temporal-apply-schedules
+docker compose logs --tail=200 temporal-setup
 ```
 
 Start full backfill manually:

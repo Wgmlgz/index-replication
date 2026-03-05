@@ -8,9 +8,9 @@ require (
 	github.com/casbin/gorm-adapter/v3 v3.33.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/swaggo/swag v1.16.4
-	go.temporal.io/api v1.43.0
-	go.temporal.io/sdk v1.31.0
-	google.golang.org/grpc v1.66.0
+	go.temporal.io/api v1.62.2
+	go.temporal.io/sdk v1.40.0
+	google.golang.org/grpc v1.67.1
 	gorm.io/datatypes v1.2.7
 	opensource.tbank.ru/invest/invest-go v1.44.0
 )
@@ -27,14 +27,13 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
-	github.com/nexus-rpc/sdk-go v0.1.0 // indirect
-	github.com/pborman/uuid v1.2.1 // indirect
+	github.com/nexus-rpc/sdk-go v0.5.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect

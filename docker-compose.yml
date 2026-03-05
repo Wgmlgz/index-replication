@@ -3,7 +3,7 @@ x-temporal-admin-tools-build: &temporal_admin_tools_build
     context: .
     dockerfile: scripts/temporal/admin-tools.Dockerfile
     args:
-      TEMPORAL_ADMINTOOLS_VERSION: ${TEMPORAL_ADMINTOOLS_VERSION:-1.28}
+      TEMPORAL_ADMINTOOLS_VERSION: ${TEMPORAL_ADMINTOOLS_VERSION:-1.30.1}
 
 services:
   temporal-admin-tools:
@@ -23,7 +23,7 @@ services:
     command: /scripts/setup-postgres.sh
 
   temporal:
-    image: temporalio/server:${TEMPORAL_VERSION:-1.28.1}
+    image: temporalio/server:${TEMPORAL_VERSION:-1.30.1}
     depends_on:
       temporal-admin-tools:
         condition: service_completed_successfully
@@ -34,7 +34,8 @@ services:
       - POSTGRES_PWD=${POSTGRES_PASSWORD}
       - POSTGRES_SEEDS=postgres
       - BIND_ON_IP=0.0.0.0
-      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/docker.yaml
+    volumes:
+      - ./scripts/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
     ports:
       - "${TEMPORAL_GRPC_PORT:-7233}:7233"
     healthcheck:
@@ -44,31 +45,8 @@ services:
       start_period: 30s
       retries: 60
 
-  temporal-create-namespace:
-    <<: *temporal_admin_tools_build
-    restart: on-failure:5
-    depends_on:
-      temporal:
-        condition: service_healthy
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - DEFAULT_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
-    entrypoint: ["/bin/sh"]
-    command: /scripts/create-namespace.sh
-
-  temporal-register-search-attributes:
-    <<: *temporal_admin_tools_build
-    restart: on-failure:5
-    depends_on:
-      temporal-create-namespace:
-        condition: service_completed_successfully
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-    entrypoint: ["/bin/sh"]
-    command: /scripts/register-search-attributes.sh
-
   temporal-ui:
-    image: temporalio/ui:${TEMPORAL_UI_VERSION:-2.40.0}
+    image: temporalio/ui:${TEMPORAL_UI_VERSION:-2.47.2}
     depends_on:
       temporal:
         condition: service_healthy
@@ -155,14 +133,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      temporal-apply-schedules:
+      temporal-setup:
         condition: service_completed_successfully
 
-  temporal-apply-schedules:
+  temporal-setup:
     build:
       context: ./api
       dockerfile: Dockerfile.worker
-    command: ["./moex-scheduler"]
+    command: ["./temporal-setup"]
     restart: on-failure
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
@@ -172,8 +150,8 @@ services:
       - MOEX_SCHEDULE_TIMEZONE=${MOEX_SCHEDULE_TIMEZONE:-Europe/Moscow}
       - MOEX_ENABLE_MONTHLY_DEEP_RESYNC=${MOEX_ENABLE_MONTHLY_DEEP_RESYNC:-false}
     depends_on:
-      temporal-register-search-attributes:
-        condition: service_completed_successfully
+      temporal:
+        condition: service_healthy
 
   web:
     build:
