@@ -68,7 +68,7 @@ func TestMoexISSClientRetriesTimeouts(t *testing.T) {
 	}
 }
 
-func TestMoexISSClientDoesNotRetryOnBadRequest(t *testing.T) {
+func TestMoexISSClientRetriesOnBadRequest(t *testing.T) {
 	var calls int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&calls, 1)
@@ -82,8 +82,8 @@ func TestMoexISSClientDoesNotRetryOnBadRequest(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
-	if got := atomic.LoadInt32(&calls); got != 1 {
-		t.Fatalf("expected 1 attempt, got %d", got)
+	if got := atomic.LoadInt32(&calls); got != moexRequestMaxAttempts {
+		t.Fatalf("expected %d attempts, got %d", moexRequestMaxAttempts, got)
 	}
 }
 

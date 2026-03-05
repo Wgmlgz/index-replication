@@ -1,6 +1,7 @@
 package workflows
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ const (
 
 	defaultFullSyncParallelism    = 4
 	defaultRegularSyncParallelism = 1
+	defaultFullSyncChunkMonths    = 6
 )
 
 type MetaRefreshParams struct {
@@ -32,6 +34,8 @@ type DailySyncParams struct {
 	Mode                   string   `json:"mode"`
 	From                   string   `json:"from,omitempty"`
 	Till                   string   `json:"till,omitempty"`
+	ChunkMonths            int      `json:"chunkMonths,omitempty"`
+	ChunkCursorTill        string   `json:"chunkCursorTill,omitempty"`
 	Parallelism            int      `json:"parallelism,omitempty"`
 	RetrySecids            []string `json:"retrySecids,omitempty"`
 	RetryPass              int      `json:"retryPass,omitempty"`
@@ -74,6 +78,30 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 	if params.EnableSearchAttributes {
 		upsertMoexSearchAttributes(ctx, "daily", "", params.Mode)
 		upsertMoexProgressSearchAttributes(ctx, 0, 0, "", "starting")
+	}
+
+	effectiveFrom := params.From
+	effectiveTill := params.Till
+	chunkPlan, chunkErr := resolveFullModeChunkPlan(params, workflow.Now(ctx))
+	if chunkErr != nil {
+		return chunkErr
+	}
+	if chunkPlan.Enabled {
+		params.From = chunkPlan.GlobalFrom
+		params.Till = chunkPlan.GlobalTill
+		params.ChunkMonths = chunkPlan.ChunkMonths
+		params.ChunkCursorTill = chunkPlan.CursorTill
+		effectiveFrom = chunkPlan.CurrentFrom
+		effectiveTill = chunkPlan.CurrentTill
+		logger.Info(
+			"MOEX full sync chunk selected",
+			"chunkMonths", chunkPlan.ChunkMonths,
+			"chunkFrom", chunkPlan.CurrentFrom,
+			"chunkTill", chunkPlan.CurrentTill,
+			"goalFrom", chunkPlan.GlobalFrom,
+			"goalTill", chunkPlan.GlobalTill,
+			"hasMoreChunks", chunkPlan.HasMore,
+		)
 	}
 
 	metaCtx := workflow.WithActivityOptions(ctx, defaultActivityOptions(5*time.Minute))
@@ -123,6 +151,8 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		"MOEX daily sync pass started",
 		"mode", params.Mode,
 		"retryPass", retryPass,
+		"from", effectiveFrom,
+		"till", effectiveTill,
 		"indexes", totalIndexes,
 		"parallelism", parallelism,
 	)
@@ -137,8 +167,8 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 
 		future := workflow.ExecuteActivity(syncCtx, SyncIndexActivityName, SyncIndexParams{
 			Mode:  params.Mode,
-			From:  params.From,
-			Till:  params.Till,
+			From:  effectiveFrom,
+			Till:  effectiveTill,
 			Secid: secid,
 			Index: i + 1,
 			Total: totalIndexes,
@@ -234,6 +264,31 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		return workflow.NewContinueAsNewError(ctx, DailySyncWorkflow, nextParams)
 	}
 
+	if chunkPlan.Enabled && chunkPlan.HasMore {
+		logger.Info(
+			"MOEX daily sync pass completed for chunk; continuing as new for next chunk",
+			"mode", params.Mode,
+			"chunkMonths", chunkPlan.ChunkMonths,
+			"chunkFrom", chunkPlan.CurrentFrom,
+			"chunkTill", chunkPlan.CurrentTill,
+			"nextChunkCursorTill", chunkPlan.NextCursorTill,
+			"goalFrom", chunkPlan.GlobalFrom,
+			"goalTill", chunkPlan.GlobalTill,
+			"indexes", totalIndexes,
+			"completedIndexes", completed,
+			"failedIndexes", failed,
+			"parallelism", parallelism,
+			"fetchedRows", totalFetchedRows,
+			"upsertedRows", totalUpsertedRows,
+		)
+
+		nextParams := params
+		nextParams.RetrySecids = nil
+		nextParams.RetryPass = 1
+		nextParams.ChunkCursorTill = chunkPlan.NextCursorTill
+		return workflow.NewContinueAsNewError(ctx, DailySyncWorkflow, nextParams)
+	}
+
 	logger.Info(
 		"MOEX daily sync workflow completed",
 		"mode", params.Mode,
@@ -248,6 +303,86 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 		"failedSecidsOmitted", len(failedIndexes)-len(failedSample),
 	)
 	return nil
+}
+
+type fullModeChunkPlan struct {
+	Enabled        bool
+	ChunkMonths    int
+	GlobalFrom     string
+	GlobalTill     string
+	CursorTill     string
+	CurrentFrom    string
+	CurrentTill    string
+	HasMore        bool
+	NextCursorTill string
+}
+
+func resolveFullModeChunkPlan(params DailySyncParams, now time.Time) (fullModeChunkPlan, error) {
+	plan := fullModeChunkPlan{}
+	if normalizeMode(params.Mode) != "full" {
+		return plan, nil
+	}
+
+	fromRaw := strings.TrimSpace(params.From)
+	if fromRaw == "" {
+		return plan, nil
+	}
+
+	globalFrom, err := parseDateOnlyUTC(fromRaw)
+	if err != nil {
+		return plan, fmt.Errorf("invalid full mode from date %q: %w", params.From, err)
+	}
+
+	globalTill := dateOnlyUTC(now)
+	if strings.TrimSpace(params.Till) != "" {
+		parsedTill, parseErr := parseDateOnlyUTC(params.Till)
+		if parseErr != nil {
+			return plan, fmt.Errorf("invalid full mode till date %q: %w", params.Till, parseErr)
+		}
+		globalTill = parsedTill
+	}
+	if globalFrom.After(globalTill) {
+		globalFrom = globalTill
+	}
+
+	cursorTill := globalTill
+	if strings.TrimSpace(params.ChunkCursorTill) != "" {
+		parsedCursor, parseErr := parseDateOnlyUTC(params.ChunkCursorTill)
+		if parseErr != nil {
+			return plan, fmt.Errorf("invalid full mode chunk cursor till date %q: %w", params.ChunkCursorTill, parseErr)
+		}
+		cursorTill = parsedCursor
+	}
+	if cursorTill.After(globalTill) {
+		cursorTill = globalTill
+	}
+	if cursorTill.Before(globalFrom) {
+		cursorTill = globalFrom
+	}
+
+	chunkMonths := params.ChunkMonths
+	if chunkMonths <= 0 {
+		chunkMonths = defaultFullSyncChunkMonths
+	}
+
+	currentFrom := addMonthsClamped(cursorTill, -chunkMonths).AddDate(0, 0, 1)
+	if currentFrom.Before(globalFrom) {
+		currentFrom = globalFrom
+	}
+
+	plan.Enabled = true
+	plan.ChunkMonths = chunkMonths
+	plan.GlobalFrom = formatDateOnlyUTC(globalFrom)
+	plan.GlobalTill = formatDateOnlyUTC(globalTill)
+	plan.CursorTill = formatDateOnlyUTC(cursorTill)
+	plan.CurrentFrom = formatDateOnlyUTC(currentFrom)
+	plan.CurrentTill = formatDateOnlyUTC(cursorTill)
+	plan.HasMore = currentFrom.After(globalFrom)
+	if plan.HasMore {
+		plan.NextCursorTill = formatDateOnlyUTC(currentFrom.AddDate(0, 0, -1))
+	}
+
+	return plan, nil
 }
 
 func defaultActivityOptions(timeout time.Duration) workflow.ActivityOptions {
@@ -333,6 +468,35 @@ func progressPercent(processed, total int) float64 {
 		return 100
 	}
 	return (float64(processed) * 100.0) / float64(total)
+}
+
+func parseDateOnlyUTC(value string) (time.Time, error) {
+	parsed, err := time.Parse("2006-01-02", strings.TrimSpace(value))
+	if err != nil {
+		return time.Time{}, err
+	}
+	return dateOnlyUTC(parsed), nil
+}
+
+func formatDateOnlyUTC(value time.Time) string {
+	return dateOnlyUTC(value).Format("2006-01-02")
+}
+
+func dateOnlyUTC(value time.Time) time.Time {
+	utc := value.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func addMonthsClamped(value time.Time, months int) time.Time {
+	value = dateOnlyUTC(value)
+	firstOfMonth := time.Date(value.Year(), value.Month(), 1, 0, 0, 0, 0, time.UTC)
+	shiftedFirst := firstOfMonth.AddDate(0, months, 0)
+	lastDay := time.Date(shiftedFirst.Year(), shiftedFirst.Month()+1, 0, 0, 0, 0, 0, time.UTC).Day()
+	day := value.Day()
+	if day > lastDay {
+		day = lastDay
+	}
+	return time.Date(shiftedFirst.Year(), shiftedFirst.Month(), day, 0, 0, 0, 0, time.UTC)
 }
 
 func upsertMoexSearchAttributes(ctx workflow.Context, dataset, secid, mode string) {

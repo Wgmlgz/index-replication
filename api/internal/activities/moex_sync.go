@@ -644,6 +644,10 @@ func splitRangeByYear(fromDate, toDate time.Time) []moexDateWindow {
 		})
 		current = yearEnd.AddDate(0, 0, 1)
 	}
+
+	for i, j := 0, len(windows)-1; i < j; i, j = i+1, j-1 {
+		windows[i], windows[j] = windows[j], windows[i]
+	}
 	return windows
 }
 

@@ -112,7 +112,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// After successful authentication:
-	if err := middleware.SetSessionUser(h.db, c, int(user.ID), user.Role.Key, req.RememberMe); err != nil {
+	if err := middleware.SetSessionUser(
+		h.db,
+		c,
+		int(user.ID),
+		user.Role.Key,
+		req.RememberMe,
+		middleware.SessionCookieOptionsFromConfig(h.cfg),
+	); err != nil {
 		fmt.Println("Failed to set session:", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to save session"})
 		return
@@ -187,7 +194,14 @@ func (h *AuthHandler) VerifyLogin(c *gin.Context) {
 		return
 	}
 
-	if err := middleware.SetSessionUser(h.db, c, int(user.ID), user.Role.Key, rememberMe); err != nil {
+	if err := middleware.SetSessionUser(
+		h.db,
+		c,
+		int(user.ID),
+		user.Role.Key,
+		rememberMe,
+		middleware.SessionCookieOptionsFromConfig(h.cfg),
+	); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to save session"})
 		return
 	}
@@ -224,7 +238,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	// Get current user ID from context before clearing the session
 	performedBy := utils.GetRequestContext(c).UserID
 
-	if err := middleware.ClearSession(h.db, c); err != nil {
+	if err := middleware.ClearSession(h.db, c, middleware.SessionCookieOptionsFromConfig(h.cfg)); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to clear session"})
 		return
 	}

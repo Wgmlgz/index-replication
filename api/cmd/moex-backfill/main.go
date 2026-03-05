@@ -20,6 +20,7 @@ func main() {
 	mode := flag.String("mode", "full", "sync mode: full|regular")
 	from := flag.String("from", "1997-01-01", "start date (YYYY-MM-DD)")
 	till := flag.String("till", "", "end date (YYYY-MM-DD), optional")
+	chunkMonths := flag.Int("chunk-months", 6, "full-mode chunk size in months for continue-as-new passes")
 	parallelism := flag.Int("parallelism", 4, "number of indexes to process in parallel")
 	workflowID := flag.String("workflow-id", "", "Temporal workflow ID (optional)")
 	flag.Parse()
@@ -63,6 +64,7 @@ func main() {
 			Mode:                   normalizedMode,
 			From:                   normalizedFrom,
 			Till:                   normalizedTill,
+			ChunkMonths:            normalizeChunkMonths(*chunkMonths),
 			Parallelism:            normalizeParallelism(*parallelism),
 			EnableSearchAttributes: cfg.TemporalEnableSearchAttrs,
 		},
@@ -72,13 +74,14 @@ func main() {
 	}
 
 	log.Printf(
-		"Started workflow type=%s workflowID=%s runID=%s mode=%s from=%s till=%s parallelism=%d namespace=%s taskQueue=%s",
+		"Started workflow type=%s workflowID=%s runID=%s mode=%s from=%s till=%s chunkMonths=%d parallelism=%d namespace=%s taskQueue=%s",
 		"DailySyncWorkflow",
 		run.GetID(),
 		run.GetRunID(),
 		normalizedMode,
 		normalizedFrom,
 		normalizedTill,
+		normalizeChunkMonths(*chunkMonths),
 		normalizeParallelism(*parallelism),
 		cfg.TemporalNS,
 		cfg.TemporalQueue,
@@ -113,6 +116,13 @@ func normalizeDate(value string, required bool) (string, error) {
 func normalizeParallelism(value int) int {
 	if value <= 0 {
 		return 1
+	}
+	return value
+}
+
+func normalizeChunkMonths(value int) int {
+	if value <= 0 {
+		return 6
 	}
 	return value
 }

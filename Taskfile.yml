@@ -43,15 +43,16 @@ tasks:
     cmds:
       - docker compose run --rm --entrypoint /bin/sh temporal-admin-tools
 
-  temporal:backfill:
+  backfill:
     desc: Start manual MOEX backfill workflow in Temporal
     vars:
       MODE: '{{.MODE | default "full"}}'
       FROM: '{{.FROM | default "1997-01-01"}}'
       TILL: '{{.TILL | default ""}}'
+      CHUNK_MONTHS: '{{.CHUNK_MONTHS | default "6"}}'
       PARALLELISM: '{{.PARALLELISM | default "16"}}'
     cmds:
-      - docker compose run --rm --entrypoint ./moex-backfill moex-worker --mode {{.MODE}} --from {{.FROM}} --parallelism {{.PARALLELISM}}{{if .TILL}} --till {{.TILL}}{{end}}
+      - docker compose run --rm --entrypoint ./moex-backfill moex-worker --mode {{.MODE}} --from {{.FROM}} --chunk-months {{.CHUNK_MONTHS}} --parallelism {{.PARALLELISM}}{{if .TILL}} --till {{.TILL}}{{end}}
 
   worker:rebuild:
     desc: Rebuild MOEX worker image

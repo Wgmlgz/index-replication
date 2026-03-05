@@ -153,10 +153,7 @@ func isRetryableMoexError(err error) bool {
 }
 
 func isRetryableMoexStatus(status int) bool {
-	if status == http.StatusRequestTimeout || status == http.StatusTooManyRequests {
-		return true
-	}
-	return status >= http.StatusInternalServerError
+	return status >= 100
 }
 
 func moexBackoffForAttempt(attempt int) time.Duration {

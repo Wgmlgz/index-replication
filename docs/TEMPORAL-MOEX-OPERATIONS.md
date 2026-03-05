@@ -133,7 +133,8 @@ docker compose logs --tail=200 moex-worker
 - range `[from_date, to_date]`
 - `is_complete=true|false` for that fetch window
 - regular runs process incomplete ranges first, then run incremental windows from `checked_through_date - overlap` (history: 7 days, composition: 2 days)
-- full-mode manual backfill is chunked year-by-year and skips already-complete chunks on rerun
+- full-mode manual backfill runs in configurable date chunks across all indexes (default: 6 months) and continues-as-new chunk-by-chunk until reaching the goal range
+- inside each index activity, full-mode fetch still uses year windows and skips already-complete coverage on rerun
 - composition ticker progress is tracked in the same table via `dataset=composition_ticker` and `entity_key=<secid>|<ticker>`
 
 `moex_sync_runs` is execution history:
@@ -144,6 +145,7 @@ docker compose logs --tail=200 moex-worker
 
 - Full-history backfill is supported as a manual workflow start (not scheduled by default).
 - Use `mode=full` with explicit `from` (for example `1997-01-01`).
+- Optional: set `CHUNK_MONTHS` (default `6`) to control the full-mode chunk size used for continue-as-new passes.
 - Monthly deep resync does not perform full-history backfill; it only rechecks mutable horizon.
 
 ## Why "No Runs Yet" Can Be Correct
@@ -201,4 +203,10 @@ Backfill with custom parallelism:
 
 ```bash
 task temporal:backfill FROM=1997-01-01 PARALLELISM=6
+```
+
+Backfill with custom chunk size (example: 3 months per continue-as-new pass):
+
+```bash
+task temporal:backfill FROM=1997-01-01 CHUNK_MONTHS=3
 ```
