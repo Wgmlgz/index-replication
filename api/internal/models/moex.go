@@ -56,6 +56,36 @@ func (MoexIndexHistoryDailyDB) TableName() string {
 	return "moex_index_history_daily"
 }
 
+type MoexSecurityHistoryDailyDB struct {
+	Secid           string     `gorm:"column:secid;primaryKey"`
+	Board           string     `gorm:"column:board;primaryKey"`
+	TradeDate       time.Time  `gorm:"column:trade_date;primaryKey;type:date"`
+	Open            *float64   `gorm:"column:open"`
+	High            *float64   `gorm:"column:high"`
+	Low             *float64   `gorm:"column:low"`
+	Close           *float64   `gorm:"column:close"`
+	SourceUpdatedAt *time.Time `gorm:"column:source_updated_at"`
+	IngestedAt      time.Time  `gorm:"column:ingested_at;autoCreateTime"`
+}
+
+func (MoexSecurityHistoryDailyDB) TableName() string {
+	return "moex_security_history_daily"
+}
+
+type PortfolioInstrumentMappingDB struct {
+	Provider      string    `gorm:"column:provider;primaryKey"`
+	InstrumentKey string    `gorm:"column:instrument_key;primaryKey"`
+	Ticker        *string   `gorm:"column:ticker"`
+	Secid         string    `gorm:"column:secid;not null"`
+	Board         string    `gorm:"column:board;not null"`
+	UpdatedAt     time.Time `gorm:"column:updated_at;autoUpdateTime"`
+	CreatedAt     time.Time `gorm:"column:created_at;autoCreateTime"`
+}
+
+func (PortfolioInstrumentMappingDB) TableName() string {
+	return "portfolio_instrument_mappings"
+}
+
 type MoexIndexCompositionDailyDB struct {
 	IndexID          string     `gorm:"column:index_id;primaryKey"`
 	TradeDate        time.Time  `gorm:"column:trade_date;primaryKey;type:date"`
@@ -158,6 +188,19 @@ type MoexHistoryPointRow struct {
 	Open      *float64  `gorm:"column:open"`
 	High      *float64  `gorm:"column:high"`
 	Low       *float64  `gorm:"column:low"`
+	Close     *float64  `gorm:"column:close"`
+}
+
+type MoexSecurityHistoryPointRow struct {
+	TradeDate time.Time `gorm:"column:trade_date"`
+	Open      *float64  `gorm:"column:open"`
+	High      *float64  `gorm:"column:high"`
+	Low       *float64  `gorm:"column:low"`
+	Close     *float64  `gorm:"column:close"`
+}
+
+type MoexSecurityLatestCloseRow struct {
+	TradeDate time.Time `gorm:"column:trade_date"`
 	Close     *float64  `gorm:"column:close"`
 }
 

@@ -82,6 +82,21 @@ func (s *Service) GetAccountPortfolio(
 		return nil, err
 	}
 
+	return s.getAccountPortfolioRaw(ctx, conn, resolvedAccountID)
+}
+
+func (s *Service) getAccountPortfolioRaw(
+	ctx context.Context,
+	conn *tbankConnection,
+	resolvedAccountID string,
+) (*AccountPortfolioResponse, error) {
+	if conn == nil {
+		return nil, ErrTBankNotConnected
+	}
+	if strings.TrimSpace(resolvedAccountID) == "" {
+		return nil, ErrTBankNoAccountFound
+	}
+
 	var portfolioResp *pb.PortfolioResponse
 	var positionsResp *pb.PositionsResponse
 	var withdrawResp *pb.WithdrawLimitsResponse

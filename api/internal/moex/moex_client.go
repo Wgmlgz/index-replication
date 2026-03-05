@@ -374,6 +374,66 @@ func (c *moexISSClient) FetchHistory(ctx context.Context, secid, from, till stri
 	return results, nil
 }
 
+func (c *moexISSClient) FetchShareSecurityHistory(ctx context.Context, secid, board, from, till string) ([]moexdomain.IndexHistoryPoint, error) {
+	start := 0
+	iterations := 0
+	results := make([]moexdomain.IndexHistoryPoint, 0)
+
+	for iterations < moexMaxIterations {
+		iterations++
+		params := url.Values{}
+		params.Set("iss.meta", "off")
+		params.Set("history.columns", "TRADEDATE,CLOSE,OPEN,HIGH,LOW")
+		params.Set("limit", strconv.Itoa(moexDefaultPageSize))
+		params.Set("start", strconv.Itoa(start))
+		if from != "" {
+			params.Set("from", from)
+		}
+		if till != "" {
+			params.Set("till", till)
+		}
+
+		var payload moexHistoryPayload
+		if err := c.get(
+			ctx,
+			fmt.Sprintf(
+				"history/engines/stock/markets/shares/boards/%s/securities/%s.json",
+				url.PathEscape(board),
+				url.PathEscape(secid),
+			),
+			params,
+			&payload,
+		); err != nil {
+			return nil, err
+		}
+
+		rows := tableToObjects(payload.History)
+		for _, row := range rows {
+			results = append(results, moexdomain.IndexHistoryPoint{
+				TradeDate: asString(getValue(row, "TRADEDATE", "tradedate")),
+				Close:     asFloatPtr(getValue(row, "CLOSE", "close")),
+				Open:      asFloatPtr(getValue(row, "OPEN", "open")),
+				High:      asFloatPtr(getValue(row, "HIGH", "high")),
+				Low:       asFloatPtr(getValue(row, "LOW", "low")),
+			})
+		}
+
+		total, pageSize, ok := readCursor(payload.HistoryCursor)
+		if !ok {
+			break
+		}
+		start += pageSize
+		if total >= 0 && start >= total {
+			break
+		}
+		if len(rows) == 0 {
+			break
+		}
+	}
+
+	return results, nil
+}
+
 func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	start := 0
 	iterations := 0

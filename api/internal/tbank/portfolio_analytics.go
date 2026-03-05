@@ -3,10 +3,13 @@ package tbank
 import (
 	"context"
 	"errors"
+	"log"
 	"math"
 	"sort"
 	"strings"
 	"time"
+
+	"server/internal/marketprice"
 
 	"google.golang.org/grpc"
 	pb "opensource.tbank.ru/invest/invest-go/proto"
@@ -67,7 +70,7 @@ func (s *Service) GetPortfolioHistory(
 		return nil, err
 	}
 
-	portfolio, err := s.GetAccountPortfolio(ctx, userID, resolvedAccountID)
+	portfolio, err := s.getAccountPortfolioRaw(ctx, conn, resolvedAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +79,14 @@ func (s *Service) GetPortfolioHistory(
 		return nil, err
 	}
 
-	anchors := resolveAnalyticsAnchors(operations, fromDate, tillDate)
-	anchors = downsampleDateStrings(anchors, intervalDays)
+	rangeFrom, rangeTill := resolveAnalyticsRange(operations, fromDate, tillDate)
+	dailyAnchors := buildDateLabels(rangeFrom, rangeTill)
+	anchors := downsampleDateStrings(dailyAnchors, intervalDays)
 	if len(anchors) == 0 {
 		return []PortfolioHistoryPoint{}, nil
 	}
 
-	snapshots := buildCompositionSnapshotsByDate(portfolio, operations, anchors)
+	snapshots := s.buildCompositionSnapshotsByDate(ctx, portfolio, operations, anchors)
 	points := make([]PortfolioHistoryPoint, 0, len(anchors))
 	currency := strings.ToUpper(strings.TrimSpace(portfolio.TotalAmountPortfolioCurrency))
 	for _, date := range anchors {
@@ -122,7 +126,7 @@ func (s *Service) GetPortfolioComposition(
 		return nil, err
 	}
 
-	portfolio, err := s.GetAccountPortfolio(ctx, userID, resolvedAccountID)
+	portfolio, err := s.getAccountPortfolioRaw(ctx, conn, resolvedAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +147,7 @@ func (s *Service) GetPortfolioComposition(
 		}
 	}
 
-	snapshots := buildCompositionSnapshotsByDate(portfolio, operations, []string{targetDate})
+	snapshots := s.buildCompositionSnapshotsByDate(ctx, portfolio, operations, []string{targetDate})
 	entries := snapshots[targetDate]
 	result := make([]PortfolioCompositionEntry, 0, len(entries))
 	for _, entry := range entries {
@@ -203,7 +207,7 @@ func (s *Service) GetPortfolioCompositionSeries(
 		return nil, err
 	}
 
-	portfolio, err := s.GetAccountPortfolio(ctx, userID, resolvedAccountID)
+	portfolio, err := s.getAccountPortfolioRaw(ctx, conn, resolvedAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -212,13 +216,14 @@ func (s *Service) GetPortfolioCompositionSeries(
 		return nil, err
 	}
 
-	anchors := resolveAnalyticsAnchors(operations, fromDate, tillDate)
-	anchors = downsampleDateStrings(anchors, intervalDays)
+	rangeFrom, rangeTill := resolveAnalyticsRange(operations, fromDate, tillDate)
+	dailyAnchors := buildDateLabels(rangeFrom, rangeTill)
+	anchors := downsampleDateStrings(dailyAnchors, intervalDays)
 	if len(anchors) == 0 {
 		return map[string][]PortfolioCompositionSeriesPoint{}, nil
 	}
 
-	snapshots := buildCompositionSnapshotsByDate(portfolio, operations, anchors)
+	snapshots := s.buildCompositionSnapshotsByDate(ctx, portfolio, operations, anchors)
 
 	selectedTickers := normalizeTickers(tickers)
 	if len(selectedTickers) == 0 && mode == "fixed" {
@@ -354,7 +359,8 @@ func (s *Service) getAllExecutedOperations(
 	return mapOperationsHistoryItems(items), nil
 }
 
-func buildCompositionSnapshotsByDate(
+func (s *Service) buildCompositionSnapshotsByDate(
+	ctx context.Context,
 	portfolio *AccountPortfolioResponse,
 	operations []OperationHistoryItem,
 	dates []string,
@@ -365,6 +371,7 @@ func buildCompositionSnapshotsByDate(
 	}
 
 	holdings := buildCurrentHoldings(portfolio, operations)
+	priceBooks := s.loadTBankPriceBooks(ctx, holdings, dates)
 	analyticsOps := buildAnalyticsOperations(operations)
 	sort.Slice(analyticsOps, func(i, j int) bool {
 		return analyticsOps[i].Date.After(analyticsOps[j].Date)
@@ -380,10 +387,55 @@ func buildCompositionSnapshotsByDate(
 			applyReverseOperation(holdings, analyticsOps[opIndex])
 			opIndex++
 		}
-		snapshots[date] = composeEntriesForDate(date, holdings)
+		snapshots[date] = composeEntriesForDate(date, holdings, priceBooks)
 	}
 
 	return snapshots
+}
+
+func (s *Service) loadTBankPriceBooks(
+	ctx context.Context,
+	holdings map[string]*analyticsHolding,
+	dates []string,
+) map[string]map[string]float64 {
+	books := make(map[string]map[string]float64)
+	if s.marketPrices == nil || len(holdings) == 0 || len(dates) == 0 {
+		return books
+	}
+
+	fromDate, err := time.Parse("2006-01-02", dates[0])
+	if err != nil {
+		return books
+	}
+	tillDate, err := time.Parse("2006-01-02", dates[len(dates)-1])
+	if err != nil {
+		return books
+	}
+	if fromDate.After(tillDate) {
+		fromDate, tillDate = tillDate, fromDate
+	}
+
+	for instrumentID, holding := range holdings {
+		if holding == nil || strings.TrimSpace(instrumentID) == "" {
+			continue
+		}
+		series, err := s.marketPrices.GetDailyAsOfPrices(ctx, marketprice.InstrumentRangeRequest{
+			Provider:      "tbank",
+			InstrumentKey: instrumentID,
+			Ticker:        holding.Ticker,
+			From:          fromDate,
+			To:            tillDate,
+		})
+		if err != nil {
+			log.Printf("[TBANK] market price fetch failed instrument=%s ticker=%s err=%v", instrumentID, holding.Ticker, err)
+			continue
+		}
+		if series == nil || len(series.Prices) == 0 {
+			continue
+		}
+		books[instrumentID] = series.Prices
+	}
+	return books
 }
 
 func buildCurrentHoldings(
@@ -549,15 +601,25 @@ func applyReverseOperation(holdings map[string]*analyticsHolding, operation anal
 func composeEntriesForDate(
 	tradeDate string,
 	holdings map[string]*analyticsHolding,
+	priceBooks map[string]map[string]float64,
 ) []analyticsSeriesEntry {
 	grouped := make(map[string]*analyticsSeriesEntry)
 	total := 0.0
 
 	for instrumentID, holding := range holdings {
-		if holding == nil || holding.Quantity <= 0 || holding.ReferencePrice <= 0 {
+		if holding == nil || holding.Quantity <= 0 {
 			continue
 		}
-		value := holding.Quantity * holding.ReferencePrice
+		price := holding.ReferencePrice
+		if byDate, exists := priceBooks[instrumentID]; exists {
+			if marketPrice, ok := byDate[tradeDate]; ok && marketPrice > 0 {
+				price = marketPrice
+			}
+		}
+		if price <= 0 {
+			continue
+		}
+		value := holding.Quantity * price
 		if value <= 0 {
 			continue
 		}
@@ -571,14 +633,14 @@ func composeEntriesForDate(
 				Name:         holding.Name,
 				Currency:     holding.Currency,
 				Quantity:     holding.Quantity,
-				CurrentPrice: holding.ReferencePrice,
+				CurrentPrice: price,
 				CurrentValue: value,
 			}
 		} else {
 			entry.Quantity += holding.Quantity
 			entry.CurrentValue += value
-			if entry.CurrentPrice <= 0 && holding.ReferencePrice > 0 {
-				entry.CurrentPrice = holding.ReferencePrice
+			if entry.CurrentPrice <= 0 && price > 0 {
+				entry.CurrentPrice = price
 			}
 			if entry.Name == "" {
 				entry.Name = holding.Name
@@ -604,6 +666,59 @@ func composeEntriesForDate(
 		return entries[i].Ticker < entries[j].Ticker
 	})
 	return entries
+}
+
+func resolveAnalyticsRange(
+	operations []OperationHistoryItem,
+	fromDate *time.Time,
+	tillDate *time.Time,
+) (time.Time, time.Time) {
+	today := dateOnlyUTC(time.Now().UTC())
+	rangeTill := today
+	if tillDate != nil {
+		rangeTill = dateOnlyUTC(*tillDate)
+	}
+
+	rangeFrom := rangeTill
+	if fromDate != nil {
+		rangeFrom = dateOnlyUTC(*fromDate)
+	} else {
+		for _, op := range operations {
+			if op.Date == nil {
+				continue
+			}
+			opDate := dateOnlyUTC(op.Date.UTC())
+			if opDate.After(rangeTill) {
+				continue
+			}
+			if opDate.Before(rangeFrom) {
+				rangeFrom = opDate
+			}
+		}
+	}
+
+	if rangeFrom.After(rangeTill) {
+		rangeFrom, rangeTill = rangeTill, rangeFrom
+	}
+	return rangeFrom, rangeTill
+}
+
+func buildDateLabels(fromDate, tillDate time.Time) []string {
+	fromDate = dateOnlyUTC(fromDate)
+	tillDate = dateOnlyUTC(tillDate)
+	if fromDate.After(tillDate) {
+		fromDate, tillDate = tillDate, fromDate
+	}
+	totalDays := int(tillDate.Sub(fromDate).Hours()/24) + 1
+	if totalDays < 1 {
+		totalDays = 1
+	}
+
+	result := make([]string, 0, totalDays)
+	for day := fromDate; !day.After(tillDate); day = day.AddDate(0, 0, 1) {
+		result = append(result, day.Format("2006-01-02"))
+	}
+	return result
 }
 
 func resolveAnalyticsAnchors(
@@ -674,6 +789,11 @@ func parseOptionalDate(value string) (*time.Time, error) {
 	}
 	normalized := time.Date(parsed.UTC().Year(), parsed.UTC().Month(), parsed.UTC().Day(), 0, 0, 0, 0, time.UTC)
 	return &normalized, nil
+}
+
+func dateOnlyUTC(value time.Time) time.Time {
+	value = value.UTC()
+	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 func downsampleDateStrings(dates []string, intervalDays int) []string {

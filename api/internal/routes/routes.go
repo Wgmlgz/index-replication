@@ -6,6 +6,7 @@ import (
 	"log"
 	"server/internal/config"
 	h "server/internal/handlers"
+	"server/internal/marketprice"
 	m "server/internal/middleware"
 	"server/internal/moex"
 	"server/internal/portfolio"
@@ -80,6 +81,12 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
 	moexLiveService := moex.NewMoexService(cfg.MoexBaseURL)
 	moexReadService := moex.NewMoexReadService(repoRegistry.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
+	marketPriceService := marketprice.NewService(
+		repoRegistry.MarketPriceRepo,
+		repoRegistry.MoexDataRepo,
+		repoRegistry.MoexSyncRepo,
+		moexLiveService,
+	)
 	moexHandler := h.NewMoexHandler(moexReadService)
 	moexSyncAdminHandler := h.NewMoexSyncAdminHandler(repoRegistry.MoexDataRepo)
 	tbankService := tbank.NewService(
@@ -90,6 +97,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		},
 		repoRegistry.UserSettingsRepo,
 		auditService,
+		marketPriceService,
 	)
 	tbankHandler := h.NewTBankHandler(tbankService)
 	portfolioService := portfolio.NewService(
@@ -97,7 +105,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		portfolio.NewTBankProvider(tbankService),
 		portfolio.NewMockProvider(),
-		portfolio.NewVirtualProvider(repoRegistry.VirtualPortfolioTransactionsRepo),
+		portfolio.NewVirtualProvider(repoRegistry.VirtualPortfolioTransactionsRepo, marketPriceService),
 	)
 	portfolioHandler := h.NewPortfolioHandler(portfolioService)
 

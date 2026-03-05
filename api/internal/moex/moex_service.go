@@ -67,6 +67,10 @@ func (s *MoexService) GetIndexHistory(ctx context.Context, secid, from, till str
 	return downsampleHistory(points, interval), nil
 }
 
+func (s *MoexService) GetShareSecurityHistory(ctx context.Context, secid, board, from, till string) ([]moexdomain.IndexHistoryPoint, error) {
+	return s.client.FetchShareSecurityHistory(ctx, secid, board, from, till)
+}
+
 func (s *MoexService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "en"

@@ -15,7 +15,7 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	defer cleanup()
 
 	txnRepo := repository.NewVirtualPortfolioTransactionsRepository(db)
-	provider := NewVirtualProvider(txnRepo)
+	provider := NewVirtualProvider(txnRepo, nil)
 	profile := &Profile{ID: 501, UserID: 77, Provider: "virtual", Name: "Virtual A"}
 
 	_, err := provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
@@ -117,7 +117,7 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 		t.Fatalf("expected latest operation SELL, got %s", operations.Items[0].Type)
 	}
 
-	providerAfterRestart := NewVirtualProvider(txnRepo)
+	providerAfterRestart := NewVirtualProvider(txnRepo, nil)
 	summaryAfterRestart, err := providerAfterRestart.GetSummary(context.Background(), profile)
 	if err != nil {
 		t.Fatalf("summary after restart failed: %v", err)
@@ -132,7 +132,7 @@ func TestVirtualProvider_RejectsInvalidActions(t *testing.T) {
 	defer cleanup()
 
 	txnRepo := repository.NewVirtualPortfolioTransactionsRepository(db)
-	provider := NewVirtualProvider(txnRepo)
+	provider := NewVirtualProvider(txnRepo, nil)
 	profile := &Profile{ID: 601, UserID: 88, Provider: "virtual", Name: "Virtual B"}
 
 	_, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{

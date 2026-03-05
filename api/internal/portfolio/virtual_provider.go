@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"server/internal/api/dto"
+	"server/internal/marketprice"
 	"server/internal/models"
 )
 
@@ -28,11 +29,15 @@ type VirtualTransactionsRepository interface {
 }
 
 type VirtualProvider struct {
-	repo VirtualTransactionsRepository
+	repo         VirtualTransactionsRepository
+	marketPrices *marketprice.Service
 }
 
-func NewVirtualProvider(repo VirtualTransactionsRepository) *VirtualProvider {
-	return &VirtualProvider{repo: repo}
+func NewVirtualProvider(repo VirtualTransactionsRepository, marketPrices *marketprice.Service) *VirtualProvider {
+	return &VirtualProvider{
+		repo:         repo,
+		marketPrices: marketPrices,
+	}
 }
 
 func (p *VirtualProvider) Name() string {
@@ -49,21 +54,26 @@ func (p *VirtualProvider) Capabilities(_ context.Context, _ *Profile) dto.Portfo
 	}
 }
 
-func (p *VirtualProvider) GetSummary(_ context.Context, profile *Profile) (*dto.PortfolioSummaryResponse, error) {
+func (p *VirtualProvider) GetSummary(ctx context.Context, profile *Profile) (*dto.PortfolioSummaryResponse, error) {
 	transactions, err := p.repo.ListByProfile(profile.UserID, profile.ID)
 	if err != nil {
 		return nil, err
 	}
 
+	now := time.Now().UTC()
+	today := dateOnlyUTC(now)
+	yesterday := today.AddDate(0, 0, -1)
+
+	priceBooks := p.loadVirtualPriceBooks(ctx, transactions, yesterday, today)
+
 	state := buildVirtualState(transactions, nil)
-	positions := buildSummaryPositionsFromState(state)
+	positions := buildSummaryPositionsFromState(state, today.Format(virtualDateLayout), priceBooks)
 	money := buildSummaryMoneyFromState(state)
-	total := virtualTotalPortfolio(state)
+	total := virtualTotalPortfolio(state, today.Format(virtualDateLayout), priceBooks)
 	currency := detectPrimaryCurrency(money, positions)
 
-	now := time.Now().UTC()
-	todayTotal := virtualTotalPortfolio(buildVirtualState(transactions, endOfDay(now)))
-	yesterdayTotal := virtualTotalPortfolio(buildVirtualState(transactions, endOfDay(now.AddDate(0, 0, -1))))
+	todayTotal := virtualTotalPortfolio(buildVirtualState(transactions, endOfDay(now)), today.Format(virtualDateLayout), priceBooks)
+	yesterdayTotal := virtualTotalPortfolio(buildVirtualState(transactions, endOfDay(yesterday)), yesterday.Format(virtualDateLayout), priceBooks)
 	dailyYield := roundFloat(todayTotal-yesterdayTotal, 2)
 	dailyYieldRelative := 0.0
 	if yesterdayTotal > 0 {
@@ -81,7 +91,7 @@ func (p *VirtualProvider) GetSummary(_ context.Context, profile *Profile) (*dto.
 }
 
 func (p *VirtualProvider) GetHistory(
-	_ context.Context,
+	ctx context.Context,
 	profile *Profile,
 	from string,
 	till string,
@@ -108,7 +118,8 @@ func (p *VirtualProvider) GetHistory(
 		step = intervalDays
 	}
 
-	points, _, _, _, err := p.buildSampledTimeline(transactions, start, end, step)
+	priceBooks := p.loadVirtualPriceBooks(ctx, transactions, start, end)
+	points, _, _, _, err := p.buildSampledTimeline(transactions, start, end, step, priceBooks)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +127,7 @@ func (p *VirtualProvider) GetHistory(
 }
 
 func (p *VirtualProvider) GetComposition(
-	_ context.Context,
+	ctx context.Context,
 	profile *Profile,
 	date string,
 ) ([]dto.PortfolioCompositionEntry, error) {
@@ -138,12 +149,13 @@ func (p *VirtualProvider) GetComposition(
 	}
 
 	state := buildVirtualState(transactions, endOfDay(target))
-	entries := buildCompositionFromState(state, target.Format(virtualDateLayout))
+	priceBooks := p.loadVirtualPriceBooks(ctx, transactions, target, target)
+	entries := buildCompositionFromState(state, target.Format(virtualDateLayout), priceBooks)
 	return entries, nil
 }
 
 func (p *VirtualProvider) GetCompositionSeries(
-	_ context.Context,
+	ctx context.Context,
 	profile *Profile,
 	tickers []string,
 	topCount int,
@@ -174,7 +186,8 @@ func (p *VirtualProvider) GetCompositionSeries(
 		step = intervalDays
 	}
 
-	_, snapshots, sampleDates, sampleDateSet, err := p.buildSampledTimeline(transactions, start, end, step)
+	priceBooks := p.loadVirtualPriceBooks(ctx, transactions, start, end)
+	_, snapshots, sampleDates, sampleDateSet, err := p.buildSampledTimeline(transactions, start, end, step, priceBooks)
 	if err != nil {
 		return nil, err
 	}
@@ -498,6 +511,7 @@ func (p *VirtualProvider) buildSampledTimeline(
 	start time.Time,
 	end time.Time,
 	intervalDays int,
+	priceBooks map[string]map[string]float64,
 ) (
 	[]dto.PortfolioHistoryPoint,
 	map[string]map[string]float64,
@@ -535,13 +549,14 @@ func (p *VirtualProvider) buildSampledTimeline(
 		}
 
 		tradeDate := day.Format(virtualDateLayout)
+		positions := buildSummaryPositionsFromState(state, tradeDate, priceBooks)
 		points = append(points, dto.PortfolioHistoryPoint{
 			TradeDate:            tradeDate,
-			TotalAmountPortfolio: roundFloat(virtualTotalPortfolio(state), 2),
-			Currency:             detectPrimaryCurrency(buildSummaryMoneyFromState(state), buildSummaryPositionsFromState(state)),
+			TotalAmountPortfolio: roundFloat(virtualTotalPortfolio(state, tradeDate, priceBooks), 2),
+			Currency:             detectPrimaryCurrency(buildSummaryMoneyFromState(state), positions),
 		})
 
-		snapshots[tradeDate] = buildTickerWeightSnapshot(state)
+		snapshots[tradeDate] = buildTickerWeightSnapshot(state, tradeDate, priceBooks)
 		sampleDates = append(sampleDates, tradeDate)
 		sampleDateSet[tradeDate] = struct{}{}
 		sampledCount++
@@ -549,12 +564,13 @@ func (p *VirtualProvider) buildSampledTimeline(
 
 	if len(points) == 0 {
 		tradeDate := dateOnlyUTC(end).Format(virtualDateLayout)
+		positions := buildSummaryPositionsFromState(state, tradeDate, priceBooks)
 		points = append(points, dto.PortfolioHistoryPoint{
 			TradeDate:            tradeDate,
-			TotalAmountPortfolio: roundFloat(virtualTotalPortfolio(state), 2),
-			Currency:             detectPrimaryCurrency(buildSummaryMoneyFromState(state), buildSummaryPositionsFromState(state)),
+			TotalAmountPortfolio: roundFloat(virtualTotalPortfolio(state, tradeDate, priceBooks), 2),
+			Currency:             detectPrimaryCurrency(buildSummaryMoneyFromState(state), positions),
 		})
-		snapshots[tradeDate] = buildTickerWeightSnapshot(state)
+		snapshots[tradeDate] = buildTickerWeightSnapshot(state, tradeDate, priceBooks)
 		sampleDates = append(sampleDates, tradeDate)
 		sampleDateSet[tradeDate] = struct{}{}
 	}
@@ -693,19 +709,20 @@ func buildSummaryMoneyFromState(state *virtualState) []dto.PortfolioSummaryMoney
 	return balances
 }
 
-func buildSummaryPositionsFromState(state *virtualState) []dto.PortfolioSummaryPosition {
+func buildSummaryPositionsFromState(
+	state *virtualState,
+	tradeDate string,
+	priceBooks map[string]map[string]float64,
+) []dto.PortfolioSummaryPosition {
 	if state == nil || len(state.Positions) == 0 {
 		return []dto.PortfolioSummaryPosition{}
 	}
 	positions := make([]dto.PortfolioSummaryPosition, 0, len(state.Positions))
-	for _, position := range state.Positions {
+	for key, position := range state.Positions {
 		if position.Quantity <= 1e-9 {
 			continue
 		}
-		lastPrice := position.LastPrice
-		if lastPrice <= 0 {
-			lastPrice = position.AvgCost
-		}
+		lastPrice := resolveVirtualPositionPrice(key, position, tradeDate, priceBooks)
 		currentValue := position.Quantity * lastPrice
 		expectedYield := (lastPrice - position.AvgCost) * position.Quantity
 		positions = append(positions, dto.PortfolioSummaryPosition{
@@ -729,8 +746,12 @@ func buildSummaryPositionsFromState(state *virtualState) []dto.PortfolioSummaryP
 	return positions
 }
 
-func buildCompositionFromState(state *virtualState, tradeDate string) []dto.PortfolioCompositionEntry {
-	positions := buildSummaryPositionsFromState(state)
+func buildCompositionFromState(
+	state *virtualState,
+	tradeDate string,
+	priceBooks map[string]map[string]float64,
+) []dto.PortfolioCompositionEntry {
+	positions := buildSummaryPositionsFromState(state, tradeDate, priceBooks)
 	if len(positions) == 0 {
 		return []dto.PortfolioCompositionEntry{}
 	}
@@ -759,8 +780,12 @@ func buildCompositionFromState(state *virtualState, tradeDate string) []dto.Port
 	return result
 }
 
-func buildTickerWeightSnapshot(state *virtualState) map[string]float64 {
-	entries := buildCompositionFromState(state, "")
+func buildTickerWeightSnapshot(
+	state *virtualState,
+	tradeDate string,
+	priceBooks map[string]map[string]float64,
+) map[string]float64 {
+	entries := buildCompositionFromState(state, tradeDate, priceBooks)
 	snapshot := make(map[string]float64, len(entries))
 	for _, entry := range entries {
 		ticker := strings.ToUpper(strings.TrimSpace(entry.Ticker))
@@ -1015,7 +1040,11 @@ func findVirtualPosition(state *virtualState, ticker string, instrumentID string
 	return "", nil
 }
 
-func virtualTotalPortfolio(state *virtualState) float64 {
+func virtualTotalPortfolio(
+	state *virtualState,
+	tradeDate string,
+	priceBooks map[string]map[string]float64,
+) float64 {
 	if state == nil {
 		return 0
 	}
@@ -1023,17 +1052,98 @@ func virtualTotalPortfolio(state *virtualState) float64 {
 	for _, amount := range state.Cash {
 		total += amount
 	}
-	for _, position := range state.Positions {
+	for key, position := range state.Positions {
 		if position.Quantity <= 1e-9 {
 			continue
 		}
-		price := position.LastPrice
-		if price <= 0 {
-			price = position.AvgCost
-		}
+		price := resolveVirtualPositionPrice(key, position, tradeDate, priceBooks)
 		total += position.Quantity * price
 	}
 	return total
+}
+
+func resolveVirtualPositionPrice(
+	key string,
+	position *virtualPosition,
+	tradeDate string,
+	priceBooks map[string]map[string]float64,
+) float64 {
+	if position == nil {
+		return 0
+	}
+	if tradeDate != "" && priceBooks != nil {
+		if byDate, exists := priceBooks[key]; exists {
+			if value, ok := byDate[tradeDate]; ok && value > 0 {
+				return value
+			}
+		}
+	}
+	if position.LastPrice > 0 {
+		return position.LastPrice
+	}
+	if position.AvgCost > 0 {
+		return position.AvgCost
+	}
+	return 0
+}
+
+func (p *VirtualProvider) loadVirtualPriceBooks(
+	ctx context.Context,
+	transactions []models.VirtualPortfolioTransaction,
+	fromDate time.Time,
+	toDate time.Time,
+) map[string]map[string]float64 {
+	if p.marketPrices == nil || len(transactions) == 0 {
+		return map[string]map[string]float64{}
+	}
+	if fromDate.After(toDate) {
+		fromDate, toDate = toDate, fromDate
+	}
+
+	type instrumentRef struct {
+		Key    string
+		Ticker string
+	}
+	refs := make(map[string]instrumentRef)
+	for _, txn := range transactions {
+		op := strings.ToLower(strings.TrimSpace(txn.OperationType))
+		if op != "buy" && op != "sell" {
+			continue
+		}
+		key := virtualPositionKey(txn.Ticker, txn.InstrumentID)
+		if key == "" {
+			continue
+		}
+		ticker := strings.ToUpper(strings.TrimSpace(txn.Ticker))
+		existing, hasExisting := refs[key]
+		if !hasExisting {
+			refs[key] = instrumentRef{
+				Key:    key,
+				Ticker: ticker,
+			}
+			continue
+		}
+		if existing.Ticker == "" && ticker != "" {
+			existing.Ticker = ticker
+			refs[key] = existing
+		}
+	}
+
+	priceBooks := make(map[string]map[string]float64, len(refs))
+	for _, ref := range refs {
+		series, err := p.marketPrices.GetDailyAsOfPrices(ctx, marketprice.InstrumentRangeRequest{
+			Provider:      "virtual",
+			InstrumentKey: ref.Key,
+			Ticker:        ref.Ticker,
+			From:          fromDate,
+			To:            toDate,
+		})
+		if err != nil || series == nil || len(series.Prices) == 0 {
+			continue
+		}
+		priceBooks[ref.Key] = series.Prices
+	}
+	return priceBooks
 }
 
 func detectPrimaryCurrency(

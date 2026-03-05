@@ -62,6 +62,9 @@ Temporal admin-tools bootstrap scripts are baked into a custom image during comp
 MOEX schedules are applied automatically on startup by the one-shot `temporal-apply-schedules` service (no manual schedule bootstrapping needed in Docker).
 Operational timeline and monitoring details are documented in `docs/TEMPORAL-MOEX-OPERATIONS.md`.
 Historical MOEX API reads are DB-backed; coverage status is exposed via response headers and sync admin endpoints.
+Portfolio `virtual` and `tbank` mark-to-market valuation now uses on-demand MOEX share security history cache
+(`moex_security_history_daily` + `moex_data_coverage` dataset `security_history`): cache miss triggers fetch+upsert,
+cache hit serves from DB. If no MOEX quote exists for an anchor date, valuation falls back to provider legacy price.
 
 ## Move Backfilled MOEX Data (Local -> Prod)
 

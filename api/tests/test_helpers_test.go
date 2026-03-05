@@ -33,6 +33,10 @@ type testServer struct {
 }
 
 func newTestServer(t *testing.T) *testServer {
+	return newTestServerWithConfig(t, nil)
+}
+
+func newTestServerWithConfig(t *testing.T, cfg *config.Config) *testServer {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -45,8 +49,10 @@ func newTestServer(t *testing.T) *testServer {
 
 	repoRegistry := repository.NewRepositoryRegistry(db)
 	auditService := services.NewAuditService(db)
-	cfg := &config.Config{
-		SessionSecret: "test_secret",
+	if cfg == nil {
+		cfg = &config.Config{
+			SessionSecret: "test_secret",
+		}
 	}
 
 	router := routes.SetupRouter(db, cfg, repoRegistry, auditService)

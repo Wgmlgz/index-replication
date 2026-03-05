@@ -160,6 +160,22 @@ The API now exposes DB-backed sync state endpoints:
 - `GET /api/moex/sync/coverage`
 - `GET /api/moex/sync/runs`
 
+## Portfolio MOEX Security Price Cache
+
+`virtual` and `tbank` providers value positions by MOEX close prices (mark-to-market) for:
+
+- `GET /api/me/portfolios/:id/summary`
+- `GET /api/me/portfolios/:id/history`
+- `GET /api/me/portfolios/:id/composition`
+
+Implementation notes:
+
+- Prices are stored in `moex_security_history_daily`.
+- Coverage tracking reuses `moex_data_coverage` with dataset key `security_history`.
+- Reads are lazy: on cache miss, the requested range is fetched from MOEX shares history endpoint, upserted, and reused on subsequent requests.
+- Non-trading days are valued with as-of logic (latest close on or before the anchor date, UTC date boundaries).
+- If a quote is unavailable after cache fetch, valuation explicitly falls back to provider legacy price for stability.
+
 ## T-Bank Test Trading Endpoints
 
 Authenticated user endpoints for integration status, connection, and instrument lookup:

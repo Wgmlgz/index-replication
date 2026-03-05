@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"server/internal/api/dto"
+	"server/internal/marketprice"
 	"server/internal/models"
 
 	"github.com/google/uuid"
@@ -49,17 +50,20 @@ type Service struct {
 	cfg           Config
 	settingsStore SettingsStore
 	auditLogger   AuditLogger
+	marketPrices  *marketprice.Service
 }
 
 func NewService(
 	cfg Config,
 	settingsStore SettingsStore,
 	auditLogger AuditLogger,
+	marketPrices *marketprice.Service,
 ) *Service {
 	return &Service{
 		cfg:           cfg,
 		settingsStore: settingsStore,
 		auditLogger:   auditLogger,
+		marketPrices:  marketPrices,
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"server/internal/api/dto"
 	"server/internal/tbank"
@@ -41,6 +42,73 @@ func (p *TBankProvider) GetSummary(ctx context.Context, profile *Profile) (*dto.
 	resp, err := p.service.GetAccountPortfolio(ctx, profile.UserID, profileAccountID(profile))
 	if err != nil {
 		return nil, err
+	}
+
+	now := time.Now().UTC()
+	today := now.Format("2006-01-02")
+	composition, compositionErr := p.service.GetPortfolioComposition(ctx, profile.UserID, profileAccountID(profile), today)
+	if compositionErr == nil {
+		byInstrument := make(map[string]tbank.PortfolioPosition, len(resp.Positions))
+		for _, row := range resp.Positions {
+			byInstrument[row.InstrumentID] = row
+		}
+		positions := make([]dto.PortfolioSummaryPosition, 0, len(composition))
+		totalPositions := 0.0
+		for _, row := range composition {
+			matched := byInstrument[row.InstrumentID]
+			positions = append(positions, dto.PortfolioSummaryPosition{
+				Ticker:         row.Ticker,
+				InstrumentID:   row.InstrumentID,
+				Name:           row.Name,
+				InstrumentType: matched.InstrumentType,
+				Quantity:       row.Quantity,
+				CurrentPrice:   row.CurrentPrice,
+				CurrentValue:   row.CurrentValue,
+				ExpectedYield:  matched.ExpectedYield,
+				Currency:       row.Currency,
+			})
+			if row.CurrentValue > 0 {
+				totalPositions += row.CurrentValue
+			}
+		}
+
+		cashTotal := 0.0
+		money := make([]dto.PortfolioSummaryMoneyBalance, 0, len(resp.Money))
+		for _, row := range resp.Money {
+			money = append(money, dto.PortfolioSummaryMoneyBalance{
+				Currency:          row.Currency,
+				Available:         row.Available,
+				Blocked:           row.Blocked,
+				WithdrawAvailable: row.WithdrawAvailable,
+				WithdrawBlocked:   row.WithdrawBlocked,
+			})
+			cashTotal += row.Available + row.Blocked
+		}
+
+		dailyYield := resp.DailyYield
+		dailyYieldRelative := resp.DailyYieldRelative
+		yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
+		if history, historyErr := p.service.GetPortfolioHistory(ctx, profile.UserID, profileAccountID(profile), yesterday, today, 1); historyErr == nil && len(history) > 0 {
+			todayTotal := history[len(history)-1].TotalAmountPortfolio
+			previousTotal := todayTotal
+			if len(history) > 1 {
+				previousTotal = history[len(history)-2].TotalAmountPortfolio
+			}
+			dailyYield = roundFloat(todayTotal-previousTotal, 2)
+			dailyYieldRelative = 0
+			if previousTotal > 0 {
+				dailyYieldRelative = roundFloat((dailyYield/previousTotal)*100, 4)
+			}
+		}
+
+		return &dto.PortfolioSummaryResponse{
+			TotalAmountPortfolio: roundFloat(cashTotal+totalPositions, 2),
+			TotalAmountCurrency:  resp.TotalAmountPortfolioCurrency,
+			DailyYield:           dailyYield,
+			DailyYieldRelative:   dailyYieldRelative,
+			Money:                money,
+			Positions:            positions,
+		}, nil
 	}
 
 	money := make([]dto.PortfolioSummaryMoneyBalance, 0, len(resp.Money))

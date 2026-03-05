@@ -150,3 +150,38 @@ func TestResolveCompositionWeightFallsBackToWFactor(t *testing.T) {
 		t.Fatalf("expected 0.1234, got %v", *weight)
 	}
 }
+
+func TestMoexISSClientFetchShareSecurityHistory(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/history/engines/stock/markets/shares/boards/TQBR/securities/SBER.json" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+  "history": {
+    "columns": ["TRADEDATE","CLOSE","OPEN","HIGH","LOW"],
+    "data": [["2026-01-02",100.5,99.0,101.0,98.5]]
+  },
+  "history.cursor": {
+    "columns": ["INDEX","TOTAL","PAGESIZE"],
+    "data": [[0,1,100]]
+  }
+}`))
+	}))
+	defer server.Close()
+
+	client := newMoexISSClient(server.URL, 2*time.Second)
+	rows, err := client.FetchShareSecurityHistory(context.Background(), "SBER", "TQBR", "2026-01-01", "2026-01-03")
+	if err != nil {
+		t.Fatalf("FetchShareSecurityHistory returned error: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("expected one row, got %d", len(rows))
+	}
+	if rows[0].TradeDate != "2026-01-02" {
+		t.Fatalf("unexpected trade date: %s", rows[0].TradeDate)
+	}
+	if rows[0].Close == nil || *rows[0].Close != 100.5 {
+		t.Fatalf("unexpected close: %+v", rows[0].Close)
+	}
+}
