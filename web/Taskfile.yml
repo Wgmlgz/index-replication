@@ -33,6 +33,21 @@ tasks:
     cmds:
       - npm run lint
 
+  storybook:
+    desc: Run Storybook in dev mode
+    cmds:
+      - npm run storybook
+
+  storybook:build:
+    desc: Build Storybook static files
+    cmds:
+      - npm run storybook:build
+
+  storybook:fixtures:record:
+    desc: Record Storybook GET fixtures from backend
+    cmds:
+      - npm run storybook:fixtures:record
+
   api:gen:
     desc: Regenerate the API client from OpenAPI
     cmds:

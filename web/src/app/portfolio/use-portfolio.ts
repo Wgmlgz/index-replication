@@ -19,20 +19,71 @@ import {
 } from '@/lib/portfolio';
 import { useUrlStateSync } from '@/lib/url-state/use-url-state-sync';
 
+export type PortfolioReplicationConfig = {
+  is_enabled: boolean;
+  benchmark_secid: string | null;
+  mode_key: string;
+  mode_params: Record<string, unknown>;
+  excluded_tickers: string[];
+  updated_at: string;
+};
+
 export type NormalizedPortfolioProfile = PortfolioProfile & {
   id: number;
   name: string;
   provider: string;
+  replication: PortfolioReplicationConfig | null;
 };
 
 function normalizeProfiles(profiles: PortfolioProfile[]): NormalizedPortfolioProfile[] {
-  return profiles.filter(
-    (profile): profile is NormalizedPortfolioProfile =>
-      typeof profile.id === 'number' &&
-      profile.id > 0 &&
-      typeof profile.name === 'string' &&
-      typeof profile.provider === 'string',
-  );
+  const normalized: NormalizedPortfolioProfile[] = [];
+  for (const profile of profiles) {
+    if (
+      typeof profile.id !== 'number' ||
+      profile.id <= 0 ||
+      typeof profile.name !== 'string' ||
+      typeof profile.provider !== 'string'
+    ) {
+      continue;
+    }
+    normalized.push({
+      ...profile,
+      id: profile.id,
+      name: profile.name,
+      provider: profile.provider,
+      replication: normalizeReplicationConfig((profile as { replication?: unknown }).replication),
+    });
+  }
+  return normalized;
+}
+
+function normalizeReplicationConfig(value: unknown): PortfolioReplicationConfig | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const modeParams = isRecord(value.mode_params) ? value.mode_params : {};
+  const excludedTickers = Array.isArray(value.excluded_tickers)
+    ? value.excluded_tickers.filter((item): item is string => typeof item === 'string')
+    : [];
+
+  return {
+    is_enabled: value.is_enabled === true,
+    benchmark_secid:
+      typeof value.benchmark_secid === 'string' && value.benchmark_secid.trim().length > 0
+        ? value.benchmark_secid.trim()
+        : null,
+    mode_key: typeof value.mode_key === 'string' && value.mode_key.trim().length > 0
+      ? value.mode_key.trim()
+      : 'full',
+    mode_params: modeParams,
+    excluded_tickers: excludedTickers,
+    updated_at: typeof value.updated_at === 'string' ? value.updated_at : '',
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function usePortfolio() {

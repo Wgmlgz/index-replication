@@ -30,6 +30,9 @@ Common tasks:
 - `task build`
 - `task lint`
 - `task api:gen`
+- `task storybook`
+- `task storybook:build`
+- `task storybook:fixtures:record`
 
 ## Architecture & Principles
 
@@ -100,3 +103,36 @@ task api:gen
 ```
 
 If you update API endpoints, regenerate the client and verify type usage in the affected pages/components.
+
+## Storybook (Local)
+
+Storybook is configured for local component development only (no Docker Compose integration).
+
+Run Storybook:
+
+```bash
+cd web
+task storybook
+```
+
+Build Storybook static output:
+
+```bash
+cd web
+task storybook:build
+```
+
+Record GET fixtures from your backend for Storybook mocks:
+
+```bash
+cd web
+STORYBOOK_CAPTURE_BASE_URL=http://localhost:18080 \
+STORYBOOK_CAPTURE_COOKIE='session=...' \
+task storybook:fixtures:record
+```
+
+Fixture capture notes:
+
+- The recorder captures **GET-only** endpoints.
+- POST/PATCH/DELETE story states are maintained as manual fixtures/handlers.
+- Captured fixtures are written to `web/src/mocks/storybook/fixtures/`.

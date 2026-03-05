@@ -11,7 +11,10 @@
     "tauri": "tauri",
     "android-dev": "tauri android dev",
     "android-build": "tauri android build",
-    "api:gen": "node scripts/prepare-openapi.js && npx @openapitools/openapi-generator-cli generate -i /local/tmp/openapi/swagger.json -g typescript-axios -o /local/src/api-client"
+    "api:gen": "node scripts/prepare-openapi.js && npx @openapitools/openapi-generator-cli generate -i /local/tmp/openapi/swagger.json -g typescript-axios -o /local/src/api-client",
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build",
+    "storybook:fixtures:record": "node scripts/storybook/record-fixtures.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -87,6 +90,9 @@
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.24.0",
+    "@storybook/addon-a11y": "^10.2.15",
+    "@storybook/addon-docs": "^10.2.15",
+    "@storybook/nextjs-vite": "^10.2.15",
     "@tailwindcss/postcss": "^4",
     "@tauri-apps/cli": "^2.9.0",
     "@types/leaflet": "^1.9.20",
@@ -99,13 +105,22 @@
     "@typescript-eslint/parser": "^8.56.1",
     "eslint": "^9",
     "eslint-config-next": "^16.1.6",
+    "msw": "^2.12.10",
+    "msw-storybook-addon": "^2.0.6",
     "serve": "^14.2.5",
+    "storybook": "^10.2.15",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^7.3.1"
   },
   "overrides": {
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
