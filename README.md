@@ -44,10 +44,9 @@ Private admin access via Tailscale Serve:
 - `task tailscale:admin:status`
 - `task tailscale:admin:disable`
 
-Defaults are Adminer on HTTPS `8443` and Temporal UI on HTTPS `9443` inside your tailnet.
-Override via env vars:
-`TAILSCALE_ADMINER_HTTPS_PORT`, `TAILSCALE_TEMPORAL_UI_HTTPS_PORT`,
-`TAILSCALE_ADMINER_LOCAL_URL`, `TAILSCALE_TEMPORAL_UI_LOCAL_URL`.
+Fixed mappings:
+- Adminer: tailnet HTTPS `8443` -> `127.0.0.1:8081`
+- Temporal UI: tailnet HTTPS `9443` -> `127.0.0.1:8233`
 
 ## Quick Start (Local)
 
