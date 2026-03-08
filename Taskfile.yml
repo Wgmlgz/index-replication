@@ -107,6 +107,21 @@ tasks:
     cmds:
       - ./scripts/moex-backfill-transfer.sh migrate --target-context {{.TARGET_CONTEXT}}{{if .SOURCE_CONTEXT}} --source-context {{.SOURCE_CONTEXT}}{{end}}{{if .SOURCE_PROJECT}} --source-project {{.SOURCE_PROJECT}}{{end}}{{if .TARGET_PROJECT}} --target-project {{.TARGET_PROJECT}}{{end}}{{if .FILE}} --file {{.FILE}}{{end}}{{if .NO_TRUNCATE}} --no-truncate{{end}}{{if .KEEP_FILE}} --keep-file{{end}}
 
+  tailscale:admin:enable:
+    desc: Expose localhost Adminer/Temporal UI over private Tailscale Serve
+    cmds:
+      - ./scripts/tailscale-admin-access.sh enable
+
+  tailscale:admin:disable:
+    desc: Disable private Tailscale Serve mappings for Adminer/Temporal UI
+    cmds:
+      - ./scripts/tailscale-admin-access.sh disable
+
+  tailscale:admin:status:
+    desc: Show current Tailscale Serve mappings
+    cmds:
+      - ./scripts/tailscale-admin-access.sh status
+
   dev:api:
     cmds:
       - task -d api dev

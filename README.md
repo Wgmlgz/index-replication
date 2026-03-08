@@ -38,6 +38,17 @@ The preferred way to run commands is through Taskfiles.
 - API: `cd api && task --list`
 - Web: `cd web && task --list`
 
+Private admin access via Tailscale Serve:
+
+- `task tailscale:admin:enable`
+- `task tailscale:admin:status`
+- `task tailscale:admin:disable`
+
+Defaults are Adminer on HTTPS `8443` and Temporal UI on HTTPS `9443` inside your tailnet.
+Override via env vars:
+`TAILSCALE_ADMINER_HTTPS_PORT`, `TAILSCALE_TEMPORAL_UI_HTTPS_PORT`,
+`TAILSCALE_ADMINER_LOCAL_URL`, `TAILSCALE_TEMPORAL_UI_LOCAL_URL`.
+
 ## Quick Start (Local)
 
 1. Start infra and services:
