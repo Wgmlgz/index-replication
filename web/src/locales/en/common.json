@@ -345,6 +345,13 @@
       "description": "Operation-derived value series based on current holdings.",
       "error": "Failed to load portfolio history.",
       "noData": "No history data to display.",
+      "noBenchmark": "No benchmark selected. Configure benchmark in Replication tab.",
+      "mode": {
+        "label": "Series mode",
+        "portfolio": "Portfolio",
+        "index": "Index",
+        "compare": "Compare (Base 100)"
+      },
       "range": {
         "label": "Range",
         "more": "More",

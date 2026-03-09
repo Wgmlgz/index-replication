@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { MoexIndex } from '@/api-client';
 import { useTranslation } from 'react-i18next';
 import {
@@ -31,6 +31,10 @@ import type {
   CompositionDataControls,
   PriceDataControls,
 } from '@/components/charts-new/types/controls';
+import {
+  ButtonToggleGroup,
+  type ButtonToggleGroupOption,
+} from '@/components/ui/button-toggle-group';
 import {
   Card,
   CardContent,
@@ -76,6 +80,54 @@ const toLineData = (data: PriceChartData): PriceLinePoint[] => {
   }));
 };
 
+const normalizeLineSeriesFrom = (
+  data: PriceLinePoint[],
+  startTime: string,
+): PriceLinePoint[] => {
+  const startIndex = data.findIndex(point => point.time >= startTime);
+  if (startIndex < 0) {
+    return [];
+  }
+
+  const baseValue = data[startIndex]?.value ?? 0;
+  if (baseValue <= 0) {
+    return [];
+  }
+
+  return data.slice(startIndex).map(point => ({
+    time: point.time,
+    value: (point.value / baseValue) * 100,
+  }));
+};
+
+const resolveNormalizationStart = (
+  portfolioData: PriceLinePoint[],
+  benchmarkData: PriceLinePoint[],
+): string | null => {
+  if (portfolioData.length === 0 || benchmarkData.length === 0) {
+    return null;
+  }
+
+  const benchmarkByTime = new Map(benchmarkData.map(point => [point.time, point.value]));
+  for (const point of portfolioData) {
+    const benchmarkValue = benchmarkByTime.get(point.time);
+    if (!benchmarkValue) {
+      continue;
+    }
+    if (point.value > 0 && benchmarkValue > 0) {
+      return point.time;
+    }
+  }
+
+  const commonStart = portfolioData[0]?.time;
+  const benchmarkStart = benchmarkData[0]?.time;
+  if (!commonStart || !benchmarkStart) {
+    return null;
+  }
+
+  return commonStart > benchmarkStart ? commonStart : benchmarkStart;
+};
+
 const formatSignedNumber = (
   formatter: Intl.NumberFormat,
   value: number,
@@ -90,12 +142,15 @@ type PortfolioAnalyticsSectionProps = {
   benchmarkSecid?: string | null;
 };
 
+type PortfolioPriceMode = 'portfolio' | 'index' | 'compare';
+
 export function PortfolioAnalyticsSection({
   portfolioID,
   portfolioName,
   benchmarkSecid = null,
 }: PortfolioAnalyticsSectionProps) {
   const { t } = useTranslation();
+  const [priceMode, setPriceMode] = useState<PortfolioPriceMode>('compare');
   const controls = useChartsNewControls({
     defaults: {
       price: DEFAULT_PRICE_CONTROLS,
@@ -110,6 +165,12 @@ export function PortfolioAnalyticsSection({
     if (chartType === 'line') return;
     setPriceField('chartType', 'line');
   }, [chartType, setPriceField]);
+
+  useEffect(() => {
+    if (priceMode !== 'compare') return;
+    if (controls.price.viewMode === 'price') return;
+    setPriceField('viewMode', 'price');
+  }, [controls.price.viewMode, priceMode, setPriceField]);
 
   const selectedPortfolio = useMemo<MoexIndex | null>(() => {
     if (!portfolioID) return null;
@@ -162,36 +223,117 @@ export function PortfolioAnalyticsSection({
     () => resolveLatestTradeDate(priceState.data),
     [priceState.data],
   );
-  const priceSeries = useMemo<PriceVisualizationSeries[]>(() => {
-    const series: PriceVisualizationSeries[] = [
+  const hasBenchmark = Boolean(selectedBenchmark);
+  const priceModeOptions = useMemo<ButtonToggleGroupOption<PortfolioPriceMode>[]>(
+    () => [
       {
-        id: 'portfolio',
-        type: 'line',
-        data: toLineData(priceState.data),
-        options: {
-          color: '#2563eb',
-          lineWidth: 2,
-        },
+        value: 'portfolio',
+        label: t('portfolio.chart.mode.portfolio'),
+        content: t('portfolio.chart.mode.portfolio'),
       },
-    ];
+      {
+        value: 'index',
+        label: t('portfolio.chart.mode.index'),
+        content: t('portfolio.chart.mode.index'),
+      },
+      {
+        value: 'compare',
+        label: t('portfolio.chart.mode.compare'),
+        content: t('portfolio.chart.mode.compare'),
+      },
+    ],
+    [t],
+  );
+  const priceSeries = useMemo<PriceVisualizationSeries[]>(() => {
+    const portfolioData = toLineData(priceState.data);
+    const benchmarkData = toLineData(benchmarkPriceState.data);
+    const portfolioSeries: PriceVisualizationSeries = {
+      id: 'portfolio',
+      type: 'line',
+      data: portfolioData,
+      options: {
+        color: '#2563eb',
+        lineWidth: 2,
+      },
+    };
 
-    if (selectedBenchmark) {
-      const benchmarkData = toLineData(benchmarkPriceState.data);
-      if (benchmarkData.length > 0) {
-        series.push({
-          id: `benchmark:${selectedBenchmark.secid}`,
-          type: 'line',
-          data: benchmarkData,
-          options: {
-            color: '#f59e0b',
-            lineWidth: 2,
-          },
-        });
-      }
+    const benchmarkSeries: PriceVisualizationSeries | null =
+      selectedBenchmark && benchmarkData.length > 0
+        ? {
+            id: `benchmark:${selectedBenchmark.secid}`,
+            type: 'line',
+            data: benchmarkData,
+            options: {
+              color: '#f59e0b',
+              lineWidth: 2,
+            },
+          }
+        : null;
+
+    if (priceMode === 'portfolio') {
+      return [portfolioSeries];
+    }
+    if (priceMode === 'index') {
+      return benchmarkSeries ? [benchmarkSeries] : [];
+    }
+    if (!benchmarkSeries) {
+      return [];
     }
 
-    return series;
-  }, [benchmarkPriceState.data, priceState.data, selectedBenchmark]);
+    const normalizationStart = resolveNormalizationStart(
+      portfolioData,
+      benchmarkData,
+    );
+    if (!normalizationStart) {
+      return [];
+    }
+
+    const normalizedPortfolio = normalizeLineSeriesFrom(
+      portfolioData,
+      normalizationStart,
+    );
+    const normalizedBenchmark = normalizeLineSeriesFrom(
+      benchmarkData,
+      normalizationStart,
+    );
+    if (normalizedPortfolio.length === 0 || normalizedBenchmark.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        ...portfolioSeries,
+        data: normalizedPortfolio,
+      },
+      {
+        ...benchmarkSeries,
+        data: normalizedBenchmark,
+      },
+    ];
+  }, [
+    benchmarkPriceState.data,
+    priceMode,
+    priceState.data,
+    selectedBenchmark,
+  ]);
+  const chartNoDataMessage = useMemo(() => {
+    if ((priceMode === 'index' || priceMode === 'compare') && !hasBenchmark) {
+      return t('portfolio.chart.noBenchmark');
+    }
+    return t('portfolio.chart.noData');
+  }, [hasBenchmark, priceMode, t]);
+  const chartLoading =
+    priceMode === 'portfolio'
+      ? priceState.loading
+      : priceMode === 'index'
+        ? benchmarkPriceState.loading
+        : priceState.loading || benchmarkPriceState.loading;
+  const chartHasError =
+    priceMode === 'portfolio'
+      ? priceState.error
+      : priceMode === 'index'
+        ? benchmarkPriceState.error
+        : priceState.error || benchmarkPriceState.error;
 
   const compositionState = useCompositionVisualizationData({
     selectedIndex: selectedPortfolio,
@@ -329,13 +471,24 @@ export function PortfolioAnalyticsSection({
               idPrefix='portfolio'
               hideChartType
             />
+
+            <div className='flex flex-wrap items-center gap-2'>
+              <span className='text-xs text-muted-foreground'>
+                {t('portfolio.chart.mode.label')}
+              </span>
+              <ButtonToggleGroup
+                value={priceMode}
+                options={priceModeOptions}
+                onValueChange={setPriceMode}
+              />
+            </div>
           </div>
 
           <PriceVisualization
-            loading={priceState.loading}
-            hasError={priceState.error && priceSeries[0]?.data.length === 0}
+            loading={chartLoading}
+            hasError={chartHasError && priceSeries[0]?.data.length === 0}
             errorMessage={t('portfolio.chart.error')}
-            noDataMessage={t('portfolio.chart.noData')}
+            noDataMessage={chartNoDataMessage}
             series={priceSeries}
             className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden'
           />
