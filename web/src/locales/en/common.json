@@ -488,7 +488,12 @@
     },
     "operations": {
       "title": "Operations history",
-      "description": "Review portfolio operations and load older entries."
+      "description": "Review portfolio operations and load older entries.",
+      "pagination": {
+        "rowsPerPage": "Rows per page",
+        "previous": "Previous page",
+        "next": "Next page"
+      }
     },
     "profiles": {
       "title": "Profiles",

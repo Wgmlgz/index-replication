@@ -1,6 +1,17 @@
 'use client';
 
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  ColumnDef,
+  SortingState,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -9,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import type { CompositionCompareRow, CompositionCompareSummary } from './types';
 
 type CompositionCompareTableProps = {
@@ -29,12 +41,218 @@ export function CompositionCompareTable({
   summary,
 }: CompositionCompareTableProps) {
   const { t } = useTranslation();
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  const formatStatus = (status: CompositionCompareRow['status']): string =>
-    t(`portfolio.composition.compare.status.${status}`);
+  const formatStatus = useCallback(
+    (status: CompositionCompareRow['status']): string =>
+      t(`portfolio.composition.compare.status.${status}`),
+    [t],
+  );
+
+  const signedPercentClassName = (value: number): string => {
+    if (value > 0) return 'text-emerald-600 dark:text-emerald-400';
+    if (value < 0) return 'text-red-600 dark:text-red-400';
+    return 'text-foreground';
+  };
+
+  const renderSortIcon = (sorted: false | 'asc' | 'desc') => {
+    if (sorted === 'asc') return <ArrowUp className='size-4' />;
+    if (sorted === 'desc') return <ArrowDown className='size-4' />;
+    return <ArrowUpDown className='size-4' />;
+  };
+
+  const columns = useMemo<ColumnDef<CompositionCompareRow>[]>(
+    () => [
+      {
+        accessorKey: 'ticker',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-3 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            {t('portfolio.composition.compare.columns.ticker')}
+            {renderSortIcon(column.getIsSorted())}
+          </Button>
+        ),
+        cell: ({ row }) => <span className='font-medium'>{row.original.ticker}</span>,
+      },
+      {
+        accessorKey: 'name',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-3 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            {t('portfolio.composition.compare.columns.name')}
+            {renderSortIcon(column.getIsSorted())}
+          </Button>
+        ),
+      },
+      {
+        accessorKey: 'portfolioWeight',
+        header: ({ column }) => (
+          <div className='text-right'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='-ml-3 h-8'
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              {t('portfolio.composition.compare.columns.portfolioWeight')}
+              {renderSortIcon(column.getIsSorted())}
+            </Button>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className={cn(
+              'text-right font-medium',
+              signedPercentClassName(row.original.portfolioWeight),
+            )}
+          >
+            {formatPercent(row.original.portfolioWeight)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'benchmarkWeight',
+        header: ({ column }) => (
+          <div className='text-right'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='-ml-3 h-8'
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              {t('portfolio.composition.compare.columns.benchmarkWeight')}
+              {renderSortIcon(column.getIsSorted())}
+            </Button>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className={cn(
+              'text-right font-medium',
+              signedPercentClassName(row.original.benchmarkWeight),
+            )}
+          >
+            {formatPercent(row.original.benchmarkWeight)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'activeWeight',
+        header: ({ column }) => (
+          <div className='text-right'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='-ml-3 h-8'
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              {t('portfolio.composition.compare.columns.activeWeight')}
+              {renderSortIcon(column.getIsSorted())}
+            </Button>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className={cn(
+              'text-right font-medium',
+              signedPercentClassName(row.original.activeWeight),
+            )}
+          >
+            {formatPercent(row.original.activeWeight)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'absActive',
+        header: ({ column }) => (
+          <div className='text-right'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='-ml-3 h-8'
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              {t('portfolio.composition.compare.columns.absActive')}
+              {renderSortIcon(column.getIsSorted())}
+            </Button>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className={cn(
+              'text-right font-medium',
+              signedPercentClassName(row.original.absActive),
+            )}
+          >
+            {formatPercent(row.original.absActive)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'contributionPct',
+        header: ({ column }) => (
+          <div className='text-right'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='-ml-3 h-8'
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              {t('portfolio.composition.compare.columns.errorContribution')}
+              {renderSortIcon(column.getIsSorted())}
+            </Button>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className={cn(
+              'text-right font-medium',
+              signedPercentClassName(row.original.contributionPct),
+            )}
+          >
+            {formatPercent(row.original.contributionPct)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-3 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            {t('portfolio.composition.compare.columns.status')}
+            {renderSortIcon(column.getIsSorted())}
+          </Button>
+        ),
+        cell: ({ row }) => formatStatus(row.original.status),
+      },
+    ],
+    [formatStatus, t],
+  );
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: { sorting },
+    getRowId: row => row.key,
+  });
 
   return (
-    <div className='flex min-h-[200px] min-w-0 flex-1 flex-col gap-3 overflow-hidden'>
+    <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden'>
       {loading && (
         <div className='text-sm text-muted-foreground'>
           {t('portfolio.composition.compare.loading')}
@@ -92,48 +310,29 @@ export function CompositionCompareTable({
           <div className='min-h-0 flex-1 overflow-auto rounded border'>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('portfolio.composition.compare.columns.ticker')}</TableHead>
-                  <TableHead>{t('portfolio.composition.compare.columns.name')}</TableHead>
-                  <TableHead className='text-right'>
-                    {t('portfolio.composition.compare.columns.portfolioWeight')}
-                  </TableHead>
-                  <TableHead className='text-right'>
-                    {t('portfolio.composition.compare.columns.benchmarkWeight')}
-                  </TableHead>
-                  <TableHead className='text-right'>
-                    {t('portfolio.composition.compare.columns.activeWeight')}
-                  </TableHead>
-                  <TableHead className='text-right'>
-                    {t('portfolio.composition.compare.columns.absActive')}
-                  </TableHead>
-                  <TableHead className='text-right'>
-                    {t('portfolio.composition.compare.columns.errorContribution')}
-                  </TableHead>
-                  <TableHead>{t('portfolio.composition.compare.columns.status')}</TableHead>
-                </TableRow>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
               </TableHeader>
               <TableBody>
-                {rows.map(row => (
-                  <TableRow key={row.key}>
-                    <TableCell className='font-medium'>{row.ticker}</TableCell>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell className='text-right'>
-                      {formatPercent(row.portfolioWeight)}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      {formatPercent(row.benchmarkWeight)}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      {formatPercent(row.activeWeight)}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      {formatPercent(row.absActive)}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      {formatPercent(row.contributionPct)}
-                    </TableCell>
-                    <TableCell>{formatStatus(row.status)}</TableCell>
+                {table.getRowModel().rows.map(row => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map(cell => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))}
               </TableBody>

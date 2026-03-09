@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { PortfolioOperationHistoryItem } from '@/api-client';
 import { portfolioApi } from '@/lib/api';
@@ -30,8 +31,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-const OPERATIONS_PAGE_SIZE = 50;
+const DEFAULT_OPERATIONS_PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
 
 type PortfolioOperationsTableProps = {
   portfolioID: number | null;
@@ -42,10 +51,12 @@ export function PortfolioOperationsTable({
 }: PortfolioOperationsTableProps) {
   const { t } = useTranslation();
   const [operations, setOperations] = useState<PortfolioOperationHistoryItem[]>([]);
-  const [operationsHasNext, setOperationsHasNext] = useState(false);
-  const [operationsNextCursor, setOperationsNextCursor] = useState('');
+  const [pageSize, setPageSize] = useState(DEFAULT_OPERATIONS_PAGE_SIZE);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [pageCursors, setPageCursors] = useState<string[]>(['']);
+  const [currentHasNextPage, setCurrentHasNextPage] = useState(false);
+  const [currentNextCursor, setCurrentNextCursor] = useState('');
   const [loadingOperations, setLoadingOperations] = useState(false);
-  const [loadingMoreOperations, setLoadingMoreOperations] = useState(false);
   const [operationsError, setOperationsError] = useState('');
 
   const columns = useMemo<ColumnDef<PortfolioOperationHistoryItem>[]>(
@@ -108,6 +119,7 @@ export function PortfolioOperationsTable({
     data: operations,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getRowId: (row, index) => `${row.id || 'op'}:${row.cursor || index}:${row.date || '-'}`,
   });
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
@@ -120,41 +132,47 @@ export function PortfolioOperationsTable({
     return fallback;
   }, []);
 
-  const loadOperations = useCallback(
-    async (targetPortfolioID: number, cursor?: string, append = false) => {
-      if (append) {
-        setLoadingMoreOperations(true);
-      } else {
-        setLoadingOperations(true);
-        setOperationsError('');
-      }
-
+  const loadOperationsPage = useCallback(
+    async (
+      targetPortfolioID: number,
+      targetPageIndex: number,
+      targetPageSize: number,
+      cursor: string,
+    ) => {
+      setLoadingOperations(true);
+      setOperationsError('');
       try {
         const response = (
           await portfolioApi.mePortfoliosIdOperationsGet(
             targetPortfolioID,
             cursor || undefined,
-            OPERATIONS_PAGE_SIZE,
+            targetPageSize,
           )
         ).data;
 
         const items = response.items ?? [];
-        setOperations(currentItems => (append ? [...currentItems, ...items] : items));
-        setOperationsHasNext(Boolean(response.has_next));
-        setOperationsNextCursor(response.next_cursor || '');
+        const hasNext = Boolean(response.has_next);
+        const nextCursor = response.next_cursor || '';
+
+        setOperations(items);
+        setCurrentPageIndex(targetPageIndex);
+        setCurrentHasNextPage(hasNext);
+        setCurrentNextCursor(nextCursor);
+        setPageCursors(prev => {
+          const next = [...prev.slice(0, targetPageIndex + 1)];
+          next[targetPageIndex] = cursor;
+          if (hasNext && nextCursor) {
+            next[targetPageIndex + 1] = nextCursor;
+          }
+          return next;
+        });
       } catch (err) {
         setOperationsError(parseErrorMessage(err, t('portfolio.errors.operations')));
-        if (!append) {
-          setOperations([]);
-          setOperationsHasNext(false);
-          setOperationsNextCursor('');
-        }
+        setOperations([]);
+        setCurrentHasNextPage(false);
+        setCurrentNextCursor('');
       } finally {
-        if (append) {
-          setLoadingMoreOperations(false);
-        } else {
-          setLoadingOperations(false);
-        }
+        setLoadingOperations(false);
       }
     },
     [parseErrorMessage, t],
@@ -163,21 +181,52 @@ export function PortfolioOperationsTable({
   useEffect(() => {
     if (!portfolioID) {
       setOperations([]);
-      setOperationsHasNext(false);
-      setOperationsNextCursor('');
+      setCurrentHasNextPage(false);
+      setCurrentNextCursor('');
+      setCurrentPageIndex(0);
+      setPageCursors(['']);
+      setPageSize(DEFAULT_OPERATIONS_PAGE_SIZE);
       setOperationsError('');
       return;
     }
 
-    void loadOperations(portfolioID);
-  }, [loadOperations, portfolioID]);
+    setCurrentPageIndex(0);
+    setPageCursors(['']);
+    void loadOperationsPage(portfolioID, 0, pageSize, '');
+  }, [loadOperationsPage, pageSize, portfolioID]);
 
-  const onLoadMoreOperations = () => {
-    if (!portfolioID || !operationsHasNext || !operationsNextCursor) {
+  const onPreviousPage = () => {
+    if (!portfolioID || currentPageIndex <= 0 || loadingOperations) {
+      return;
+    }
+    const prevPageIndex = currentPageIndex - 1;
+    const prevCursor = pageCursors[prevPageIndex] || '';
+    void loadOperationsPage(portfolioID, prevPageIndex, pageSize, prevCursor);
+  };
+
+  const onNextPage = () => {
+    if (!portfolioID || !currentHasNextPage || loadingOperations) {
       return;
     }
 
-    void loadOperations(portfolioID, operationsNextCursor, true);
+    const nextPageIndex = currentPageIndex + 1;
+    const nextCursor = pageCursors[nextPageIndex] || currentNextCursor;
+    if (!nextCursor) {
+      return;
+    }
+
+    void loadOperationsPage(portfolioID, nextPageIndex, pageSize, nextCursor);
+  };
+
+  const onPageSizeChange = (value: string) => {
+    const nextPageSize = Number.parseInt(value, 10);
+    if (!Number.isFinite(nextPageSize) || nextPageSize < 1) {
+      return;
+    }
+
+    setPageSize(nextPageSize);
+    setCurrentPageIndex(0);
+    setPageCursors(['']);
   };
 
   if (!portfolioID) {
@@ -200,7 +249,7 @@ export function PortfolioOperationsTable({
         <CardTitle>{t('portfolio.operations.title')}</CardTitle>
         <CardDescription>{t('portfolio.operations.description')}</CardDescription>
       </CardHeader>
-      <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
+      <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden text-sm'>
         {operationsError ? (
           <Alert variant='destructive'>
             <AlertTitle>{t('common.error')}</AlertTitle>
@@ -211,7 +260,7 @@ export function PortfolioOperationsTable({
         {loadingOperations ? (
           <div className='text-muted-foreground'>{t('portfolio.card.operationsLoading')}</div>
         ) : (
-          <div className='overflow-auto rounded-md border'>
+          <div className='min-h-0 flex-1 overflow-auto rounded-md border'>
             <Table>
               <TableHeader className='bg-muted/50'>
                 {table.getHeaderGroups().map(headerGroup => (
@@ -252,18 +301,57 @@ export function PortfolioOperationsTable({
           </div>
         )}
 
-        {operationsHasNext ? (
-          <Button
-            type='button'
-            variant='outline'
-            onClick={onLoadMoreOperations}
-            disabled={loadingMoreOperations}
-          >
-            {loadingMoreOperations
-              ? t('portfolio.card.operationsLoadingMore')
-              : t('portfolio.card.operationsLoadMore')}
-          </Button>
-        ) : null}
+        <div className='flex items-center justify-between gap-2'>
+          <div className='flex items-center gap-2'>
+            <span className='text-muted-foreground text-sm'>
+              {t('portfolio.operations.pagination.rowsPerPage')}
+            </span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={onPageSizeChange}
+              disabled={loadingOperations}
+            >
+              <SelectTrigger className='h-8 w-[90px]'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent side='top'>
+                {PAGE_SIZE_OPTIONS.map(option => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='flex items-center gap-3'>
+            <span className='text-muted-foreground text-sm'>
+              {currentPageIndex + 1}
+            </span>
+            <div className='flex items-center gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                onClick={onPreviousPage}
+                disabled={loadingOperations || currentPageIndex === 0}
+                aria-label={t('portfolio.operations.pagination.previous')}
+              >
+                <ChevronLeft className='size-4' />
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                onClick={onNextPage}
+                disabled={loadingOperations || !currentHasNextPage}
+                aria-label={t('portfolio.operations.pagination.next')}
+              >
+                <ChevronRight className='size-4' />
+              </Button>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
