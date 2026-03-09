@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -124,13 +124,14 @@ export function CompositionControlsPanel({
           >
             {t(`${translationKeyPrefix}.selectionDate`)}
           </Label>
-          <Input
+          <DatePicker
             id={`${idPrefix}-composition-selection-date`}
-            type='date'
-            className='w-32'
             value={controls.compositionSelectionDate}
+            placeholder={t(`${translationKeyPrefix}.selectionDate`)}
             max={selectionDateMax}
-            onChange={event => actions.setSelectionDate(event.target.value)}
+            onValueChange={actions.setSelectionDate}
+            size='sm'
+            className='w-32'
           />
         </div>
       )}

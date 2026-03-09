@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -149,7 +150,7 @@ export function AuditLogsTable() {
 
   const hasActiveFilters = filters.action !== "__all__" || filters.entityType !== "__all__" || filters.entityId || filters.performedBy || filters.startDate || filters.endDate
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFilters(prev => ({ ...prev, [name]: value }))
   }
@@ -267,23 +268,25 @@ export function AuditLogsTable() {
 
               <div className="space-y-2">
                 <Label htmlFor="start-date">Начальная дата</Label>
-                <Input
+                <DatePicker
                   id="start-date"
-                  name="startDate"
-                  type="date"
                   value={filters.startDate}
-                  onChange={handleFilterChange}
+                  placeholder="YYYY-MM-DD"
+                  onValueChange={value =>
+                    setFilters(prev => ({ ...prev, startDate: value }))
+                  }
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="end-date">Конечная дата</Label>
-                <Input
+                <DatePicker
                   id="end-date"
-                  name="endDate"
-                  type="date"
                   value={filters.endDate}
-                  onChange={handleFilterChange}
+                  placeholder="YYYY-MM-DD"
+                  onValueChange={value =>
+                    setFilters(prev => ({ ...prev, endDate: value }))
+                  }
                 />
               </div>
 

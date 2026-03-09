@@ -8,7 +8,7 @@ import {
   type ButtonToggleGroupOption,
   type ButtonToggleGroupSelectOption,
 } from '@/components/ui/button-toggle-group';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import type { PriceDataControls } from '@/components/charts-new/types/controls';
 import {
@@ -154,11 +154,11 @@ export function PriceControlsPanel({
               >
                 {t(`${translationKeyPrefix}.range.from`)}
               </Label>
-              <Input
+              <DatePicker
                 id={`${idPrefix}-chart-from`}
-                type='date'
                 value={controls.customFrom}
-                onChange={event => actions.setCustomFrom(event.target.value)}
+                placeholder={t(`${translationKeyPrefix}.range.from`)}
+                onValueChange={actions.setCustomFrom}
               />
             </div>
             <div className='space-y-1'>
@@ -168,11 +168,11 @@ export function PriceControlsPanel({
               >
                 {t(`${translationKeyPrefix}.range.to`)}
               </Label>
-              <Input
+              <DatePicker
                 id={`${idPrefix}-chart-to`}
-                type='date'
                 value={controls.customTill}
-                onChange={event => actions.setCustomTill(event.target.value)}
+                placeholder={t(`${translationKeyPrefix}.range.to`)}
+                onValueChange={actions.setCustomTill}
               />
             </div>
           </div>
