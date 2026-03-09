@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   buildCompositionLegendRows,
   calculateSnapshotOtherWeight,
+  createMoexChartsDataProvider,
   createPortfolioChartsDataProvider,
   useCompositionVisualizationData,
   usePriceVisualizationData,
@@ -23,6 +24,8 @@ import {
   CompositionTrendVisualization,
   PriceVisualization,
   type PriceChartData,
+  type PriceLinePoint,
+  type PriceVisualizationSeries,
 } from '@/components/charts-new/visualization';
 import type {
   CompositionDataControls,
@@ -66,6 +69,13 @@ const resolveLatestTradeDate = (data: PriceChartData): string | null => {
   return lastPoint.time.length > 0 ? lastPoint.time : null;
 };
 
+const toLineData = (data: PriceChartData): PriceLinePoint[] => {
+  return data.map(point => ({
+    time: point.time,
+    value: 'value' in point ? point.value : point.close,
+  }));
+};
+
 const formatSignedNumber = (
   formatter: Intl.NumberFormat,
   value: number,
@@ -77,11 +87,13 @@ const formatSignedNumber = (
 type PortfolioAnalyticsSectionProps = {
   portfolioID: number | null;
   portfolioName: string;
+  benchmarkSecid?: string | null;
 };
 
 export function PortfolioAnalyticsSection({
   portfolioID,
   portfolioName,
+  benchmarkSecid = null,
 }: PortfolioAnalyticsSectionProps) {
   const { t } = useTranslation();
   const controls = useChartsNewControls({
@@ -119,16 +131,67 @@ export function PortfolioAnalyticsSection({
         : EMPTY_PROVIDER,
     [portfolioID],
   );
+  const moexProvider = useMemo(() => createMoexChartsDataProvider(), []);
 
   const priceState = usePriceVisualizationData(
     selectedPortfolio,
     controls.price,
     provider,
   );
+  const selectedBenchmark = useMemo<MoexIndex | null>(() => {
+    const secid = benchmarkSecid?.trim();
+    if (!secid) {
+      return null;
+    }
+
+    return {
+      secid,
+      name: secid,
+      shortName: secid,
+      currency: '',
+      decimals: 2,
+      hasComposition: false,
+    };
+  }, [benchmarkSecid]);
+  const benchmarkPriceState = usePriceVisualizationData(
+    selectedBenchmark,
+    controls.price,
+    moexProvider,
+  );
   const latestTradeDate = useMemo(
     () => resolveLatestTradeDate(priceState.data),
     [priceState.data],
   );
+  const priceSeries = useMemo<PriceVisualizationSeries[]>(() => {
+    const series: PriceVisualizationSeries[] = [
+      {
+        id: 'portfolio',
+        type: 'line',
+        data: toLineData(priceState.data),
+        options: {
+          color: '#2563eb',
+          lineWidth: 2,
+        },
+      },
+    ];
+
+    if (selectedBenchmark) {
+      const benchmarkData = toLineData(benchmarkPriceState.data);
+      if (benchmarkData.length > 0) {
+        series.push({
+          id: `benchmark:${selectedBenchmark.secid}`,
+          type: 'line',
+          data: benchmarkData,
+          options: {
+            color: '#f59e0b',
+            lineWidth: 2,
+          },
+        });
+      }
+    }
+
+    return series;
+  }, [benchmarkPriceState.data, priceState.data, selectedBenchmark]);
 
   const compositionState = useCompositionVisualizationData({
     selectedIndex: selectedPortfolio,
@@ -270,11 +333,10 @@ export function PortfolioAnalyticsSection({
 
           <PriceVisualization
             loading={priceState.loading}
-            hasError={priceState.error}
+            hasError={priceState.error && priceSeries[0]?.data.length === 0}
             errorMessage={t('portfolio.chart.error')}
             noDataMessage={t('portfolio.chart.noData')}
-            data={priceState.data}
-            seriesType='line'
+            series={priceSeries}
             className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden'
           />
         </div>

@@ -12,10 +12,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type {
-  PriceChartData,
-  PriceCandlestickPoint,
-  PriceLinePoint,
-  PriceSeriesType,
+  PriceCandlestickSeriesOptions,
+  PriceLineSeriesOptions,
+  PriceVisualizationSeries,
 } from './chart-types';
 
 type PriceVisualizationProps = {
@@ -23,27 +22,37 @@ type PriceVisualizationProps = {
   hasError?: boolean;
   errorMessage?: string;
   noDataMessage: string;
-  data: PriceChartData;
-  seriesType: PriceSeriesType;
+  series: PriceVisualizationSeries[];
   className?: string;
   skeletonClassName?: string;
 };
 
 const MIN_CHART_HEIGHT = 200;
+const DEFAULT_LINE_COLORS = ['#2563eb', '#f59e0b', '#16a34a', '#dc2626', '#0891b2'];
+
+type ChartSeriesApi = ISeriesApi<'Line'> | ISeriesApi<'Candlestick'>;
+
+const DEFAULT_LINE_OPTIONS: PriceLineSeriesOptions = {
+  color: DEFAULT_LINE_COLORS[0],
+  lineWidth: 2,
+};
+
+const DEFAULT_CANDLESTICK_OPTIONS: PriceCandlestickSeriesOptions = {
+  upColor: '#16a34a',
+  downColor: '#dc2626',
+  wickUpColor: '#16a34a',
+  wickDownColor: '#dc2626',
+  borderVisible: false,
+};
 
 function PriceChart({
-  data,
-  seriesType,
+  series,
 }: {
-  data: PriceChartData;
-  seriesType: PriceSeriesType;
+  series: PriceVisualizationSeries[];
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null>(
-    null
-  );
-  const seriesTypeRef = useRef<PriceSeriesType | null>(null);
+  const seriesRefs = useRef<ChartSeriesApi[]>([]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -87,8 +96,7 @@ function PriceChart({
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
-      seriesRef.current = null;
-      seriesTypeRef.current = null;
+      seriesRefs.current = [];
     };
   }, []);
 
@@ -96,58 +104,54 @@ function PriceChart({
     const chart = chartRef.current;
     if (!chart) return;
 
-    if (seriesTypeRef.current !== seriesType) {
-      if (seriesRef.current) {
-        chart.removeSeries(seriesRef.current as ISeriesApi<'Line'>);
-        seriesRef.current = null;
+    for (const seriesApi of seriesRefs.current) {
+      chart.removeSeries(seriesApi);
+    }
+    seriesRefs.current = [];
+
+    for (let index = 0; index < series.length; index += 1) {
+      const entry = series[index];
+
+      if (entry.type === 'candlestick') {
+        const candlestickSeries = chart.addSeries(CandlestickSeries, {
+          ...DEFAULT_CANDLESTICK_OPTIONS,
+          ...entry.options,
+        });
+        candlestickSeries.setData(entry.data);
+        seriesRefs.current.push(candlestickSeries);
+        continue;
       }
 
-      seriesRef.current =
-        seriesType === 'candlestick'
-          ? chart.addSeries(CandlestickSeries, {
-              upColor: '#16a34a',
-              downColor: '#dc2626',
-              wickUpColor: '#16a34a',
-              wickDownColor: '#dc2626',
-              borderVisible: false,
-            })
-          : chart.addSeries(LineSeries, {
-              color: '#2563eb',
-              lineWidth: 2,
-            });
-      seriesTypeRef.current = seriesType;
+      const lineSeries = chart.addSeries(LineSeries, {
+        ...DEFAULT_LINE_OPTIONS,
+        color: entry.options?.color ?? DEFAULT_LINE_COLORS[index % DEFAULT_LINE_COLORS.length],
+        ...entry.options,
+      });
+      lineSeries.setData(entry.data);
+      seriesRefs.current.push(lineSeries);
     }
-  }, [seriesType]);
 
-  useEffect(() => {
-    if (!seriesRef.current || !chartRef.current) return;
-
-    if (seriesType === 'candlestick') {
-      (seriesRef.current as ISeriesApi<'Candlestick'>).setData(
-        data as PriceCandlestickPoint[]
-      );
-    } else {
-      (seriesRef.current as ISeriesApi<'Line'>).setData(data as PriceLinePoint[]);
+    if (series.some(entry => entry.data.length > 0)) {
+      chart.timeScale().fitContent();
     }
-    if (data.length > 0) {
-      chartRef.current.timeScale().fitContent();
-    }
-  }, [data, seriesType]);
+  }, [series]);
 
   return <div ref={containerRef} className='h-full w-full' />;
 }
 
-export function PriceVisualization({
-  loading,
-  hasError = false,
-  errorMessage,
-  noDataMessage,
-  data,
-  seriesType,
-  className,
-  skeletonClassName,
-}: PriceVisualizationProps) {
-  const showSkeleton = loading && data.length === 0;
+export function PriceVisualization(props: PriceVisualizationProps) {
+  const {
+    loading,
+    hasError = false,
+    errorMessage,
+    noDataMessage,
+    series,
+    className,
+    skeletonClassName,
+  } = props;
+
+  const hasData = series.some(entry => entry.data.length > 0);
+  const showSkeleton = loading && !hasData;
 
   return (
     <div className={cn(className)}>
@@ -159,11 +163,11 @@ export function PriceVisualization({
       {!loading && hasError && errorMessage && (
         <div className='text-sm text-muted-foreground'>{errorMessage}</div>
       )}
-      {!loading && !hasError && data.length === 0 && (
+      {!loading && !hasError && !hasData && (
         <div className='text-sm text-muted-foreground'>{noDataMessage}</div>
       )}
-      {!showSkeleton && !hasError && data.length > 0 && (
-        <PriceChart data={data} seriesType={seriesType} />
+      {!showSkeleton && !hasError && hasData && (
+        <PriceChart series={series} />
       )}
     </div>
   );

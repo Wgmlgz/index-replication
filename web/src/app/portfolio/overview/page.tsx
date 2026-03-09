@@ -235,6 +235,11 @@ export default function PortfolioOverviewPage() {
           <PortfolioAnalyticsSection
             portfolioID={selectedPortfolioID}
             portfolioName={selectedProfile?.name || ''}
+            benchmarkSecid={
+              selectedProfile?.replication?.is_enabled
+                ? selectedProfile.replication.benchmark_secid
+                : null
+            }
           />
         </TabsContent>
 

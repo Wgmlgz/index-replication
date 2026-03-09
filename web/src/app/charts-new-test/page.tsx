@@ -20,7 +20,10 @@ import {
   CompositionStackedVisualization,
   CompositionTrendVisualization,
   PriceVisualization,
+  type PriceCandlestickPoint,
   type PriceChartData,
+  type PriceLinePoint,
+  type PriceVisualizationSeries,
 } from '@/components/charts-new/visualization';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -66,6 +69,29 @@ const resolveLatestTradeDate = (data: PriceChartData): string | null => {
   return lastPoint.time.length > 0 ? lastPoint.time : null;
 };
 
+const buildPriceSeries = (
+  data: PriceChartData,
+  chartType: PriceDataControls['chartType']
+): PriceVisualizationSeries[] => {
+  if (chartType === 'candlestick') {
+    return [
+      {
+        id: 'price',
+        type: 'candlestick',
+        data: data as PriceCandlestickPoint[],
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'price',
+      type: 'line',
+      data: data as PriceLinePoint[],
+    },
+  ];
+};
+
 export default function ChartsNewTestPage() {
   const { t } = useTranslation();
   const dataProvider = useMemo(() => createMoexChartsDataProvider(), []);
@@ -80,6 +106,10 @@ export default function ChartsNewTestPage() {
     TEST_INDEX,
     controls.price,
     dataProvider
+  );
+  const priceSeries = useMemo(
+    () => buildPriceSeries(priceState.data, controls.price.chartType),
+    [controls.price.chartType, priceState.data]
   );
   const latestTradeDate = useMemo(
     () => resolveLatestTradeDate(priceState.data),
@@ -222,8 +252,7 @@ export default function ChartsNewTestPage() {
                   hasError={priceState.error}
                   errorMessage={t('chartsNewTest.price.error')}
                   noDataMessage={t('chartsNewTest.price.noData')}
-                  data={priceState.data}
-                  seriesType={controls.price.chartType}
+                  series={priceSeries}
                   className='flex min-h-[200px] flex-1 items-stretch'
                 />
               </div>

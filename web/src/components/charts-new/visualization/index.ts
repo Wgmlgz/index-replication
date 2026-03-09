@@ -12,4 +12,5 @@ export type {
   PriceChartData,
   PriceLinePoint,
   PriceSeriesType,
+  PriceVisualizationSeries,
 } from './chart-types';

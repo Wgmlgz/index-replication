@@ -27,7 +27,10 @@ import {
   CompositionStackedVisualization,
   CompositionTrendVisualization,
   PriceVisualization,
+  type PriceCandlestickPoint,
   type PriceChartData,
+  type PriceLinePoint,
+  type PriceVisualizationSeries,
 } from '@/components/charts-new/visualization';
 import type {
   CompositionDataControls,
@@ -55,6 +58,29 @@ const resolveLatestTradeDate = (data: PriceChartData): string | null => {
   return lastPoint.time.length > 0 ? lastPoint.time : null;
 };
 
+const buildPriceSeries = (
+  data: PriceChartData,
+  chartType: PriceDataControls['chartType']
+): PriceVisualizationSeries[] => {
+  if (chartType === 'candlestick') {
+    return [
+      {
+        id: 'price',
+        type: 'candlestick',
+        data: data as PriceCandlestickPoint[],
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'price',
+      type: 'line',
+      data: data as PriceLinePoint[],
+    },
+  ];
+};
+
 const formatSignedNumber = (
   formatter: Intl.NumberFormat,
   value: number
@@ -79,6 +105,10 @@ export function MoexIndexesChartsPanel() {
     selectedIndex,
     controls.price,
     dataProvider
+  );
+  const priceSeries = useMemo(
+    () => buildPriceSeries(priceState.data, controls.price.chartType),
+    [controls.price.chartType, priceState.data]
   );
   const latestTradeDate = useMemo(
     () => resolveLatestTradeDate(priceState.data),
@@ -292,8 +322,7 @@ export function MoexIndexesChartsPanel() {
           hasError={priceState.error}
           errorMessage={t('moex.errors.history')}
           noDataMessage={t('moex.chart.noData')}
-          data={priceState.data}
-          seriesType={controls.price.chartType}
+          series={priceSeries}
           className='flex min-h-[200px] flex-1 items-stretch'
         />
       </div>
