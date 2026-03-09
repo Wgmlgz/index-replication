@@ -23,6 +23,7 @@ type CompositionControlsPanelProps = {
   idPrefix: string;
   topCountOptions?: number[];
   selectionDateMax?: string;
+  hideTabs?: boolean;
   className?: string;
 };
 
@@ -35,31 +36,34 @@ export function CompositionControlsPanel({
   idPrefix,
   topCountOptions = DEFAULT_TOP_COUNT_OPTIONS,
   selectionDateMax,
+  hideTabs = false,
   className,
 }: CompositionControlsPanelProps) {
   const { t } = useTranslation();
 
   return (
     <div className={cn('space-y-3', className)}>
-      <Tabs
-        value={controls.compositionTab}
-        onValueChange={next =>
-          actions.setCompositionTab(next as typeof controls.compositionTab)
-        }
-        className='space-y-3'
-      >
-        <TabsList className='w-full justify-start'>
-          <TabsTrigger value='snapshot'>
-            {t(`${translationKeyPrefix}.tabs.snapshot`)}
-          </TabsTrigger>
-          <TabsTrigger value='trend'>
-            {t(`${translationKeyPrefix}.tabs.trend`)}
-          </TabsTrigger>
-          <TabsTrigger value='stacked'>
-            {t(`${translationKeyPrefix}.tabs.stacked`)}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {!hideTabs && (
+        <Tabs
+          value={controls.compositionTab}
+          onValueChange={next =>
+            actions.setCompositionTab(next as typeof controls.compositionTab)
+          }
+          className='space-y-3'
+        >
+          <TabsList className='w-full justify-start'>
+            <TabsTrigger value='snapshot'>
+              {t(`${translationKeyPrefix}.tabs.snapshot`)}
+            </TabsTrigger>
+            <TabsTrigger value='trend'>
+              {t(`${translationKeyPrefix}.tabs.trend`)}
+            </TabsTrigger>
+            <TabsTrigger value='stacked'>
+              {t(`${translationKeyPrefix}.tabs.stacked`)}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
       <div className='flex flex-wrap items-center gap-4'>
         <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>

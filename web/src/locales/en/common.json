@@ -407,14 +407,45 @@
       "noData": "No composition data to display.",
       "noSeries": "No composition series data to display.",
       "tabs": {
+        "label": "Tab",
         "snapshot": "Snapshot",
         "trend": "Trend",
-        "stacked": "Stacked"
+        "stacked": "Stacked",
+        "compare": "Compare"
       },
       "selectionMode": {
         "label": "Selection mode",
         "fixed": "Fixed",
         "rolling": "Rolling"
+      },
+      "compare": {
+        "loading": "Loading comparison...",
+        "noData": "No comparison data to display.",
+        "summary": {
+          "trackingError": "Tracking error",
+          "meanAbsActive": "Mean absolute active",
+          "overlap": "Overlap",
+          "overweightCount": "Overweight tickers",
+          "underweightCount": "Underweight tickers",
+          "missingCount": "Missing tickers"
+        },
+        "columns": {
+          "ticker": "Ticker",
+          "name": "Name",
+          "portfolioWeight": "Portfolio %",
+          "benchmarkWeight": "Benchmark %",
+          "activeWeight": "Active %",
+          "absActive": "Abs active %",
+          "errorContribution": "Error contrib %",
+          "status": "Status"
+        },
+        "status": {
+          "overweight": "Overweight",
+          "underweight": "Underweight",
+          "neutral": "Neutral",
+          "portfolio_only": "Only in portfolio",
+          "benchmark_only": "Only in benchmark"
+        }
       },
       "legend": {
         "openTicker": "Open ticker page",
