@@ -143,6 +143,7 @@ type PortfolioAnalyticsSectionProps = {
 };
 
 type PortfolioPriceMode = 'portfolio' | 'index' | 'compare';
+type CompositionSourceMode = 'portfolio' | 'index';
 
 export function PortfolioAnalyticsSection({
   portfolioID,
@@ -151,6 +152,8 @@ export function PortfolioAnalyticsSection({
 }: PortfolioAnalyticsSectionProps) {
   const { t } = useTranslation();
   const [priceMode, setPriceMode] = useState<PortfolioPriceMode>('compare');
+  const [compositionSource, setCompositionSource] =
+    useState<CompositionSourceMode>('portfolio');
   const controls = useChartsNewControls({
     defaults: {
       price: DEFAULT_PRICE_CONTROLS,
@@ -224,6 +227,10 @@ export function PortfolioAnalyticsSection({
     [priceState.data],
   );
   const hasBenchmark = Boolean(selectedBenchmark);
+
+  const compositionSourceMode: CompositionSourceMode = hasBenchmark
+    ? compositionSource
+    : 'portfolio';
   const priceModeOptions = useMemo<ButtonToggleGroupOption<PortfolioPriceMode>[]>(
     () => [
       {
@@ -335,7 +342,40 @@ export function PortfolioAnalyticsSection({
         ? benchmarkPriceState.error
         : priceState.error || benchmarkPriceState.error;
 
-  const compositionState = useCompositionVisualizationData({
+  const selectedBenchmarkForComposition = useMemo<MoexIndex | null>(() => {
+    if (!selectedBenchmark) {
+      return null;
+    }
+
+    return {
+      ...selectedBenchmark,
+      hasComposition: true,
+    };
+  }, [selectedBenchmark]);
+  const benchmarkLatestTradeDate = useMemo(
+    () => resolveLatestTradeDate(benchmarkPriceState.data),
+    [benchmarkPriceState.data],
+  );
+
+  const compositionSourceOptions = useMemo<
+    ButtonToggleGroupOption<CompositionSourceMode>[]
+  >(
+    () => [
+      {
+        value: 'portfolio',
+        label: t('portfolio.composition.source.portfolio'),
+        content: t('portfolio.composition.source.portfolio'),
+      },
+      {
+        value: 'index',
+        label: t('portfolio.composition.source.index'),
+        content: t('portfolio.composition.source.index'),
+      },
+    ],
+    [t],
+  );
+
+  const portfolioCompositionState = useCompositionVisualizationData({
     selectedIndex: selectedPortfolio,
     latestTradeDate,
     baseRange: {
@@ -347,24 +387,40 @@ export function PortfolioAnalyticsSection({
     controls: controls.composition,
     provider,
   });
+  const indexCompositionState = useCompositionVisualizationData({
+    selectedIndex: selectedBenchmarkForComposition,
+    latestTradeDate: benchmarkLatestTradeDate,
+    baseRange: {
+      rangeKey: controls.price.rangeKey,
+      intervalKey: controls.price.intervalKey,
+      customFrom: controls.price.customFrom,
+      customTill: controls.price.customTill,
+    },
+    controls: controls.composition,
+    provider: moexProvider,
+  });
+  const activeCompositionState =
+    compositionSourceMode === 'index'
+      ? indexCompositionState
+      : portfolioCompositionState;
 
   const snapshotItems = useMemo(() => {
     if (controls.composition.topCount === null) {
-      return compositionState.snapshotItems;
+      return activeCompositionState.snapshotItems;
     }
-    return compositionState.snapshotItems.slice(
+    return activeCompositionState.snapshotItems.slice(
       0,
       controls.composition.topCount,
     );
-  }, [compositionState.snapshotItems, controls.composition.topCount]);
+  }, [activeCompositionState.snapshotItems, controls.composition.topCount]);
 
   const legendRows = useMemo(
     () =>
       buildCompositionLegendRows(
-        compositionState.series,
-        compositionState.snapshotItems,
+        activeCompositionState.series,
+        activeCompositionState.snapshotItems,
       ),
-    [compositionState.series, compositionState.snapshotItems],
+    [activeCompositionState.series, activeCompositionState.snapshotItems],
   );
 
   const snapshotOtherWeight = useMemo(
@@ -373,9 +429,21 @@ export function PortfolioAnalyticsSection({
   );
 
   const trendLoading =
-    compositionState.snapshotLoading || compositionState.seriesLoading;
+    activeCompositionState.snapshotLoading || activeCompositionState.seriesLoading;
   const trendError =
-    compositionState.snapshotError || compositionState.seriesError;
+    activeCompositionState.snapshotError || activeCompositionState.seriesError;
+  const compositionNoDataMessage = useMemo(() => {
+    if (compositionSourceMode === 'index' && !hasBenchmark) {
+      return t('portfolio.composition.noBenchmark');
+    }
+    return t('portfolio.composition.noData');
+  }, [compositionSourceMode, hasBenchmark, t]);
+  const compositionNoSeriesMessage = useMemo(() => {
+    if (compositionSourceMode === 'index' && !hasBenchmark) {
+      return t('portfolio.composition.noBenchmark');
+    }
+    return t('portfolio.composition.noSeries');
+  }, [compositionSourceMode, hasBenchmark, t]);
   const showOtherLegend =
     (controls.composition.compositionTab === 'stacked' ||
       controls.composition.compositionTab === 'snapshot') &&
@@ -384,10 +452,10 @@ export function PortfolioAnalyticsSection({
   const compositionChart =
     controls.composition.compositionTab === 'snapshot' ? (
       <CompositionSnapshotVisualization
-        loading={compositionState.snapshotLoading}
-        hasError={compositionState.snapshotError}
+        loading={activeCompositionState.snapshotLoading}
+        hasError={activeCompositionState.snapshotError}
         errorMessage={t('portfolio.composition.error')}
-        noDataMessage={t('portfolio.composition.noData')}
+        noDataMessage={compositionNoDataMessage}
         items={snapshotItems}
         className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
@@ -396,8 +464,8 @@ export function PortfolioAnalyticsSection({
         loading={trendLoading}
         hasError={trendError}
         errorMessage={t('portfolio.composition.error')}
-        noDataMessage={t('portfolio.composition.noSeries')}
-        series={compositionState.series}
+        noDataMessage={compositionNoSeriesMessage}
+        series={activeCompositionState.series}
         className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     ) : (
@@ -405,8 +473,8 @@ export function PortfolioAnalyticsSection({
         loading={trendLoading}
         hasError={trendError}
         errorMessage={t('portfolio.composition.error')}
-        noDataMessage={t('portfolio.composition.noSeries')}
-        series={compositionState.series}
+        noDataMessage={compositionNoSeriesMessage}
+        series={activeCompositionState.series}
         className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     );
@@ -498,14 +566,27 @@ export function PortfolioAnalyticsSection({
           <div className='flex min-h-0 min-w-0 flex-col gap-3 lg:w-[320px]'>
             <div className='space-y-1'>
               <CardTitle>{t('portfolio.composition.title')}</CardTitle>
-              {compositionState.snapshotDate && (
+              {activeCompositionState.snapshotDate && (
                 <div className='text-xs text-muted-foreground'>
                   {t('portfolio.composition.asOf', {
-                    date: compositionState.snapshotDate,
+                    date: activeCompositionState.snapshotDate,
                   })}
                 </div>
               )}
             </div>
+
+            {hasBenchmark && (
+              <div className='flex flex-wrap items-center gap-2'>
+                <span className='text-xs text-muted-foreground'>
+                  {t('portfolio.composition.source.label')}
+                </span>
+                <ButtonToggleGroup
+                  value={compositionSourceMode}
+                  options={compositionSourceOptions}
+                  onValueChange={setCompositionSource}
+                />
+              </div>
+            )}
 
             <CompositionControlsPanel
               controls={controls.composition}
@@ -521,7 +602,7 @@ export function PortfolioAnalyticsSection({
                 loading={trendLoading}
                 hasError={trendError}
                 errorMessage={t('portfolio.composition.error')}
-                noDataMessage={t('portfolio.composition.noSeries')}
+                noDataMessage={compositionNoSeriesMessage}
                 translationKeyPrefix='portfolio.composition'
                 showOther={showOtherLegend}
                 otherWeight={snapshotOtherWeight}

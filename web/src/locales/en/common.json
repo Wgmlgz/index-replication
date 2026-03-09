@@ -393,11 +393,17 @@
       "title": "Portfolio composition",
       "description": "Portfolio weights by ticker over time.",
       "asOf": "As of {{date}}",
+      "source": {
+        "label": "Composition source",
+        "portfolio": "Portfolio",
+        "index": "Index"
+      },
       "topLabel": "Top",
       "all": "All",
       "selectionDate": "Selection date",
       "other": "Other",
       "error": "Failed to load portfolio composition.",
+      "noBenchmark": "No benchmark selected. Configure benchmark in Replication tab.",
       "noData": "No composition data to display.",
       "noSeries": "No composition series data to display.",
       "tabs": {
