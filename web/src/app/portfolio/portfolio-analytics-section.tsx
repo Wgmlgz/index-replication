@@ -34,8 +34,6 @@ import {
 import { CompositionAnalyticsPanel } from '@/app/portfolio/components/analytics/composition-analytics-panel';
 import { PriceAnalyticsPanel } from '@/app/portfolio/components/analytics/price-analytics-panel';
 import type {
-  CompositionCompareRow,
-  CompositionCompareSummary,
   CompositionDisplayTab,
   CompositionSourceMode,
   PortfolioPriceMode,
@@ -44,7 +42,6 @@ import {
   normalizeLineSeriesFrom,
   resolveLatestTradeDate,
   resolveNormalizationStart,
-  resolveSnapshotKey,
   toLineData,
 } from '@/app/portfolio/components/analytics/utils';
 
@@ -114,7 +111,6 @@ export function PortfolioAnalyticsSection({
   const setCompositionField = controls.setCompositionField;
 
   useEffect(() => {
-    if (compositionDisplayTab === 'compare') return;
     if (compositionTab === compositionDisplayTab) return;
     setCompositionField('compositionTab', compositionDisplayTab);
   }, [compositionDisplayTab, compositionTab, setCompositionField]);
@@ -194,11 +190,6 @@ export function PortfolioAnalyticsSection({
         value: 'stacked',
         label: t('portfolio.composition.tabs.stacked'),
         content: t('portfolio.composition.tabs.stacked'),
-      },
-      {
-        value: 'compare',
-        label: t('portfolio.composition.tabs.compare'),
-        content: t('portfolio.composition.tabs.compare'),
       },
     ],
     [t],
@@ -384,127 +375,6 @@ export function PortfolioAnalyticsSection({
       ? indexCompositionState
       : portfolioCompositionState;
 
-  const compareRows = useMemo<CompositionCompareRow[]>(() => {
-    if (!hasBenchmark) {
-      return [];
-    }
-
-    const portfolioByKey = new Map(
-      portfolioCompositionState.snapshotItems.map(item => [
-        resolveSnapshotKey(item),
-        item,
-      ]),
-    );
-    const benchmarkByKey = new Map(
-      indexCompositionState.snapshotItems.map(item => [
-        resolveSnapshotKey(item),
-        item,
-      ]),
-    );
-    const keys = new Set<string>([
-      ...portfolioByKey.keys(),
-      ...benchmarkByKey.keys(),
-    ]);
-
-    const baseRows: Omit<CompositionCompareRow, 'contributionPct'>[] = [];
-    let totalSquaredError = 0;
-    for (const key of keys) {
-      if (!key) continue;
-      const portfolioItem = portfolioByKey.get(key);
-      const benchmarkItem = benchmarkByKey.get(key);
-      const portfolioWeight = portfolioItem?.weight ?? 0;
-      const benchmarkWeight = benchmarkItem?.weight ?? 0;
-      const activeWeight = portfolioWeight - benchmarkWeight;
-      const absActive = Math.abs(activeWeight);
-      totalSquaredError += activeWeight * activeWeight;
-
-      const status: CompositionCompareRow['status'] =
-        portfolioWeight > 0 && benchmarkWeight === 0
-          ? 'portfolio_only'
-          : benchmarkWeight > 0 && portfolioWeight === 0
-            ? 'benchmark_only'
-            : activeWeight > 0
-              ? 'overweight'
-              : activeWeight < 0
-                ? 'underweight'
-                : 'neutral';
-
-      baseRows.push({
-        key,
-        ticker: portfolioItem?.ticker || benchmarkItem?.ticker || key,
-        name: portfolioItem?.name || benchmarkItem?.name || key,
-        portfolioWeight,
-        benchmarkWeight,
-        activeWeight,
-        absActive,
-        status,
-      });
-    }
-
-    return baseRows
-      .map(row => ({
-        ...row,
-        contributionPct:
-          totalSquaredError > 0
-            ? (row.activeWeight * row.activeWeight * 100) / totalSquaredError
-            : 0,
-      }))
-      .sort((a, b) => b.absActive - a.absActive);
-  }, [
-    hasBenchmark,
-    indexCompositionState.snapshotItems,
-    portfolioCompositionState.snapshotItems,
-  ]);
-
-  const compareSummary = useMemo<CompositionCompareSummary>(() => {
-    let squaredErrorSum = 0;
-    let absActiveSum = 0;
-    let overlapSum = 0;
-    let overweightCount = 0;
-    let underweightCount = 0;
-    let portfolioOnlyCount = 0;
-    let benchmarkOnlyCount = 0;
-
-    for (const row of compareRows) {
-      squaredErrorSum += row.activeWeight * row.activeWeight;
-      absActiveSum += row.absActive;
-      overlapSum += Math.min(row.portfolioWeight, row.benchmarkWeight);
-      if (row.status === 'overweight') overweightCount += 1;
-      if (row.status === 'underweight') underweightCount += 1;
-      if (row.status === 'portfolio_only') portfolioOnlyCount += 1;
-      if (row.status === 'benchmark_only') benchmarkOnlyCount += 1;
-    }
-
-    return {
-      trackingError: Math.sqrt(squaredErrorSum),
-      meanAbsActive: absActiveSum / 2,
-      overlap: overlapSum,
-      overweightCount,
-      underweightCount,
-      portfolioOnlyCount,
-      benchmarkOnlyCount,
-    };
-  }, [compareRows]);
-
-  const visibleCompareRows = useMemo(() => {
-    if (controls.composition.topCount === null) {
-      return compareRows;
-    }
-    return compareRows.slice(0, controls.composition.topCount);
-  }, [compareRows, controls.composition.topCount]);
-
-  const compareLoading =
-    portfolioCompositionState.snapshotLoading || indexCompositionState.snapshotLoading;
-  const compareError =
-    portfolioCompositionState.snapshotError || indexCompositionState.snapshotError;
-
-  const compareNoDataMessage = useMemo(() => {
-    if (!hasBenchmark) {
-      return t('portfolio.composition.noBenchmark');
-    }
-    return t('portfolio.composition.compare.noData');
-  }, [hasBenchmark, t]);
-
   const snapshotItems = useMemo(() => {
     if (controls.composition.topCount === null) {
       return activeCompositionState.snapshotItems;
@@ -638,11 +508,6 @@ export function PortfolioAnalyticsSection({
           showOtherLegend={showOtherLegend}
           snapshotOtherWeight={snapshotOtherWeight}
           compositionChart={compositionChart}
-          compareLoading={compareLoading}
-          compareError={compareError}
-          compareNoDataMessage={compareNoDataMessage}
-          visibleCompareRows={visibleCompareRows}
-          compareSummary={compareSummary}
         />
       </CardContent>
     </Card>

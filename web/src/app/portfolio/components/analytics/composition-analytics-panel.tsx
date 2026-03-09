@@ -16,10 +16,7 @@ import {
   type ButtonToggleGroupOption,
 } from '@/components/ui/button-toggle-group';
 import { CardTitle } from '@/components/ui/card';
-import { CompositionCompareTable } from './composition-compare-table';
 import type {
-  CompositionCompareRow,
-  CompositionCompareSummary,
   CompositionDisplayTab,
   CompositionSourceMode,
 } from './types';
@@ -43,11 +40,6 @@ type CompositionAnalyticsPanelProps = {
   showOtherLegend: boolean;
   snapshotOtherWeight: number;
   compositionChart: ReactNode;
-  compareLoading: boolean;
-  compareError: boolean;
-  compareNoDataMessage: string;
-  visibleCompareRows: CompositionCompareRow[];
-  compareSummary: CompositionCompareSummary;
 };
 
 export function CompositionAnalyticsPanel({
@@ -69,11 +61,6 @@ export function CompositionAnalyticsPanel({
   showOtherLegend,
   snapshotOtherWeight,
   compositionChart,
-  compareLoading,
-  compareError,
-  compareNoDataMessage,
-  visibleCompareRows,
-  compareSummary,
 }: CompositionAnalyticsPanelProps) {
   const { t } = useTranslation();
 
@@ -125,33 +112,21 @@ export function CompositionAnalyticsPanel({
         />
 
         <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
-          {compositionDisplayTab !== 'compare' ? (
-            <CompositionLegend
-              rows={legendRows}
-              loading={trendLoading}
-              hasError={trendError}
-              errorMessage={t('portfolio.composition.error')}
-              noDataMessage={compositionNoSeriesMessage}
-              translationKeyPrefix='portfolio.composition'
-              showOther={showOtherLegend}
-              otherWeight={snapshotOtherWeight}
-              linkBuilder={() => undefined}
-            />
-          ) : null}
+          <CompositionLegend
+            rows={legendRows}
+            loading={trendLoading}
+            hasError={trendError}
+            errorMessage={t('portfolio.composition.error')}
+            noDataMessage={compositionNoSeriesMessage}
+            translationKeyPrefix='portfolio.composition'
+            showOther={showOtherLegend}
+            otherWeight={snapshotOtherWeight}
+            linkBuilder={() => undefined}
+          />
         </div>
       </div>
 
-      {compositionDisplayTab !== 'compare' ? (
-        compositionChart
-      ) : (
-        <CompositionCompareTable
-          loading={compareLoading}
-          hasError={compareError}
-          noDataMessage={compareNoDataMessage}
-          rows={visibleCompareRows}
-          summary={compareSummary}
-        />
-      )}
+      {compositionChart}
     </div>
   );
 }

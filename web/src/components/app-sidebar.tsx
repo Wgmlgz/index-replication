@@ -42,7 +42,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, hasPermission, logoutUser } = useUser();
   const { state, toggleSidebar } = useSidebar();
   const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
-  const selectedPortfolioTab = searchParams.get('tab');
+  const selectedPortfolioTabRaw = searchParams.get('tab');
+  const selectedPortfolioTab =
+    selectedPortfolioTabRaw === 'operations' ? 'overview' : selectedPortfolioTabRaw;
+  const selectedPortfolioOverviewTab =
+    searchParams.get('overview_tab')
+    ?? (selectedPortfolioTabRaw === 'operations' ? 'operations' : null);
   const isPortfolioSectionActive = pathname.startsWith('/portfolio');
 
   const handleLogout = async () => {
@@ -59,15 +64,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       return false;
     }
 
-    if (!item.activeTab) {
+    if (item.activeTab) {
+      if (item.activeTab === 'overview') {
+        if (selectedPortfolioTab && selectedPortfolioTab !== 'overview') {
+          return false;
+        }
+      } else if (selectedPortfolioTab !== item.activeTab) {
+        return false;
+      }
+    }
+
+    if (!item.activeOverviewTab) {
       return true;
     }
 
-    if (item.activeTab === 'overview') {
-      return !selectedPortfolioTab || selectedPortfolioTab === 'overview';
+    if (item.activeOverviewTab === 'summary') {
+      return !selectedPortfolioOverviewTab || selectedPortfolioOverviewTab === 'summary';
     }
 
-    return selectedPortfolioTab === item.activeTab;
+    return selectedPortfolioOverviewTab === item.activeOverviewTab;
   };
 
   return (

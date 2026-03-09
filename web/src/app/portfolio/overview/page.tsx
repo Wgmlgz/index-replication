@@ -18,6 +18,7 @@ import axios from 'axios';
 
 import { PortfolioAnalyticsSection } from '@/app/portfolio/portfolio-analytics-section';
 import { PortfolioActionsPanel } from '@/app/portfolio/components/portfolio-actions-panel';
+import { PortfolioCompositionComparePanel } from '@/app/portfolio/components/portfolio-composition-compare-panel';
 import { PortfolioOperationsTable } from '@/app/portfolio/components/portfolio-operations-table';
 import { usePortfolio } from '@/app/portfolio/use-portfolio';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,14 +40,23 @@ import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
 
-type DetailsTab = 'overview' | 'actions' | 'analytics' | 'operations' | 'replication';
+type DetailsTab = 'overview' | 'actions' | 'analytics' | 'replication';
+type OverviewTab = 'summary' | 'operations' | 'compare';
 
 function resolveDetailsTab(tab: string | null): DetailsTab {
-  if (tab === 'actions' || tab === 'analytics' || tab === 'operations' || tab === 'replication') {
+  if (tab === 'actions' || tab === 'analytics' || tab === 'replication') {
     return tab;
   }
 
   return 'overview';
+}
+
+function resolveOverviewTab(tab: string | null): OverviewTab {
+  if (tab === 'operations' || tab === 'compare') {
+    return tab;
+  }
+
+  return 'summary';
 }
 
 export default function PortfolioOverviewPage() {
@@ -63,6 +73,7 @@ export default function PortfolioOverviewPage() {
   } = usePortfolio();
   const [editOpen, setEditOpen] = useState(false);
   const [profileNameDraft, setProfileNameDraft] = useState('');
+  const selectedTabParam = searchParams.get('tab');
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
@@ -124,10 +135,16 @@ export default function PortfolioOverviewPage() {
     ],
   );
 
-  const activeTab = useMemo(
-    () => resolveDetailsTab(searchParams.get('tab')),
-    [searchParams],
+  const activeTab = useMemo(() => resolveDetailsTab(selectedTabParam), [selectedTabParam]);
+  const activeOverviewTab = useMemo(
+    () => (
+      selectedTabParam === 'operations'
+        ? 'operations'
+        : resolveOverviewTab(searchParams.get('overview_tab'))
+    ),
+    [searchParams, selectedTabParam],
   );
+
   const handleTabChange = useCallback(
     (nextTab: string) => {
       const resolvedTab = resolveDetailsTab(nextTab);
@@ -137,6 +154,26 @@ export default function PortfolioOverviewPage() {
         nextParams.delete('tab');
       } else {
         nextParams.set('tab', resolvedTab);
+        nextParams.delete('overview_tab');
+      }
+
+      const query = nextParams.toString();
+      const href = query ? `${pathname}?${query}` : pathname;
+      router.replace(href, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleOverviewTabChange = useCallback(
+    (nextTab: string) => {
+      const resolvedTab = resolveOverviewTab(nextTab);
+      const nextParams = new URLSearchParams(searchParams.toString());
+
+      nextParams.delete('tab');
+      if (resolvedTab === 'summary') {
+        nextParams.delete('overview_tab');
+      } else {
+        nextParams.set('overview_tab', resolvedTab);
       }
 
       const query = nextParams.toString();
@@ -188,7 +225,7 @@ export default function PortfolioOverviewPage() {
               </Button>
             </div>
 
-            <TabsList className='grid h-auto w-full grid-cols-2 lg:w-auto lg:grid-cols-5'>
+            <TabsList className='grid h-auto w-full grid-cols-2 lg:w-auto lg:grid-cols-4'>
               <TabsTrigger value='overview'>
                 <Wallet className='size-4' />
                 {t('portfolio.subpages.overview')}
@@ -200,10 +237,6 @@ export default function PortfolioOverviewPage() {
               <TabsTrigger value='analytics'>
                 <BarChart3 className='size-4' />
                 {t('portfolio.subpages.analytics')}
-              </TabsTrigger>
-              <TabsTrigger value='operations'>
-                <ClipboardList className='size-4' />
-                {t('portfolio.subpages.operations')}
               </TabsTrigger>
               <TabsTrigger value='replication'>
                 <SlidersHorizontal className='size-4' />
@@ -221,7 +254,46 @@ export default function PortfolioOverviewPage() {
         ) : null}
 
         <TabsContent value='overview' className='min-h-0 flex-1'>
-          <PortfolioSummaryPanel portfolioID={selectedPortfolioID} />
+          <Tabs
+            value={activeOverviewTab}
+            onValueChange={handleOverviewTabChange}
+            className='min-h-0 flex-1 gap-4'
+          >
+            <TabsList className='grid h-auto w-full grid-cols-3 md:w-auto'>
+              <TabsTrigger value='summary'>
+                <Wallet className='size-4' />
+                {t('portfolio.overview.tabs.summary')}
+              </TabsTrigger>
+              <TabsTrigger value='operations'>
+                <ClipboardList className='size-4' />
+                {t('portfolio.overview.tabs.operations')}
+              </TabsTrigger>
+              <TabsTrigger value='compare'>
+                <BarChart3 className='size-4' />
+                {t('portfolio.overview.tabs.compare')}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value='summary' className='min-h-0 flex-1'>
+              <PortfolioSummaryPanel portfolioID={selectedPortfolioID} />
+            </TabsContent>
+
+            <TabsContent value='operations' className='min-h-0 flex-1'>
+              <PortfolioOperationsTable portfolioID={selectedPortfolioID} />
+            </TabsContent>
+
+            <TabsContent value='compare' className='min-h-0 flex-1'>
+              <PortfolioCompositionComparePanel
+                portfolioID={selectedPortfolioID}
+                portfolioName={selectedProfile?.name || ''}
+                benchmarkSecid={
+                  selectedProfile?.replication?.is_enabled
+                    ? selectedProfile.replication.benchmark_secid
+                    : null
+                }
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value='actions' className='min-h-0 flex-1'>
@@ -241,10 +313,6 @@ export default function PortfolioOverviewPage() {
                 : null
             }
           />
-        </TabsContent>
-
-        <TabsContent value='operations' className='min-h-0 flex-1'>
-          <PortfolioOperationsTable portfolioID={selectedPortfolioID} />
         </TabsContent>
 
         <TabsContent value='replication' className='min-h-0 flex-1'>

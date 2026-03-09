@@ -18,6 +18,7 @@ export type SidebarSubItem = {
   href: string;
   activePathname?: string;
   activeTab?: string;
+  activeOverviewTab?: string;
   permission: PermissionStr | null;
 }
 
@@ -113,6 +114,25 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     href: PORTFOLIO_V2_ROUTES.overview,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
     activeTab: "overview",
+    activeOverviewTab: "summary",
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.operations',
+    href: `${PORTFOLIO_V2_ROUTES.overview}?overview_tab=operations`,
+    activePathname: PORTFOLIO_V2_ROUTES.overview,
+    activeTab: "overview",
+    activeOverviewTab: "operations",
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.compare',
+    href: `${PORTFOLIO_V2_ROUTES.overview}?overview_tab=compare`,
+    activePathname: PORTFOLIO_V2_ROUTES.overview,
+    activeTab: "overview",
+    activeOverviewTab: "compare",
     permission: null,
   },
   {
@@ -129,14 +149,6 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     href: `${PORTFOLIO_V2_ROUTES.overview}?tab=analytics`,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
     activeTab: "analytics",
-    permission: null,
-  },
-  {
-    kind: "item",
-    titleKey: 'navigation.portfolio.operations',
-    href: `${PORTFOLIO_V2_ROUTES.overview}?tab=operations`,
-    activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeTab: "operations",
     permission: null,
   },
 ];

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
 import type { PortfolioOperationHistoryItem } from '@/api-client';
 import { portfolioApi } from '@/lib/api';
@@ -21,6 +22,14 @@ import {
   formatEnumLabel,
   formatNumber,
 } from '@/app/portfolio/components/portfolio-formatting';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const OPERATIONS_PAGE_SIZE = 50;
 
@@ -38,6 +47,68 @@ export function PortfolioOperationsTable({
   const [loadingOperations, setLoadingOperations] = useState(false);
   const [loadingMoreOperations, setLoadingMoreOperations] = useState(false);
   const [operationsError, setOperationsError] = useState('');
+
+  const columns = useMemo<ColumnDef<PortfolioOperationHistoryItem>[]>(
+    () => [
+      {
+        id: 'date',
+        header: () => t('portfolio.card.operationDate'),
+        cell: ({ row }) => formatDateTime(row.original.date),
+      },
+      {
+        id: 'type',
+        header: () => t('portfolio.card.operationType'),
+        cell: ({ row }) => formatEnumLabel(row.original.type, 'OPERATION_TYPE_'),
+      },
+      {
+        id: 'state',
+        header: () => t('portfolio.card.operationState'),
+        cell: ({ row }) => formatEnumLabel(row.original.state, 'OPERATION_STATE_'),
+      },
+      {
+        id: 'instrument',
+        header: () => t('portfolio.card.operationInstrument'),
+        cell: ({ row }) =>
+          row.original.name || row.original.instrument_id || row.original.figi || '-',
+      },
+      {
+        id: 'quantity',
+        header: () => t('portfolio.card.operationQuantity'),
+        cell: ({ row }) =>
+          formatNumber(row.original.quantity_done || row.original.quantity || 0),
+      },
+      {
+        id: 'price',
+        header: () => t('portfolio.card.operationPrice'),
+        cell: ({ row }) =>
+          `${formatNumber(row.original.price ?? 0)} ${row.original.price_currency || ''}`.trim(),
+      },
+      {
+        id: 'payment',
+        header: () => t('portfolio.card.operationPayment'),
+        cell: ({ row }) =>
+          `${formatNumber(row.original.payment ?? 0)} ${row.original.payment_currency || ''}`.trim(),
+      },
+      {
+        id: 'commission',
+        header: () => t('portfolio.card.operationCommission'),
+        cell: ({ row }) =>
+          `${formatNumber(row.original.commission ?? 0)} ${row.original.commission_currency || ''}`.trim(),
+      },
+      {
+        id: 'description',
+        header: () => t('portfolio.card.operationDescription'),
+        cell: ({ row }) => row.original.description || '-',
+      },
+    ],
+    [t],
+  );
+
+  const table = useReactTable({
+    data: operations,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
@@ -141,61 +212,43 @@ export function PortfolioOperationsTable({
           <div className='text-muted-foreground'>{t('portfolio.card.operationsLoading')}</div>
         ) : (
           <div className='overflow-auto rounded-md border'>
-            <table className='w-full text-left text-sm'>
-              <thead className='bg-muted/50'>
-                <tr>
-                  <th className='p-2'>{t('portfolio.card.operationDate')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationType')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationState')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationInstrument')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationQuantity')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationPrice')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationPayment')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationCommission')}</th>
-                  <th className='p-2'>{t('portfolio.card.operationDescription')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {operations.length === 0 ? (
-                  <tr>
-                    <td className='p-2 text-muted-foreground' colSpan={9}>
-                      {t('portfolio.card.operationsEmpty')}
-                    </td>
-                  </tr>
-                ) : (
-                  operations.map((operation, index) => (
-                    <tr
-                      key={`${operation.id || 'op'}:${operation.cursor || index}:${operation.date || '-'}`}
-                      className='border-t'
-                    >
-                      <td className='p-2'>{formatDateTime(operation.date)}</td>
-                      <td className='p-2'>
-                        {formatEnumLabel(operation.type, 'OPERATION_TYPE_')}
-                      </td>
-                      <td className='p-2'>
-                        {formatEnumLabel(operation.state, 'OPERATION_STATE_')}
-                      </td>
-                      <td className='p-2'>
-                        {operation.name || operation.instrument_id || operation.figi || '-'}
-                      </td>
-                      <td className='p-2'>
-                        {formatNumber(operation.quantity_done || operation.quantity || 0)}
-                      </td>
-                      <td className='p-2'>
-                        {formatNumber(operation.price ?? 0)} {operation.price_currency || ''}
-                      </td>
-                      <td className='p-2'>
-                        {formatNumber(operation.payment ?? 0)} {operation.payment_currency || ''}
-                      </td>
-                      <td className='p-2'>
-                        {formatNumber(operation.commission ?? 0)} {operation.commission_currency || ''}
-                      </td>
-                      <td className='p-2'>{operation.description || '-'}</td>
-                    </tr>
+            <Table>
+              <TableHeader className='bg-muted/50'>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.length > 0 ? (
+                  table.getRowModel().rows.map(row => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map(cell => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))
+                ) : (
+                  <TableRow>
+                    <TableCell className='text-muted-foreground' colSpan={columns.length}>
+                      {t('portfolio.card.operationsEmpty')}
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 

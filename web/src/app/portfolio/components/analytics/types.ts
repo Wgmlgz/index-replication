@@ -1,6 +1,6 @@
 export type PortfolioPriceMode = 'portfolio' | 'index' | 'compare';
 export type CompositionSourceMode = 'portfolio' | 'index';
-export type CompositionDisplayTab = 'snapshot' | 'trend' | 'stacked' | 'compare';
+export type CompositionDisplayTab = 'snapshot' | 'trend' | 'stacked';
 
 export type CompositionCompareRow = {
   key: string;

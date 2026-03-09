@@ -40,6 +40,7 @@
     "portfolio": {
       "details": "Details",
       "overview": "Overview",
+      "compare": "Compare",
       "actions": "Actions",
       "analytics": "Analytics",
       "operations": "Operations",
@@ -419,6 +420,7 @@
         "rolling": "Rolling"
       },
       "compare": {
+        "description": "Compare portfolio composition against benchmark weights.",
         "loading": "Loading comparison...",
         "noData": "No comparison data to display.",
         "summary": {
@@ -469,7 +471,12 @@
       "summaryDescription": "Review account state, balances, and top positions.",
       "quickActionsTitle": "Actions",
       "noQuickActions": "No provider actions available for this profile.",
-      "balancesTitle": "Balances"
+      "balancesTitle": "Balances",
+      "tabs": {
+        "summary": "Summary",
+        "operations": "Operations",
+        "compare": "Compare"
+      }
     },
     "analyticsPage": {
       "title": "Analytics",
