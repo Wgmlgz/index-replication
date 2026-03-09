@@ -350,7 +350,7 @@
         "label": "Series mode",
         "portfolio": "Portfolio",
         "index": "Index",
-        "compare": "Compare (Base 100)"
+        "compare": "Compare"
       },
       "range": {
         "label": "Range",
