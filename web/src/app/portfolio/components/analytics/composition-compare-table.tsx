@@ -11,6 +11,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -20,8 +22,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
 import type { CompositionCompareRow, CompositionCompareSummary } from './types';
+import {
+  boundedPercentDivergingColorStyle,
+  boundedPercentColorStyle,
+  gradientColorStyle,
+  resolveCompositionCompareColorScale,
+  signedPercentGradientColorStyle,
+} from './composition-compare-colors';
 
 type CompositionCompareTableProps = {
   loading: boolean;
@@ -32,6 +40,7 @@ type CompositionCompareTableProps = {
 };
 
 const formatPercent = (value: number): string => `${value.toFixed(2)}%`;
+const METRIC_CELL_CLASS = 'rounded-sm px-2 py-0.5 text-right font-medium tabular-nums';
 
 export function CompositionCompareTable({
   loading,
@@ -41,7 +50,9 @@ export function CompositionCompareTable({
   summary,
 }: CompositionCompareTableProps) {
   const { t } = useTranslation();
+  const { resolvedTheme } = useTheme();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const colorScale = useMemo(() => resolveCompositionCompareColorScale(), [resolvedTheme]);
 
   const formatStatus = useCallback(
     (status: CompositionCompareRow['status']): string =>
@@ -49,11 +60,29 @@ export function CompositionCompareTable({
     [t],
   );
 
-  const signedPercentClassName = (value: number): string => {
-    if (value > 0) return 'text-emerald-600 dark:text-emerald-400';
-    if (value < 0) return 'text-red-600 dark:text-red-400';
-    return 'text-foreground';
-  };
+  const scales = useMemo(() => {
+    let maxPortfolioWeight = 0;
+    let maxBenchmarkWeight = 0;
+    let maxAbsActive = 0;
+    let maxAbsActiveWeight = 0;
+    let maxAbsContribution = 0;
+
+    for (const row of rows) {
+      maxPortfolioWeight = Math.max(maxPortfolioWeight, Math.abs(row.portfolioWeight));
+      maxBenchmarkWeight = Math.max(maxBenchmarkWeight, Math.abs(row.benchmarkWeight));
+      maxAbsActive = Math.max(maxAbsActive, row.absActive);
+      maxAbsActiveWeight = Math.max(maxAbsActiveWeight, Math.abs(row.activeWeight));
+      maxAbsContribution = Math.max(maxAbsContribution, Math.abs(row.contributionPct));
+    }
+
+    return {
+      maxPortfolioWeight: maxPortfolioWeight || 1,
+      maxBenchmarkWeight: maxBenchmarkWeight || 1,
+      maxAbsActive: maxAbsActive || 1,
+      maxAbsActiveWeight: maxAbsActiveWeight || 1,
+      maxAbsContribution: maxAbsContribution || 1,
+    };
+  }, [rows]);
 
   const renderSortIcon = (sorted: false | 'asc' | 'desc') => {
     if (sorted === 'asc') return <ArrowUp className='size-4' />;
@@ -76,7 +105,9 @@ export function CompositionCompareTable({
             {renderSortIcon(column.getIsSorted())}
           </Button>
         ),
-        cell: ({ row }) => <span className='font-medium'>{row.original.ticker}</span>,
+        cell: ({ row }) => (
+          <TickerWithLogo ticker={row.original.ticker} textClassName='font-medium' />
+        ),
       },
       {
         accessorKey: 'name',
@@ -109,9 +140,10 @@ export function CompositionCompareTable({
         ),
         cell: ({ row }) => (
           <div
-            className={cn(
-              'text-right font-medium',
-              signedPercentClassName(row.original.portfolioWeight),
+            className={METRIC_CELL_CLASS}
+            style={gradientColorStyle(
+              Math.abs(row.original.portfolioWeight) / scales.maxPortfolioWeight,
+              colorScale.baseMetric,
             )}
           >
             {formatPercent(row.original.portfolioWeight)}
@@ -135,9 +167,10 @@ export function CompositionCompareTable({
         ),
         cell: ({ row }) => (
           <div
-            className={cn(
-              'text-right font-medium',
-              signedPercentClassName(row.original.benchmarkWeight),
+            className={METRIC_CELL_CLASS}
+            style={gradientColorStyle(
+              Math.abs(row.original.benchmarkWeight) / scales.maxBenchmarkWeight,
+              colorScale.baseMetric,
             )}
           >
             {formatPercent(row.original.benchmarkWeight)}
@@ -161,9 +194,11 @@ export function CompositionCompareTable({
         ),
         cell: ({ row }) => (
           <div
-            className={cn(
-              'text-right font-medium',
-              signedPercentClassName(row.original.activeWeight),
+            className={METRIC_CELL_CLASS}
+            style={signedPercentGradientColorStyle(
+              row.original.activeWeight,
+              colorScale.activeWeight,
+              scales.maxAbsActiveWeight,
             )}
           >
             {formatPercent(row.original.activeWeight)}
@@ -187,9 +222,10 @@ export function CompositionCompareTable({
         ),
         cell: ({ row }) => (
           <div
-            className={cn(
-              'text-right font-medium',
-              signedPercentClassName(row.original.absActive),
+            className={METRIC_CELL_CLASS}
+            style={gradientColorStyle(
+              row.original.absActive / scales.maxAbsActive,
+              colorScale.baseMetric,
             )}
           >
             {formatPercent(row.original.absActive)}
@@ -213,9 +249,11 @@ export function CompositionCompareTable({
         ),
         cell: ({ row }) => (
           <div
-            className={cn(
-              'text-right font-medium',
-              signedPercentClassName(row.original.contributionPct),
+            className={METRIC_CELL_CLASS}
+            style={signedPercentGradientColorStyle(
+              row.original.contributionPct,
+              colorScale.contributionPct,
+              scales.maxAbsContribution,
             )}
           >
             {formatPercent(row.original.contributionPct)}
@@ -238,7 +276,7 @@ export function CompositionCompareTable({
         cell: ({ row }) => formatStatus(row.original.status),
       },
     ],
-    [formatStatus, t],
+    [colorScale, formatStatus, scales, t],
   );
 
   const table = useReactTable({
@@ -271,19 +309,37 @@ export function CompositionCompareTable({
           <div className='grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3'>
             <div className='rounded border p-2'>
               {t('portfolio.composition.compare.summary.trackingError')}:{' '}
-              <span className='font-medium text-foreground'>
+              <span
+                className='font-medium'
+                style={boundedPercentColorStyle(
+                  summary.trackingError,
+                  colorScale.summaryHigherIsWorse,
+                )}
+              >
                 {formatPercent(summary.trackingError)}
               </span>
             </div>
             <div className='rounded border p-2'>
               {t('portfolio.composition.compare.summary.meanAbsActive')}:{' '}
-              <span className='font-medium text-foreground'>
+              <span
+                className='font-medium'
+                style={boundedPercentColorStyle(
+                  summary.meanAbsActive,
+                  colorScale.summaryHigherIsWorse,
+                )}
+              >
                 {formatPercent(summary.meanAbsActive)}
               </span>
             </div>
             <div className='rounded border p-2'>
               {t('portfolio.composition.compare.summary.overlap')}:{' '}
-              <span className='font-medium text-foreground'>
+              <span
+                className='font-medium'
+                style={boundedPercentDivergingColorStyle(
+                  summary.overlap,
+                  colorScale.summaryOverlap,
+                )}
+              >
                 {formatPercent(summary.overlap)}
               </span>
             </div>

@@ -88,6 +88,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		moexLiveService,
 	)
 	moexHandler := h.NewMoexHandler(moexReadService)
+	tickerLogoHandler := h.NewTickerLogoHandler()
 	moexSyncAdminHandler := h.NewMoexSyncAdminHandler(repoRegistry.MoexDataRepo)
 	tbankService := tbank.NewService(
 		tbank.Config{
@@ -161,6 +162,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.GET("/moex/indexes/:secid/history", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexHistory)
 		a.GET("/moex/indexes/:secid/composition", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexComposition)
 		a.GET("/moex/indexes/:secid/composition/series", m.RPM(cs, config.MoexView), moexHandler.GetMoexIndexCompositionSeries)
+		a.GET("/tickers/logo", m.RPM(cs, config.SelfView), tickerLogoHandler.ResolveTickerLogo)
 		a.GET("/moex/sync/state", m.RPM(cs, config.MoexView), moexSyncAdminHandler.GetMoexSyncState)
 		a.GET("/moex/sync/coverage", m.RPM(cs, config.MoexView), moexSyncAdminHandler.GetMoexCoverage)
 		a.GET("/moex/sync/runs", m.RPM(cs, config.MoexView), moexSyncAdminHandler.GetMoexSyncRuns)
