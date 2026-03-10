@@ -440,6 +440,8 @@ export function PortfolioAnalyticsSection({
         errorMessage={t('portfolio.composition.error')}
         noDataMessage={compositionNoSeriesMessage}
         series={activeCompositionState.series}
+        rangeFrom={activeCompositionState.dateRange.from}
+        rangeTill={activeCompositionState.dateRange.till}
         className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     ) : (
@@ -449,6 +451,8 @@ export function PortfolioAnalyticsSection({
         errorMessage={t('portfolio.composition.error')}
         noDataMessage={compositionNoSeriesMessage}
         series={activeCompositionState.series}
+        rangeFrom={activeCompositionState.dateRange.from}
+        rangeTill={activeCompositionState.dateRange.till}
         className='min-h-[200px] h-full min-w-0 w-full overflow-hidden'
       />
     );

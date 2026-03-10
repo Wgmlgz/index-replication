@@ -295,6 +295,14 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
       if (apiError) {
         return apiError;
       }
+
+      if (typeof err.response?.status === "number") {
+        return `${fallback} (HTTP ${err.response.status})`;
+      }
+
+      if (typeof err.message === "string" && err.message.trim().length > 0) {
+        return `${fallback} (${err.message.trim()})`;
+      }
     }
     return fallback;
   }, []);

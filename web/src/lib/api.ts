@@ -97,7 +97,12 @@ const DEFAULT_DEV_API_BASE_URL = 'http://localhost:18080';
 const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "");
 
 const readLocalStorageBaseUrl = () => {
-  const localStorageBase = localStorage.getItem(LOCAL_STORAGE_BASE_URL);
+  let localStorageBase: string | null = null;
+  try {
+    localStorageBase = localStorage.getItem(LOCAL_STORAGE_BASE_URL);
+  } catch {
+    return null;
+  }
   if (!localStorageBase || localStorageBase.length <= 3) {
     return null;
   }

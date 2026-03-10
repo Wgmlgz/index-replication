@@ -166,6 +166,7 @@ export function usePriceVisualizationData(
     loading: historyQuery.isLoading,
     error: Boolean(historyQuery.error),
     data: chartData,
+    dateRange,
     latestValue,
     change,
     changePercent,

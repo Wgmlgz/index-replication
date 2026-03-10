@@ -8,6 +8,10 @@ export type PriceVisualizationDataState = {
   loading: boolean;
   error: boolean;
   data: PriceChartData;
+  dateRange: {
+    from?: string;
+    till?: string;
+  };
   latestValue: number | null;
   change: number | null;
   changePercent: number | null;
@@ -39,6 +43,10 @@ export type CompositionVisualizationDataState = {
   snapshotError: boolean;
   snapshotDate: string | null;
   snapshotItems: CompositionSnapshotItem[];
+  dateRange: {
+    from?: string;
+    till?: string;
+  };
   seriesLoading: boolean;
   seriesError: boolean;
   series: CompositionSeries[];

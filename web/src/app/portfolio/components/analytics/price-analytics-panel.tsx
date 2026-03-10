@@ -103,6 +103,7 @@ export function PriceAnalyticsPanel({
         errorMessage={t('portfolio.chart.error')}
         noDataMessage={chartNoDataMessage}
         series={priceSeries}
+        visibleRange={priceState.dateRange}
         className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden'
       />
     </div>

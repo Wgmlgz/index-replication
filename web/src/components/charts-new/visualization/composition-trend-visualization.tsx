@@ -27,6 +27,8 @@ type CompositionTrendVisualizationProps = {
   errorMessage: string;
   noDataMessage: string;
   series: CompositionSeries[];
+  rangeFrom?: string;
+  rangeTill?: string;
   className?: string;
   chartClassName?: string;
   skeletonClassName?: string;
@@ -40,6 +42,8 @@ export function CompositionTrendVisualization({
   errorMessage,
   noDataMessage,
   series,
+  rangeFrom,
+  rangeTill,
   className,
   chartClassName,
   skeletonClassName,
@@ -56,7 +60,7 @@ export function CompositionTrendVisualization({
   );
 
   const chartData = useMemo(() => {
-    const rows = new Map<string, Record<string, number | string>>();
+    const rows = new Map<string, Record<string, number | string | null>>();
     seriesMeta.forEach((meta, index) => {
       const item = series[index];
       item?.data.forEach(point => {
@@ -66,10 +70,26 @@ export function CompositionTrendVisualization({
       });
     });
 
-    return Array.from(rows.values()).sort((a, b) =>
+    if (rangeFrom && !rows.has(rangeFrom)) {
+      rows.set(rangeFrom, { time: rangeFrom });
+    }
+    if (rangeTill && !rows.has(rangeTill)) {
+      rows.set(rangeTill, { time: rangeTill });
+    }
+
+    const data = Array.from(rows.values()).sort((a, b) =>
       String(a.time).localeCompare(String(b.time))
     );
-  }, [series, seriesMeta]);
+
+    data.forEach(row => {
+      seriesMeta.forEach(meta => {
+        if (typeof row[meta.key] === 'number') return;
+        row[meta.key] = null;
+      });
+    });
+
+    return data;
+  }, [rangeFrom, rangeTill, series, seriesMeta]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return seriesMeta.reduce<ChartConfig>((acc, item) => {

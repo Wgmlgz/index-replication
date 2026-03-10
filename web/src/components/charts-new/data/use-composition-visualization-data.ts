@@ -50,6 +50,7 @@ export function useCompositionVisualizationData(options: {
     snapshotError: snapshotState.snapshotError,
     snapshotDate: snapshotState.snapshotDate,
     snapshotItems: snapshotState.snapshotItems,
+    dateRange: snapshotState.dateRange,
     seriesLoading: seriesState.seriesLoading,
     seriesError: seriesState.seriesError,
     series: seriesState.series,

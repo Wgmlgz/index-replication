@@ -12,7 +12,7 @@
     "android-dev": "tauri android dev",
     "android-build": "tauri android build",
     "api:gen": "node scripts/prepare-openapi.js && npx @openapitools/openapi-generator-cli generate -i /local/tmp/openapi/swagger.json -g typescript-axios -o /local/src/api-client",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev -p 6006 --exact-port",
     "storybook:build": "storybook build",
     "storybook:fixtures:record": "node scripts/storybook/record-fixtures.mjs"
   },

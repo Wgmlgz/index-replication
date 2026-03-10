@@ -238,6 +238,8 @@ export function MoexIndexesChartsPanel() {
         errorMessage={t('moex.composition.error')}
         noDataMessage={t('moex.composition.noSeries')}
         series={compositionState.series}
+        rangeFrom={compositionState.dateRange.from}
+        rangeTill={compositionState.dateRange.till}
         className='min-h-[200px] h-full'
       />
     ) : (
@@ -247,6 +249,8 @@ export function MoexIndexesChartsPanel() {
         errorMessage={t('moex.composition.error')}
         noDataMessage={t('moex.composition.noSeries')}
         series={compositionState.series}
+        rangeFrom={compositionState.dateRange.from}
+        rangeTill={compositionState.dateRange.till}
         className='min-h-[200px] h-full'
       />
     );
@@ -323,6 +327,7 @@ export function MoexIndexesChartsPanel() {
           errorMessage={t('moex.errors.history')}
           noDataMessage={t('moex.chart.noData')}
           series={priceSeries}
+          visibleRange={priceState.dateRange}
           className='flex min-h-[200px] flex-1 items-stretch'
         />
       </div>

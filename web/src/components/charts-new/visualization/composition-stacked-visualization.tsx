@@ -30,6 +30,8 @@ type CompositionStackedVisualizationProps = {
   errorMessage: string;
   noDataMessage: string;
   series: CompositionSeries[];
+  rangeFrom?: string;
+  rangeTill?: string;
   includeOther?: boolean;
   className?: string;
   chartClassName?: string;
@@ -44,6 +46,8 @@ export function CompositionStackedVisualization({
   errorMessage,
   noDataMessage,
   series,
+  rangeFrom,
+  rangeTill,
   includeOther = true,
   className,
   chartClassName,
@@ -61,24 +65,35 @@ export function CompositionStackedVisualization({
   );
 
   const { chartData, seriesMeta } = useMemo(() => {
-    const rows = new Map<string, Record<string, number | string>>();
+    const rows = new Map<string, Record<string, number | string | null>>();
+    const realRowTimes = new Set<string>();
     baseSeriesMeta.forEach((meta, index) => {
       const item = series[index];
       item?.data.forEach(point => {
         const row = rows.get(point.time) ?? { time: point.time };
         row[meta.key] = point.value;
         rows.set(point.time, row);
+        realRowTimes.add(point.time);
       });
     });
+
+    if (rangeFrom && !rows.has(rangeFrom)) {
+      rows.set(rangeFrom, { time: rangeFrom });
+    }
+    if (rangeTill && !rows.has(rangeTill)) {
+      rows.set(rangeTill, { time: rangeTill });
+    }
 
     const data = Array.from(rows.values()).sort((a, b) =>
       String(a.time).localeCompare(String(b.time))
     );
 
     data.forEach(row => {
+      const rowTime = String(row.time);
+      const isRealDataRow = realRowTimes.has(rowTime);
       baseSeriesMeta.forEach(meta => {
         if (typeof row[meta.key] !== 'number') {
-          row[meta.key] = 0;
+          row[meta.key] = isRealDataRow ? 0 : null;
         }
       });
     });
@@ -90,6 +105,12 @@ export function CompositionStackedVisualization({
     const otherKey = 'series_other';
     let hasOther = false;
     data.forEach(row => {
+      const rowTime = String(row.time);
+      const isRealDataRow = realRowTimes.has(rowTime);
+      if (!isRealDataRow) {
+        row[otherKey] = null;
+        return;
+      }
       const sum = baseSeriesMeta.reduce((total, meta) => {
         const value =
           typeof row[meta.key] === 'number' ? (row[meta.key] as number) : 0;
@@ -116,7 +137,7 @@ export function CompositionStackedVisualization({
         { key: otherKey, id: 'OTHER', color: OTHER_SERIES_COLOR },
       ],
     };
-  }, [baseSeriesMeta, includeOther, series]);
+  }, [baseSeriesMeta, includeOther, rangeFrom, rangeTill, series]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return seriesMeta.reduce<ChartConfig>((acc, item) => {
