@@ -14,6 +14,7 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import type { PortfolioSummaryResponse } from "@/api-client";
+import { TickerWithLogo } from "@/components/ticker/ticker-with-logo";
 import { portfolioApi } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/error-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -158,7 +159,12 @@ export function PortfolioSummaryPanel({ portfolioID }: PortfolioSummaryPanelProp
             {renderSortIcon(column.getIsSorted())}
           </Button>
         ),
-        cell: ({ row }) => row.original.ticker || "-",
+        cell: ({ row }) => (
+          <TickerWithLogo
+            ticker={row.original.ticker}
+            textClassName="font-medium"
+          />
+        ),
       },
       {
         accessorKey: "instrument_id",

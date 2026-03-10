@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
+  TICKER_LOGO_CACHE_MS,
   normalizeTicker,
   resolveTickerLogoUrl,
+  tickerLogoQueryKey,
 } from '@/lib/ticker-logo';
 import { cn } from '@/lib/utils';
 
@@ -26,26 +29,21 @@ export function TickerWithLogo({
     () => normalizeTicker(ticker ?? ''),
     [ticker],
   );
-  const [resolved, setResolved] = useState<{ ticker: string; url: string | null }>({
-    ticker: '',
-    url: null,
+  const [failedTickers, setFailedTickers] = useState<Record<string, true>>({});
+  const isTickerValid = normalizedTicker.length > 0;
+
+  const logoQuery = useQuery({
+    queryKey: tickerLogoQueryKey(normalizedTicker),
+    queryFn: () => resolveTickerLogoUrl(normalizedTicker),
+    enabled: isTickerValid,
+    staleTime: TICKER_LOGO_CACHE_MS,
+    gcTime: TICKER_LOGO_CACHE_MS,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
-
-  useEffect(() => {
-    if (!normalizedTicker) return;
-
-    let cancelled = false;
-    void resolveTickerLogoUrl(normalizedTicker).then(url => {
-      if (cancelled) return;
-      setResolved({ ticker: normalizedTicker, url });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [normalizedTicker]);
-
-  const logoUrl = resolved.ticker === normalizedTicker ? resolved.url : null;
+  const logoUrl = failedTickers[normalizedTicker]
+    ? null
+    : (logoQuery.data ?? null);
 
   if (!normalizedTicker) {
     return <span className={cn(textClassName)}>{placeholder}</span>;
@@ -53,32 +51,37 @@ export function TickerWithLogo({
 
   return (
     <span className={cn('inline-flex min-w-0 items-center gap-2', className)}>
-      {logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={logoUrl}
-          alt=''
-          aria-hidden='true'
-          className={cn(
-            'size-5 shrink-0 rounded-[4px] bg-background object-contain',
-            iconClassName,
-          )}
-          loading='lazy'
-          decoding='async'
-          referrerPolicy='no-referrer'
-          onError={() => setResolved({ ticker: normalizedTicker, url: null })}
-        />
-      ) : (
-        <span
-          aria-hidden='true'
-          className={cn(
-            'inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-muted text-[10px] font-semibold uppercase text-muted-foreground',
-            iconClassName,
-          )}
-        >
+      <span
+        aria-hidden='true'
+        className={cn(
+          'relative inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-muted',
+          iconClassName,
+        )}
+      >
+        <span className='text-[10px] font-semibold uppercase text-muted-foreground leading-none'>
           {normalizedTicker.charAt(0)}
         </span>
-      )}
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoUrl}
+            alt=''
+            width={20}
+            height={20}
+            className='absolute inset-0 block size-full object-contain'
+            loading='lazy'
+            decoding='async'
+            referrerPolicy='no-referrer'
+            onError={() =>
+              setFailedTickers(prev => (
+                prev[normalizedTicker]
+                  ? prev
+                  : { ...prev, [normalizedTicker]: true }
+              ))
+            }
+          />
+        ) : null}
+      </span>
       <span className={cn('truncate', textClassName)}>{normalizedTicker}</span>
     </span>
   );

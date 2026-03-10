@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { CompositionLegendRow } from './chart-types';
@@ -67,56 +68,64 @@ export function CompositionLegend({
           {rows.map((item, index) => {
             const tickerHref = resolveTickerHref(item.ticker);
             return (
-            <div
-              key={item.ticker}
-              className='rounded-md border p-2 text-xs text-muted-foreground'
-            >
-              <div className='flex items-center gap-2'>
-                <span
-                  className='h-2.5 w-2.5 shrink-0 rounded-full'
-                  style={{
-                    backgroundColor: resolveCompositionSeriesColor(index),
-                  }}
-                />
-                {tickerHref ? (
-                  <a
-                    href={tickerHref}
-                    target='_blank'
-                    rel='noreferrer noopener'
-                    className='font-medium text-foreground hover:underline'
-                    aria-label={t(`${translationKeyPrefix}.legend.openTicker`)}
-                  >
-                    {item.ticker}
-                  </a>
-                ) : (
-                  <span className='font-medium text-foreground'>{item.ticker}</span>
+              <div
+                key={item.ticker}
+                className='rounded-md border p-2 text-xs text-muted-foreground'
+              >
+                <div className='flex items-center gap-2'>
+                  <span
+                    className='h-2.5 w-2.5 shrink-0 rounded-full'
+                    style={{
+                      backgroundColor: resolveCompositionSeriesColor(index),
+                    }}
+                  />
+                  {tickerHref ? (
+                    <a
+                      href={tickerHref}
+                      target='_blank'
+                      rel='noreferrer noopener'
+                      className='hover:underline'
+                      aria-label={t(`${translationKeyPrefix}.legend.openTicker`)}
+                    >
+                      <TickerWithLogo
+                        ticker={item.ticker}
+                        textClassName='font-medium text-foreground'
+                        iconClassName='size-4'
+                      />
+                    </a>
+                  ) : (
+                    <TickerWithLogo
+                      ticker={item.ticker}
+                      textClassName='font-medium text-foreground'
+                      iconClassName='size-4'
+                    />
+                  )}
+                  {item.name !== item.ticker && (
+                    <span className='truncate'>{item.name}</span>
+                  )}
+                </div>
+                {item.latestWeight !== null && (
+                  <div>
+                    {t(`${translationKeyPrefix}.legend.latestWeight`, {
+                      value: item.latestWeight.toFixed(2),
+                    })}
+                  </div>
                 )}
-                {item.name !== item.ticker && (
-                  <span className='truncate'>{item.name}</span>
+                {item.latestDate && (
+                  <div>
+                    {t(`${translationKeyPrefix}.legend.asOf`, {
+                      date: item.latestDate,
+                    })}
+                  </div>
+                )}
+                {item.snapshotWeight !== null && (
+                  <div>
+                    {t(`${translationKeyPrefix}.legend.snapshotWeight`, {
+                      value: item.snapshotWeight.toFixed(2),
+                    })}
+                  </div>
                 )}
               </div>
-              {item.latestWeight !== null && (
-                <div>
-                  {t(`${translationKeyPrefix}.legend.latestWeight`, {
-                    value: item.latestWeight.toFixed(2),
-                  })}
-                </div>
-              )}
-              {item.latestDate && (
-                <div>
-                  {t(`${translationKeyPrefix}.legend.asOf`, {
-                    date: item.latestDate,
-                  })}
-                </div>
-              )}
-              {item.snapshotWeight !== null && (
-                <div>
-                  {t(`${translationKeyPrefix}.legend.snapshotWeight`, {
-                    value: item.snapshotWeight.toFixed(2),
-                  })}
-                </div>
-              )}
-            </div>
             );
           })}
 

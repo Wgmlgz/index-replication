@@ -7,6 +7,7 @@ import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { PortfolioOperationHistoryItem } from '@/api-client';
+import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -41,6 +42,15 @@ import {
 
 const DEFAULT_OPERATIONS_PAGE_SIZE = 50;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
+const TICKER_LIKE_PATTERN = /^[A-Z0-9._-]{1,12}$/;
+
+function resolveOperationTicker(operation: PortfolioOperationHistoryItem): string | null {
+  const candidate = (operation.instrument_id ?? '').trim().toUpperCase();
+  if (!candidate || !TICKER_LIKE_PATTERN.test(candidate)) {
+    return null;
+  }
+  return candidate;
+}
 
 type PortfolioOperationsTableProps = {
   portfolioID: number | null;
@@ -79,8 +89,22 @@ export function PortfolioOperationsTable({
       {
         id: 'instrument',
         header: () => t('portfolio.card.operationInstrument'),
-        cell: ({ row }) =>
-          row.original.name || row.original.instrument_id || row.original.figi || '-',
+        cell: ({ row }) => {
+          const operation = row.original;
+          const ticker = resolveOperationTicker(operation);
+          if (!ticker) {
+            return operation.name || operation.instrument_id || operation.figi || '-';
+          }
+
+          return (
+            <div className='space-y-0.5'>
+              <TickerWithLogo ticker={ticker} textClassName='font-medium' />
+              {operation.name && operation.name !== ticker && (
+                <div className='text-xs text-muted-foreground'>{operation.name}</div>
+              )}
+            </div>
+          );
+        },
       },
       {
         id: 'quantity',
