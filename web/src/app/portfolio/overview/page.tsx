@@ -188,7 +188,7 @@ export default function PortfolioOverviewPage() {
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className='min-h-0 flex-1 gap-6'
+        className='min-h-0 min-w-0 flex-1 gap-6'
       >
         <div className='space-y-4'>
           <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start'>
@@ -253,11 +253,14 @@ export default function PortfolioOverviewPage() {
           </Alert>
         ) : null}
 
-        <TabsContent value='overview' className='min-h-0 flex-1'>
+        <TabsContent
+          value='overview'
+          className='min-h-0 min-w-0 flex-1 overflow-hidden data-[state=active]:flex'
+        >
           <Tabs
             value={activeOverviewTab}
             onValueChange={handleOverviewTabChange}
-            className='min-h-0 flex-1 gap-4'
+            className='min-h-0 min-w-0 flex-1 gap-4 overflow-hidden'
           >
             <TabsList className='grid h-auto w-full grid-cols-3 md:w-auto'>
               <TabsTrigger value='summary'>
@@ -274,15 +277,18 @@ export default function PortfolioOverviewPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value='summary' className='min-h-0 flex-1'>
+            <TabsContent value='summary' className='min-h-0 min-w-0 flex-1 overflow-hidden'>
               <PortfolioSummaryPanel portfolioID={selectedPortfolioID} />
             </TabsContent>
 
-            <TabsContent value='operations' className='min-h-0 flex-1'>
+            <TabsContent
+              value='operations'
+              className='min-h-0 min-w-0 flex-1 overflow-hidden data-[state=active]:flex'
+            >
               <PortfolioOperationsTable portfolioID={selectedPortfolioID} />
             </TabsContent>
 
-            <TabsContent value='compare' className='min-h-0 flex-1'>
+            <TabsContent value='compare' className='min-h-0 min-w-0 flex-1 overflow-hidden'>
               <PortfolioCompositionComparePanel
                 portfolioID={selectedPortfolioID}
                 portfolioName={selectedProfile?.name || ''}

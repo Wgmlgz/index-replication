@@ -244,12 +244,12 @@ export function PortfolioOperationsTable({
   }
 
   return (
-    <Card className='h-full min-h-0 overflow-hidden'>
+    <Card className='h-full min-h-0 min-w-0 flex-1 overflow-hidden'>
       <CardHeader>
         <CardTitle>{t('portfolio.operations.title')}</CardTitle>
         <CardDescription>{t('portfolio.operations.description')}</CardDescription>
       </CardHeader>
-      <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden text-sm'>
+      <CardContent className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden text-sm'>
         {operationsError ? (
           <Alert variant='destructive'>
             <AlertTitle>{t('common.error')}</AlertTitle>
@@ -260,48 +260,50 @@ export function PortfolioOperationsTable({
         {loadingOperations ? (
           <div className='text-muted-foreground'>{t('portfolio.card.operationsLoading')}</div>
         ) : (
-          <div className='min-h-0 flex-1 overflow-auto rounded-md border'>
-            <Table>
-              <TableHeader className='bg-muted/50'>
-                {table.getHeaderGroups().map(headerGroup => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length > 0 ? (
-                  table.getRowModel().rows.map(row => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map(cell => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
+          <div className='min-h-0 min-w-0 flex-1 overflow-hidden rounded-md border'>
+            <div className='h-full w-full overflow-auto'>
+              <Table>
+                <TableHeader className='bg-muted/50'>
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map(header => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                        </TableHead>
                       ))}
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell className='text-muted-foreground' colSpan={columns.length}>
-                      {t('portfolio.card.operationsEmpty')}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.length > 0 ? (
+                    table.getRowModel().rows.map(row => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map(cell => (
+                          <TableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell className='text-muted-foreground' colSpan={columns.length}>
+                        {t('portfolio.card.operationsEmpty')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
 
-        <div className='flex items-center justify-between gap-2'>
+        <div className='shrink-0 flex items-center justify-between gap-2'>
           <div className='flex items-center gap-2'>
             <span className='text-muted-foreground text-sm'>
               {t('portfolio.operations.pagination.rowsPerPage')}

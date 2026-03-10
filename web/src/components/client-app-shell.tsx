@@ -103,8 +103,8 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
       }
     >
       <AppSidebar variant='sidebar' />
-      <div className='flex flex-1 flex-col'>
-        <main className='mx-auto w-full px-4 py-8 sm:px-6 lg:px-8'>{children}</main>
+      <div className='flex min-h-0 flex-1 flex-col'>
+        <main className='mx-auto min-h-0 w-full px-4 py-8 sm:px-6 lg:px-8'>{children}</main>
       </div>
     </SidebarProvider>
   );
