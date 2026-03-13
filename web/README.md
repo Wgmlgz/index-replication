@@ -29,6 +29,9 @@ Common tasks:
 - `task dev`
 - `task build`
 - `task lint`
+- `task i18n:unused` (prints unused/missing key list, no writes)
+- `task i18n:prune` (apply locale cleanup)
+- `task i18n:check` (same analysis, exits non-zero on changes)
 - `task api:gen`
 - `task storybook`
 - `task storybook:build`

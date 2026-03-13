@@ -137,3 +137,18 @@ tasks:
   lint:web:
     cmds:
       - task -d web lint
+
+  i18n:unused:
+    desc: Report unused/missing web i18n keys (no writes)
+    cmds:
+      - task -d web i18n:unused
+
+  i18n:prune:
+    desc: Remove unused web i18n keys from locale files
+    cmds:
+      - task -d web i18n:prune
+
+  i18n:check:
+    desc: Fail if unused or missing web i18n keys are detected
+    cmds:
+      - task -d web i18n:check

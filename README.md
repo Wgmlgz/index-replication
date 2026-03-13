@@ -37,6 +37,7 @@ The preferred way to run commands is through Taskfiles.
 - Root: `task --list`
 - API: `cd api && task --list`
 - Web: `cd web && task --list`
+- Web i18n maintenance: `task i18n:unused`, `task i18n:prune`, `task i18n:check`
 
 Private admin access via Tailscale Serve:
 

@@ -33,6 +33,21 @@ tasks:
     cmds:
       - npm run lint
 
+  i18n:unused:
+    desc: Report unused/missing i18n keys (no file writes)
+    cmds:
+      - npm run i18n:unused
+
+  i18n:prune:
+    desc: Remove unused i18n keys from locale files
+    cmds:
+      - npm run i18n:prune
+
+  i18n:check:
+    desc: Fail if unused or missing i18n keys are detected
+    cmds:
+      - npm run i18n:check
+
   storybook:
     desc: Run Storybook in dev mode
     env:

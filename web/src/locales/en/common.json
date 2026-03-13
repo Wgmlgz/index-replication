@@ -1,16 +1,5 @@
 {
-  "common": {
-    "error": "Error",
-    "loading": "Loading...",
-    "articleUnavailable": "Article is not available for this language yet."
-  },
   "navigation": {
-    "brand": "Replicant",
-    "section": "Navigation",
-    "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar",
-    "signIn": "Sign in",
-    "signOut": "Sign out",
     "cards": {
       "moex": {
         "title": "MOEX indexes",
@@ -46,47 +35,15 @@
       "replication": "Replication",
       "operations": "Operations",
       "profiles": "Profiles"
-    }
-  },
-  "auth": {
-    "login": {
-      "title": "Sign in to your account",
-      "description": "Enter your credentials to continue.",
-      "usernameLabel": "Username",
-      "usernamePlaceholder": "Enter username",
-      "passwordLabel": "Password",
-      "passwordPlaceholder": "Enter password",
-      "rememberMe": "Remember me",
-      "submit": "Sign in",
-      "submitting": "Signing in...",
-      "genericError": "Unable to sign in. Please try again.",
-      "sessionNotReady": "Login was approved, but session is not ready yet. Please try again.",
-      "verification": {
-        "description": "Approve sign-in in Telegram to finish login.",
-        "waiting": "Waiting for Telegram approval.",
-        "expiresAt": "Expires at {{time}}",
-        "checkNow": "Check approval now",
-        "checking": "Checking...",
-        "back": "Back to login",
-        "genericError": "Verification failed. Please try again."
-      }
     },
-    "guard": {
-      "checkingSessionTitle": "Checking your session",
-      "checkingSessionDescription": "Please wait while we verify your access.",
-      "redirectingToLoginTitle": "Redirecting to sign in",
-      "redirectingToLoginDescription": "This page requires authentication.",
-      "redirectingToAppTitle": "Redirecting to the app",
-      "redirectingToAppDescription": "You are already signed in."
-    }
+    "brand": "Replicant",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "section": "Navigation",
+    "signOut": "Sign out",
+    "signIn": "Sign in"
   },
   "landing": {
-    "kicker": "Index Replication Platform",
-    "title": "Track indexes, manage integrations, and operate from one workspace.",
-    "description": "Sign in to access dashboards, audit logs, user management, and T-Bank tools.",
-    "primaryGuest": "Sign in",
-    "primaryAuthenticated": "Open dashboard",
-    "secondaryGuest": "Continue to login",
     "features": {
       "indexes": {
         "title": "MOEX analytics",
@@ -100,48 +57,23 @@
         "title": "Secure access",
         "description": "Use session auth with optional Telegram login verification."
       }
-    }
+    },
+    "primaryAuthenticated": "Open dashboard",
+    "primaryGuest": "Sign in",
+    "kicker": "Index Replication Platform",
+    "title": "Track indexes, manage integrations, and operate from one workspace.",
+    "description": "Sign in to access dashboards, audit logs, user management, and T-Bank tools.",
+    "secondaryGuest": "Continue to login"
   },
   "settings": {
-    "page": {
-      "loading": "Loading...",
-      "appSettingsTitle": "Application settings",
-      "apiUrlLabel": "API base URL",
-      "apiUrlPlaceholder": "http://localhost:8080",
-      "defaultThresholdLabel": "Default threshold",
-      "oneThresholdLabel": "One threshold",
-      "oneOtherThresholdLabel": "One other threshold",
-      "currentUserTitle": "Current user info",
-      "loginLabel": "Login",
-      "fullNameLabel": "Full name",
-      "emailLabel": "Email",
-      "roleLabel": "Role",
-      "phoneLabel": "Phone",
-      "blockedLabel": "Blocked",
-      "createdLabel": "Created",
-      "lastActiveLabel": "Last active",
-      "notAuthorized": "Not authenticated.",
-      "none": "(none)",
-      "never": "(never)",
-      "yes": "Yes",
-      "no": "No"
-    },
-    "changePassword": {
-      "title": "Change password",
-      "currentPasswordLabel": "Current password",
-      "newPasswordLabel": "New password",
-      "confirmPasswordLabel": "Confirm new password",
-      "save": "Save",
-      "saving": "Saving...",
-      "success": "Password updated successfully.",
-      "error": "Failed to update password.",
-      "validation": {
-        "currentRequired": "Current password is required.",
-        "newMinLength": "New password must contain at least 6 characters.",
-        "passwordMismatch": "Passwords do not match."
-      }
-    },
     "telegram": {
+      "errors": {
+        "load": "Failed to load Telegram verification settings.",
+        "connectLink": "Failed to create Telegram connect link.",
+        "update": "Failed to update Telegram verification settings.",
+        "unlink": "Failed to unlink Telegram."
+      },
+      "unlinkConfirm": "Unlink Telegram from your account? This will disable Telegram login verification.",
       "title": "Telegram verification",
       "description": "Connect Telegram account and manage login verification settings.",
       "loading": "Loading Telegram verification settings...",
@@ -149,45 +81,54 @@
       "connected": "Connected",
       "notConnected": "Not connected",
       "username": "Telegram account: @{{username}}",
+      "enableLogin2FA": "Enable Telegram login verification",
+      "enableLogin2FADescription": "When enabled, sign-in requires Telegram approval after password.",
       "generateLink": "Generate connect link",
       "openBot": "Open bot chat",
       "unlink": "Unlink Telegram",
-      "unlinkConfirm": "Unlink Telegram from your account? This will disable Telegram login verification.",
       "connectLinkReady": "Open this one-time connect link:",
-      "expiresAt": "Link expires at {{time}}",
-      "enableLogin2FA": "Enable Telegram login verification",
-      "enableLogin2FADescription": "When enabled, sign-in requires Telegram approval after password.",
-      "errors": {
-        "load": "Failed to load Telegram verification settings.",
-        "connectLink": "Failed to create Telegram connect link.",
-        "update": "Failed to update Telegram verification settings.",
-        "unlink": "Failed to unlink Telegram."
-      }
+      "expiresAt": "Link expires at {{time}}"
+    },
+    "changePassword": {
+      "validation": {
+        "currentRequired": "Current password is required.",
+        "newMinLength": "New password must contain at least 6 characters.",
+        "passwordMismatch": "Passwords do not match."
+      },
+      "success": "Password updated successfully.",
+      "error": "Failed to update password.",
+      "title": "Change password",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "saving": "Saving...",
+      "save": "Save"
+    },
+    "page": {
+      "appSettingsTitle": "Application settings",
+      "apiUrlLabel": "API base URL",
+      "apiUrlPlaceholder": "http://localhost:8080",
+      "defaultThresholdLabel": "Default threshold",
+      "oneThresholdLabel": "One threshold",
+      "oneOtherThresholdLabel": "One other threshold",
+      "loading": "Loading...",
+      "currentUserTitle": "Current user info",
+      "loginLabel": "Login",
+      "fullNameLabel": "Full name",
+      "emailLabel": "Email",
+      "none": "(none)",
+      "roleLabel": "Role",
+      "phoneLabel": "Phone",
+      "blockedLabel": "Blocked",
+      "yes": "Yes",
+      "no": "No",
+      "createdLabel": "Created",
+      "lastActiveLabel": "Last active",
+      "never": "(never)",
+      "notAuthorized": "Not authenticated."
     }
   },
   "moex": {
-    "title": "MOEX indexes",
-    "description": "Select an index to review performance over time.",
-    "sources": {
-      "overview": "Open MOEX index values",
-      "list": "Open MOEX index list",
-      "indexPage": "Open MOEX index page for {{secid}}",
-      "indexConstituents": "Open MOEX constituents page for {{secid}}",
-      "selectIndex": "Select an index to open the source."
-    },
-    "list": {
-      "title": "Index list",
-      "searchPlaceholder": "Search by name or code",
-      "loading": "Loading list...",
-      "found": "Found: {{count}}",
-      "onlyFavorites": "Only favorites",
-      "favorites": "Favorites",
-      "empty": "Nothing found.",
-      "noFavorites": "No favorites match your query.",
-      "addFavorite": "Add to favorites",
-      "codeOnly": "{{secid}}",
-      "codeWithName": "{{secid}} - {{name}}"
-    },
     "filters": {
       "groups": "Groups",
       "currency": "Currency",
@@ -210,18 +151,10 @@
     },
     "groups": {
       "uncategorized": "Uncategorized",
+      "more_one": "moex.groups.more",
+      "more_other": "moex.groups.more",
       "list": "Groups: {{groups}}",
-      "more": "Groups: {{groups}} +{{count}}",
       "none": "Groups: Uncategorized"
-    },
-    "status": {
-      "inactiveSince": "Inactive since {{date}}"
-    },
-    "pagination": {
-      "rowsPerPage": "Rows per page",
-      "pageOf": "{{page}} of {{pageCount}}",
-      "previous": "Previous page",
-      "next": "Next page"
     },
     "chart": {
       "title": "Chart",
@@ -298,23 +231,6 @@
       "noSeries": "No weight history for the selected range.",
       "error": "Failed to load index composition."
     },
-    "demo": {
-      "title": "Composition chart demo",
-      "description": "Test hover interactions and series density with sample data.",
-      "controls": "Demo controls",
-      "seriesCount": "Series count",
-      "variant": "Chart type",
-      "variantStacked": "Stacked area",
-      "variantLine": "Line",
-      "snapshot": "Snapshot (treemap)",
-      "series": "Series chart"
-    },
-    "errors": {
-      "indexes": "Failed to load index list.",
-      "history": "Failed to load index history.",
-      "settings": "Failed to load user settings.",
-      "groups": "Failed to load index groups."
-    },
     "sort": {
       "nameAsc": "Name (A-Z)",
       "nameDesc": "Name (Z-A)",
@@ -323,25 +239,46 @@
       "currencyAsc": "Currency",
       "boardAsc": "Board",
       "calcAsc": "Calculation type"
+    },
+    "sources": {
+      "indexPage": "Open MOEX index page for {{secid}}",
+      "selectIndex": "Select an index to open the source.",
+      "overview": "Open MOEX index values",
+      "indexConstituents": "Open MOEX constituents page for {{secid}}",
+      "list": "Open MOEX index list"
+    },
+    "title": "MOEX indexes",
+    "description": "Select an index to review performance over time.",
+    "status": {
+      "inactiveSince": "Inactive since {{date}}"
+    },
+    "errors": {
+      "history": "Failed to load index history.",
+      "indexes": "Failed to load index list.",
+      "settings": "Failed to load user settings.",
+      "groups": "Failed to load index groups."
+    },
+    "list": {
+      "favorites": "Favorites",
+      "codeWithName": "{{secid}} - {{name}}",
+      "codeOnly": "{{secid}}",
+      "addFavorite": "Add to favorites",
+      "title": "Index list",
+      "searchPlaceholder": "Search by name or code",
+      "found_one": "moex.list.found",
+      "found_other": "moex.list.found",
+      "onlyFavorites": "Only favorites",
+      "empty": "Nothing found.",
+      "noFavorites": "No favorites match your query."
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "pageOf": "{{page}} of {{pageCount}}",
+      "previous": "Previous page",
+      "next": "Next page"
     }
   },
-  "integrations": {
-    "title": "Integrations",
-    "description": "Manage external connections and credentials in one place.",
-    "loading": "Loading integrations...",
-    "notAuthorized": "Not authenticated."
-  },
   "portfolio": {
-    "title": "Portfolio",
-    "description": "Review account balances and portfolio positions.",
-    "analytics": {
-      "title": "Portfolio analytics",
-      "description": "Track portfolio value and composition over time.",
-      "notConnected": "Connect T-Bank in Integrations to load portfolio analytics.",
-      "accountLabel": "Account",
-      "accountDefaultOption": "Use default account",
-      "selectPrompt": "Select or create a portfolio profile to load analytics."
-    },
     "chart": {
       "title": "Portfolio value",
       "description": "Operation-derived value series based on current holdings.",
@@ -457,44 +394,120 @@
         "asOf": "As of {{date}}"
       }
     },
-    "subpages": {
-      "overview": "Overview",
-      "actions": "Actions",
-      "analytics": "Analytics",
-      "operations": "Operations",
-      "replication": "Replication",
-      "profiles": "Profiles"
-    },
-    "overview": {
-      "title": "Overview",
-      "description": "Summary, balances, and top positions.",
-      "summaryTitle": "Portfolio summary",
-      "summaryDescription": "Review account state, balances, and top positions.",
-      "quickActionsTitle": "Actions",
-      "noQuickActions": "No provider actions available for this profile.",
-      "balancesTitle": "Balances",
+    "replication": {
+      "modeOptions": {
+        "full": "Full replication",
+        "sampled": "Sampled replication"
+      },
+      "selector": {
+        "title": "Select MOEX benchmark index",
+        "description": "Browse MOEX indexes and confirm selection.",
+        "selectedValue": "Selected: {{secid}}",
+        "noSelection": "No index selected.",
+        "cancelButton": "Cancel",
+        "selectButton": "Select and save"
+      },
+      "title": "Replication config",
+      "description": "Configure benchmark and mode parameters for future replication workflows.",
+      "selectPrompt": "Select a portfolio profile to configure replication.",
       "tabs": {
-        "summary": "Summary",
-        "operations": "Operations",
-        "compare": "Compare"
-      }
+        "settings": "Settings",
+        "drafts": "Drafts"
+      },
+      "rebalances": {
+        "detailModeLabel": "Mode",
+        "detailExecutionLabel": "Execution mode",
+        "detailAsOfLabel": "As-of date",
+        "detailCreatedLabel": "Created",
+        "warningsTitle": "Warnings",
+        "summaryItemsTotal": "Items total",
+        "summaryActionable": "Actionable items",
+        "summaryUnresolved": "Unresolved items",
+        "summaryTurnover": "Estimated turnover",
+        "itemsColumns": {
+          "ticker": "Ticker",
+          "side": "Side",
+          "currentQty": "Current qty",
+          "targetQty": "Target qty",
+          "deltaQty": "Delta qty",
+          "currentWeight": "Current %",
+          "targetWeight": "Target %",
+          "status": "Status",
+          "reason": "Reason"
+        },
+        "emptyItems": "No planned items.",
+        "executionModeLabel": "Execution mode",
+        "executionModeOptions": {
+          "manual": "Manual",
+          "automatic": "Automatic"
+        },
+        "asOfDateLabel": "As-of date",
+        "createDraftWorking": "Creating draft...",
+        "createDraftButton": "Create draft",
+        "title": "Rebalance drafts",
+        "description": "Create deterministic planning drafts and inspect planned items before any execution.",
+        "openCreateDialogButton": "Create draft",
+        "listTitle": "Draft history",
+        "loadingList": "Loading rebalance drafts...",
+        "emptyList": "No rebalance drafts yet.",
+        "viewDraftButton": "View draft",
+        "createDialogTitle": "Create rebalance draft",
+        "createDialogDescription": "Set execution mode and optional as-of date, then create draft.",
+        "detailTitle": "Draft #{{id}}",
+        "selectPrompt": "Select a draft to see details.",
+        "loadingDetail": "Loading draft details...",
+        "closeButton": "Close"
+      },
+      "errors": {
+        "loadRebalances": "Failed to load rebalance drafts.",
+        "loadRebalanceDetail": "Failed to load rebalance draft detail.",
+        "createDraft": "Failed to create rebalance draft.",
+        "modeParamsObject": "Mode params must be a JSON object.",
+        "modeParamsJson": "Mode params must be valid JSON.",
+        "save": "Failed to save replication config.",
+        "clear": "Failed to clear replication config."
+      },
+      "updatedAtEmpty": "Not set",
+      "isEnabledLabel": "Enable replication mode",
+      "toggleConfirmTitle": "Update replication mode?",
+      "toggleConfirmDisableDescription": "Disable replication mode and save this change now?",
+      "toggleConfirmEnableDescription": "Enable replication mode and save this change now?",
+      "modeDialog": {
+        "cancelButton": "Cancel",
+        "title": "Edit mode settings",
+        "description": "Update mode key and params. Save to apply changes.",
+        "saveButton": "Save mode settings"
+      },
+      "toggleConfirmDisableAction": "Disable and save",
+      "toggleConfirmEnableAction": "Enable and save",
+      "benchmarkLabel": "Benchmark SECID",
+      "changeBenchmarkButton": "Change and save index",
+      "selectBenchmarkButton": "Select and save index",
+      "clearBenchmarkButton": "Clear selected index",
+      "clearBenchmarkConfirmTitle": "Clear selected index?",
+      "clearBenchmarkConfirmDescription": "Benchmark selection will be cleared and saved immediately.",
+      "clearBenchmarkConfirmAction": "Clear and save",
+      "selectedBenchmarkValue": "Selected benchmark: {{secid}}",
+      "selectedBenchmarkEmpty": "No benchmark index selected.",
+      "modeKeyLabel": "Mode key",
+      "modeParamsLabel": "Mode params (JSON object)",
+      "readonlyHint": "Values are read-only here. Use Edit mode settings to change and save.",
+      "editModeButton": "Edit mode settings",
+      "updatedAtLabel": "Last updated",
+      "clearButton": "Clear config",
+      "clearConfigConfirmTitle": "Clear replication config?",
+      "clearConfigConfirmDescription": "This will remove current replication settings for this profile.",
+      "clearConfigConfirmAction": "Clear config"
     },
-    "analyticsPage": {
-      "title": "Analytics",
-      "description": "Price and composition charts for the selected profile."
-    },
-    "operationsPage": {
-      "title": "Operations",
-      "description": "Operations history with cursor-based pagination."
-    },
-    "operations": {
-      "title": "Operations history",
-      "description": "Review portfolio operations and load older entries.",
-      "pagination": {
-        "rowsPerPage": "Rows per page",
-        "previous": "Previous page",
-        "next": "Next page"
-      }
+    "errors": {
+      "createProfile": "Failed to create portfolio profile.",
+      "deleteProfile": "Failed to delete portfolio profile.",
+      "profileNameRequired": "Profile name is required.",
+      "loadProfiles": "Failed to load portfolio profiles.",
+      "updateProfile": "Failed to update portfolio profile.",
+      "summary": "Failed to load portfolio summary.",
+      "action": "Failed to execute portfolio action.",
+      "operations": "Failed to load portfolio operations."
     },
     "profiles": {
       "title": "Profiles",
@@ -508,195 +521,45 @@
       "providerVirtual": "Virtual",
       "providerMock": "Mock",
       "providerTbank": "T-Bank",
-      "createDefaultLabel": "Set as default",
       "createAccountIDLabel": "T-Bank account id (optional)",
       "createAccountIDPlaceholder": "Use connected default account",
-      "createSubmit": "Create",
+      "createDefaultLabel": "Set as default",
       "cancelButton": "Cancel",
-      "managerTitle": "Profile manager",
-      "selectedConfigTitle": "Selected profile config",
-      "defaultLabel": "Default profile:",
+      "createSubmit": "Create",
+      "providerLabel": "Provider",
       "defaultLabelShort": "Default",
       "defaultYes": "Yes",
       "defaultNo": "No",
-      "providerLabel": "Provider",
       "actionsLabel": "Actions",
       "updatedLabel": "Updated",
-      "accountIDLabel": "T-Bank account id:",
-      "overviewButton": "Overview",
-      "openButton": "Open",
       "openAriaLabel": "Open profile {{name}}",
+      "overviewButton": "Overview",
       "deleteAriaLabel": "Delete profile {{name}}",
       "deleteConfirmTitle": "Delete profile?",
       "deleteConfirmDescription": "Profile \"{{name}}\" will be removed.",
       "deleteConfirmAction": "Delete"
     },
     "selector": {
-      "title": "Portfolio profiles",
-      "label": "Selected profile",
-      "emptyOption": "Select profile",
-      "noProfiles": "No profiles yet. Create one to get started.",
-      "defaultTag": "default",
-      "deleteButton": "Delete selected",
-      "refreshButton": "Refresh profiles",
-      "createTitle": "Create profile",
-      "provider": "Provider",
-      "name": "Profile name",
-      "namePlaceholder": "My portfolio profile",
-      "isDefault": "Set as default",
-      "accountID": "T-Bank account id (optional)",
-      "accountIDPlaceholder": "Use connected default account",
-      "createButton": "Create profile"
-    },
-    "actions": {
-      "title": "Actions",
-      "description": "Run provider actions for the selected profile.",
-      "selectPrompt": "Select a portfolio profile to run actions."
-    },
-    "replication": {
-      "title": "Replication config",
-      "description": "Configure benchmark and mode parameters for future replication workflows.",
-      "tabs": {
-        "settings": "Settings",
-        "drafts": "Drafts"
-      },
-      "selectPrompt": "Select a portfolio profile to configure replication.",
-      "isEnabledLabel": "Enable replication mode",
-      "benchmarkLabel": "Benchmark SECID",
-      "benchmarkPlaceholder": "IMOEX",
-      "selectBenchmarkButton": "Select and save index",
-      "changeBenchmarkButton": "Change and save index",
-      "clearBenchmarkButton": "Clear selected index",
-      "clearBenchmarkConfirmTitle": "Clear selected index?",
-      "clearBenchmarkConfirmDescription": "Benchmark selection will be cleared and saved immediately.",
-      "clearBenchmarkConfirmAction": "Clear and save",
-      "selectedBenchmarkValue": "Selected benchmark: {{secid}}",
-      "selectedBenchmarkEmpty": "No benchmark index selected.",
-      "modeKeyLabel": "Mode key",
-      "modeOptions": {
-        "full": "Full replication",
-        "sampled": "Sampled replication"
-      },
-      "modeParamsLabel": "Mode params (JSON object)",
-      "readonlyHint": "Values are read-only here. Use Edit mode settings to change and save.",
-      "editModeButton": "Edit mode settings",
-      "modeDialog": {
-        "title": "Edit mode settings",
-        "description": "Update mode key and params. Save to apply changes.",
-        "cancelButton": "Cancel",
-        "saveButton": "Save mode settings"
-      },
-      "toggleConfirmTitle": "Update replication mode?",
-      "toggleConfirmEnableDescription": "Enable replication mode and save this change now?",
-      "toggleConfirmDisableDescription": "Disable replication mode and save this change now?",
-      "toggleConfirmEnableAction": "Enable and save",
-      "toggleConfirmDisableAction": "Disable and save",
-      "excludedTickersLabel": "Excluded tickers",
-      "excludedTickersPlaceholder": "GAZP, SBER",
-      "updatedAtLabel": "Last updated",
-      "updatedAtEmpty": "Not set",
-      "clearButton": "Clear config",
-      "clearConfigConfirmTitle": "Clear replication config?",
-      "clearConfigConfirmDescription": "This will remove current replication settings for this profile.",
-      "clearConfigConfirmAction": "Clear config",
-      "selector": {
-        "title": "Select MOEX benchmark index",
-        "description": "Browse MOEX indexes and confirm selection.",
-        "selectedValue": "Selected: {{secid}}",
-        "noSelection": "No index selected.",
-        "cancelButton": "Cancel",
-        "selectButton": "Select and save"
-      },
-      "errors": {
-        "save": "Failed to save replication config.",
-        "clear": "Failed to clear replication config.",
-        "modeParamsJson": "Mode params must be valid JSON.",
-        "modeParamsObject": "Mode params must be a JSON object.",
-        "createDraft": "Failed to create rebalance draft.",
-        "loadRebalances": "Failed to load rebalance drafts.",
-        "loadRebalanceDetail": "Failed to load rebalance draft detail."
-      },
-      "rebalances": {
-        "title": "Rebalance drafts",
-        "description": "Create deterministic planning drafts and inspect planned items before any execution.",
-        "executionModeLabel": "Execution mode",
-        "executionModeOptions": {
-          "manual": "Manual",
-          "automatic": "Automatic"
-        },
-        "openCreateDialogButton": "Create draft",
-        "createDialogTitle": "Create rebalance draft",
-        "createDialogDescription": "Set execution mode and optional as-of date, then create draft.",
-        "asOfDateLabel": "As-of date",
-        "createDraftButton": "Create draft",
-        "createDraftWorking": "Creating draft...",
-        "listTitle": "Draft history",
-        "viewDraftButton": "View draft",
-        "loadingList": "Loading rebalance drafts...",
-        "emptyList": "No rebalance drafts yet.",
-        "selectPrompt": "Select a draft to see details.",
-        "loadingDetail": "Loading draft details...",
-        "detailDialogTitle": "Draft details",
-        "detailDialogDescription": "Inspect run summary, warnings, and planned rebalance items.",
-        "detailTitle": "Draft #{{id}}",
-        "detailModeLabel": "Mode",
-        "detailExecutionLabel": "Execution mode",
-        "detailAsOfLabel": "As-of date",
-        "detailCreatedLabel": "Created",
-        "closeButton": "Close",
-        "warningsTitle": "Warnings",
-        "summaryItemsTotal": "Items total",
-        "summaryActionable": "Actionable items",
-        "summaryUnresolved": "Unresolved items",
-        "summaryTurnover": "Estimated turnover",
-        "emptyItems": "No planned items.",
-        "itemsColumns": {
-          "ticker": "Ticker",
-          "side": "Side",
-          "currentQty": "Current qty",
-          "targetQty": "Target qty",
-          "deltaQty": "Delta qty",
-          "currentWeight": "Current %",
-          "targetWeight": "Target %",
-          "status": "Status",
-          "reason": "Reason"
-        }
-      }
+      "noProfiles": "No profiles yet. Create one to get started."
     },
     "details": {
-      "title": "Portfolio details",
-      "description": "Overview, actions, analytics, and operations for the selected profile.",
-      "profileName": "Profile: {{name}}",
       "profileNameFallback": "Not selected",
-      "backButton": "<-",
-      "backAriaLabel": "Back to profiles",
       "editNameAriaLabel": "Edit profile name",
+      "description": "Overview, actions, analytics, and operations for the selected profile.",
+      "backAriaLabel": "Back to profiles",
       "editNameTitle": "Edit profile name",
       "editNameDescription": "Update the display name for this profile.",
       "editNameLabel": "Profile name",
       "editNamePlaceholder": "My portfolio profile",
       "editNameSave": "Save"
     },
+    "subpages": {
+      "overview": "Overview",
+      "actions": "Actions",
+      "analytics": "Analytics",
+      "replication": "Replication"
+    },
     "card": {
-      "title": "Portfolio details",
-      "description": "Unified summary, positions, operations, and provider actions.",
-      "selectPrompt": "Select or create a portfolio profile to load details.",
-      "actionResult": "Action completed: {{action}}.",
-      "tabs": {
-        "account": "Account",
-        "balance": "Balance",
-        "positions": "Top positions",
-        "operations": "Operations history"
-      },
-      "profileName": "Profile:",
-      "provider": "Provider:",
-      "refreshButton": "Refresh data",
-      "sandboxCurrency": "Sandbox currency",
-      "sandboxUnits": "Sandbox units",
-      "tbankTestBuyInstrumentID": "Instrument ID",
-      "tbankTestBuyAccountID": "Account ID",
-      "tbankTestBuyQuantity": "Quantity",
-      "virtualDepositAmount": "Deposit amount",
       "virtualTradeTicker": "Ticker",
       "virtualTradeInstrumentID": "Instrument ID",
       "virtualTradeQuantity": "Quantity",
@@ -705,177 +568,37 @@
       "virtualTradeCurrency": "Currency",
       "virtualTradeDateTime": "Execution time",
       "runAction": "Run action",
+      "tbankTestBuyInstrumentID": "Instrument ID",
+      "tbankTestBuyAccountID": "Account ID",
+      "tbankTestBuyQuantity": "Quantity",
+      "profileName": "Profile:",
+      "provider": "Provider:",
+      "refreshButton": "Refresh data",
+      "sandboxCurrency": "Sandbox currency",
+      "sandboxUnits": "Sandbox units",
+      "virtualDepositAmount": "Deposit amount",
+      "moneyCurrency": "Currency",
+      "moneyAvailable": "Available",
+      "moneyBlocked": "Blocked",
+      "moneyWithdrawAvailable": "Withdraw available",
+      "moneyWithdrawBlocked": "Withdraw blocked",
+      "positionTicker": "Ticker",
+      "positionInstrumentID": "Instrument ID",
+      "positionQuantity": "Quantity",
+      "positionCurrentPrice": "Current price",
+      "positionCurrentValue": "Current value",
+      "positionExpectedYield": "Expected yield",
+      "selectPrompt": "Select or create a portfolio profile to load details.",
       "loading": "Loading portfolio data...",
+      "totalLabel": "Total portfolio:",
+      "dailyYieldLabel": "Daily yield:",
+      "dailyYieldRelativeLabel": "Daily yield relative:",
+      "moneyEmpty": "No money balances returned.",
+      "positionsTitle_one": "portfolio.card.positionsTitle",
+      "positionsTitle_other": "portfolio.card.positionsTitle",
+      "positionsEmpty": "No positions returned.",
       "empty": "No portfolio data loaded yet.",
-      "totalLabel": "Total portfolio:",
-      "dailyYieldLabel": "Daily yield:",
-      "dailyYieldRelativeLabel": "Daily yield relative:",
-      "moneyTitle": "Money balances",
-      "moneyCurrency": "Currency",
-      "moneyAvailable": "Available",
-      "moneyBlocked": "Blocked",
-      "moneyWithdrawAvailable": "Withdraw available",
-      "moneyWithdrawBlocked": "Withdraw blocked",
-      "moneyEmpty": "No money balances returned.",
-      "positionsTitle": "Top positions ({{count}})",
-      "positionsEmpty": "No positions returned.",
-      "positionTicker": "Ticker",
-      "positionInstrumentID": "Instrument ID",
-      "positionQuantity": "Quantity",
-      "positionCurrentPrice": "Current price",
-      "positionCurrentValue": "Current value",
-      "positionExpectedYield": "Expected yield",
-      "operationsTitle": "Operations history",
-      "operationsLoading": "Loading operations history...",
-      "operationsLoadMore": "Load more operations",
-      "operationsLoadingMore": "Loading more...",
-      "operationsEmpty": "No operations returned.",
-      "operationDate": "Date",
-      "operationType": "Type",
-      "operationState": "State",
-      "operationInstrument": "Instrument",
-      "operationQuantity": "Quantity",
-      "operationPrice": "Price",
-      "operationPayment": "Payment",
-      "operationCommission": "Commission",
-      "operationDescription": "Description"
-    },
-    "errors": {
-      "summary": "Failed to load portfolio summary.",
-      "operations": "Failed to load portfolio operations.",
-      "action": "Failed to execute portfolio action.",
-      "loadProfiles": "Failed to load portfolio profiles.",
-      "createProfile": "Failed to create portfolio profile.",
-      "deleteProfile": "Failed to delete portfolio profile.",
-      "updateProfile": "Failed to update portfolio profile.",
-      "profileNameRequired": "Profile name is required."
-    }
-  },
-  "chartsNewTest": {
-    "title": "Charts New test page",
-    "description": "Experimental page to validate new chart visualizations and data hooks.",
-    "settings": {
-      "title": "Test controls",
-      "description": "These controls are managed in charts-new controls state and synced with URL.",
-      "priceControls": "Price controls",
-      "compositionControls": "Composition controls"
-    },
-    "labels": {
-      "secid": "Index",
-      "priceRange": "Price range",
-      "priceInterval": "Price interval",
-      "priceType": "Price chart type",
-      "compositionRange": "Composition range",
-      "compositionInterval": "Composition interval",
-      "compositionMode": "Selection mode",
-      "compositionTab": "Composition tab",
-      "compositionTop": "Top count"
-    },
-    "price": {
-      "title": "Price chart",
-      "error": "Failed to load chart history.",
-      "noData": "No chart data to display."
-    },
-    "composition": {
-      "snapshotTitle": "Composition snapshot",
-      "trendTitle": "Composition trend",
-      "stackedTitle": "Composition stacked",
-      "legendTitle": "Composition constituents",
-      "error": "Failed to load composition data.",
-      "noData": "No composition snapshot data to display.",
-      "noSeries": "No composition series data to display."
-    }
-  },
-  "tbankTest": {
-    "title": "T-Bank trading workspace",
-    "description": "Run test orders and resolve instrument ids. Configure token and account in Integrations.",
-    "menu": {
-      "title": "T-Bank test buy",
-      "button": "Open T-Bank tester"
-    },
-    "loading": "Loading integration status...",
-    "errors": {
-      "status": "Failed to load T-Bank integration status.",
-      "connect": "Failed to connect T-Bank account.",
-      "disconnect": "Failed to disconnect T-Bank account.",
-      "buy": "Failed to place test buy order.",
-      "portfolio": "Failed to load account portfolio and balances.",
-      "operations": "Failed to load account operations history.",
-      "payIn": "Failed to top up sandbox account.",
-      "lookup": "Failed to resolve instrument id by ticker.",
-      "defaultAccount": "Failed to update default account."
-    },
-    "connect": {
-      "title": "T-Bank integration",
-      "description": "Save API token and account defaults for T-Bank features.",
-      "statusLabel": "Connection:",
-      "connected": "Connected",
-      "notConnected": "Not connected",
-      "maskedToken": "Token: {{token}}",
-      "environmentLabel": "Environment",
-      "environmentSandbox": "Sandbox",
-      "environmentProduction": "Production",
-      "tokenLabel": "API token",
-      "tokenPlaceholder": "Paste T-Bank token",
-      "defaultAccountLabel": "Default account id (optional)",
-      "defaultAccountAuto": "Auto-pick first open account",
-      "defaultAccountValue": "Default account: {{accountID}}",
-      "connectButton": "Save and connect",
-      "saveDefaultButton": "Save default account",
-      "disconnectButton": "Disconnect",
-      "refreshButton": "Refresh status"
-    },
-    "buy": {
-      "title": "Place test buy",
-      "description": "Uses market order with BUY direction.",
-      "instrumentLabel": "Instrument id (FIGI / UID)",
-      "instrumentPlaceholder": "BBG004730N88",
-      "accountLabel": "Account id",
-      "accountDefaultOption": "Use default account",
-      "quantityLabel": "Quantity (lots)",
-      "mappingTitle": "Ticker vs Instrument ID",
-      "mappingHint": "MOEX ticker and T-Bank instrument id are different values. Resolve instrument id in the lookup panel before placing an order.",
-      "submitButton": "Place test buy order",
-      "resultOrderId": "Order id:",
-      "resultStatus": "Execution status:"
-    },
-    "portfolio": {
-      "title": "Account balances",
-      "description": "Load account portfolio, money balances, and top positions.",
-      "tabs": {
-        "account": "Account",
-        "balance": "Balance",
-        "positions": "Top positions",
-        "operations": "Operations history"
-      },
-      "accountLabel": "Account",
-      "accountDefaultOption": "Use default account",
-      "refreshButton": "Load balances",
-      "loading": "Loading balances...",
-      "empty": "No portfolio loaded yet.",
-      "totalLabel": "Total portfolio:",
-      "dailyYieldLabel": "Daily yield:",
-      "dailyYieldRelativeLabel": "Daily yield relative:",
-      "moneyTitle": "Money balances",
-      "moneyCurrency": "Currency",
-      "moneyAvailable": "Available",
-      "moneyBlocked": "Blocked",
-      "moneyWithdrawAvailable": "Withdraw available",
-      "moneyWithdrawBlocked": "Withdraw blocked",
-      "moneyEmpty": "No money balances returned.",
-      "positionsTitle": "Top positions ({{count}})",
-      "positionsEmpty": "No positions returned.",
-      "positionTicker": "Ticker",
-      "positionInstrumentID": "Instrument ID",
-      "positionQuantity": "Quantity",
-      "positionCurrentPrice": "Current price",
-      "positionCurrentValue": "Current value",
-      "positionExpectedYield": "Expected yield",
-      "operationsTitle": "Operations history",
-      "operationsLoading": "Loading operations history...",
-      "operationsLoadMore": "Load more operations",
-      "operationsLoadingMore": "Loading more...",
-      "operationsEmpty": "No operations returned.",
+      "actionResult": "Action completed: {{action}}.",
       "operationDate": "Date",
       "operationType": "Type",
       "operationState": "State",
@@ -885,10 +608,51 @@
       "operationPayment": "Payment",
       "operationCommission": "Commission",
       "operationDescription": "Description",
-      "sandboxCurrencyPlaceholder": "RUB",
-      "sandboxUnitsPlaceholder": "Top-up units",
-      "sandboxTopUpButton": "Sandbox top-up",
-      "sandboxTopUpResult": "Sandbox balance topped up: account {{accountID}}, {{units}} {{currency}}."
+      "operationsLoading": "Loading operations history...",
+      "operationsEmpty": "No operations returned."
+    },
+    "overview": {
+      "noQuickActions": "No provider actions available for this profile.",
+      "summaryTitle": "Portfolio summary",
+      "summaryDescription": "Review account state, balances, and top positions.",
+      "balancesTitle": "Balances",
+      "tabs": {
+        "summary": "Summary",
+        "operations": "Operations",
+        "compare": "Compare"
+      }
+    },
+    "analytics": {
+      "title": "Portfolio analytics",
+      "description": "Track portfolio value and composition over time.",
+      "selectPrompt": "Select or create a portfolio profile to load analytics."
+    },
+    "actions": {
+      "title": "Actions",
+      "description": "Run provider actions for the selected profile.",
+      "selectPrompt": "Select a portfolio profile to run actions."
+    },
+    "operations": {
+      "title": "Operations history",
+      "description": "Review portfolio operations and load older entries.",
+      "pagination": {
+        "rowsPerPage": "Rows per page",
+        "previous": "Previous page",
+        "next": "Next page"
+      }
+    }
+  },
+  "tbankTest": {
+    "menu": {
+      "title": "T-Bank test buy",
+      "button": "Open T-Bank tester"
+    },
+    "errors": {
+      "status": "Failed to load T-Bank integration status.",
+      "connect": "Failed to connect T-Bank account.",
+      "disconnect": "Failed to disconnect T-Bank account.",
+      "defaultAccount": "Failed to update default account.",
+      "lookup": "Failed to resolve instrument id by ticker."
     },
     "lookup": {
       "title": "Instrument id lookup",
@@ -899,11 +663,75 @@
       "classCodePlaceholder": "TQBR",
       "searchButton": "Find instrument id",
       "loading": "Searching instruments...",
-      "resultCount": "Found: {{count}}",
+      "resultCount_one": "tbankTest.lookup.resultCount",
+      "resultCount_other": "tbankTest.lookup.resultCount",
       "empty": "No matching instruments.",
-      "instrumentIdLabel": "Instrument ID:",
-      "useInstrumentButton": "Use instrument id",
-      "noName": "Unnamed instrument"
+      "noName": "Unnamed instrument",
+      "instrumentIdLabel": "Instrument ID:"
+    },
+    "connect": {
+      "title": "T-Bank integration",
+      "description": "Save API token and account defaults for T-Bank features.",
+      "statusLabel": "Connection:",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "maskedToken": "Token: {{token}}",
+      "defaultAccountValue": "Default account: {{accountID}}",
+      "environmentLabel": "Environment",
+      "environmentSandbox": "Sandbox",
+      "environmentProduction": "Production",
+      "tokenLabel": "API token",
+      "tokenPlaceholder": "Paste T-Bank token",
+      "defaultAccountLabel": "Default account id (optional)",
+      "defaultAccountAuto": "Auto-pick first open account",
+      "connectButton": "Save and connect",
+      "saveDefaultButton": "Save default account",
+      "disconnectButton": "Disconnect",
+      "refreshButton": "Refresh status"
+    },
+    "loading": "Loading integration status...",
+    "title": "T-Bank trading workspace",
+    "description": "Run test orders and resolve instrument ids. Configure token and account in Integrations."
+  },
+  "common": {
+    "error": "Error",
+    "loading": "Loading...",
+    "articleUnavailable": "Article is not available for this language yet."
+  },
+  "auth": {
+    "login": {
+      "sessionNotReady": "Login was approved, but session is not ready yet. Please try again.",
+      "verification": {
+        "genericError": "Verification failed. Please try again.",
+        "description": "Approve sign-in in Telegram to finish login.",
+        "waiting": "Waiting for Telegram approval.",
+        "expiresAt": "Expires at {{time}}",
+        "checking": "Checking...",
+        "checkNow": "Check approval now",
+        "back": "Back to login"
+      },
+      "genericError": "Unable to sign in. Please try again.",
+      "title": "Sign in to your account",
+      "description": "Enter your credentials to continue.",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Enter username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter password",
+      "rememberMe": "Remember me",
+      "submitting": "Signing in...",
+      "submit": "Sign in"
+    },
+    "guard": {
+      "redirectingToAppTitle": "Redirecting to the app",
+      "redirectingToAppDescription": "You are already signed in.",
+      "redirectingToLoginTitle": "Redirecting to sign in",
+      "redirectingToLoginDescription": "This page requires authentication."
     }
+  },
+  "integrations": {
+    "loading": "Loading integrations...",
+    "notAuthorized": "Not authenticated.",
+    "title": "Integrations",
+    "description": "Manage external connections and credentials in one place."
   }
 }
