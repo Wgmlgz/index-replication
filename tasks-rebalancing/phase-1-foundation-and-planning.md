@@ -219,12 +219,6 @@ Add API tests for:
 - invalid profile or config
 - draft detail/list contract
 
-### Frontend
-Add at minimum component or integration tests for:
-- draft creation form validation
-- draft detail rendering with planned items
-- empty and error states
-
 ## Acceptance Criteria
 - Rebalance draft can be created and reloaded after restart.
 - Planning logic is isolated behind an algorithm registry.
