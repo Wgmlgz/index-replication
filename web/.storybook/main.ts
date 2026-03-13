@@ -8,19 +8,12 @@ const config: StorybookConfig = {
   docs: {
     autodocs: 'tag',
   },
-  viteFinal: async viteConfig => {
-    const proxyTarget = process.env.STORYBOOK_API_PROXY_TARGET || 'http://localhost:18080';
-    viteConfig.server = viteConfig.server ?? {};
-    viteConfig.server.proxy = {
-      ...(viteConfig.server.proxy ?? {}),
-      '/api': {
-        target: proxyTarget,
-        changeOrigin: true,
-        secure: false,
-      },
+  env: env => {
+    const nextApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:18080';
+    return {
+      ...env,
+      NEXT_PUBLIC_API_BASE_URL: nextApiBaseUrl,
     };
-
-    return viteConfig;
   },
 };
 

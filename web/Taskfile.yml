@@ -35,11 +35,15 @@ tasks:
 
   storybook:
     desc: Run Storybook in dev mode
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:18080
     cmds:
       - npm run storybook
 
   storybook:build:
     desc: Build Storybook static files
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:18080
     cmds:
       - npm run storybook:build
 

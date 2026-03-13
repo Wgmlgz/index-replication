@@ -96,6 +96,23 @@ const DEFAULT_DEV_API_BASE_URL = 'http://localhost:18080';
 
 const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "");
 
+const isStorybookRuntime = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const path = window.location.pathname;
+  if (path.endsWith('/iframe.html')) {
+    return true;
+  }
+
+  if (path.endsWith('/index.html') && window.location.search.includes('path=/story/')) {
+    return true;
+  }
+
+  return false;
+};
+
 const readLocalStorageBaseUrl = () => {
   let localStorageBase: string | null = null;
   try {
@@ -130,13 +147,17 @@ const getBaseUrl = () => {
       return localStorageBase;
     }
 
+    if (envBaseUrl.length > 3) {
+      return envBaseUrl;
+    }
+
+    if (isStorybookRuntime()) {
+      return DEFAULT_DEV_API_BASE_URL;
+    }
+
     // In browser production, use same origin to keep scheme (https/http) in sync.
     if (process.env.NODE_ENV === 'production') {
       return "";
-    }
-
-    if (envBaseUrl.length > 3) {
-      return envBaseUrl;
     }
 
     return DEFAULT_DEV_API_BASE_URL;
@@ -150,6 +171,12 @@ export const getApiUrl = () => {
   const baseUrl = getBaseUrl();
   return baseUrl ? `${baseUrl}/api` : '/api';
 }
+
+axiosClient.defaults.baseURL = getApiUrl();
+axiosClient.interceptors.request.use(config => {
+  config.baseURL = getApiUrl();
+  return config;
+});
 
 const config = new Configuration({
   basePath: getApiUrl(),
