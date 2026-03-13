@@ -17,7 +17,6 @@ import { Label } from "@/components/ui/label"
 import { useUser } from "@/components/user-context";
 import { authApi as auth_api, usersApi } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/error-utils";
-import { verificationClient } from "@/lib/verification-client";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_AUTHENTICATED_ROUTE, getSafeNextPath } from "@/lib/routes";
 
@@ -77,7 +76,9 @@ export function LoginForm({
     }
 
     try {
-      const response = await verificationClient.verifyLogin(challengeID);
+      const response = await auth_api.loginVerifyPost({
+        challenge_id: challengeID,
+      });
       if (response.status === 200) {
         setChallengeID("")
         setVerificationExpiresAt("")

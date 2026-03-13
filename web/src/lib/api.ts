@@ -9,6 +9,7 @@ import {
   SettingsApi,
   TbankApi,
   UsersApi,
+  VerificationApi
 } from "@/api-client";
 import axios from "axios";
 import type { AxiosResponse } from "axios";
@@ -190,3 +191,4 @@ export const usersApi = new UsersApi(config, config.basePath, axiosClient);
 export const moexApi = new MoexApi(config, config.basePath, axiosClient);
 export const portfolioApi = new PortfolioApi(config, config.basePath, axiosClient);
 export const tbankApi = new TbankApi(config, config.basePath, axiosClient);
+export const verificationApi = new VerificationApi(config, config.basePath, axiosClient);

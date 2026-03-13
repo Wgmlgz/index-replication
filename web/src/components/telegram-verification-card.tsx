@@ -4,11 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
-import {
-  verificationClient,
-  type TelegramConnectResponse,
-  type TelegramStatusResponse,
-} from '@/lib/verification-client';
+import type { TelegramConnectResponse, TelegramStatusResponse } from '@/api-client';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +14,7 @@ import {
 import { MarkdownArticle } from '@/components/content/markdown-article';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { verificationApi } from '@/lib/api';
 
 export function TelegramVerificationCard() {
   const { t } = useTranslation();
@@ -37,7 +34,8 @@ export function TelegramVerificationCard() {
 
   const loadStatus = useCallback(async () => {
     try {
-      const data = await verificationClient.getTelegramStatus();
+      const response = await verificationApi.meVerificationTelegramGet();
+      const data = response.data;
       setStatus(data);
     } catch (err) {
       setError(getErrorMessage(err, 'settings.telegram.errors.load'));
@@ -54,7 +52,8 @@ export function TelegramVerificationCard() {
     setWorking(true);
     setError('');
     try {
-      const data = await verificationClient.createTelegramConnectLink();
+      const response = await verificationApi.meVerificationTelegramConnectPost();
+      const data = response.data;
       setConnectInfo(data);
       await loadStatus();
     } catch (err) {
@@ -68,9 +67,10 @@ export function TelegramVerificationCard() {
     setWorking(true);
     setError('');
     try {
-      const data = await verificationClient.patchTelegramSettings({
+      const response = await verificationApi.meVerificationTelegramPatch({
         login_2fa_enabled: enabled,
       });
+      const data = response.data;
       setStatus(data);
     } catch (err) {
       setError(getErrorMessage(err, 'settings.telegram.errors.update'));
@@ -86,7 +86,8 @@ export function TelegramVerificationCard() {
     setWorking(true);
     setError('');
     try {
-      const data = await verificationClient.unlinkTelegram();
+      const response = await verificationApi.meVerificationTelegramDelete();
+      const data = response.data;
       setStatus(data);
       setConnectInfo(null);
     } catch (err) {
@@ -183,7 +184,9 @@ export function TelegramVerificationCard() {
           </a>
           <div className='text-muted-foreground'>
             {t('settings.telegram.expiresAt', {
-              time: new Date(connectInfo.expires_at).toLocaleString(),
+              time: connectInfo.expires_at
+                ? new Date(connectInfo.expires_at).toLocaleString()
+                : '-',
             })}
           </div>
         </div>
