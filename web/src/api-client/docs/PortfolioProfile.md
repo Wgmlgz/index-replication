@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **is_default** | **boolean** |  | [optional] [default to undefined]
 **name** | **string** |  | [optional] [default to undefined]
 **provider** | **string** |  | [optional] [default to undefined]
+**replication** | [**PortfolioReplicationConfig**](PortfolioReplicationConfig.md) |  | [optional] [default to undefined]
 **updated_at** | **string** |  | [optional] [default to undefined]
 
 ## Example
@@ -27,6 +28,7 @@ const instance: PortfolioProfile = {
     is_default,
     name,
     provider,
+    replication,
     updated_at,
 };
 ```

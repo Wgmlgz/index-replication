@@ -46,6 +46,12 @@ export interface CreateUserRequest {
     'role_id': number;
     'username': string;
 }
+export interface DtoTickerLogoResolveResponse {
+    'isin'?: string;
+    'logo_url'?: string;
+    'source'?: string;
+    'ticker'?: string;
+}
 export interface ErrorResponse {
     'error'?: string;
 }
@@ -218,6 +224,7 @@ export interface PortfolioProfile {
     'is_default'?: boolean;
     'name'?: string;
     'provider'?: string;
+    'replication'?: PortfolioReplicationConfig;
     'updated_at'?: string;
 }
 export interface PortfolioProfileCreateRequest {
@@ -236,6 +243,64 @@ export interface PortfolioProfilePatchRequest {
 export interface PortfolioProviderAction {
     'id'?: string;
     'label'?: string;
+}
+export interface PortfolioRebalanceCreateRequest {
+    'as_of_date'?: string;
+    'confirmation_required'?: boolean;
+    'execution_mode'?: string;
+    'planning_params'?: { [key: string]: any; };
+}
+export interface PortfolioRebalanceDetailResponse {
+    'items'?: Array<PortfolioRebalanceItem>;
+    'run'?: PortfolioRebalanceRun;
+}
+export interface PortfolioRebalanceItem {
+    'current_quantity'?: number;
+    'current_weight'?: number;
+    'delta_quantity'?: number;
+    'id'?: number;
+    'instrument_id'?: string;
+    'metadata'?: { [key: string]: any; };
+    'planned_amount'?: number;
+    'rebalance_run_id'?: number;
+    'reference_price'?: number;
+    'side'?: string;
+    'status'?: string;
+    'target_quantity'?: number;
+    'target_weight'?: number;
+    'ticker'?: string;
+}
+export interface PortfolioRebalanceRun {
+    'as_of_date'?: string;
+    'benchmark_secid'?: string;
+    'confirmation_required'?: boolean;
+    'created_at'?: string;
+    'ended_at'?: string;
+    'execution_mode'?: string;
+    'id'?: number;
+    'mode_key'?: string;
+    'mode_params'?: { [key: string]: any; };
+    'planning_params'?: { [key: string]: any; };
+    'portfolio_id'?: number;
+    'provider'?: string;
+    'started_at'?: string;
+    'status'?: string;
+    'summary'?: { [key: string]: any; };
+    'updated_at'?: string;
+    'warnings'?: Array<string>;
+}
+export interface PortfolioReplicationConfig {
+    'benchmark_secid'?: string;
+    'is_enabled'?: boolean;
+    'mode_key'?: string;
+    'mode_params'?: { [key: string]: any; };
+    'updated_at'?: string;
+}
+export interface PortfolioReplicationConfigUpsertRequest {
+    'benchmark_secid'?: string;
+    'is_enabled'?: boolean;
+    'mode_key'?: string;
+    'mode_params'?: { [key: string]: any; };
 }
 export interface PortfolioSummaryMoneyBalance {
     'available'?: number;
@@ -264,6 +329,7 @@ export interface PortfolioSummaryResponse {
     'portfolio_id'?: number;
     'positions'?: Array<PortfolioSummaryPosition>;
     'provider'?: string;
+    'replication'?: PortfolioReplicationConfig;
     'total_amount_currency'?: string;
     'total_amount_portfolio'?: number;
 }
@@ -966,6 +1032,110 @@ export class AuthApi extends BaseAPI {
      */
     public mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).mePasswordPut(body, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * BrandingApi - axios parameter creator
+ */
+export const BrandingApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Resolves a public logo URL by ticker symbol
+         * @summary Resolve ticker logo URL
+         * @param {string} ticker Ticker symbol
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        tickersLogoGet: async (ticker: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'ticker' is not null or undefined
+            assertParamExists('tickersLogoGet', 'ticker', ticker)
+            const localVarPath = `/tickers/logo`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (ticker !== undefined) {
+                localVarQueryParameter['ticker'] = ticker;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * BrandingApi - functional programming interface
+ */
+export const BrandingApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = BrandingApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Resolves a public logo URL by ticker symbol
+         * @summary Resolve ticker logo URL
+         * @param {string} ticker Ticker symbol
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async tickersLogoGet(ticker: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DtoTickerLogoResolveResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.tickersLogoGet(ticker, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BrandingApi.tickersLogoGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * BrandingApi - factory interface
+ */
+export const BrandingApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = BrandingApiFp(configuration)
+    return {
+        /**
+         * Resolves a public logo URL by ticker symbol
+         * @summary Resolve ticker logo URL
+         * @param {string} ticker Ticker symbol
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        tickersLogoGet(ticker: string, options?: RawAxiosRequestConfig): AxiosPromise<DtoTickerLogoResolveResponse> {
+            return localVarFp.tickersLogoGet(ticker, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * BrandingApi - object-oriented interface
+ */
+export class BrandingApi extends BaseAPI {
+    /**
+     * Resolves a public logo URL by ticker symbol
+     * @summary Resolve ticker logo URL
+     * @param {string} ticker Ticker symbol
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public tickersLogoGet(ticker: string, options?: RawAxiosRequestConfig) {
+        return BrandingApiFp(this.configuration).tickersLogoGet(ticker, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -2011,6 +2181,195 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
+         * Lists persisted rebalances for selected portfolio profile
+         * @summary List rebalance drafts
+         * @param {number} id Portfolio profile id
+         * @param {number} [limit] Max number of rows
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesGet: async (id: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/rebalances`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates a persisted rebalance draft (planning only, no execution)
+         * @summary Create rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioRebalanceCreateRequest} payload Rebalance draft payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesPost: async (id: number, payload: PortfolioRebalanceCreateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesPost', 'id', id)
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesPost', 'payload', payload)
+            const localVarPath = `/me/portfolios/{id}/rebalances`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns run summary and planned items for selected rebalance draft
+         * @summary Get rebalance draft detail
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdGet: async (id: number, rebalanceId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdGet', 'id', id)
+            // verify required parameter 'rebalanceId' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdGet', 'rebalanceId', rebalanceId)
+            const localVarPath = `/me/portfolios/{id}/rebalances/{rebalanceId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"rebalanceId"}}`, encodeURIComponent(String(rebalanceId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Deletes replication config for selected portfolio profile
+         * @summary Delete portfolio replication config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdReplicationDelete: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdReplicationDelete', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/replication`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = '*/*';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates or updates replication config for selected portfolio profile
+         * @summary Upsert portfolio replication config
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioReplicationConfigUpsertRequest} payload Replication config payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdReplicationPut: async (id: number, payload: PortfolioReplicationConfigUpsertRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdReplicationPut', 'id', id)
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('mePortfoliosIdReplicationPut', 'payload', payload)
+            const localVarPath = `/me/portfolios/{id}/replication`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns unified summary (balances and positions) by portfolio profile
          * @summary Get portfolio summary
          * @param {number} id Portfolio profile id
@@ -2208,6 +2567,75 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Lists persisted rebalances for selected portfolio profile
+         * @summary List rebalance drafts
+         * @param {number} id Portfolio profile id
+         * @param {number} [limit] Max number of rows
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesGet(id: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<PortfolioRebalanceRun>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesGet(id, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates a persisted rebalance draft (planning only, no execution)
+         * @summary Create rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioRebalanceCreateRequest} payload Rebalance draft payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesPost(id: number, payload: PortfolioRebalanceCreateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceDetailResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesPost(id, payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns run summary and planned items for selected rebalance draft
+         * @summary Get rebalance draft detail
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceDetailResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesRebalanceIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Deletes replication config for selected portfolio profile
+         * @summary Delete portfolio replication config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdReplicationDelete(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdReplicationDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdReplicationDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates or updates replication config for selected portfolio profile
+         * @summary Upsert portfolio replication config
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioReplicationConfigUpsertRequest} payload Replication config payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdReplicationPut(id: number, payload: PortfolioReplicationConfigUpsertRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioReplicationConfig>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdReplicationPut(id, payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdReplicationPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns unified summary (balances and positions) by portfolio profile
          * @summary Get portfolio summary
          * @param {number} id Portfolio profile id
@@ -2338,6 +2766,60 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdPatch(id, payload, options).then((request) => request(axios, basePath));
         },
         /**
+         * Lists persisted rebalances for selected portfolio profile
+         * @summary List rebalance drafts
+         * @param {number} id Portfolio profile id
+         * @param {number} [limit] Max number of rows
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesGet(id: number, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<PortfolioRebalanceRun>> {
+            return localVarFp.mePortfoliosIdRebalancesGet(id, limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates a persisted rebalance draft (planning only, no execution)
+         * @summary Create rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioRebalanceCreateRequest} payload Rebalance draft payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesPost(id: number, payload: PortfolioRebalanceCreateRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceDetailResponse> {
+            return localVarFp.mePortfoliosIdRebalancesPost(id, payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns run summary and planned items for selected rebalance draft
+         * @summary Get rebalance draft detail
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceDetailResponse> {
+            return localVarFp.mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Deletes replication config for selected portfolio profile
+         * @summary Delete portfolio replication config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdReplicationDelete(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.mePortfoliosIdReplicationDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates or updates replication config for selected portfolio profile
+         * @summary Upsert portfolio replication config
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioReplicationConfigUpsertRequest} payload Replication config payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdReplicationPut(id: number, payload: PortfolioReplicationConfigUpsertRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioReplicationConfig> {
+            return localVarFp.mePortfoliosIdReplicationPut(id, payload, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns unified summary (balances and positions) by portfolio profile
          * @summary Get portfolio summary
          * @param {number} id Portfolio profile id
@@ -2465,6 +2947,65 @@ export class PortfolioApi extends BaseAPI {
      */
     public mePortfoliosIdPatch(id: number, payload: PortfolioProfilePatchRequest, options?: RawAxiosRequestConfig) {
         return PortfolioApiFp(this.configuration).mePortfoliosIdPatch(id, payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Lists persisted rebalances for selected portfolio profile
+     * @summary List rebalance drafts
+     * @param {number} id Portfolio profile id
+     * @param {number} [limit] Max number of rows
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesGet(id: number, limit?: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesGet(id, limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates a persisted rebalance draft (planning only, no execution)
+     * @summary Create rebalance draft
+     * @param {number} id Portfolio profile id
+     * @param {PortfolioRebalanceCreateRequest} payload Rebalance draft payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesPost(id: number, payload: PortfolioRebalanceCreateRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesPost(id, payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns run summary and planned items for selected rebalance draft
+     * @summary Get rebalance draft detail
+     * @param {number} id Portfolio profile id
+     * @param {number} rebalanceId Rebalance run id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Deletes replication config for selected portfolio profile
+     * @summary Delete portfolio replication config
+     * @param {number} id Portfolio profile id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdReplicationDelete(id: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdReplicationDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates or updates replication config for selected portfolio profile
+     * @summary Upsert portfolio replication config
+     * @param {number} id Portfolio profile id
+     * @param {PortfolioReplicationConfigUpsertRequest} payload Replication config payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdReplicationPut(id: number, payload: PortfolioReplicationConfigUpsertRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdReplicationPut(id, payload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -12,6 +12,11 @@ All URIs are relative to *http://localhost:8080/api*
 |[**mePortfoliosIdHistoryGet**](#meportfoliosidhistoryget) | **GET** /me/portfolios/{id}/history | Get portfolio history|
 |[**mePortfoliosIdOperationsGet**](#meportfoliosidoperationsget) | **GET** /me/portfolios/{id}/operations | Get portfolio operations|
 |[**mePortfoliosIdPatch**](#meportfoliosidpatch) | **PATCH** /me/portfolios/{id} | Update portfolio profile|
+|[**mePortfoliosIdRebalancesGet**](#meportfoliosidrebalancesget) | **GET** /me/portfolios/{id}/rebalances | List rebalance drafts|
+|[**mePortfoliosIdRebalancesPost**](#meportfoliosidrebalancespost) | **POST** /me/portfolios/{id}/rebalances | Create rebalance draft|
+|[**mePortfoliosIdRebalancesRebalanceIdGet**](#meportfoliosidrebalancesrebalanceidget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId} | Get rebalance draft detail|
+|[**mePortfoliosIdReplicationDelete**](#meportfoliosidreplicationdelete) | **DELETE** /me/portfolios/{id}/replication | Delete portfolio replication config|
+|[**mePortfoliosIdReplicationPut**](#meportfoliosidreplicationput) | **PUT** /me/portfolios/{id}/replication | Upsert portfolio replication config|
 |[**mePortfoliosIdSummaryGet**](#meportfoliosidsummaryget) | **GET** /me/portfolios/{id}/summary | Get portfolio summary|
 |[**mePortfoliosPost**](#meportfoliospost) | **POST** /me/portfolios | Create portfolio profile|
 
@@ -467,6 +472,290 @@ const { status, data } = await apiInstance.mePortfoliosIdPatch(
 ### Return type
 
 **PortfolioProfile**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesGet**
+> Array<PortfolioRebalanceRun> mePortfoliosIdRebalancesGet()
+
+Lists persisted rebalances for selected portfolio profile
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let limit: number; //Max number of rows (optional) (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesGet(
+    id,
+    limit
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+| **limit** | [**number**] | Max number of rows | (optional) defaults to undefined|
+
+
+### Return type
+
+**Array<PortfolioRebalanceRun>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesPost**
+> PortfolioRebalanceDetailResponse mePortfoliosIdRebalancesPost(payload)
+
+Creates a persisted rebalance draft (planning only, no execution)
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration,
+    PortfolioRebalanceCreateRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let payload: PortfolioRebalanceCreateRequest; //Rebalance draft payload
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesPost(
+    id,
+    payload
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **payload** | **PortfolioRebalanceCreateRequest**| Rebalance draft payload | |
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceDetailResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**201** | Created |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesRebalanceIdGet**
+> PortfolioRebalanceDetailResponse mePortfoliosIdRebalancesRebalanceIdGet()
+
+Returns run summary and planned items for selected rebalance draft
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let rebalanceId: number; //Rebalance run id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdGet(
+    id,
+    rebalanceId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+| **rebalanceId** | [**number**] | Rebalance run id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceDetailResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdReplicationDelete**
+> mePortfoliosIdReplicationDelete()
+
+Deletes replication config for selected portfolio profile
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdReplicationDelete(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdReplicationPut**
+> PortfolioReplicationConfig mePortfoliosIdReplicationPut(payload)
+
+Creates or updates replication config for selected portfolio profile
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration,
+    PortfolioReplicationConfigUpsertRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let payload: PortfolioReplicationConfigUpsertRequest; //Replication config payload
+
+const { status, data } = await apiInstance.mePortfoliosIdReplicationPut(
+    id,
+    payload
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **payload** | **PortfolioReplicationConfigUpsertRequest**| Replication config payload | |
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioReplicationConfig**
 
 ### Authorization
 

@@ -899,6 +899,173 @@
                 }
             }
         },
+        "/me/portfolios/{id}/rebalances": {
+            "get": {
+                "description": "Lists persisted rebalances for selected portfolio profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "List rebalance drafts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max number of rows",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PortfolioRebalanceRun"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a persisted rebalance draft (planning only, no execution)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Create rebalance draft",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Rebalance draft payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/rebalances/{rebalanceId}": {
+            "get": {
+                "description": "Returns run summary and planned items for selected rebalance draft",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get rebalance draft detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Rebalance run id",
+                        "name": "rebalanceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/portfolios/{id}/replication": {
             "put": {
                 "description": "Creates or updates replication config for selected portfolio profile",
@@ -1851,6 +2018,53 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickers/logo": {
+            "get": {
+                "description": "Resolves a public logo URL by ticker symbol",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "branding"
+                ],
+                "summary": "Resolve ticker logo URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticker symbol",
+                        "name": "ticker",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TickerLogoResolveResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -2880,6 +3094,148 @@
                 }
             }
         },
+        "PortfolioRebalanceCreateRequest": {
+            "type": "object",
+            "properties": {
+                "as_of_date": {
+                    "type": "string"
+                },
+                "confirmation_required": {
+                    "type": "boolean"
+                },
+                "execution_mode": {
+                    "type": "string"
+                },
+                "planning_params": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "PortfolioRebalanceDetailResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioRebalanceItem"
+                    }
+                },
+                "run": {
+                    "$ref": "#/definitions/PortfolioRebalanceRun"
+                }
+            }
+        },
+        "PortfolioRebalanceItem": {
+            "type": "object",
+            "properties": {
+                "current_quantity": {
+                    "type": "number"
+                },
+                "current_weight": {
+                    "type": "number"
+                },
+                "delta_quantity": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "planned_amount": {
+                    "type": "number"
+                },
+                "rebalance_run_id": {
+                    "type": "integer"
+                },
+                "reference_price": {
+                    "type": "number"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target_quantity": {
+                    "type": "number"
+                },
+                "target_weight": {
+                    "type": "number"
+                },
+                "ticker": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceRun": {
+            "type": "object",
+            "properties": {
+                "as_of_date": {
+                    "type": "string"
+                },
+                "benchmark_secid": {
+                    "type": "string"
+                },
+                "confirmation_required": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "ended_at": {
+                    "type": "string"
+                },
+                "execution_mode": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mode_key": {
+                    "type": "string"
+                },
+                "mode_params": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "planning_params": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "portfolio_id": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "PortfolioReplicationConfig": {
             "type": "object",
             "properties": {
@@ -3344,6 +3700,23 @@
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TickerLogoResolveResponse": {
+            "type": "object",
+            "properties": {
+                "isin": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "ticker": {
                     "type": "string"
                 }
             }

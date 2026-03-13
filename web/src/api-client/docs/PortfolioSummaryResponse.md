@@ -13,6 +13,7 @@ Name | Type | Description | Notes
 **portfolio_id** | **number** |  | [optional] [default to undefined]
 **positions** | [**Array&lt;PortfolioSummaryPosition&gt;**](PortfolioSummaryPosition.md) |  | [optional] [default to undefined]
 **provider** | **string** |  | [optional] [default to undefined]
+**replication** | [**PortfolioReplicationConfig**](PortfolioReplicationConfig.md) |  | [optional] [default to undefined]
 **total_amount_currency** | **string** |  | [optional] [default to undefined]
 **total_amount_portfolio** | **number** |  | [optional] [default to undefined]
 
@@ -30,6 +31,7 @@ const instance: PortfolioSummaryResponse = {
     portfolio_id,
     positions,
     provider,
+    replication,
     total_amount_currency,
     total_amount_portfolio,
 };

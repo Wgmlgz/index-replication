@@ -588,7 +588,49 @@
         "save": "Failed to save replication config.",
         "clear": "Failed to clear replication config.",
         "modeParamsJson": "Mode params must be valid JSON.",
-        "modeParamsObject": "Mode params must be a JSON object."
+        "modeParamsObject": "Mode params must be a JSON object.",
+        "createDraft": "Failed to create rebalance draft.",
+        "loadRebalances": "Failed to load rebalance drafts.",
+        "loadRebalanceDetail": "Failed to load rebalance draft detail."
+      },
+      "rebalances": {
+        "title": "Rebalance drafts",
+        "description": "Create deterministic planning drafts and inspect planned items before any execution.",
+        "executionModeLabel": "Execution mode",
+        "executionModeOptions": {
+          "manual": "Manual",
+          "automatic": "Automatic"
+        },
+        "asOfDateLabel": "As-of date",
+        "createDraftButton": "Create draft",
+        "createDraftWorking": "Creating draft...",
+        "listTitle": "Draft history",
+        "loadingList": "Loading rebalance drafts...",
+        "emptyList": "No rebalance drafts yet.",
+        "selectPrompt": "Select a draft to see details.",
+        "loadingDetail": "Loading draft details...",
+        "detailTitle": "Draft #{{id}}",
+        "detailModeLabel": "Mode",
+        "detailExecutionLabel": "Execution mode",
+        "detailAsOfLabel": "As-of date",
+        "detailCreatedLabel": "Created",
+        "warningsTitle": "Warnings",
+        "summaryItemsTotal": "Items total",
+        "summaryActionable": "Actionable items",
+        "summaryUnresolved": "Unresolved items",
+        "summaryTurnover": "Estimated turnover",
+        "emptyItems": "No planned items.",
+        "itemsColumns": {
+          "ticker": "Ticker",
+          "side": "Side",
+          "currentQty": "Current qty",
+          "targetQty": "Target qty",
+          "deltaQty": "Delta qty",
+          "currentWeight": "Current %",
+          "targetWeight": "Target %",
+          "status": "Status",
+          "reason": "Reason"
+        }
       }
     },
     "details": {

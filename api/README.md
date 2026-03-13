@@ -201,6 +201,9 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `DELETE /api/me/portfolios/:id`
 - `PUT /api/me/portfolios/:id/replication`
 - `DELETE /api/me/portfolios/:id/replication`
+- `POST /api/me/portfolios/:id/rebalances`
+- `GET /api/me/portfolios/:id/rebalances`
+- `GET /api/me/portfolios/:id/rebalances/:rebalanceId`
 - `GET /api/me/portfolios/:id/summary`
 - `GET /api/me/portfolios/:id/history`
 - `GET /api/me/portfolios/:id/composition`

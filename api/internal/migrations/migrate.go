@@ -78,6 +78,10 @@ func ensurePostgresIdentity(db *sql.DB) error {
 		"user_favorite_indexes",
 		"portfolio_profiles",
 		"portfolio_replication_configs",
+		"portfolio_rebalance_runs",
+		"portfolio_rebalance_items",
+		"portfolio_rebalance_execution_links",
+		"portfolio_rebalance_confirmation_records",
 		"virtual_portfolio_transactions",
 	}
 	for _, table := range tables {

@@ -8,7 +8,9 @@ docs/AuditLogListResponse.md
 docs/AuditLogResponse.md
 docs/AuditLogsApi.md
 docs/AuthApi.md
+docs/BrandingApi.md
 docs/CreateUserRequest.md
+docs/DtoTickerLogoResolveResponse.md
 docs/ErrorResponse.md
 docs/LoginRequest.md
 docs/LoginVerifyRequest.md
@@ -39,6 +41,12 @@ docs/PortfolioProfile.md
 docs/PortfolioProfileCreateRequest.md
 docs/PortfolioProfilePatchRequest.md
 docs/PortfolioProviderAction.md
+docs/PortfolioRebalanceCreateRequest.md
+docs/PortfolioRebalanceDetailResponse.md
+docs/PortfolioRebalanceItem.md
+docs/PortfolioRebalanceRun.md
+docs/PortfolioReplicationConfig.md
+docs/PortfolioReplicationConfigUpsertRequest.md
 docs/PortfolioSummaryMoneyBalance.md
 docs/PortfolioSummaryPosition.md
 docs/PortfolioSummaryResponse.md

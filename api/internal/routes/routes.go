@@ -10,6 +10,8 @@ import (
 	m "server/internal/middleware"
 	"server/internal/moex"
 	"server/internal/portfolio"
+	"server/internal/rebalance"
+	rebalanceplanner "server/internal/rebalance/planner"
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/tbank"
@@ -101,15 +103,40 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		marketPriceService,
 	)
 	tbankHandler := h.NewTBankHandler(tbankService)
+	tbankProvider := portfolio.NewTBankProvider(tbankService)
+	mockProvider := portfolio.NewMockProvider()
+	virtualProvider := portfolio.NewVirtualProvider(repoRegistry.VirtualPortfolioTransactionsRepo, marketPriceService)
 	portfolioService := portfolio.NewService(
 		repoRegistry.PortfolioProfilesRepo,
 		repoRegistry.PortfolioReplicationConfigsRepo,
 		auditService,
-		portfolio.NewTBankProvider(tbankService),
-		portfolio.NewMockProvider(),
-		portfolio.NewVirtualProvider(repoRegistry.VirtualPortfolioTransactionsRepo, marketPriceService),
+		tbankProvider,
+		mockProvider,
+		virtualProvider,
 	)
 	portfolioHandler := h.NewPortfolioHandler(portfolioService)
+	rebalancePlanner := rebalanceplanner.NewService(
+		rebalanceplanner.NewRegistry(
+			rebalanceplanner.NewFullAlgorithm(),
+			rebalanceplanner.NewSampledAlgorithm(),
+		),
+	)
+	rebalanceSnapshotLoader := rebalance.NewSnapshotLoader(
+		repoRegistry.PortfolioProfilesRepo,
+		repoRegistry.PortfolioReplicationConfigsRepo,
+		moexReadService,
+		tbankProvider,
+		mockProvider,
+		virtualProvider,
+	)
+	rebalanceService := rebalance.NewService(
+		repoRegistry.PortfolioProfilesRepo,
+		repoRegistry.PortfolioRebalancesRepo,
+		rebalanceSnapshotLoader,
+		rebalancePlanner,
+		auditService,
+	)
+	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(rebalanceService)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -132,6 +159,9 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.DELETE("/me/portfolios/:id", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteProfile)
 		a.PUT("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.UpsertReplicationConfig)
 		a.DELETE("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteReplicationConfig)
+		a.POST("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.CreateRebalanceDraft)
+		a.GET("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.ListRebalances)
+		a.GET("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceDetail)
 		a.GET("/me/portfolios/:id/summary", m.RPM(cs, config.SelfView), portfolioHandler.GetSummary)
 		a.GET("/me/portfolios/:id/history", m.RPM(cs, config.SelfView), portfolioHandler.GetHistory)
 		a.GET("/me/portfolios/:id/composition", m.RPM(cs, config.SelfView), portfolioHandler.GetComposition)

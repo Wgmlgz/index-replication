@@ -1,0 +1,150 @@
+package handlers
+
+import (
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"server/internal/api/dto"
+	"server/internal/rebalance"
+	"server/internal/utils"
+
+	"github.com/gin-gonic/gin"
+)
+
+type PortfolioRebalanceHandler struct {
+	service *rebalance.Service
+}
+
+func NewPortfolioRebalanceHandler(service *rebalance.Service) *PortfolioRebalanceHandler {
+	return &PortfolioRebalanceHandler{service: service}
+}
+
+// CreateRebalanceDraft godoc
+//
+//	@Summary		Create rebalance draft
+//	@Description	Creates a persisted rebalance draft (planning only, no execution)
+//	@Tags			portfolio
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int							true	"Portfolio profile id"
+//	@Param			payload	body		dto.PortfolioRebalanceCreateRequest	true	"Rebalance draft payload"
+//	@Success		201		{object}	dto.PortfolioRebalanceDetailResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances [post]
+func (h *PortfolioRebalanceHandler) CreateRebalanceDraft(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	var req dto.PortfolioRebalanceCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
+		return
+	}
+
+	resp, err := h.service.CreateDraft(c.Request.Context(), userID, portfolioID, &req)
+	if err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, resp)
+}
+
+// ListRebalances godoc
+//
+//	@Summary		List rebalance drafts
+//	@Description	Lists persisted rebalances for selected portfolio profile
+//	@Tags			portfolio
+//	@Produce		json
+//	@Param			id		path		int	true	"Portfolio profile id"
+//	@Param			limit	query		int	false	"Max number of rows"
+//	@Success		200		{array}	dto.PortfolioRebalanceRun
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances [get]
+func (h *PortfolioRebalanceHandler) ListRebalances(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	limit := 50
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed <= 0 {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid limit"})
+			return
+		}
+		limit = parsed
+	}
+
+	rows, err := h.service.ListRuns(c.Request.Context(), userID, portfolioID, limit)
+	if err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// GetRebalanceDetail godoc
+//
+//	@Summary		Get rebalance draft detail
+//	@Description	Returns run summary and planned items for selected rebalance draft
+//	@Tags			portfolio
+//	@Produce		json
+//	@Param			id			path		int	true	"Portfolio profile id"
+//	@Param			rebalanceId	path		int	true	"Rebalance run id"
+//	@Success		200			{object}	dto.PortfolioRebalanceDetailResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances/{rebalanceId} [get]
+func (h *PortfolioRebalanceHandler) GetRebalanceDetail(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	runID, err := strconv.Atoi(strings.TrimSpace(c.Param("rebalanceId")))
+	if err != nil || runID <= 0 {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid rebalance id"})
+		return
+	}
+
+	resp, err := h.service.GetRunDetail(c.Request.Context(), userID, portfolioID, runID)
+	if err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+func writePortfolioRebalanceError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, rebalance.ErrInvalidRequest),
+		errors.Is(err, rebalance.ErrInvalidAsOfDate),
+		errors.Is(err, rebalance.ErrInvalidExecutionMode),
+		errors.Is(err, rebalance.ErrInvalidProfileID),
+		errors.Is(err, rebalance.ErrInvalidRebalanceID),
+		errors.Is(err, rebalance.ErrReplicationConfigDisabled),
+		errors.Is(err, rebalance.ErrBenchmarkNotConfigured),
+		errors.Is(err, rebalance.ErrProviderNotFound):
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	case errors.Is(err, rebalance.ErrProfileNotFound),
+		errors.Is(err, rebalance.ErrReplicationConfigNotFound),
+		errors.Is(err, rebalance.ErrBenchmarkNotFound),
+		errors.Is(err, rebalance.ErrRebalanceNotFound):
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
+	default:
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to plan rebalance"})
+	}
+}
