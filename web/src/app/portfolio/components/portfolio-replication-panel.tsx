@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { axiosClient, getApiUrl, portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
@@ -52,6 +53,8 @@ type RebalanceDraftFormState = {
   executionMode: 'manual' | 'automatic';
   asOfDate: string;
 };
+
+type ReplicationViewTab = 'settings' | 'drafts';
 
 const EMPTY_FORM_STATE: ReplicationFormState = {
   isEnabled: false,
@@ -91,6 +94,16 @@ function parseRebalanceID(value: string | null): number | null {
     return null;
   }
   return parsed;
+}
+
+function parseReplicationViewTab(
+  value: string | null,
+  fallback: ReplicationViewTab,
+): ReplicationViewTab {
+  if (value === 'settings' || value === 'drafts') {
+    return value;
+  }
+  return fallback;
 }
 
 function formatDateTime(value: string | undefined, language: string): string {
@@ -165,6 +178,26 @@ export function PortfolioReplicationPanel({
     () => parseRebalanceID(searchParams.get('rebalance_id')),
     [searchParams],
   );
+  const activeViewTab = useMemo(
+    () =>
+      parseReplicationViewTab(
+        searchParams.get('replication_tab'),
+        selectedRebalanceID ? 'drafts' : 'settings',
+      ),
+    [searchParams, selectedRebalanceID],
+  );
+
+  const setReplicationTabInQuery = useCallback(
+    (tab: ReplicationViewTab) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set('tab', 'replication');
+      nextParams.set('replication_tab', tab);
+      const query = nextParams.toString();
+      const href = query ? `${pathname}?${query}` : pathname;
+      router.replace(href, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   useEffect(() => {
     setForm(toFormState(profile?.replication ?? null));
@@ -190,6 +223,7 @@ export function PortfolioReplicationPanel({
       } else {
         nextParams.set('rebalance_id', String(runID));
         nextParams.set('tab', 'replication');
+        nextParams.set('replication_tab', 'drafts');
       }
       const query = nextParams.toString();
       const href = query ? `${pathname}?${query}` : pathname;
@@ -431,341 +465,367 @@ export function PortfolioReplicationPanel({
         <CardDescription>{t('portfolio.replication.description')}</CardDescription>
       </CardHeader>
 
-      <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
-        {error ? (
-          <Alert variant='destructive'>
-            <AlertTitle>{t('common.error')}</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
+      <CardContent className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+        <Tabs
+          value={activeViewTab}
+          onValueChange={value => setReplicationTabInQuery(value === 'drafts' ? 'drafts' : 'settings')}
+          className='min-h-0 flex-1 overflow-hidden'
+        >
+          <TabsList className='grid h-auto w-full grid-cols-2 md:w-auto'>
+            <TabsTrigger value='settings'>
+              {t('portfolio.replication.tabs.settings')}
+            </TabsTrigger>
+            <TabsTrigger value='drafts'>
+              {t('portfolio.replication.tabs.drafts')}
+            </TabsTrigger>
+          </TabsList>
 
-        <div className='grid gap-4 rounded-md border p-4'>
-          <div className='flex items-center justify-between gap-3'>
-            <Label htmlFor='portfolio-replication-enabled'>
-              {t('portfolio.replication.isEnabledLabel')}
-            </Label>
-            <Switch
-              id='portfolio-replication-enabled'
-              checked={form.isEnabled}
-              onCheckedChange={checked => setForm(prev => ({ ...prev, isEnabled: checked }))}
-              disabled={working}
-            />
-          </div>
-
-          <div className='grid gap-2'>
-            <Label>
-              {t('portfolio.replication.benchmarkLabel')}
-            </Label>
-            <div className='flex flex-wrap items-center gap-2'>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={() => setSelectorOpen(true)}
-                disabled={working}
-              >
-                {form.benchmarkSecid
-                  ? t('portfolio.replication.changeBenchmarkButton')
-                  : t('portfolio.replication.selectBenchmarkButton')}
-              </Button>
-              <Button
-                type='button'
-                variant='ghost'
-                onClick={() => setForm(prev => ({ ...prev, benchmarkSecid: '' }))}
-                disabled={working || !form.benchmarkSecid}
-              >
-                {t('portfolio.replication.clearBenchmarkButton')}
-              </Button>
-            </div>
-            <div className='text-xs text-muted-foreground'>
-              {form.benchmarkSecid
-                ? t('portfolio.replication.selectedBenchmarkValue', {
-                    secid: form.benchmarkSecid,
-                  })
-                : t('portfolio.replication.selectedBenchmarkEmpty')}
-            </div>
-          </div>
-
-          <div className='grid gap-2'>
-            <Label htmlFor='portfolio-replication-mode'>
-              {t('portfolio.replication.modeKeyLabel')}
-            </Label>
-            <Select
-              value={form.modeKey || 'full'}
-              onValueChange={value => setForm(prev => ({ ...prev, modeKey: value }))}
-              disabled={working}
-            >
-              <SelectTrigger id='portfolio-replication-mode'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REPLICATION_MODE_OPTIONS.map(mode => (
-                  <SelectItem key={mode} value={mode}>
-                    {t(`portfolio.replication.modeOptions.${mode}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className='grid gap-2'>
-            <Label htmlFor='portfolio-replication-mode-params'>
-              {t('portfolio.replication.modeParamsLabel')}
-            </Label>
-            <Textarea
-              id='portfolio-replication-mode-params'
-              value={form.modeParamsRaw}
-              onChange={event => setForm(prev => ({ ...prev, modeParamsRaw: event.target.value }))}
-              placeholder='{}'
-              rows={6}
-              disabled={working}
-            />
-          </div>
-
-          <div className='text-xs text-muted-foreground'>
-            {t('portfolio.replication.updatedAtLabel')}: {formattedUpdatedAt}
-          </div>
-        </div>
-
-        <div className='flex flex-wrap gap-2'>
-          <Button type='button' onClick={() => void onSave()} disabled={working}>
-            {t('portfolio.replication.saveButton')}
-          </Button>
-          <Button type='button' variant='outline' onClick={() => void onClear()} disabled={working}>
-            {t('portfolio.replication.clearButton')}
-          </Button>
-        </div>
-
-        <div className='grid gap-4 rounded-md border p-4'>
-          <div className='space-y-1'>
-            <h3 className='font-semibold'>{t('portfolio.replication.rebalances.title')}</h3>
-            <p className='text-xs text-muted-foreground'>
-              {t('portfolio.replication.rebalances.description')}
-            </p>
-          </div>
-
-          {rebalanceError ? (
-            <Alert variant='destructive'>
-              <AlertTitle>{t('common.error')}</AlertTitle>
-              <AlertDescription>{rebalanceError}</AlertDescription>
-            </Alert>
-          ) : null}
-
-          <div className='grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end'>
-            <div className='grid gap-2'>
-              <Label htmlFor='rebalance-execution-mode'>
-                {t('portfolio.replication.rebalances.executionModeLabel')}
-              </Label>
-              <Select
-                value={draftForm.executionMode}
-                onValueChange={value =>
-                  setDraftForm(prev => ({
-                    ...prev,
-                    executionMode: value === 'automatic' ? 'automatic' : 'manual',
-                  }))
-                }
-                disabled={rebalanceWorking}
-              >
-                <SelectTrigger id='rebalance-execution-mode'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='manual'>
-                    {t('portfolio.replication.rebalances.executionModeOptions.manual')}
-                  </SelectItem>
-                  <SelectItem value='automatic'>
-                    {t('portfolio.replication.rebalances.executionModeOptions.automatic')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className='grid gap-2'>
-              <Label htmlFor='rebalance-as-of-date'>
-                {t('portfolio.replication.rebalances.asOfDateLabel')}
-              </Label>
-              <Input
-                id='rebalance-as-of-date'
-                type='date'
-                value={draftForm.asOfDate}
-                onChange={event =>
-                  setDraftForm(prev => ({
-                    ...prev,
-                    asOfDate: event.target.value,
-                  }))
-                }
-                disabled={rebalanceWorking}
-              />
-            </div>
-
-            <Button type='button' onClick={() => void onCreateDraft()} disabled={rebalanceWorking}>
-              {rebalanceWorking
-                ? t('portfolio.replication.rebalances.createDraftWorking')
-                : t('portfolio.replication.rebalances.createDraftButton')}
-            </Button>
-          </div>
-
-          <div className='grid min-h-0 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]'>
-            <div className='grid gap-2 rounded-md border p-2'>
-              <p className='px-2 text-xs font-medium text-muted-foreground'>
-                {t('portfolio.replication.rebalances.listTitle')}
-              </p>
-
-              {rebalanceListLoading ? (
-                <p className='px-2 text-xs text-muted-foreground'>
-                  {t('portfolio.replication.rebalances.loadingList')}
-                </p>
+          <TabsContent value='settings' className='min-h-0 flex-1 overflow-hidden data-[state=active]:flex'>
+            <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-1 pt-2 text-sm'>
+              {error ? (
+                <Alert variant='destructive'>
+                  <AlertTitle>{t('common.error')}</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               ) : null}
 
-              {!rebalanceListLoading && rebalanceRuns.length === 0 ? (
-                <p className='px-2 text-xs text-muted-foreground'>
-                  {t('portfolio.replication.rebalances.emptyList')}
-                </p>
-              ) : null}
+              <div className='grid gap-4 rounded-md border p-4'>
+                <div className='flex items-center justify-between gap-3'>
+                  <Label htmlFor='portfolio-replication-enabled'>
+                    {t('portfolio.replication.isEnabledLabel')}
+                  </Label>
+                  <Switch
+                    id='portfolio-replication-enabled'
+                    checked={form.isEnabled}
+                    onCheckedChange={checked => setForm(prev => ({ ...prev, isEnabled: checked }))}
+                    disabled={working}
+                  />
+                </div>
 
-              {rebalanceRuns.map(run => {
-                const runID = typeof run.id === 'number' ? run.id : 0;
-                const isSelected = runID > 0 && runID === selectedRebalanceID;
-                return (
-                  <button
-                    key={runID || `${run.created_at}-${run.status}`}
-                    type='button'
-                    onClick={() => setSelectedRebalanceInQuery(runID || null)}
-                    className={`flex w-full flex-col items-start gap-1 rounded border px-2 py-2 text-left text-xs transition-colors ${
-                      isSelected ? 'bg-accent border-accent-foreground/30' : 'hover:bg-muted/40'
-                    }`}
+                <div className='grid gap-2'>
+                  <Label>
+                    {t('portfolio.replication.benchmarkLabel')}
+                  </Label>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      onClick={() => setSelectorOpen(true)}
+                      disabled={working}
+                    >
+                      {form.benchmarkSecid
+                        ? t('portfolio.replication.changeBenchmarkButton')
+                        : t('portfolio.replication.selectBenchmarkButton')}
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      onClick={() => setForm(prev => ({ ...prev, benchmarkSecid: '' }))}
+                      disabled={working || !form.benchmarkSecid}
+                    >
+                      {t('portfolio.replication.clearBenchmarkButton')}
+                    </Button>
+                  </div>
+                  <div className='text-xs text-muted-foreground'>
+                    {form.benchmarkSecid
+                      ? t('portfolio.replication.selectedBenchmarkValue', {
+                          secid: form.benchmarkSecid,
+                        })
+                      : t('portfolio.replication.selectedBenchmarkEmpty')}
+                  </div>
+                </div>
+
+                <div className='grid gap-2'>
+                  <Label htmlFor='portfolio-replication-mode'>
+                    {t('portfolio.replication.modeKeyLabel')}
+                  </Label>
+                  <Select
+                    value={form.modeKey || 'full'}
+                    onValueChange={value => setForm(prev => ({ ...prev, modeKey: value }))}
+                    disabled={working}
                   >
-                    <div className='flex w-full items-center justify-between gap-2'>
-                      <span className='font-medium'>#{runID || '-'}</span>
-                      <Badge variant='outline'>{run.status || '-'}</Badge>
-                    </div>
-                    <span className='text-muted-foreground'>
-                      {run.as_of_date || '-'} · {run.execution_mode || '-'}
-                    </span>
-                    <span className='text-muted-foreground'>
-                      {formatDateTime(run.created_at, i18n.language || 'en')}
-                    </span>
-                  </button>
-                );
-              })}
+                    <SelectTrigger id='portfolio-replication-mode'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPLICATION_MODE_OPTIONS.map(mode => (
+                        <SelectItem key={mode} value={mode}>
+                          {t(`portfolio.replication.modeOptions.${mode}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className='grid gap-2'>
+                  <Label htmlFor='portfolio-replication-mode-params'>
+                    {t('portfolio.replication.modeParamsLabel')}
+                  </Label>
+                  <Textarea
+                    id='portfolio-replication-mode-params'
+                    value={form.modeParamsRaw}
+                    onChange={event => setForm(prev => ({ ...prev, modeParamsRaw: event.target.value }))}
+                    placeholder='{}'
+                    rows={6}
+                    disabled={working}
+                  />
+                </div>
+
+                <div className='text-xs text-muted-foreground'>
+                  {t('portfolio.replication.updatedAtLabel')}: {formattedUpdatedAt}
+                </div>
+              </div>
+
+              <div className='flex flex-wrap gap-2'>
+                <Button type='button' onClick={() => void onSave()} disabled={working}>
+                  {t('portfolio.replication.saveButton')}
+                </Button>
+                <Button type='button' variant='outline' onClick={() => void onClear()} disabled={working}>
+                  {t('portfolio.replication.clearButton')}
+                </Button>
+              </div>
             </div>
+          </TabsContent>
 
-            <div className='grid gap-3 rounded-md border p-3'>
-              {!selectedRebalanceID ? (
-                <p className='text-xs text-muted-foreground'>
-                  {t('portfolio.replication.rebalances.selectPrompt')}
-                </p>
-              ) : null}
+          <TabsContent value='drafts' className='min-h-0 flex-1 overflow-hidden data-[state=active]:flex'>
+            <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-1 pt-2 text-sm'>
+              <div className='grid gap-4 rounded-md border p-4'>
+                <div className='space-y-1'>
+                  <h3 className='font-semibold'>{t('portfolio.replication.rebalances.title')}</h3>
+                  <p className='text-xs text-muted-foreground'>
+                    {t('portfolio.replication.rebalances.description')}
+                  </p>
+                </div>
 
-              {selectedRebalanceID && rebalanceDetailLoading ? (
-                <p className='text-xs text-muted-foreground'>
-                  {t('portfolio.replication.rebalances.loadingDetail')}
-                </p>
-              ) : null}
+                {rebalanceError ? (
+                  <Alert variant='destructive'>
+                    <AlertTitle>{t('common.error')}</AlertTitle>
+                    <AlertDescription>{rebalanceError}</AlertDescription>
+                  </Alert>
+                ) : null}
 
-              {selectedRebalanceID && !rebalanceDetailLoading && selectedRun ? (
-                <>
+                <div className='grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end'>
                   <div className='grid gap-2'>
-                    <div className='flex flex-wrap items-center gap-2'>
-                      <h4 className='font-semibold'>
-                        {t('portfolio.replication.rebalances.detailTitle', {
-                          id: selectedRun.id ?? '-',
-                        })}
-                      </h4>
-                      <Badge>{selectedRun.status || '-'}</Badge>
-                    </div>
-                    <div className='grid gap-1 text-xs text-muted-foreground'>
-                      <p>
-                        {t('portfolio.replication.rebalances.detailModeLabel')}: {selectedRun.mode_key || '-'}
-                      </p>
-                      <p>
-                        {t('portfolio.replication.rebalances.detailExecutionLabel')}:{' '}
-                        {selectedRun.execution_mode || '-'}
-                      </p>
-                      <p>
-                        {t('portfolio.replication.rebalances.detailAsOfLabel')}:{' '}
-                        {selectedRun.as_of_date || '-'}
-                      </p>
-                      <p>
-                        {t('portfolio.replication.rebalances.detailCreatedLabel')}:{' '}
-                        {formatDateTime(selectedRun.created_at, i18n.language || 'en')}
-                      </p>
-                    </div>
+                    <Label htmlFor='rebalance-execution-mode'>
+                      {t('portfolio.replication.rebalances.executionModeLabel')}
+                    </Label>
+                    <Select
+                      value={draftForm.executionMode}
+                      onValueChange={value =>
+                        setDraftForm(prev => ({
+                          ...prev,
+                          executionMode: value === 'automatic' ? 'automatic' : 'manual',
+                        }))
+                      }
+                      disabled={rebalanceWorking}
+                    >
+                      <SelectTrigger id='rebalance-execution-mode'>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='manual'>
+                          {t('portfolio.replication.rebalances.executionModeOptions.manual')}
+                        </SelectItem>
+                        <SelectItem value='automatic'>
+                          {t('portfolio.replication.rebalances.executionModeOptions.automatic')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {selectedRun.warnings && selectedRun.warnings.length > 0 ? (
-                    <Alert>
-                      <AlertTitle>{t('portfolio.replication.rebalances.warningsTitle')}</AlertTitle>
-                      <AlertDescription>
-                        {selectedRun.warnings.join(', ')}
-                      </AlertDescription>
-                    </Alert>
-                  ) : null}
-
-                  <div className='grid gap-1 text-xs text-muted-foreground'>
-                    <p>
-                      {t('portfolio.replication.rebalances.summaryItemsTotal')}:{' '}
-                      {formatNumber(extractSummaryNumber(selectedRun, 'items_total') ?? undefined, 0)}
-                    </p>
-                    <p>
-                      {t('portfolio.replication.rebalances.summaryActionable')}:{' '}
-                      {formatNumber(extractSummaryNumber(selectedRun, 'actionable_items') ?? undefined, 0)}
-                    </p>
-                    <p>
-                      {t('portfolio.replication.rebalances.summaryUnresolved')}:{' '}
-                      {formatNumber(extractSummaryNumber(selectedRun, 'unresolved_items') ?? undefined, 0)}
-                    </p>
-                    <p>
-                      {t('portfolio.replication.rebalances.summaryTurnover')}:{' '}
-                      {formatNumber(extractSummaryNumber(selectedRun, 'estimated_turnover_abs') ?? undefined, 2)}
-                    </p>
+                  <div className='grid gap-2'>
+                    <Label htmlFor='rebalance-as-of-date'>
+                      {t('portfolio.replication.rebalances.asOfDateLabel')}
+                    </Label>
+                    <Input
+                      id='rebalance-as-of-date'
+                      type='date'
+                      value={draftForm.asOfDate}
+                      onChange={event =>
+                        setDraftForm(prev => ({
+                          ...prev,
+                          asOfDate: event.target.value,
+                        }))
+                      }
+                      disabled={rebalanceWorking}
+                    />
                   </div>
 
-                  <div className='rounded-md border'>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.ticker')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.side')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.currentQty')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.targetQty')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.deltaQty')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.currentWeight')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.targetWeight')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.status')}</TableHead>
-                          <TableHead>{t('portfolio.replication.rebalances.itemsColumns.reason')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedItems.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={9} className='text-muted-foreground'>
-                              {t('portfolio.replication.rebalances.emptyItems')}
-                            </TableCell>
-                          </TableRow>
+                  <Button type='button' onClick={() => void onCreateDraft()} disabled={rebalanceWorking}>
+                    {rebalanceWorking
+                      ? t('portfolio.replication.rebalances.createDraftWorking')
+                      : t('portfolio.replication.rebalances.createDraftButton')}
+                  </Button>
+                </div>
+
+                <div className='grid min-h-0 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]'>
+                  <div className='grid gap-2 rounded-md border p-2'>
+                    <p className='px-2 text-xs font-medium text-muted-foreground'>
+                      {t('portfolio.replication.rebalances.listTitle')}
+                    </p>
+
+                    {rebalanceListLoading ? (
+                      <p className='px-2 text-xs text-muted-foreground'>
+                        {t('portfolio.replication.rebalances.loadingList')}
+                      </p>
+                    ) : null}
+
+                    {!rebalanceListLoading && rebalanceRuns.length === 0 ? (
+                      <p className='px-2 text-xs text-muted-foreground'>
+                        {t('portfolio.replication.rebalances.emptyList')}
+                      </p>
+                    ) : null}
+
+                    {rebalanceRuns.map(run => {
+                      const runID = typeof run.id === 'number' ? run.id : 0;
+                      const isSelected = runID > 0 && runID === selectedRebalanceID;
+                      return (
+                        <button
+                          key={runID || `${run.created_at}-${run.status}`}
+                          type='button'
+                          onClick={() => setSelectedRebalanceInQuery(runID || null)}
+                          className={`flex w-full flex-col items-start gap-1 rounded border px-2 py-2 text-left text-xs transition-colors ${
+                            isSelected ? 'bg-accent border-accent-foreground/30' : 'hover:bg-muted/40'
+                          }`}
+                        >
+                          <div className='flex w-full items-center justify-between gap-2'>
+                            <span className='font-medium'>#{runID || '-'}</span>
+                            <Badge variant='outline'>{run.status || '-'}</Badge>
+                          </div>
+                          <span className='text-muted-foreground'>
+                            {run.as_of_date || '-'} · {run.execution_mode || '-'}
+                          </span>
+                          <span className='text-muted-foreground'>
+                            {formatDateTime(run.created_at, i18n.language || 'en')}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className='grid gap-3 rounded-md border p-3'>
+                    {!selectedRebalanceID ? (
+                      <p className='text-xs text-muted-foreground'>
+                        {t('portfolio.replication.rebalances.selectPrompt')}
+                      </p>
+                    ) : null}
+
+                    {selectedRebalanceID && rebalanceDetailLoading ? (
+                      <p className='text-xs text-muted-foreground'>
+                        {t('portfolio.replication.rebalances.loadingDetail')}
+                      </p>
+                    ) : null}
+
+                    {selectedRebalanceID && !rebalanceDetailLoading && selectedRun ? (
+                      <>
+                        <div className='grid gap-2'>
+                          <div className='flex flex-wrap items-center gap-2'>
+                            <h4 className='font-semibold'>
+                              {t('portfolio.replication.rebalances.detailTitle', {
+                                id: selectedRun.id ?? '-',
+                              })}
+                            </h4>
+                            <Badge>{selectedRun.status || '-'}</Badge>
+                          </div>
+                          <div className='grid gap-1 text-xs text-muted-foreground'>
+                            <p>
+                              {t('portfolio.replication.rebalances.detailModeLabel')}: {selectedRun.mode_key || '-'}
+                            </p>
+                            <p>
+                              {t('portfolio.replication.rebalances.detailExecutionLabel')}:{' '}
+                              {selectedRun.execution_mode || '-'}
+                            </p>
+                            <p>
+                              {t('portfolio.replication.rebalances.detailAsOfLabel')}:{' '}
+                              {selectedRun.as_of_date || '-'}
+                            </p>
+                            <p>
+                              {t('portfolio.replication.rebalances.detailCreatedLabel')}:{' '}
+                              {formatDateTime(selectedRun.created_at, i18n.language || 'en')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {selectedRun.warnings && selectedRun.warnings.length > 0 ? (
+                          <Alert>
+                            <AlertTitle>{t('portfolio.replication.rebalances.warningsTitle')}</AlertTitle>
+                            <AlertDescription>
+                              {selectedRun.warnings.join(', ')}
+                            </AlertDescription>
+                          </Alert>
                         ) : null}
-                        {selectedItems.map(item => (
-                          <TableRow key={`${item.id ?? 0}-${item.ticker ?? ''}-${item.instrument_id ?? ''}`}>
-                            <TableCell>{item.ticker || item.instrument_id || '-'}</TableCell>
-                            <TableCell>{item.side || '-'}</TableCell>
-                            <TableCell>{formatNumber(item.current_quantity)}</TableCell>
-                            <TableCell>{formatNumber(item.target_quantity)}</TableCell>
-                            <TableCell>{formatNumber(item.delta_quantity)}</TableCell>
-                            <TableCell>{formatNumber(item.current_weight)}</TableCell>
-                            <TableCell>{formatNumber(item.target_weight)}</TableCell>
-                            <TableCell>
-                              <Badge variant='outline'>{item.status || '-'}</Badge>
-                            </TableCell>
-                            <TableCell>{unresolvedReason(item)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+
+                        <div className='grid gap-1 text-xs text-muted-foreground'>
+                          <p>
+                            {t('portfolio.replication.rebalances.summaryItemsTotal')}:{' '}
+                            {formatNumber(extractSummaryNumber(selectedRun, 'items_total') ?? undefined, 0)}
+                          </p>
+                          <p>
+                            {t('portfolio.replication.rebalances.summaryActionable')}:{' '}
+                            {formatNumber(extractSummaryNumber(selectedRun, 'actionable_items') ?? undefined, 0)}
+                          </p>
+                          <p>
+                            {t('portfolio.replication.rebalances.summaryUnresolved')}:{' '}
+                            {formatNumber(extractSummaryNumber(selectedRun, 'unresolved_items') ?? undefined, 0)}
+                          </p>
+                          <p>
+                            {t('portfolio.replication.rebalances.summaryTurnover')}:{' '}
+                            {formatNumber(
+                              extractSummaryNumber(selectedRun, 'estimated_turnover_abs') ?? undefined,
+                              2,
+                            )}
+                          </p>
+                        </div>
+
+                        <div className='rounded-md border'>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.ticker')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.side')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.currentQty')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.targetQty')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.deltaQty')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.currentWeight')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.targetWeight')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.status')}</TableHead>
+                                <TableHead>{t('portfolio.replication.rebalances.itemsColumns.reason')}</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedItems.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={9} className='text-muted-foreground'>
+                                    {t('portfolio.replication.rebalances.emptyItems')}
+                                  </TableCell>
+                                </TableRow>
+                              ) : null}
+                              {selectedItems.map(item => (
+                                <TableRow key={`${item.id ?? 0}-${item.ticker ?? ''}-${item.instrument_id ?? ''}`}>
+                                  <TableCell>{item.ticker || item.instrument_id || '-'}</TableCell>
+                                  <TableCell>{item.side || '-'}</TableCell>
+                                  <TableCell>{formatNumber(item.current_quantity)}</TableCell>
+                                  <TableCell>{formatNumber(item.target_quantity)}</TableCell>
+                                  <TableCell>{formatNumber(item.delta_quantity)}</TableCell>
+                                  <TableCell>{formatNumber(item.current_weight)}</TableCell>
+                                  <TableCell>{formatNumber(item.target_weight)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant='outline'>{item.status || '-'}</Badge>
+                                  </TableCell>
+                                  <TableCell>{unresolvedReason(item)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
-                </>
-              ) : null}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
 
       {selectorOpen ? (

@@ -43,6 +43,7 @@
       "compare": "Compare",
       "actions": "Actions",
       "analytics": "Analytics",
+      "replication": "Replication",
       "operations": "Operations",
       "profiles": "Profiles"
     }
@@ -555,6 +556,10 @@
     "replication": {
       "title": "Replication config",
       "description": "Configure benchmark and mode parameters for future replication workflows.",
+      "tabs": {
+        "settings": "Settings",
+        "drafts": "Drafts"
+      },
       "selectPrompt": "Select a portfolio profile to configure replication.",
       "isEnabledLabel": "Enable replication mode",
       "benchmarkLabel": "Benchmark SECID",

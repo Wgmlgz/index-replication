@@ -17,7 +17,6 @@ export type SidebarSubItem = {
   titleKey: string;
   href: string;
   activePathname?: string;
-  activeTab?: string;
   activeOverviewTab?: string;
   permission: PermissionStr | null;
 }
@@ -113,7 +112,6 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     titleKey: 'navigation.portfolio.overview',
     href: PORTFOLIO_V2_ROUTES.overview,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeTab: "overview",
     activeOverviewTab: "summary",
     permission: null,
   },
@@ -122,7 +120,6 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     titleKey: 'navigation.portfolio.operations',
     href: `${PORTFOLIO_V2_ROUTES.overview}?overview_tab=operations`,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeTab: "overview",
     activeOverviewTab: "operations",
     permission: null,
   },
@@ -131,24 +128,28 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     titleKey: 'navigation.portfolio.compare',
     href: `${PORTFOLIO_V2_ROUTES.overview}?overview_tab=compare`,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeTab: "overview",
     activeOverviewTab: "compare",
     permission: null,
   },
   {
     kind: "item",
     titleKey: 'navigation.portfolio.actions',
-    href: `${PORTFOLIO_V2_ROUTES.overview}?tab=actions`,
-    activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeTab: "actions",
+    href: PORTFOLIO_V2_ROUTES.actions,
+    activePathname: PORTFOLIO_V2_ROUTES.actions,
     permission: null,
   },
   {
     kind: "item",
     titleKey: 'navigation.portfolio.analytics',
-    href: `${PORTFOLIO_V2_ROUTES.overview}?tab=analytics`,
-    activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeTab: "analytics",
+    href: PORTFOLIO_V2_ROUTES.analytics,
+    activePathname: PORTFOLIO_V2_ROUTES.analytics,
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: 'navigation.portfolio.replication',
+    href: PORTFOLIO_V2_ROUTES.replication,
+    activePathname: PORTFOLIO_V2_ROUTES.replication,
     permission: null,
   },
 ];
