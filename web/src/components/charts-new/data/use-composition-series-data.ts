@@ -65,6 +65,7 @@ export function useCompositionSeriesData(options: {
     () => fixedModeTickers.join(','),
     [fixedModeTickers]
   );
+  const cache = provider.cache;
 
   const seriesQuery = useQuery({
     queryKey: [
@@ -106,7 +107,12 @@ export function useCompositionSeriesData(options: {
         topCountParam >= 0
     ),
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000,
+    staleTime: cache.staleTime,
+    gcTime: cache.gcTime,
+    refetchOnMount: cache.refetchOnMount,
+    meta: {
+      persist: cache.persist,
+    },
     retry: 1,
   });
 

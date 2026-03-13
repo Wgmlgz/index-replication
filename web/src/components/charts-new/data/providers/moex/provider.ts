@@ -17,10 +17,15 @@ import { moexApi } from '@/lib/api';
 import type { ChartsDataProvider } from '../types';
 
 const MOEX_PROVIDER_ID = 'moex';
+const MOEX_CHART_CACHE_MS = 2 * 60 * 1000;
 
 export function createMoexChartsDataProvider(): ChartsDataProvider {
   return {
     id: MOEX_PROVIDER_ID,
+    cache: {
+      staleTime: MOEX_CHART_CACHE_MS,
+      persist: true,
+    },
     getPriceHistory: async (
       query: PriceHistoryQuery
     ): Promise<ProviderPriceHistoryPoint[]> => {
@@ -82,4 +87,3 @@ export function createMoexChartsDataProvider(): ChartsDataProvider {
     },
   };
 }
-

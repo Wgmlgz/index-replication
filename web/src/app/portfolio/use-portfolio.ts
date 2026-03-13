@@ -28,7 +28,7 @@ export type PortfolioReplicationConfig = {
   updated_at: string;
 };
 
-export type NormalizedPortfolioProfile = PortfolioProfile & {
+export type NormalizedPortfolioProfile = Omit<PortfolioProfile, 'id' | 'name' | 'provider' | 'replication'> & {
   id: number;
   name: string;
   provider: string;

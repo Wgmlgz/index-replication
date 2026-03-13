@@ -49,6 +49,7 @@ export function useCompositionSnapshotData(options: {
     () => resolveIntervalDays(controls.intervalKey),
     [controls.intervalKey]
   );
+  const cache = provider.cache;
 
   const snapshotQuery = useQuery({
     queryKey: [
@@ -67,7 +68,12 @@ export function useCompositionSnapshotData(options: {
     },
     enabled: Boolean(selectedIndex?.secid && selectedIndex?.hasComposition),
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000,
+    staleTime: cache.staleTime,
+    gcTime: cache.gcTime,
+    refetchOnMount: cache.refetchOnMount,
+    meta: {
+      persist: cache.persist,
+    },
     retry: 1,
   });
 

@@ -53,6 +53,7 @@ export function usePriceVisualizationData(
     () => resolveIntervalDays(controls.intervalKey),
     [controls.intervalKey]
   );
+  const cache = provider.cache;
 
   const historyQuery = useQuery({
     queryKey: [
@@ -73,7 +74,12 @@ export function usePriceVisualizationData(
     },
     enabled: Boolean(selectedIndex?.secid),
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000,
+    staleTime: cache.staleTime,
+    gcTime: cache.gcTime,
+    refetchOnMount: cache.refetchOnMount,
+    meta: {
+      persist: cache.persist,
+    },
     retry: 1,
   });
 

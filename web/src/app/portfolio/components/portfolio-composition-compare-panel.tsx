@@ -25,6 +25,12 @@ import { resolveSnapshotKey } from '@/app/portfolio/components/analytics/utils';
 
 const EMPTY_PROVIDER: ChartsDataProvider = {
   id: 'portfolio:none',
+  cache: {
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    persist: false,
+  },
   getPriceHistory: () => Promise.resolve([]),
   getCompositionSnapshot: () => Promise.resolve([]),
   getCompositionSeries: () => Promise.resolve({}),

@@ -9,8 +9,16 @@ import type {
   PriceHistoryQuery,
 } from '@/components/charts-new/data/domain/queries';
 
+export type ChartsDataProviderCache = {
+  staleTime: number;
+  gcTime?: number;
+  refetchOnMount?: boolean | 'always';
+  persist?: boolean;
+};
+
 export type ChartsDataProvider = {
   id: string;
+  cache: ChartsDataProviderCache;
   getPriceHistory: (query: PriceHistoryQuery) => Promise<ProviderPriceHistoryPoint[]>;
   getCompositionSnapshot: (
     query: CompositionSnapshotQuery
@@ -19,4 +27,3 @@ export type ChartsDataProvider = {
     query: CompositionSeriesQuery
   ) => Promise<ProviderCompositionSeriesMap>;
 };
-

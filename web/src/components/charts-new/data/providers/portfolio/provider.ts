@@ -21,6 +21,12 @@ export function createPortfolioChartsDataProvider(
 ): ChartsDataProvider {
   return {
     id: `portfolio:${portfolioID}`,
+    cache: {
+      staleTime: 0,
+      gcTime: 0,
+      refetchOnMount: 'always',
+      persist: false,
+    },
     getPriceHistory: async (
       query: PriceHistoryQuery
     ): Promise<ProviderPriceHistoryPoint[]> => {

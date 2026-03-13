@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { QueryClient } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
@@ -47,6 +47,15 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         persister,
         maxAge: ONE_DAY_MS,
         buster: 'v1',
+        dehydrateOptions: {
+          shouldDehydrateQuery: query => {
+            const persist = (query.meta as { persist?: boolean } | undefined)?.persist;
+            if (persist === false) {
+              return false;
+            }
+            return defaultShouldDehydrateQuery(query);
+          },
+        },
       }}
       onSuccess={async () => {
         // On reload with persisted cache, force SWR behavior:

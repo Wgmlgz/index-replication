@@ -63,6 +63,12 @@ const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
 
 const EMPTY_PROVIDER: ChartsDataProvider = {
   id: 'portfolio:none',
+  cache: {
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    persist: false,
+  },
   getPriceHistory: () => Promise.resolve([]),
   getCompositionSnapshot: () => Promise.resolve([]),
   getCompositionSeries: () => Promise.resolve({}),
