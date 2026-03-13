@@ -54,7 +54,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const isPortfolioSubItemActive = (item: SidebarSubItem): boolean => {
     const itemPathname = item.activePathname ?? item.href.split('?')[0];
-    return pathname === itemPathname;
+    if (pathname === itemPathname) {
+      return true;
+    }
+
+    if (
+      itemPathname === PORTFOLIO_V2_ROUTES.replication
+      && pathname.startsWith(`${PORTFOLIO_V2_ROUTES.replication}/`)
+    ) {
+      return true;
+    }
+
+    return false;
   };
 
   return (

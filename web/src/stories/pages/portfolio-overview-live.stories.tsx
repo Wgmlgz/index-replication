@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useEffect } from 'react';
 
-import { PortfolioSummaryPanel } from '@/app/portfolio/components/portfolio-summary-panel';
-
 const API_BASE_STORAGE_KEY = 'settings-api-url';
 const DEFAULT_LIVE_API_BASE_URL = 'http://localhost:18080';
 
@@ -35,7 +33,6 @@ function LiveSummaryHost({ portfolioID }: LiveSummaryHostProps) {
       <div className='mb-4 text-sm text-muted-foreground'>
         Live backend summary for portfolio_id={portfolioID} via {DEFAULT_LIVE_API_BASE_URL}
       </div>
-      <PortfolioSummaryPanel portfolioID={portfolioID} />
     </div>
   );
 }

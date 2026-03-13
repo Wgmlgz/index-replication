@@ -91,7 +91,10 @@ function resolveActiveSection(pathname: string): PortfolioDetailsSection {
   if (pathname === PORTFOLIO_V2_ROUTES.analytics) {
     return 'analytics';
   }
-  if (pathname === PORTFOLIO_V2_ROUTES.replication) {
+  if (
+    pathname === PORTFOLIO_V2_ROUTES.replication
+    || pathname.startsWith(`${PORTFOLIO_V2_ROUTES.replication}/`)
+  ) {
     return 'replication';
   }
   return 'overview';
@@ -196,6 +199,8 @@ export default function PortfolioDetailsRouteLayout({
 
       const nextParams = new URLSearchParams(searchParams.toString());
       nextParams.delete('tab');
+      nextParams.delete('overview_tab');
+      nextParams.delete('replication_tab');
       const query = nextParams.toString();
       const href = query ? `${nextPath}?${query}` : nextPath;
       router.replace(href, { scroll: false });

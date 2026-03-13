@@ -10,6 +10,7 @@ export const PORTFOLIO_V2_ROUTES = {
   actions: '/portfolio/actions',
   analytics: '/portfolio/analytics',
   replication: '/portfolio/replication',
+  replicationDrafts: '/portfolio/replication/drafts',
   profiles: '/portfolio/profiles',
 } as const;
 
