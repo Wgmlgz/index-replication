@@ -42,7 +42,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, hasPermission, logoutUser } = useUser();
   const { state, toggleSidebar } = useSidebar();
   const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
-  const selectedPortfolioOverviewTab = searchParams.get('overview_tab');
   const isPortfolioSectionActive = pathname.startsWith('/portfolio');
 
   const handleLogout = async () => {
@@ -55,19 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const isPortfolioSubItemActive = (item: SidebarSubItem): boolean => {
     const itemPathname = item.activePathname ?? item.href.split('?')[0];
-    if (pathname !== itemPathname) {
-      return false;
-    }
-
-    if (!item.activeOverviewTab) {
-      return true;
-    }
-
-    if (item.activeOverviewTab === 'summary') {
-      return !selectedPortfolioOverviewTab || selectedPortfolioOverviewTab === 'summary';
-    }
-
-    return selectedPortfolioOverviewTab === item.activeOverviewTab;
+    return pathname === itemPathname;
   };
 
   return (

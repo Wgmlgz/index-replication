@@ -5,6 +5,8 @@ export const PORTFOLIO_V2_PROFILES_QUERY_KEY = ['portfolio', 'profiles'] as cons
 export const PORTFOLIO_V2_ROUTES = {
   root: '/portfolio',
   overview: '/portfolio/overview',
+  overviewOperations: '/portfolio/overview/operations',
+  overviewCompare: '/portfolio/overview/compare',
   actions: '/portfolio/actions',
   analytics: '/portfolio/analytics',
   replication: '/portfolio/replication',

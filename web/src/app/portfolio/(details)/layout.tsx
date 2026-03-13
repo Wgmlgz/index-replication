@@ -47,24 +47,38 @@ const SECTION_ROUTES: Record<PortfolioDetailsSection, string> = {
   replication: PORTFOLIO_V2_ROUTES.replication,
 };
 
-function resolveLegacyRoute(tab: string | null): {
-  path: string;
-  overviewTab?: 'operations';
-} | null {
+function resolveLegacyRoute(
+  tab: string | null,
+  overviewTab: string | null,
+): string | null {
   if (tab === 'actions') {
-    return { path: PORTFOLIO_V2_ROUTES.actions };
+    return PORTFOLIO_V2_ROUTES.actions;
   }
   if (tab === 'analytics') {
-    return { path: PORTFOLIO_V2_ROUTES.analytics };
+    return PORTFOLIO_V2_ROUTES.analytics;
   }
   if (tab === 'replication') {
-    return { path: PORTFOLIO_V2_ROUTES.replication };
+    return PORTFOLIO_V2_ROUTES.replication;
   }
   if (tab === 'operations') {
-    return { path: PORTFOLIO_V2_ROUTES.overview, overviewTab: 'operations' };
+    return PORTFOLIO_V2_ROUTES.overviewOperations;
   }
   if (tab === 'overview') {
-    return { path: PORTFOLIO_V2_ROUTES.overview };
+    if (overviewTab === 'operations') {
+      return PORTFOLIO_V2_ROUTES.overviewOperations;
+    }
+    if (overviewTab === 'compare') {
+      return PORTFOLIO_V2_ROUTES.overviewCompare;
+    }
+    return PORTFOLIO_V2_ROUTES.overview;
+  }
+  if (!tab) {
+    if (overviewTab === 'operations') {
+      return PORTFOLIO_V2_ROUTES.overviewOperations;
+    }
+    if (overviewTab === 'compare') {
+      return PORTFOLIO_V2_ROUTES.overviewCompare;
+    }
   }
 
   return null;
@@ -191,23 +205,22 @@ export default function PortfolioDetailsRouteLayout({
 
   useEffect(() => {
     const legacyTab = searchParams.get('tab');
-    if (!legacyTab) {
+    const legacyOverviewTab = searchParams.get('overview_tab');
+    if (!legacyTab && !legacyOverviewTab) {
       return;
     }
 
-    const resolved = resolveLegacyRoute(legacyTab);
-    if (!resolved) {
+    const resolvedPath = resolveLegacyRoute(legacyTab, legacyOverviewTab);
+    if (!resolvedPath) {
       return;
     }
 
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete('tab');
-    if (resolved.overviewTab === 'operations') {
-      nextParams.set('overview_tab', 'operations');
-    }
+    nextParams.delete('overview_tab');
 
     const query = nextParams.toString();
-    const href = query ? `${resolved.path}?${query}` : resolved.path;
+    const href = query ? `${resolvedPath}?${query}` : resolvedPath;
     const currentQuery = searchParams.toString();
     const currentHref = currentQuery ? `${pathname}?${currentQuery}` : pathname;
     if (href !== currentHref) {

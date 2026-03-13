@@ -17,7 +17,6 @@ export type SidebarSubItem = {
   titleKey: string;
   href: string;
   activePathname?: string;
-  activeOverviewTab?: string;
   permission: PermissionStr | null;
 }
 
@@ -112,23 +111,20 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     titleKey: 'navigation.portfolio.overview',
     href: PORTFOLIO_V2_ROUTES.overview,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeOverviewTab: "summary",
     permission: null,
   },
   {
     kind: "item",
     titleKey: 'navigation.portfolio.operations',
-    href: `${PORTFOLIO_V2_ROUTES.overview}?overview_tab=operations`,
-    activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeOverviewTab: "operations",
+    href: PORTFOLIO_V2_ROUTES.overviewOperations,
+    activePathname: PORTFOLIO_V2_ROUTES.overviewOperations,
     permission: null,
   },
   {
     kind: "item",
     titleKey: 'navigation.portfolio.compare',
-    href: `${PORTFOLIO_V2_ROUTES.overview}?overview_tab=compare`,
-    activePathname: PORTFOLIO_V2_ROUTES.overview,
-    activeOverviewTab: "compare",
+    href: PORTFOLIO_V2_ROUTES.overviewCompare,
+    activePathname: PORTFOLIO_V2_ROUTES.overviewCompare,
     permission: null,
   },
   {
