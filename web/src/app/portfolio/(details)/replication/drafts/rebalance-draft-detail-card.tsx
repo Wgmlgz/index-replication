@@ -2,7 +2,10 @@
 
 import { useTranslation } from 'react-i18next';
 
-import type { PortfolioRebalanceItem, PortfolioRebalanceRun } from '@/api-client';
+import type {
+  PortfolioRebalanceItem,
+  PortfolioRebalanceRun,
+} from '@/api-client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { DialogTitle } from '@radix-ui/react-dialog';
 
 function formatDateTime(value: string | undefined, language: string): string {
   if (!value) {
@@ -38,7 +42,10 @@ function formatNumber(value: number | undefined, fractionDigits = 4): string {
   }).format(value);
 }
 
-function extractSummaryNumber(run: PortfolioRebalanceRun | undefined, key: string): number | null {
+function extractSummaryNumber(
+  run: PortfolioRebalanceRun | undefined,
+  key: string,
+): number | null {
   const raw: unknown = run?.summary?.[key];
   if (typeof raw === 'number' && Number.isFinite(raw)) {
     return raw;
@@ -73,23 +80,18 @@ export function RebalanceDraftDetailCard({
   return (
     <div className='grid gap-3'>
       <div className='grid gap-2'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <h4 className='font-semibold'>
-            {t('portfolio.replication.rebalances.detailTitle', {
-              id: run.id ?? '-',
-            })}
-          </h4>
-          <Badge>{run.status || '-'}</Badge>
-        </div>
         <div className='grid gap-1 text-xs text-muted-foreground'>
           <p>
-            {t('portfolio.replication.rebalances.detailModeLabel')}: {run.mode_key || '-'}
+            {t('portfolio.replication.rebalances.detailModeLabel')}:{' '}
+            {run.mode_key || '-'}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.detailExecutionLabel')}: {run.execution_mode || '-'}
+            {t('portfolio.replication.rebalances.detailExecutionLabel')}:{' '}
+            {run.execution_mode || '-'}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.detailAsOfLabel')}: {run.as_of_date || '-'}
+            {t('portfolio.replication.rebalances.detailAsOfLabel')}:{' '}
+            {run.as_of_date || '-'}
           </p>
           <p>
             {t('portfolio.replication.rebalances.detailCreatedLabel')}:{' '}
@@ -100,29 +102,41 @@ export function RebalanceDraftDetailCard({
 
       {run.warnings && run.warnings.length > 0 ? (
         <Alert>
-          <AlertTitle>{t('portfolio.replication.rebalances.warningsTitle')}</AlertTitle>
-          <AlertDescription>
-            {run.warnings.join(', ')}
-          </AlertDescription>
+          <AlertTitle>
+            {t('portfolio.replication.rebalances.warningsTitle')}
+          </AlertTitle>
+          <AlertDescription>{run.warnings.join(', ')}</AlertDescription>
         </Alert>
       ) : null}
 
       <div className='grid gap-1 text-xs text-muted-foreground'>
         <p>
           {t('portfolio.replication.rebalances.summaryItemsTotal')}:{' '}
-          {formatNumber(extractSummaryNumber(run, 'items_total') ?? undefined, 0)}
+          {formatNumber(
+            extractSummaryNumber(run, 'items_total') ?? undefined,
+            0,
+          )}
         </p>
         <p>
           {t('portfolio.replication.rebalances.summaryActionable')}:{' '}
-          {formatNumber(extractSummaryNumber(run, 'actionable_items') ?? undefined, 0)}
+          {formatNumber(
+            extractSummaryNumber(run, 'actionable_items') ?? undefined,
+            0,
+          )}
         </p>
         <p>
           {t('portfolio.replication.rebalances.summaryUnresolved')}:{' '}
-          {formatNumber(extractSummaryNumber(run, 'unresolved_items') ?? undefined, 0)}
+          {formatNumber(
+            extractSummaryNumber(run, 'unresolved_items') ?? undefined,
+            0,
+          )}
         </p>
         <p>
           {t('portfolio.replication.rebalances.summaryTurnover')}:{' '}
-          {formatNumber(extractSummaryNumber(run, 'estimated_turnover_abs') ?? undefined, 2)}
+          {formatNumber(
+            extractSummaryNumber(run, 'estimated_turnover_abs') ?? undefined,
+            2,
+          )}
         </p>
       </div>
 
@@ -130,15 +144,37 @@ export function RebalanceDraftDetailCard({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.ticker')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.side')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.currentQty')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.targetQty')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.deltaQty')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.currentWeight')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.targetWeight')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.status')}</TableHead>
-              <TableHead>{t('portfolio.replication.rebalances.itemsColumns.reason')}</TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.ticker')}
+              </TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.side')}
+              </TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.currentQty')}
+              </TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.targetQty')}
+              </TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.deltaQty')}
+              </TableHead>
+              <TableHead>
+                {t(
+                  'portfolio.replication.rebalances.itemsColumns.currentWeight',
+                )}
+              </TableHead>
+              <TableHead>
+                {t(
+                  'portfolio.replication.rebalances.itemsColumns.targetWeight',
+                )}
+              </TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.status')}
+              </TableHead>
+              <TableHead>
+                {t('portfolio.replication.rebalances.itemsColumns.reason')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -150,8 +186,12 @@ export function RebalanceDraftDetailCard({
               </TableRow>
             ) : null}
             {items.map(item => (
-              <TableRow key={`${item.id ?? 0}-${item.ticker ?? ''}-${item.instrument_id ?? ''}`}>
-                <TableCell>{item.ticker || item.instrument_id || '-'}</TableCell>
+              <TableRow
+                key={`${item.id ?? 0}-${item.ticker ?? ''}-${item.instrument_id ?? ''}`}
+              >
+                <TableCell>
+                  {item.ticker || item.instrument_id || '-'}
+                </TableCell>
                 <TableCell>{item.side || '-'}</TableCell>
                 <TableCell>{formatNumber(item.current_quantity)}</TableCell>
                 <TableCell>{formatNumber(item.target_quantity)}</TableCell>

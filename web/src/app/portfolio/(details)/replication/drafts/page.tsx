@@ -15,7 +15,13 @@ import { usePortfolioDetailsContext } from '@/app/portfolio/components/portfolio
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -75,9 +81,14 @@ export default function PortfolioReplicationDraftsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [draftForm, setDraftForm] = useState<RebalanceDraftFormState>({ ...EMPTY_DRAFT_FORM });
-  const [rebalanceRuns, setRebalanceRuns] = useState<PortfolioRebalanceRun[]>([]);
-  const [rebalanceDetail, setRebalanceDetail] = useState<PortfolioRebalanceDetailResponse | null>(null);
+  const [draftForm, setDraftForm] = useState<RebalanceDraftFormState>({
+    ...EMPTY_DRAFT_FORM,
+  });
+  const [rebalanceRuns, setRebalanceRuns] = useState<PortfolioRebalanceRun[]>(
+    [],
+  );
+  const [rebalanceDetail, setRebalanceDetail] =
+    useState<PortfolioRebalanceDetailResponse | null>(null);
   const [rebalanceError, setRebalanceError] = useState('');
   const [rebalanceListLoading, setRebalanceListLoading] = useState(false);
   const [rebalanceDetailLoading, setRebalanceDetailLoading] = useState(false);
@@ -124,11 +135,19 @@ export default function PortfolioReplicationDraftsPage() {
 
     setRebalanceListLoading(true);
     try {
-      const response = await portfolioApi.mePortfoliosIdRebalancesGet(portfolioID, 50);
+      const response = await portfolioApi.mePortfoliosIdRebalancesGet(
+        portfolioID,
+        50,
+      );
       setRebalanceRuns(response.data ?? []);
       setRebalanceError('');
     } catch (err) {
-      setRebalanceError(parseErrorMessage(err, t('portfolio.replication.errors.loadRebalances')));
+      setRebalanceError(
+        parseErrorMessage(
+          err,
+          t('portfolio.replication.errors.loadRebalances'),
+        ),
+      );
     } finally {
       setRebalanceListLoading(false);
     }
@@ -153,17 +172,23 @@ export default function PortfolioReplicationDraftsPage() {
     const run = async () => {
       setRebalanceDetailLoading(true);
       try {
-        const response = await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
-          portfolioID,
-          selectedRebalanceID,
-        );
+        const response =
+          await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
+            portfolioID,
+            selectedRebalanceID,
+          );
         if (!cancelled) {
           setRebalanceDetail(response.data ?? null);
           setRebalanceError('');
         }
       } catch (err) {
         if (!cancelled) {
-          setRebalanceError(parseErrorMessage(err, t('portfolio.replication.errors.loadRebalanceDetail')));
+          setRebalanceError(
+            parseErrorMessage(
+              err,
+              t('portfolio.replication.errors.loadRebalanceDetail'),
+            ),
+          );
         }
       } finally {
         if (!cancelled) {
@@ -192,7 +217,10 @@ export default function PortfolioReplicationDraftsPage() {
     setRebalanceWorking(true);
     setRebalanceError('');
     try {
-      const response = await portfolioApi.mePortfoliosIdRebalancesPost(portfolioID, payload);
+      const response = await portfolioApi.mePortfoliosIdRebalancesPost(
+        portfolioID,
+        payload,
+      );
       const detail = response.data ?? null;
       setRebalanceDetail(detail);
 
@@ -204,7 +232,9 @@ export default function PortfolioReplicationDraftsPage() {
       await loadRebalanceRuns();
       return true;
     } catch (err) {
-      setRebalanceError(parseErrorMessage(err, t('portfolio.replication.errors.createDraft')));
+      setRebalanceError(
+        parseErrorMessage(err, t('portfolio.replication.errors.createDraft')),
+      );
       return false;
     } finally {
       setRebalanceWorking(false);
@@ -222,10 +252,13 @@ export default function PortfolioReplicationDraftsPage() {
   const selectedRun = rebalanceDetail?.run;
   const selectedItems = rebalanceDetail?.items ?? [];
 
-  const onOpenDraftDetail = useCallback((runID: number | null) => {
-    setSelectedRebalanceInQuery(runID);
-    setDetailDialogOpen(Boolean(runID));
-  }, [setSelectedRebalanceInQuery]);
+  const onOpenDraftDetail = useCallback(
+    (runID: number | null) => {
+      setSelectedRebalanceInQuery(runID);
+      setDetailDialogOpen(Boolean(runID));
+    },
+    [setSelectedRebalanceInQuery],
+  );
 
   const onSubmitCreateDraft = useCallback(async () => {
     const created = await onCreateDraft();
@@ -239,7 +272,9 @@ export default function PortfolioReplicationDraftsPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('portfolio.replication.rebalances.title')}</CardTitle>
-          <CardDescription>{t('portfolio.replication.rebalances.description')}</CardDescription>
+          <CardDescription>
+            {t('portfolio.replication.rebalances.description')}
+          </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
           {t('portfolio.replication.selectPrompt')}
@@ -253,7 +288,9 @@ export default function PortfolioReplicationDraftsPage() {
       <Card className='h-full min-h-0 overflow-hidden'>
         <CardHeader>
           <CardTitle>{t('portfolio.replication.rebalances.title')}</CardTitle>
-          <CardDescription>{t('portfolio.replication.rebalances.description')}</CardDescription>
+          <CardDescription>
+            {t('portfolio.replication.rebalances.description')}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
@@ -265,7 +302,11 @@ export default function PortfolioReplicationDraftsPage() {
           ) : null}
 
           <div className='flex justify-end'>
-            <Button type='button' onClick={() => setCreateDialogOpen(true)} disabled={rebalanceWorking}>
+            <Button
+              type='button'
+              onClick={() => setCreateDialogOpen(true)}
+              disabled={rebalanceWorking}
+            >
               <Plus className='size-4' />
               {t('portfolio.replication.rebalances.openCreateDialogButton')}
             </Button>
@@ -330,7 +371,9 @@ export default function PortfolioReplicationDraftsPage() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className='sm:max-w-2xl'>
           <DialogHeader>
-            <DialogTitle>{t('portfolio.replication.rebalances.createDialogTitle')}</DialogTitle>
+            <DialogTitle>
+              {t('portfolio.replication.rebalances.createDialogTitle')}
+            </DialogTitle>
             <DialogDescription>
               {t('portfolio.replication.rebalances.createDialogDescription')}
             </DialogDescription>
@@ -359,45 +402,60 @@ export default function PortfolioReplicationDraftsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={detailDialogOpen}
-        onOpenChange={open => {
-          setDetailDialogOpen(open);
-          if (!open) {
-            setSelectedRebalanceInQuery(null);
-          }
-        }}
-      >
-        <DialogContent className='max-h-[90svh] sm:max-w-6xl'>
-          <div className='min-h-0 overflow-y-auto'>
-            {!selectedRebalanceID ? (
-              <p className='text-xs text-muted-foreground'>
-                {t('portfolio.replication.rebalances.selectPrompt')}
-              </p>
-            ) : null}
+      {selectedRun && (
+        <Dialog
+          open={detailDialogOpen}
+          onOpenChange={open => {
+            setDetailDialogOpen(open);
+            if (!open) {
+              setSelectedRebalanceInQuery(null);
+            }
+          }}
+        >
+          <DialogContent className='max-h-[90svh] sm:max-w-6xl'>
+            <DialogTitle className='font-semibold'>
+              <div className='flex flex-wrap items-center gap-2'>
+                {t('portfolio.replication.rebalances.detailTitle', {
+                  id: selectedRun.id ?? '-',
+                })}
+                <Badge>{selectedRun.status || '-'}</Badge>
+              </div>
+            </DialogTitle>
 
-            {selectedRebalanceID && rebalanceDetailLoading ? (
-              <p className='text-xs text-muted-foreground'>
-                {t('portfolio.replication.rebalances.loadingDetail')}
-              </p>
-            ) : null}
+            <div className='min-h-0 overflow-y-auto'>
+              {!selectedRebalanceID ? (
+                <p className='text-xs text-muted-foreground'>
+                  {t('portfolio.replication.rebalances.selectPrompt')}
+                </p>
+              ) : null}
 
-            {selectedRebalanceID && !rebalanceDetailLoading && selectedRun ? (
-              <RebalanceDraftDetailCard
-                run={selectedRun}
-                items={selectedItems}
-                language={i18n.language || 'en'}
-              />
-            ) : null}
-          </div>
+              {selectedRebalanceID && rebalanceDetailLoading ? (
+                <p className='text-xs text-muted-foreground'>
+                  {t('portfolio.replication.rebalances.loadingDetail')}
+                </p>
+              ) : null}
 
-          <DialogFooter>
-            <Button type='button' variant='outline' onClick={() => setDetailDialogOpen(false)}>
-              {t('portfolio.replication.rebalances.closeButton')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {selectedRebalanceID && !rebalanceDetailLoading && selectedRun ? (
+                <RebalanceDraftDetailCard
+                  run={selectedRun}
+                  items={selectedItems}
+                  language={i18n.language || 'en'}
+                />
+              ) : null}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => setDetailDialogOpen(false)}
+              >
+                {t('portfolio.replication.rebalances.closeButton')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
