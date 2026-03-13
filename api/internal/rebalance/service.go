@@ -22,6 +22,7 @@ type runRepository interface {
 	) (*models.PortfolioRebalanceRun, []models.PortfolioRebalanceItem, error)
 	ListRunsByPortfolio(userID int, portfolioProfileID int, limit int) ([]models.PortfolioRebalanceRun, error)
 	GetRunByID(userID int, portfolioProfileID int, runID int) (*models.PortfolioRebalanceRun, error)
+	DeleteRunByID(userID int, portfolioProfileID int, runID int) error
 	ListItemsByRunID(runID int) ([]models.PortfolioRebalanceItem, error)
 }
 
@@ -243,6 +244,37 @@ func (s *Service) GetRunDetail(
 		Run:   toRunDTO(run),
 		Items: toItemDTOList(items),
 	}, nil
+}
+
+func (s *Service) DeleteDraft(
+	_ context.Context,
+	userID int,
+	portfolioID int,
+	runID int,
+) error {
+	if portfolioID <= 0 {
+		return ErrInvalidProfileID
+	}
+	if runID <= 0 {
+		return ErrInvalidRebalanceID
+	}
+	if err := s.ensureProfileExists(userID, portfolioID); err != nil {
+		return err
+	}
+
+	if err := s.runsRepo.DeleteRunByID(userID, portfolioID, runID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrRebalanceNotFound
+		}
+		return err
+	}
+
+	_ = s.audit.LogUserAction(userID, models.ActionPortfolioRebalanceDeleted, userID, map[string]interface{}{
+		"portfolio_id":     portfolioID,
+		"rebalance_run_id": runID,
+	})
+
+	return nil
 }
 
 func (s *Service) ensureProfileExists(userID int, portfolioID int) error {

@@ -140,4 +140,4 @@ cd web
 task api:gen
 ```
 
-The spec is output to `api/docs/swagger.json`. The generation script currently points to `../server/docs/swagger.json` in `web/package.json`. If your backend folder is `api/`, update that script path or add a symlink.
+The spec is output to `api/docs/swagger.json`. The web generator script reads this file and handles both Docker (`/local/...`) and local path modes automatically.

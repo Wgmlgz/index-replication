@@ -45,7 +45,7 @@ Common tasks:
 - API access is centralized in `web/src/lib/api.ts` using a generated client.
 - Portfolio (`/portfolio`) uses provider-agnostic backend endpoints (`/api/me/portfolios/:id/*`) and profile selection via `portfolio_id` URL param.
 - Portfolio overview includes a Replication tab for config CRUD and rebalance draft planning
-  (create/list/detail, read-only; no execution yet). It reads replication data embedded in
+  (create/list/detail/delete; no execution yet). It reads replication data embedded in
   `GET /api/me/portfolios` / `GET /api/me/portfolios/:id/summary`, writes config via PUT/DELETE replication endpoints,
   and uses `/api/me/portfolios/:id/rebalances*` for draft planning data.
 - MOEX data access is handled by backend endpoints via `web/src/lib/moex-client.ts`.

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -202,13 +203,17 @@ func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {
 		t.Fatalf("insert confirmation record: %v", err)
 	}
 
-	if err := db.Delete(&models.PortfolioRebalanceRun{}, "id = ?", run.ID).Error; err != nil {
+	if err := repo.DeleteRunByID(102, profileID, run.ID); err != nil {
 		t.Fatalf("delete rebalance run: %v", err)
 	}
 
 	assertCount(t, db, "portfolio_rebalance_items", "rebalance_run_id = ?", run.ID, 0)
 	assertCount(t, db, "portfolio_rebalance_execution_links", "rebalance_run_id = ?", run.ID, 0)
 	assertCount(t, db, "portfolio_rebalance_confirmation_records", "rebalance_run_id = ?", run.ID, 0)
+
+	if err := repo.DeleteRunByID(102, profileID, run.ID); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected gorm.ErrRecordNotFound, got %v", err)
+	}
 }
 
 func createPortfolioProfileForRebalance(t *testing.T, db *gorm.DB, userID int) int {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 import type {
   PortfolioRebalanceCreateRequest,
@@ -12,6 +12,7 @@ import type {
   PortfolioRebalanceRun,
 } from '@/api-client';
 import { usePortfolioDetailsContext } from '@/app/portfolio/components/portfolio-details-context';
+import { ConfirmActionDialog } from '@/components/confirm-action-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -267,6 +268,43 @@ export default function PortfolioReplicationDraftsPage() {
     }
   }, [onCreateDraft]);
 
+  const onDeleteDraft = useCallback(
+    async (runID: number) => {
+      if (!portfolioID || runID <= 0) {
+        return;
+      }
+
+      setRebalanceWorking(true);
+      setRebalanceError('');
+      try {
+        await portfolioApi.mePortfoliosIdRebalancesRebalanceIdDelete(
+          portfolioID,
+          runID,
+        );
+        if (selectedRebalanceID === runID) {
+          setRebalanceDetail(null);
+          setDetailDialogOpen(false);
+          setSelectedRebalanceInQuery(null);
+        }
+        await loadRebalanceRuns();
+      } catch (err) {
+        setRebalanceError(
+          parseErrorMessage(err, t('portfolio.replication.errors.deleteDraft')),
+        );
+      } finally {
+        setRebalanceWorking(false);
+      }
+    },
+    [
+      loadRebalanceRuns,
+      parseErrorMessage,
+      portfolioID,
+      selectedRebalanceID,
+      setSelectedRebalanceInQuery,
+      t,
+    ],
+  );
+
   if (!portfolioID) {
     return (
       <Card>
@@ -312,7 +350,7 @@ export default function PortfolioReplicationDraftsPage() {
             </Button>
           </div>
 
-          <div className='grid gap-2 rounded-md border p-2'>
+          <div className='grid gap-2'>
             <p className='px-2 text-xs font-medium text-muted-foreground'>
               {t('portfolio.replication.rebalances.listTitle')}
             </p>
@@ -331,13 +369,10 @@ export default function PortfolioReplicationDraftsPage() {
 
             {rebalanceRuns.map(run => {
               const runID = typeof run.id === 'number' ? run.id : 0;
-              const isSelected = runID > 0 && runID === selectedRebalanceID;
               return (
                 <div
                   key={runID || `${run.created_at}-${run.status}`}
-                  className={`flex items-center justify-between gap-3 rounded border px-2 py-2 text-xs transition-colors ${
-                    isSelected ? 'bg-accent border-accent-foreground/30' : ''
-                  }`}
+                  className={`flex items-center justify-between gap-3 rounded p-2 text-xs transition-colors`}
                 >
                   <div className='grid gap-1'>
                     <div className='flex w-full items-center gap-2'>
@@ -352,15 +387,42 @@ export default function PortfolioReplicationDraftsPage() {
                     </span>
                   </div>
 
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    onClick={() => onOpenDraftDetail(runID || null)}
-                    disabled={!runID}
-                  >
-                    {t('portfolio.replication.rebalances.viewDraftButton')}
-                  </Button>
+                  <div className='flex items-center gap-2'>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={() => onOpenDraftDetail(runID || null)}
+                      disabled={!runID || rebalanceWorking}
+                    >
+                      {t('portfolio.replication.rebalances.viewDraftButton')}
+                    </Button>
+                    <ConfirmActionDialog
+                      trigger={(
+                        <Button
+                          type='button'
+                          variant='destructive'
+                          size='sm'
+                          disabled={!runID || rebalanceWorking}
+                        >
+                          <Trash2 className='size-4' />
+                          {t('portfolio.replication.rebalances.deleteDraftButton')}
+                        </Button>
+                      )}
+                      title={t('portfolio.replication.rebalances.deleteConfirmTitle', {
+                        id: runID || '-',
+                      })}
+                      description={t(
+                        'portfolio.replication.rebalances.deleteConfirmDescription',
+                      )}
+                      cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
+                      actionLabel={rebalanceWorking
+                        ? t('portfolio.replication.rebalances.deleteDraftWorking')
+                        : t('portfolio.replication.rebalances.deleteConfirmAction')}
+                      disabled={!runID || rebalanceWorking}
+                      onAction={() => onDeleteDraft(runID)}
+                    />
+                  </div>
                 </div>
               );
             })}

@@ -99,6 +99,19 @@ func (r *PortfolioRebalancesRepository) GetRunByID(userID int, portfolioProfileI
 	return &row, nil
 }
 
+func (r *PortfolioRebalancesRepository) DeleteRunByID(userID int, portfolioProfileID int, runID int) error {
+	result := r.db.
+		Where("id = ? AND user_id = ? AND portfolio_profile_id = ?", runID, userID, portfolioProfileID).
+		Delete(&models.PortfolioRebalanceRun{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 func (r *PortfolioRebalancesRepository) ListItemsByRunID(runID int) ([]models.PortfolioRebalanceItem, error) {
 	var rows []models.PortfolioRebalanceItem
 	err := r.db.

@@ -141,6 +141,46 @@ func TestPortfolioRebalanceAPI_DetailAndListContract(t *testing.T) {
 	}
 }
 
+func TestPortfolioRebalanceAPI_DeleteDraft(t *testing.T) {
+	router, _, profileID := setupRebalanceTestRouter(t, true)
+
+	createPayload := dto.PortfolioRebalanceCreateRequest{
+		ExecutionMode: "manual",
+		AsOfDate:      "2025-01-15",
+	}
+	createRec := performJSONRequest(t, router, http.MethodPost,
+		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	}
+
+	var created dto.PortfolioRebalanceDetailResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	if created.Run.ID <= 0 {
+		t.Fatalf("expected created run id > 0")
+	}
+
+	deleteRec := performJSONRequest(t, router, http.MethodDelete,
+		fmt.Sprintf("/me/portfolios/%d/rebalances/%d", profileID, created.Run.ID), nil)
+	if deleteRec.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d body=%s", deleteRec.Code, deleteRec.Body.String())
+	}
+
+	detailRec := performJSONRequest(t, router, http.MethodGet,
+		fmt.Sprintf("/me/portfolios/%d/rebalances/%d", profileID, created.Run.ID), nil)
+	if detailRec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d body=%s", detailRec.Code, detailRec.Body.String())
+	}
+
+	deleteMissingRec := performJSONRequest(t, router, http.MethodDelete,
+		fmt.Sprintf("/me/portfolios/%d/rebalances/%d", profileID, created.Run.ID), nil)
+	if deleteMissingRec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d body=%s", deleteMissingRec.Code, deleteMissingRec.Body.String())
+	}
+}
+
 func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, *gorm.DB, int) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
@@ -200,6 +240,7 @@ func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, 
 	router.POST("/me/portfolios/:id/rebalances", handler.CreateRebalanceDraft)
 	router.GET("/me/portfolios/:id/rebalances", handler.ListRebalances)
 	router.GET("/me/portfolios/:id/rebalances/:rebalanceId", handler.GetRebalanceDetail)
+	router.DELETE("/me/portfolios/:id/rebalances/:rebalanceId", handler.DeleteRebalanceDraft)
 
 	return router, db, profileID
 }

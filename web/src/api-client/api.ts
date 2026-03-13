@@ -2259,6 +2259,44 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
+         * Deletes selected rebalance draft and all related records
+         * @summary Delete rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdDelete: async (id: number, rebalanceId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdDelete', 'id', id)
+            // verify required parameter 'rebalanceId' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdDelete', 'rebalanceId', rebalanceId)
+            const localVarPath = `/me/portfolios/{id}/rebalances/{rebalanceId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"rebalanceId"}}`, encodeURIComponent(String(rebalanceId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = '*/*';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns run summary and planned items for selected rebalance draft
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
@@ -2595,6 +2633,20 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Deletes selected rebalance draft and all related records
+         * @summary Delete rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesRebalanceIdDelete(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesRebalanceIdDelete(id, rebalanceId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesRebalanceIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns run summary and planned items for selected rebalance draft
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
@@ -2788,6 +2840,17 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdRebalancesPost(id, payload, options).then((request) => request(axios, basePath));
         },
         /**
+         * Deletes selected rebalance draft and all related records
+         * @summary Delete rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdDelete(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.mePortfoliosIdRebalancesRebalanceIdDelete(id, rebalanceId, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns run summary and planned items for selected rebalance draft
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
@@ -2971,6 +3034,18 @@ export class PortfolioApi extends BaseAPI {
      */
     public mePortfoliosIdRebalancesPost(id: number, payload: PortfolioRebalanceCreateRequest, options?: RawAxiosRequestConfig) {
         return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesPost(id, payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Deletes selected rebalance draft and all related records
+     * @summary Delete rebalance draft
+     * @param {number} id Portfolio profile id
+     * @param {number} rebalanceId Rebalance run id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesRebalanceIdDelete(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdDelete(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

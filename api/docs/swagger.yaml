@@ -1539,6 +1539,37 @@ paths:
       tags:
       - portfolio
   /me/portfolios/{id}/rebalances/{rebalanceId}:
+    delete:
+      description: Deletes selected rebalance draft and all related records
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rebalance run id
+        in: path
+        name: rebalanceId
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete rebalance draft
+      tags:
+      - portfolio
     get:
       description: Returns run summary and planned items for selected rebalance draft
       parameters:

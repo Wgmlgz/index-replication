@@ -114,9 +114,8 @@ func (h *PortfolioRebalanceHandler) GetRebalanceDetail(c *gin.Context) {
 		return
 	}
 
-	runID, err := strconv.Atoi(strings.TrimSpace(c.Param("rebalanceId")))
-	if err != nil || runID <= 0 {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid rebalance id"})
+	runID, ok := parseRebalanceID(c)
+	if !ok {
 		return
 	}
 
@@ -126,6 +125,46 @@ func (h *PortfolioRebalanceHandler) GetRebalanceDetail(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+// DeleteRebalanceDraft godoc
+//
+//	@Summary		Delete rebalance draft
+//	@Description	Deletes selected rebalance draft and all related records
+//	@Tags			portfolio
+//	@Param			id			path		int	true	"Portfolio profile id"
+//	@Param			rebalanceId	path		int	true	"Rebalance run id"
+//	@Success		204
+//	@Failure		400	{object}	dto.ErrorResponse
+//	@Failure		404	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances/{rebalanceId} [delete]
+func (h *PortfolioRebalanceHandler) DeleteRebalanceDraft(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	runID, ok := parseRebalanceID(c)
+	if !ok {
+		return
+	}
+
+	if err := h.service.DeleteDraft(c.Request.Context(), userID, portfolioID, runID); err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func parseRebalanceID(c *gin.Context) (int, bool) {
+	runID, err := strconv.Atoi(strings.TrimSpace(c.Param("rebalanceId")))
+	if err != nil || runID <= 0 {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid rebalance id"})
+		return 0, false
+	}
+	return runID, true
 }
 
 func writePortfolioRebalanceError(c *gin.Context, err error) {
@@ -145,6 +184,6 @@ func writePortfolioRebalanceError(c *gin.Context, err error) {
 		errors.Is(err, rebalance.ErrRebalanceNotFound):
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 	default:
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to plan rebalance"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Rebalance request failed"})
 	}
 }

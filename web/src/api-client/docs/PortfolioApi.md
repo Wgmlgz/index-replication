@@ -14,6 +14,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**mePortfoliosIdPatch**](#meportfoliosidpatch) | **PATCH** /me/portfolios/{id} | Update portfolio profile|
 |[**mePortfoliosIdRebalancesGet**](#meportfoliosidrebalancesget) | **GET** /me/portfolios/{id}/rebalances | List rebalance drafts|
 |[**mePortfoliosIdRebalancesPost**](#meportfoliosidrebalancespost) | **POST** /me/portfolios/{id}/rebalances | Create rebalance draft|
+|[**mePortfoliosIdRebalancesRebalanceIdDelete**](#meportfoliosidrebalancesrebalanceiddelete) | **DELETE** /me/portfolios/{id}/rebalances/{rebalanceId} | Delete rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdGet**](#meportfoliosidrebalancesrebalanceidget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId} | Get rebalance draft detail|
 |[**mePortfoliosIdReplicationDelete**](#meportfoliosidreplicationdelete) | **DELETE** /me/portfolios/{id}/replication | Delete portfolio replication config|
 |[**mePortfoliosIdReplicationPut**](#meportfoliosidreplicationput) | **PUT** /me/portfolios/{id}/replication | Upsert portfolio replication config|
@@ -602,6 +603,63 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**201** | Created |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesRebalanceIdDelete**
+> mePortfoliosIdRebalancesRebalanceIdDelete()
+
+Deletes selected rebalance draft and all related records
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let rebalanceId: number; //Rebalance run id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdDelete(
+    id,
+    rebalanceId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+| **rebalanceId** | [**number**] | Rebalance run id | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
 |**400** | Bad Request |  -  |
 |**404** | Not Found |  -  |
 |**500** | Internal Server Error |  -  |

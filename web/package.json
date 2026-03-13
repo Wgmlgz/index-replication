@@ -15,7 +15,7 @@
     "tauri": "tauri",
     "android-dev": "tauri android dev",
     "android-build": "tauri android build",
-    "api:gen": "node scripts/prepare-openapi.js && npx @openapitools/openapi-generator-cli generate -i /local/tmp/openapi/swagger.json -g typescript-axios -o /local/src/api-client",
+    "api:gen": "node scripts/generate-api-client.js",
     "storybook": "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:18080} storybook dev -p 6006 --exact-port",
     "storybook:build": "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:18080} storybook build",
     "storybook:fixtures:record": "node scripts/storybook/record-fixtures.mjs"

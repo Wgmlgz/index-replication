@@ -45,6 +45,7 @@ const (
 	ActionPortfolioActionExecuted    = "portfolio_action_executed"
 	ActionPortfolioRebalanceCreated  = "portfolio_rebalance_created"
 	ActionPortfolioRebalanceFailed   = "portfolio_rebalance_planning_failed"
+	ActionPortfolioRebalanceDeleted  = "portfolio_rebalance_deleted"
 )
 
 // AuditLogEntityType constants
