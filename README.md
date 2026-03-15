@@ -79,6 +79,29 @@ Portfolio `virtual` and `tbank` mark-to-market valuation now uses on-demand MOEX
 (`moex_security_history_daily` + `moex_data_coverage` dataset `security_history`): cache miss triggers fetch+upsert,
 cache hit serves from DB. If no MOEX quote exists for an anchor date, valuation falls back to provider legacy price.
 
+## Keycloak Infra (Auto-Bootstrap)
+
+Docker compose includes Keycloak with no manual UI setup:
+
+- Single Terraform codebase in `infra/terraform/keycloak` is applied in two phases:
+  - `keycloak-terraform-db` creates/ensures a dedicated Keycloak schema in existing Postgres.
+  - `keycloak-terraform` applies Keycloak realm/client/user resources after Keycloak is healthy.
+- `keycloak` starts the server on `127.0.0.1:${KEYCLOAK_PORT}`.
+
+DB reuse behavior:
+
+- Keycloak reuses the existing `postgres` service and the same `${POSTGRES_DB}` database.
+- Keycloak tables are isolated in `${KEYCLOAK_DB_SCHEMA}` (default `keycloak`).
+
+Useful env vars are documented in `.env.example` (`KEYCLOAK_*`).
+Compose now passes only changing/sensitive Terraform inputs; static values (like
+`postgres` host and internal Keycloak URL) are defaulted in `infra/terraform/keycloak/variables.tf`.
+
+Useful commands:
+
+- `task keycloak:up` to start Keycloak and run Terraform bootstrap.
+- `task keycloak:apply` to force re-apply Keycloak Terraform after env/config changes.
+
 ## Move Backfilled MOEX Data (Local -> Prod)
 
 Use `scripts/moex-backfill-transfer.sh` to transfer only MOEX backfill tables (`moex_*`) between compose deployments.

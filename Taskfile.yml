@@ -42,6 +42,16 @@ tasks:
     cmds:
       - docker compose up postgres temporal-admin-tools temporal temporal-setup temporal-ui
 
+  keycloak:up:
+    desc: Start Keycloak with Terraform bootstrap
+    cmds:
+      - docker compose up postgres keycloak-terraform-db keycloak keycloak-terraform
+
+  keycloak:apply:
+    desc: Re-apply Keycloak Terraform configuration
+    cmds:
+      - docker compose up --force-recreate keycloak-terraform-db keycloak keycloak-terraform
+
   temporal:cli:
     desc: Open Temporal admin-tools shell
     cmds:

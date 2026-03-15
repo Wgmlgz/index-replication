@@ -5,3 +5,8 @@ web/tmp/
 *.exe
 api/.env
 .env
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+infra/terraform/**/.terraform.lock.hcl
