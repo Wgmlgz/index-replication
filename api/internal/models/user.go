@@ -8,13 +8,14 @@ import (
 )
 
 type User struct {
-	ID           int    `gorm:"primaryKey;autoIncrement"`
-	Username     string `gorm:"uniqueIndex;not null;size:255"`
-	PasswordHash string `gorm:"not null;size:60"`
-	FullName     string `gorm:"not null;size:255"`
-	RoleID       int    `gorm:"not null"`
-	Phone        string `gorm:"size:50"`
-	Email        string `gorm:"size:255"`
+	ID           int     `gorm:"primaryKey;autoIncrement"`
+	Username     string  `gorm:"uniqueIndex;not null;size:255"`
+	PasswordHash string  `gorm:"not null;size:60"`
+	KeycloakSub  *string `gorm:"uniqueIndex;size:255"`
+	FullName     string  `gorm:"not null;size:255"`
+	RoleID       int     `gorm:"not null"`
+	Phone        string  `gorm:"size:50"`
+	Email        string  `gorm:"size:255"`
 	LastActive   *time.Time
 	BlockedAt    *time.Time
 	CreatedAt    time.Time `gorm:"autoCreateTime"`

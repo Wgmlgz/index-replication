@@ -86,6 +86,9 @@ Docker compose includes Keycloak with no manual UI setup:
 - Single Terraform codebase in `infra/terraform/keycloak` is applied in two phases:
   - `keycloak-terraform-db` creates/ensures a dedicated Keycloak schema in existing Postgres.
   - `keycloak-terraform` applies Keycloak realm/client/user resources after Keycloak is healthy.
+- Realm user profile is managed by Terraform so end-user profile fields (`email`, `firstName`, `lastName`) are not required or editable by users.
+- Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
+- Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.
 - `keycloak` starts the server on `127.0.0.1:${KEYCLOAK_PORT}`.
 
 DB reuse behavior:
@@ -101,6 +104,11 @@ Useful commands:
 
 - `task keycloak:up` to start Keycloak and run Terraform bootstrap.
 - `task keycloak:apply` to force re-apply Keycloak Terraform after env/config changes.
+
+API integration:
+
+- Backend protected routes can use Keycloak JWT bearer middleware (`Authorization: Bearer ...`).
+- Local users are linked by `users.keycloak_sub` and auto-created on first Keycloak-authenticated request.
 
 ## Move Backfilled MOEX Data (Local -> Prod)
 

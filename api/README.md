@@ -99,6 +99,13 @@ Environment variables live in `.env`. Key settings:
 - `DATABASE_URL` (preferred)
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
+- `KEYCLOAK_AUTH_ENABLED` (default `true`, enables Keycloak bearer middleware on protected routes)
+- `KEYCLOAK_BASE_URL` (default `http://localhost:18081`, used to build issuer URL)
+- `KEYCLOAK_REALM` (default `index-replication`)
+- `KEYCLOAK_ISSUER_URL` (optional explicit issuer/discovery URL override)
+- `KEYCLOAK_CLIENT_ID` (optional audience/client check target)
+- `KEYCLOAK_SKIP_ISSUER_CHECK` (default `true`)
+- `KEYCLOAK_SKIP_CLIENT_ID_CHECK` (default `true`)
 - `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
 - `TELEGRAM_BOT_TOKEN` (optional; enables Telegram login verification transport)
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)
@@ -167,6 +174,20 @@ The API now exposes DB-backed sync state endpoints:
 - `GET /api/me/portfolios/:id/summary`
 - `GET /api/me/portfolios/:id/history`
 - `GET /api/me/portfolios/:id/composition`
+
+## Keycloak Auth Middleware
+
+When `KEYCLOAK_AUTH_ENABLED=true`, protected routes require:
+
+- `Authorization: Bearer <keycloak JWT>`
+
+Behavior:
+
+- Verifies JWT signature using Keycloak OIDC metadata/JWKS.
+- Reads `sub` and maps to local user (`users.keycloak_sub`).
+- Auto-creates a local `observer` user when `sub` is first seen.
+- Populates request context (user id + role) directly from JWT-linked user.
+- Session-based middleware is not used for protected routes in this mode.
 
 Implementation notes:
 

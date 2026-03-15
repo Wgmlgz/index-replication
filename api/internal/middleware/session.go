@@ -59,6 +59,7 @@ func SessionAuthMiddleware() gin.HandlerFunc {
 			RoleKey: roleKey,
 		}
 		c.Set(utils.CustomContextKey, reqCtx)
+		c.Set(AuthModeContextKey, AuthModeSession)
 
 		c.Next()
 	}

@@ -25,6 +25,13 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_keycloak_bootstrap_user_password: "${KEYCLOAK_BOOTSTRAP_USER_PASSWORD:-}"
   TF_VAR_keycloak_bootstrap_user_email: "${KEYCLOAK_BOOTSTRAP_USER_EMAIL:-}"
 
+x-keycloak-terraform-build: &keycloak_terraform_build
+  build:
+    context: ./infra/terraform/keycloak
+    dockerfile: Dockerfile
+    args:
+      TERRAFORM_VERSION: ${TERRAFORM_VERSION:-1.7.5}
+
 services:
   temporal-admin-tools:
     <<: *temporal_admin_tools_build
@@ -103,7 +110,7 @@ services:
       retries: 10
 
   keycloak-terraform-db:
-    image: hashicorp/terraform:${TERRAFORM_VERSION:-1.7.5}
+    <<: *keycloak_terraform_build
     working_dir: /workspace/infra/terraform/keycloak
     depends_on:
       postgres:
@@ -116,9 +123,9 @@ services:
       - -ec
       - |
           terraform init -input=false
-          terraform apply -input=false -auto-approve -target=postgresql_schema.keycloak
+          terraform apply -input=false -auto-approve -state=/workspace/terraform-state/terraform.tfstate -target=postgresql_schema.keycloak
     volumes:
-      - ./infra/terraform:/workspace/infra/terraform
+      - keycloak_terraform_state:/workspace/terraform-state
 
   keycloak:
     image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.1}
@@ -150,7 +157,7 @@ services:
       - "127.0.0.1:${KEYCLOAK_PORT:-18081}:8080"
 
   keycloak-terraform:
-    image: hashicorp/terraform:${TERRAFORM_VERSION:-1.7.5}
+    <<: *keycloak_terraform_build
     working_dir: /workspace/infra/terraform/keycloak
     depends_on:
       keycloak:
@@ -160,12 +167,12 @@ services:
       - -ec
       - |
           terraform init -input=false
-          terraform apply -input=false -auto-approve
+          terraform apply -input=false -auto-approve -state=/workspace/terraform-state/terraform.tfstate
     restart: on-failure
     environment:
       <<: *keycloak_terraform_env
     volumes:
-      - ./infra/terraform:/workspace/infra/terraform
+      - keycloak_terraform_state:/workspace/terraform-state
 
   api:
     build:
@@ -182,6 +189,13 @@ services:
       - COOKIE_DOMAIN=${COOKIE_DOMAIN}
       - CORS_ORIGINS=http://${WEB_HOST}
       - RUN_MIGRATIONS=true
+      - KEYCLOAK_AUTH_ENABLED=${KEYCLOAK_AUTH_ENABLED:-true}
+      - KEYCLOAK_BASE_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-index-replication}
+      - KEYCLOAK_ISSUER_URL=${KEYCLOAK_ISSUER_URL:-}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-}
+      - KEYCLOAK_SKIP_ISSUER_CHECK=${KEYCLOAK_SKIP_ISSUER_CHECK:-true}
+      - KEYCLOAK_SKIP_CLIENT_ID_CHECK=${KEYCLOAK_SKIP_CLIENT_ID_CHECK:-true}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME}
       - TELEGRAM_POLL_TIMEOUT_SEC=${TELEGRAM_POLL_TIMEOUT_SEC:-30}
@@ -262,3 +276,4 @@ services:
 
 volumes:
   pgdata:
+  keycloak_terraform_state:

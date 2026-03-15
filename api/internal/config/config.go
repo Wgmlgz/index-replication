@@ -24,6 +24,13 @@ type Config struct {
 	SessionCookieDomain            string
 	SessionCookiePath              string
 	SessionCookieSameSite          string
+	KeycloakAuthEnabled            bool
+	KeycloakBaseURL                string
+	KeycloakRealm                  string
+	KeycloakIssuerURL              string
+	KeycloakClientID               string
+	KeycloakSkipIssuerCheck        bool
+	KeycloakSkipClientIDCheck      bool
 	BotsToken                      string
 	TelegramBotToken               string
 	TelegramBotUsername            string
@@ -50,6 +57,11 @@ type Config struct {
 func LoadConfig() *Config {
 	// Load .env file if exists
 	_ = godotenv.Load()
+
+	keycloakRealm := getEnvNonEmpty("KEYCLOAK_REALM", "index-replication")
+	keycloakBaseURL := strings.TrimRight(getEnvNonEmpty("KEYCLOAK_BASE_URL", "http://localhost:18081"), "/")
+	keycloakIssuerURL := getEnvNonEmpty("KEYCLOAK_ISSUER_URL", fmt.Sprintf("%s/realms/%s", keycloakBaseURL, keycloakRealm))
+
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		DBUser:      getEnv("DB_USER", "postgres"),
@@ -64,6 +76,13 @@ func LoadConfig() *Config {
 		SessionCookieDomain:            getEnv("SESSION_COOKIE_DOMAIN", ""),
 		SessionCookiePath:              getEnv("SESSION_COOKIE_PATH", "/"),
 		SessionCookieSameSite:          getEnv("SESSION_COOKIE_SAME_SITE", "lax"),
+		KeycloakAuthEnabled:            getEnvBool("KEYCLOAK_AUTH_ENABLED", true),
+		KeycloakBaseURL:                keycloakBaseURL,
+		KeycloakRealm:                  keycloakRealm,
+		KeycloakIssuerURL:              keycloakIssuerURL,
+		KeycloakClientID:               getEnv("KEYCLOAK_CLIENT_ID", ""),
+		KeycloakSkipIssuerCheck:        getEnvBool("KEYCLOAK_SKIP_ISSUER_CHECK", true),
+		KeycloakSkipClientIDCheck:      getEnvBool("KEYCLOAK_SKIP_CLIENT_ID_CHECK", true),
 		BotsToken:                      getEnv("BOTS_TOKEN", "secret_token"),
 		TelegramBotToken:               getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramBotUsername:            getEnv("TELEGRAM_BOT_USERNAME", ""),

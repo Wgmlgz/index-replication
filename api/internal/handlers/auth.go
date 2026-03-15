@@ -235,15 +235,15 @@ func (h *AuthHandler) VerifyLogin(c *gin.Context) {
 //	@Success		200	{object}	map[string]string
 //	@Router			/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// Get current user ID from context before clearing the session
 	performedBy := utils.GetRequestContext(c).UserID
 
-	if err := middleware.ClearSession(h.db, c, middleware.SessionCookieOptionsFromConfig(h.cfg)); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to clear session"})
-		return
+	if mode, ok := c.Get(middleware.AuthModeContextKey); ok && mode == middleware.AuthModeSession {
+		if err := middleware.ClearSession(h.db, c, middleware.SessionCookieOptionsFromConfig(h.cfg)); err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to clear session"})
+			return
+		}
 	}
 
-	// Log the logout action
 	h.auditService.LogUserAction(
 		performedBy,
 		models.ActionUserLogout,

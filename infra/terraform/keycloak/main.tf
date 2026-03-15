@@ -47,6 +47,109 @@ resource "keycloak_realm" "app" {
   display_name = var.keycloak_realm_display_name
 }
 
+resource "keycloak_realm_user_profile" "app" {
+  realm_id = keycloak_realm.app.id
+
+  group {
+    name                = "user-metadata"
+    display_header      = "User metadata"
+    display_description = "Attributes, which refer to user metadata"
+  }
+
+  attribute {
+    name         = "username"
+    display_name = "$${username}"
+    group        = "user-metadata"
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin", "user"]
+    }
+
+    validator {
+      name = "username-prohibited-characters"
+    }
+
+    validator {
+      name = "up-username-not-idn-homograph"
+    }
+
+    validator {
+      name = "length"
+      config = {
+        min = "3"
+        max = "255"
+      }
+    }
+  }
+
+  attribute {
+    name         = "email"
+    display_name = "$${email}"
+    group        = "user-metadata"
+
+    permissions {
+      view = ["admin"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name = "email"
+    }
+
+    validator {
+      name = "length"
+      config = {
+        max = "255"
+      }
+    }
+  }
+
+  attribute {
+    name         = "firstName"
+    display_name = "$${firstName}"
+    group        = "user-metadata"
+
+    permissions {
+      view = ["admin"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+
+    validator {
+      name = "length"
+      config = {
+        max = "255"
+      }
+    }
+  }
+
+  attribute {
+    name         = "lastName"
+    display_name = "$${lastName}"
+    group        = "user-metadata"
+
+    permissions {
+      view = ["admin"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+
+    validator {
+      name = "length"
+      config = {
+        max = "255"
+      }
+    }
+  }
+}
+
 resource "keycloak_openid_client" "web" {
   realm_id                     = keycloak_realm.app.id
   client_id                    = var.keycloak_web_client_id
