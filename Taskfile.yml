@@ -1,5 +1,9 @@
 version: '3'
 output: prefixed
+vars:
+  COMPOSE_NON_APP_SERVICES_RAW:
+    sh: docker compose config --services
+  COMPOSE_NON_APP_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api") }}'
 tasks:
   default:
     cmds:
@@ -14,7 +18,7 @@ tasks:
   upx:
     desc: Compose up services except web and server/api
     cmds:
-      - SERVICES="$(docker compose config --services | grep -vE '^(web|server|api)$' | xargs)" && docker compose up -d $SERVICES
+      - docker compose up -d {{.COMPOSE_NON_APP_SERVICES}}
 
   devx:
     desc: Run upx, then start API and web in dev mode
@@ -25,7 +29,7 @@ tasks:
   upxb:
     desc: Rebuild and recreate all compose services except web and server/api
     cmds:
-      - SERVICES="$(docker compose config --services | grep -vE '^(web|server|api)$' | xargs)" && docker compose up --build --force-recreate $SERVICES
+      - docker compose up --build --force-recreate {{.COMPOSE_NON_APP_SERVICES}}
 
   devxb:
     desc: Run upxb, then start API and web in dev mode
