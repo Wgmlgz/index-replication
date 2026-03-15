@@ -33,14 +33,13 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		defer moexServer.Close()
 
 		ts := newTestServerWithConfig(t, &config.Config{
-			SessionSecret: "test_secret",
-			MoexBaseURL:   moexServer.URL,
+			MoexBaseURL: moexServer.URL,
 		})
 		defer ts.cleanup()
 
 		seedAdminUser(t, ts, "admin_virtual_m2m", "password123")
-		cookie := login(t, ts.router, "admin_virtual_m2m", "password123")
-		profile := createVirtualPortfolioProfile(t, ts, cookie, "Virtual M2M")
+		token := login(t, ts, "admin_virtual_m2m", "password123")
+		profile := createVirtualPortfolioProfile(t, ts, token, "Virtual M2M")
 
 		deposit := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
 			"payload": map[string]interface{}{
@@ -48,7 +47,7 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 				"currency":    "RUB",
 				"executed_at": "2026-01-01",
 			},
-		}, cookie)
+		}, token)
 		if deposit.Code != http.StatusOK {
 			t.Fatalf("deposit status=%d body=%s", deposit.Code, deposit.Body.String())
 		}
@@ -60,13 +59,13 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 				"currency":    "RUB",
 				"executed_at": "2026-01-02",
 			},
-		}, cookie)
+		}, token)
 		if buy.Code != http.StatusOK {
 			t.Fatalf("buy status=%d body=%s", buy.Code, buy.Body.String())
 		}
 
 		path := "/api/me/portfolios/" + itoa(profile.ID) + "/history?from=2026-01-02&till=2026-01-03&intervalDays=1"
-		first := doRequest(t, ts.router, http.MethodGet, path, nil, cookie)
+		first := doRequest(t, ts.router, http.MethodGet, path, nil, token)
 		if first.Code != http.StatusOK {
 			t.Fatalf("first history status=%d body=%s", first.Code, first.Body.String())
 		}
@@ -94,7 +93,7 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		}
 
 		callCount := moexCalls.Load()
-		second := doRequest(t, ts.router, http.MethodGet, path, nil, cookie)
+		second := doRequest(t, ts.router, http.MethodGet, path, nil, token)
 		if second.Code != http.StatusOK {
 			t.Fatalf("second history status=%d body=%s", second.Code, second.Body.String())
 		}
@@ -111,7 +110,6 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		defer stopGrpc()
 
 		ts := newTestServerWithConfig(t, &config.Config{
-			SessionSecret:                  "test_secret",
 			MoexBaseURL:                    moexServer.URL,
 			TBankInvestGrpcEndpoint:        endpoint,
 			TBankInvestSandboxGrpcEndpoint: endpoint,
@@ -120,21 +118,21 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		defer ts.cleanup()
 
 		seedAdminUser(t, ts, "admin_tbank_m2m", "password123")
-		cookie := login(t, ts.router, "admin_tbank_m2m", "password123")
+		token := login(t, ts, "admin_tbank_m2m", "password123")
 		userID := userIDByUsername(t, ts, "admin_tbank_m2m")
 		seedTBankSettings(t, ts, userID, "fake-token", dto.TBankEnvironmentSandbox, "acc-test")
 
 		profile := createPortfolioProfile(
 			t,
 			ts,
-			cookie,
+			token,
 			"tbank",
 			"TBank M2M",
 			map[string]interface{}{"account_id": "acc-test"},
 		)
 
 		path := "/api/me/portfolios/" + itoa(profile.ID) + "/history?from=2026-01-02&till=2026-01-03&intervalDays=1"
-		first := doRequest(t, ts.router, http.MethodGet, path, nil, cookie)
+		first := doRequest(t, ts.router, http.MethodGet, path, nil, token)
 		if first.Code != http.StatusOK {
 			t.Fatalf("first history status=%d body=%s", first.Code, first.Body.String())
 		}
@@ -162,7 +160,7 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		}
 
 		callCount := moexCalls.Load()
-		second := doRequest(t, ts.router, http.MethodGet, path, nil, cookie)
+		second := doRequest(t, ts.router, http.MethodGet, path, nil, token)
 		if second.Code != http.StatusOK {
 			t.Fatalf("second history status=%d body=%s", second.Code, second.Body.String())
 		}

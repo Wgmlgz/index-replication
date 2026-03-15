@@ -13,7 +13,7 @@ Backend:
 
 - Go 1.23, Gin, GORM
 - Postgres as primary DB
-- Session-based auth (cookie) with `gin-contrib/sessions` + GORM store
+- Keycloak JWT bearer auth (OIDC)
 - RBAC/permissions via Casbin
 - Migrations via Goose
 - OpenAPI/Swagger via swaggo (used to generate frontend API client)

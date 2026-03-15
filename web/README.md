@@ -97,17 +97,9 @@ By default in dev mode the frontend talks to the API at `http://localhost:18080`
 In browser production mode, the frontend uses same-origin `/api` so the protocol (HTTPS/HTTP) always matches the current site.
 You can still override the base URL in the Settings page inside the app (`settings-api-url` in local storage). For non-browser contexts, `NEXT_PUBLIC_API_BASE_URL` is used as a fallback.
 
-## Auth Mode Configuration
+## Auth Configuration
 
-The login page supports two frontend auth modes:
-
-- `session` (legacy username/password + cookie session)
-- `keycloak` (OIDC redirect flow, bearer token for API calls)
-
-The selected mode is persisted in local storage (`settings-auth-mode`).
-Default mode can be overridden via:
-
-- `NEXT_PUBLIC_AUTH_MODE_DEFAULT` (`session` or `keycloak`)
+The login page uses Keycloak OIDC redirect flow with bearer token API authorization.
 
 OIDC/Keycloak frontend settings:
 
@@ -158,7 +150,7 @@ Record GET fixtures from your backend for Storybook mocks:
 ```bash
 cd web
 STORYBOOK_CAPTURE_BASE_URL=http://localhost:18080 \
-STORYBOOK_CAPTURE_COOKIE='session=...' \
+STORYBOOK_CAPTURE_COOKIE='cookie_name=...' \
 task storybook:fixtures:record
 ```
 

@@ -12,19 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	AuthModeContextKey = "auth_mode"
-	AuthModeSession    = "session"
-	AuthModeKeycloak   = "keycloak"
-)
-
 func KeycloakJWTAuthMiddleware(
 	keycloakAuth *keycloakauth.KeycloakAuthenticator,
 	userRepo *repository.UserRepository,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if keycloakAuth == nil || !keycloakAuth.Enabled() {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "Keycloak auth is disabled"})
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "Keycloak auth is not configured"})
 			return
 		}
 
@@ -80,7 +74,6 @@ func KeycloakJWTAuthMiddleware(
 			UserID:  user.ID,
 			RoleKey: roleKey,
 		})
-		c.Set(AuthModeContextKey, AuthModeKeycloak)
 		c.Next()
 	}
 }

@@ -19,9 +19,6 @@ import (
 	"server/internal/telegram"
 
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-
-	gormsessions "github.com/gin-contrib/sessions/gorm"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -68,26 +65,13 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	verificationService.StartTelegramPolling(context.Background())
 
 	keycloakAuth := keycloakauth.NewKeycloakAuthenticator(cfg)
-	authHandler := h.NewAuthHandler(db, cfg, repoRegistry.UserRepo, auditService, cs, verificationService)
+	authHandler := h.NewAuthHandler(db, repoRegistry.UserRepo, auditService)
 	settingsHandler := h.NewUserSettingsHandler(repoRegistry.UserSettingsRepo)
 	verificationHandler := h.NewVerificationHandler(verificationService)
 
-	if !cfg.KeycloakAuthEnabled {
-		store := gormsessions.NewStore(db, true, []byte(cfg.SessionSecret))
-		router.Use(sessions.Sessions("auth_session", store))
-	}
-
 	// Create API group
 	api := router.Group("/api")
-
-	if cfg.KeycloakAuthEnabled {
-		log.Printf("auth mode: keycloak bearer middleware")
-	} else {
-		log.Printf("auth mode: session login")
-		api.POST("/login", authHandler.Login)
-		api.POST("/login-verify", authHandler.VerifyLogin)
-		api.POST("/login/verify", authHandler.VerifyLogin)
-	}
+	log.Printf("auth mode: keycloak bearer middleware")
 
 	userHandler := h.NewUserHandler(cfg, repoRegistry.UserRepo, cs, auditService)
 	auditHandler := h.NewAuditLogHandler(repoRegistry.AuditLogRepo, cfg, cs)
@@ -150,11 +134,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 
 	// Protected user routes
 	a := api.Group("/")
-	if cfg.KeycloakAuthEnabled {
-		a.Use(m.KeycloakJWTAuthMiddleware(keycloakAuth, repoRegistry.UserRepo))
-	} else {
-		a.Use(m.SessionAuthMiddleware())
-	}
+	a.Use(m.KeycloakJWTAuthMiddleware(keycloakAuth, repoRegistry.UserRepo))
 	{
 		a.POST("/logout", authHandler.Logout)
 

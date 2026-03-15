@@ -120,11 +120,6 @@ func (r *UserRepository) UpdateUser(id string, input UpdateUserInput) (*models.U
 	oldUser := user
 
 	// Role changed
-	if user.RoleID != input.RoleID {
-		// Logout
-		_ = models.DeleteAllSessionsForUser(r.db, user.ID)
-	}
-
 	action := models.ActionUserUpdated
 
 	user.FullName = input.FullName
@@ -170,7 +165,6 @@ func (r *UserRepository) BlockUser(id string) (*models.User, error) {
 		if err := r.db.Save(&user).Error; err != nil {
 			return nil, err
 		}
-		_ = models.DeleteAllSessionsForUser(r.db, user.ID)
 	}
 	return &user, nil
 }

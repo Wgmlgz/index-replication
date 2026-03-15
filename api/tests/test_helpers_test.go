@@ -2,20 +2,26 @@ package tests
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
@@ -30,6 +36,15 @@ type testServer struct {
 	router  *gin.Engine
 	db      *gorm.DB
 	cleanup func()
+	oidc    *testOIDCServer
+}
+
+type testOIDCServer struct {
+	server     *httptest.Server
+	issuerURL  string
+	jwksURL    string
+	privateKey *rsa.PrivateKey
+	keyID      string
 }
 
 func newTestServer(t *testing.T) *testServer {
@@ -41,6 +56,10 @@ func newTestServerWithConfig(t *testing.T, cfg *config.Config) *testServer {
 	gin.SetMode(gin.TestMode)
 
 	logs := captureLogs(t)
+	oidc := newTestOIDCServer(t)
+	t.Cleanup(func() {
+		oidc.close()
+	})
 
 	db, cleanup := testutil.NewTestDB(t)
 	gormadapter.TurnOffAutoMigrate(db)
@@ -50,10 +69,13 @@ func newTestServerWithConfig(t *testing.T, cfg *config.Config) *testServer {
 	repoRegistry := repository.NewRepositoryRegistry(db)
 	auditService := services.NewAuditService(db)
 	if cfg == nil {
-		cfg = &config.Config{
-			SessionSecret: "test_secret",
-		}
+		cfg = &config.Config{}
 	}
+	if strings.TrimSpace(cfg.KeycloakIssuerURL) == "" {
+		cfg.KeycloakIssuerURL = oidc.issuerURL
+	}
+	cfg.KeycloakSkipIssuerCheck = true
+	cfg.KeycloakSkipClientIDCheck = true
 
 	router := routes.SetupRouter(db, cfg, repoRegistry, auditService)
 
@@ -64,10 +86,102 @@ func newTestServerWithConfig(t *testing.T, cfg *config.Config) *testServer {
 	})
 
 	return &testServer{
-		router:  router,
-		db:      db,
-		cleanup: cleanup,
+		router: router,
+		db:     db,
+		oidc:   oidc,
+		cleanup: func() {
+			cleanup()
+		},
 	}
+}
+
+func newTestOIDCServer(t *testing.T) *testOIDCServer {
+	t.Helper()
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate oidc private key: %v", err)
+	}
+
+	oidc := &testOIDCServer{
+		privateKey: privateKey,
+		keyID:      "test-key-1",
+	}
+
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	oidc.server = server
+	oidc.issuerURL = server.URL
+	oidc.jwksURL = server.URL + "/keys"
+
+	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"issuer":   oidc.issuerURL,
+			"jwks_uri": oidc.jwksURL,
+		})
+	})
+
+	mux.HandleFunc("/keys", func(w http.ResponseWriter, r *http.Request) {
+		pubKey, ok := oidc.privateKey.Public().(*rsa.PublicKey)
+		if !ok {
+			http.Error(w, "invalid key", http.StatusInternalServerError)
+			return
+		}
+		n := base64.RawURLEncoding.EncodeToString(pubKey.N.Bytes())
+		e := base64.RawURLEncoding.EncodeToString(big.NewInt(int64(pubKey.E)).Bytes())
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"keys": []map[string]string{
+				{
+					"kty": "RSA",
+					"use": "sig",
+					"alg": "RS256",
+					"kid": oidc.keyID,
+					"n":   n,
+					"e":   e,
+				},
+			},
+		})
+	})
+
+	return oidc
+}
+
+func (s *testOIDCServer) close() {
+	if s != nil && s.server != nil {
+		s.server.Close()
+	}
+}
+
+func (s *testOIDCServer) issueToken(t *testing.T, claims jwt.MapClaims) string {
+	t.Helper()
+	if s == nil || s.privateKey == nil {
+		t.Fatalf("oidc server is not initialized")
+	}
+
+	now := time.Now().UTC()
+	if _, ok := claims["iss"]; !ok {
+		claims["iss"] = s.issuerURL
+	}
+	if _, ok := claims["iat"]; !ok {
+		claims["iat"] = now.Unix()
+	}
+	if _, ok := claims["nbf"]; !ok {
+		claims["nbf"] = now.Add(-1 * time.Minute).Unix()
+	}
+	if _, ok := claims["exp"]; !ok {
+		claims["exp"] = now.Add(1 * time.Hour).Unix()
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token.Header["kid"] = s.keyID
+	signed, err := token.SignedString(s.privateKey)
+	if err != nil {
+		t.Fatalf("failed to sign oidc token: %v", err)
+	}
+	return signed
 }
 
 func seedAdminUser(t *testing.T, ts *testServer, username, password string) {
@@ -134,19 +248,50 @@ func insertAuditLog(t *testing.T, ts *testServer, performedBy int, action, entit
 	return id
 }
 
-func login(t *testing.T, router *gin.Engine, username, password string) *http.Cookie {
+func login(t *testing.T, ts *testServer, username, password string) string {
 	t.Helper()
-	resp := doRequest(t, router, http.MethodPost, "/api/login", map[string]interface{}{
-		"username": username,
-		"password": password,
-	}, nil)
-	if resp.Code != http.StatusOK {
-		t.Fatalf("login status = %d, body = %s", resp.Code, resp.Body.String())
+
+	var row struct {
+		ID           int
+		PasswordHash string
+		KeycloakSub  *string
+		FullName     string
+		Email        string
 	}
-	return sessionCookieFromResponse(t, resp.Result())
+
+	if err := ts.db.Raw(
+		"SELECT id, password_hash, keycloak_sub, full_name, email FROM users WHERE username = ?",
+		username,
+	).Scan(&row).Error; err != nil {
+		t.Fatalf("failed to fetch user for login: %v", err)
+	}
+	if row.ID == 0 {
+		t.Fatalf("user not found for login: %s", username)
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(row.PasswordHash), []byte(password)); err != nil {
+		t.Fatalf("invalid credentials for %s", username)
+	}
+
+	sub := ""
+	if row.KeycloakSub != nil {
+		sub = strings.TrimSpace(*row.KeycloakSub)
+	}
+	if sub == "" {
+		sub = "test-sub-" + username
+		if err := ts.db.Exec("UPDATE users SET keycloak_sub = ? WHERE id = ?", sub, row.ID).Error; err != nil {
+			t.Fatalf("failed to set keycloak_sub: %v", err)
+		}
+	}
+
+	return ts.oidc.issueToken(t, jwt.MapClaims{
+		"sub":                sub,
+		"preferred_username": username,
+		"name":               row.FullName,
+		"email":              row.Email,
+	})
 }
 
-func doRequest(t *testing.T, router *gin.Engine, method, path string, body interface{}, cookie *http.Cookie) *httptest.ResponseRecorder {
+func doRequest(t *testing.T, router *gin.Engine, method, path string, body interface{}, bearerToken string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	var payload []byte
@@ -162,8 +307,8 @@ func doRequest(t *testing.T, router *gin.Engine, method, path string, body inter
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	if cookie != nil {
-		req.AddCookie(cookie)
+	if strings.TrimSpace(bearerToken) != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
 	}
 
 	rec := httptest.NewRecorder()
@@ -178,10 +323,10 @@ func decodeJSON(t *testing.T, rec *httptest.ResponseRecorder, v interface{}) {
 	}
 }
 
-func findUserIDByUsername(t *testing.T, router *gin.Engine, cookie *http.Cookie, username string) int {
+func findUserIDByUsername(t *testing.T, router *gin.Engine, bearerToken string, username string) int {
 	t.Helper()
 
-	resp := doRequest(t, router, http.MethodGet, "/api/users?search="+username, nil, cookie)
+	resp := doRequest(t, router, http.MethodGet, "/api/users?search="+username, nil, bearerToken)
 	if resp.Code != http.StatusOK {
 		t.Fatalf("list users status = %d, body = %s", resp.Code, resp.Body.String())
 	}
@@ -195,24 +340,6 @@ func findUserIDByUsername(t *testing.T, router *gin.Engine, cookie *http.Cookie,
 	}
 
 	return 0
-}
-
-func sessionCookieFromResponse(t *testing.T, resp *http.Response) *http.Cookie {
-	t.Helper()
-
-	var sessionCookie *http.Cookie
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "auth_session" {
-			sessionCookie = cookie
-		}
-	}
-	if sessionCookie == nil {
-		t.Fatalf("expected auth_session cookie to be set")
-	}
-	if sessionCookie.Value == "" || sessionCookie.MaxAge == -1 {
-		t.Fatalf("expected a non-expired auth_session cookie")
-	}
-	return sessionCookie
 }
 
 func pathUser(id int) string {

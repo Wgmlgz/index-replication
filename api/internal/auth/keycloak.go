@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	ErrKeycloakAuthDisabled = errors.New("keycloak auth is disabled")
 	ErrInvalidKeycloakToken = errors.New("invalid keycloak token")
 	ErrMissingKeycloakSub   = errors.New("keycloak token missing sub claim")
 )
@@ -35,7 +34,6 @@ type keycloakTokenClaims struct {
 }
 
 type KeycloakAuthenticator struct {
-	enabled           bool
 	issuerURL         string
 	clientID          string
 	skipIssuerCheck   bool
@@ -48,7 +46,6 @@ type KeycloakAuthenticator struct {
 
 func NewKeycloakAuthenticator(cfg *config.Config) *KeycloakAuthenticator {
 	return &KeycloakAuthenticator{
-		enabled:           cfg.KeycloakAuthEnabled,
 		issuerURL:         strings.TrimSpace(cfg.KeycloakIssuerURL),
 		clientID:          strings.TrimSpace(cfg.KeycloakClientID),
 		skipIssuerCheck:   cfg.KeycloakSkipIssuerCheck,
@@ -58,12 +55,12 @@ func NewKeycloakAuthenticator(cfg *config.Config) *KeycloakAuthenticator {
 }
 
 func (a *KeycloakAuthenticator) Enabled() bool {
-	return a != nil && a.enabled && a.issuerURL != ""
+	return a != nil && a.issuerURL != ""
 }
 
 func (a *KeycloakAuthenticator) VerifyToken(ctx context.Context, rawToken string) (*KeycloakClaims, error) {
 	if !a.Enabled() {
-		return nil, ErrKeycloakAuthDisabled
+		return nil, fmt.Errorf("keycloak issuer url is required")
 	}
 
 	token := strings.TrimSpace(rawToken)

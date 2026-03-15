@@ -282,7 +282,7 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 
 // BlockUser godoc
 // @Summary      Block user
-// @Description  Blocks a user and terminates their sessions
+// @Description  Blocks a user
 // @Tags         users
 // @Produce      json
 // @Param        id   path      int  true  "User ID"

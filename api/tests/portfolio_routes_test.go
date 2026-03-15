@@ -59,7 +59,7 @@ type portfolioReplicationConfigResponse struct {
 func createPortfolioProfile(
 	t *testing.T,
 	ts *testServer,
-	cookie *http.Cookie,
+	bearerToken string,
 	provider string,
 	name string,
 	config map[string]interface{},
@@ -75,7 +75,7 @@ func createPortfolioProfile(
 		"name":       name,
 		"is_default": false,
 		"config":     config,
-	}, cookie)
+	}, bearerToken)
 	if resp.Code != http.StatusCreated {
 		t.Fatalf("create profile status = %d, body = %s", resp.Code, resp.Body.String())
 	}
@@ -88,16 +88,16 @@ func createPortfolioProfile(
 	return profile
 }
 
-func createMockPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cookie, name string) portfolioProfileResponse {
+func createMockPortfolioProfile(t *testing.T, ts *testServer, bearerToken string, name string) portfolioProfileResponse {
 	t.Helper()
-	return createPortfolioProfile(t, ts, cookie, "mock", name, map[string]interface{}{
+	return createPortfolioProfile(t, ts, bearerToken, "mock", name, map[string]interface{}{
 		"seed": 123,
 	})
 }
 
-func createVirtualPortfolioProfile(t *testing.T, ts *testServer, cookie *http.Cookie, name string) portfolioProfileResponse {
+func createVirtualPortfolioProfile(t *testing.T, ts *testServer, bearerToken string, name string) portfolioProfileResponse {
 	t.Helper()
-	return createPortfolioProfile(t, ts, cookie, "virtual", name, nil)
+	return createPortfolioProfile(t, ts, bearerToken, "virtual", name, nil)
 }
 
 func seedMoexIndex(t *testing.T, ts *testServer, secid string) {
@@ -118,11 +118,11 @@ func TestPortfolioRoutes(t *testing.T) {
 	defer ts.cleanup()
 
 	seedAdminUser(t, ts, "admin_portfolio", "password123")
-	adminCookie := login(t, ts.router, "admin_portfolio", "password123")
-	baseProfile := createMockPortfolioProfile(t, ts, adminCookie, "Base mock")
+	adminToken := login(t, ts, "admin_portfolio", "password123")
+	baseProfile := createMockPortfolioProfile(t, ts, adminToken, "Base mock")
 
 	t.Run("ListProfiles", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("list profiles status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -133,15 +133,15 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("expected at least one profile")
 		}
 
-		unauthResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, nil)
+		unauthResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, "")
 		if unauthResp.Code != http.StatusUnauthorized {
 			t.Fatalf("expected unauthorized, got %d", unauthResp.Code)
 		}
 	})
 
 	t.Run("CreateProfile", func(t *testing.T) {
-		_ = createPortfolioProfile(t, ts, adminCookie, "mock", "Create ok", nil)
-		virtualProfile := createPortfolioProfile(t, ts, adminCookie, "virtual", "Virtual create ok", nil)
+		_ = createPortfolioProfile(t, ts, adminToken, "mock", "Create ok", nil)
+		virtualProfile := createPortfolioProfile(t, ts, adminToken, "virtual", "Virtual create ok", nil)
 		if virtualProfile.Provider != "virtual" {
 			t.Fatalf("expected virtual provider, got %q", virtualProfile.Provider)
 		}
@@ -149,18 +149,18 @@ func TestPortfolioRoutes(t *testing.T) {
 		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios", map[string]interface{}{
 			"provider": "bad-provider",
 			"name":     "Invalid",
-		}, adminCookie)
+		}, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid provider, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("PatchProfile", func(t *testing.T) {
-		profile := createMockPortfolioProfile(t, ts, adminCookie, "Patch me")
+		profile := createMockPortfolioProfile(t, ts, adminToken, "Patch me")
 		resp := doRequest(t, ts.router, http.MethodPatch, "/api/me/portfolios/"+itoa(profile.ID), map[string]interface{}{
 			"name":       "Patched name",
 			"is_default": true,
-		}, adminCookie)
+		}, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("patch profile status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -173,17 +173,17 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		errResp := doRequest(t, ts.router, http.MethodPatch, "/api/me/portfolios/"+itoa(profile.ID), map[string]interface{}{
 			"name": "",
-		}, adminCookie)
+		}, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid patch payload, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("ReplicationConfigCRUDAndContracts", func(t *testing.T) {
-		profile := createMockPortfolioProfile(t, ts, adminCookie, "Replication profile")
+		profile := createMockPortfolioProfile(t, ts, adminToken, "Replication profile")
 		seedMoexIndex(t, ts, "IMOEX")
 
-		listInitialResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		listInitialResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminToken)
 		if listInitialResp.Code != http.StatusOK {
 			t.Fatalf("initial list status = %d, body = %s", listInitialResp.Code, listInitialResp.Body.String())
 		}
@@ -208,7 +208,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("profile not found in list response")
 		}
 
-		summaryInitialResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryInitialResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryInitialResp.Code != http.StatusOK {
 			t.Fatalf("initial summary status = %d, body = %s", summaryInitialResp.Code, summaryInitialResp.Body.String())
 		}
@@ -227,7 +227,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			"mode_key":        "full",
 			"mode_params":     map[string]interface{}{"lot_size": 1},
 		}
-		putResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", putPayload, adminCookie)
+		putResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", putPayload, adminToken)
 		if putResp.Code != http.StatusOK {
 			t.Fatalf("replication create status = %d, body = %s", putResp.Code, putResp.Body.String())
 		}
@@ -246,7 +246,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			"mode_key":        "sampled",
 			"mode_params":     map[string]interface{}{"top_n": 10},
 		}
-		updateResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
+		updateResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminToken)
 		if updateResp.Code != http.StatusOK {
 			t.Fatalf("replication update status = %d, body = %s", updateResp.Code, updateResp.Body.String())
 		}
@@ -256,11 +256,11 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("unexpected updated config: %+v", updatedConfig)
 		}
 
-		idempotentResp1 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
+		idempotentResp1 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminToken)
 		if idempotentResp1.Code != http.StatusOK {
 			t.Fatalf("idempotent put #1 status = %d, body = %s", idempotentResp1.Code, idempotentResp1.Body.String())
 		}
-		idempotentResp2 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminCookie)
+		idempotentResp2 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminToken)
 		if idempotentResp2.Code != http.StatusOK {
 			t.Fatalf("idempotent put #2 status = %d, body = %s", idempotentResp2.Code, idempotentResp2.Body.String())
 		}
@@ -272,7 +272,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("expected repeated PUT to keep config state stable: %+v vs %+v", idem1, idem2)
 		}
 
-		listPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		listPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminToken)
 		if listPopulatedResp.Code != http.StatusOK {
 			t.Fatalf("list populated status = %d, body = %s", listPopulatedResp.Code, listPopulatedResp.Body.String())
 		}
@@ -296,7 +296,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("profile not found in populated list response")
 		}
 
-		summaryPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryPopulatedResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryPopulatedResp.Code != http.StatusOK {
 			t.Fatalf("summary populated status = %d, body = %s", summaryPopulatedResp.Code, summaryPopulatedResp.Body.String())
 		}
@@ -312,7 +312,7 @@ func TestPortfolioRoutes(t *testing.T) {
 		plainTickerResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
 			"is_enabled":      true,
 			"benchmark_secid": "UNKNOWN",
-		}, adminCookie)
+		}, adminToken)
 		if plainTickerResp.Code != http.StatusOK {
 			t.Fatalf("expected plain ticker benchmark to be accepted, got %d body=%s", plainTickerResp.Code, plainTickerResp.Body.String())
 		}
@@ -322,12 +322,12 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("expected UNKNOWN benchmark ticker to persist, got %+v", plainTickerConfig)
 		}
 
-		deleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, adminCookie)
+		deleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, adminToken)
 		if deleteResp.Code != http.StatusNoContent {
 			t.Fatalf("replication delete status = %d, body = %s", deleteResp.Code, deleteResp.Body.String())
 		}
 
-		listAfterDeleteResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminCookie)
+		listAfterDeleteResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios", nil, adminToken)
 		if listAfterDeleteResp.Code != http.StatusOK {
 			t.Fatalf("list after delete status = %d, body = %s", listAfterDeleteResp.Code, listAfterDeleteResp.Body.String())
 		}
@@ -339,7 +339,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			}
 		}
 
-		summaryAfterDeleteResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryAfterDeleteResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryAfterDeleteResp.Code != http.StatusOK {
 			t.Fatalf("summary after delete status = %d, body = %s", summaryAfterDeleteResp.Code, summaryAfterDeleteResp.Body.String())
 		}
@@ -351,7 +351,7 @@ func TestPortfolioRoutes(t *testing.T) {
 	})
 
 	t.Run("ReplicationPermissionEnforcement", func(t *testing.T) {
-		profile := createMockPortfolioProfile(t, ts, adminCookie, "Forbidden replication")
+		profile := createMockPortfolioProfile(t, ts, adminToken, "Forbidden replication")
 		seedMoexIndex(t, ts, "MXRW")
 
 		if err := ts.db.Exec(
@@ -364,77 +364,77 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("insert custom role: %v", err)
 		}
 		insertUser(t, ts, "portfolio_forbidden_user", "password123", "No Portfolio Write User", 99)
-		forbiddenCookie := login(t, ts.router, "portfolio_forbidden_user", "password123")
+		forbiddenToken := login(t, ts, "portfolio_forbidden_user", "password123")
 
 		forbiddenResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
 			"is_enabled":      true,
 			"benchmark_secid": "MXRW",
-		}, forbiddenCookie)
+		}, forbiddenToken)
 		if forbiddenResp.Code != http.StatusForbidden {
 			t.Fatalf("expected forbidden for replication put, got %d", forbiddenResp.Code)
 		}
 
-		forbiddenDeleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, forbiddenCookie)
+		forbiddenDeleteResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", nil, forbiddenToken)
 		if forbiddenDeleteResp.Code != http.StatusForbidden {
 			t.Fatalf("expected forbidden for replication delete, got %d", forbiddenDeleteResp.Code)
 		}
 	})
 
 	t.Run("GetSummary", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/summary", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/summary", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("summary status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/99999/summary", nil, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/99999/summary", nil, adminToken)
 		if errResp.Code != http.StatusNotFound {
 			t.Fatalf("expected not found for missing summary profile, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("GetHistory", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/history?from=2025-01-01&till=2025-01-31&intervalDays=3", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/history?from=2025-01-01&till=2025-01-31&intervalDays=3", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("history status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/history?from=invalid", nil, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/history?from=invalid", nil, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid history dates, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("GetComposition", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("composition status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition?date=bad-date", nil, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition?date=bad-date", nil, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid composition date, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("GetCompositionSeries", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition/series?topCount=5&selectionMode=fixed", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition/series?topCount=5&selectionMode=fixed", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("composition series status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition/series?topCount=-1", nil, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/composition/series?topCount=-1", nil, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid topCount, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("GetOperations", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/operations?limit=20", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/operations?limit=20", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("operations status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/operations?limit=bad", nil, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/operations?limit=bad", nil, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid operations limit, got %d", errResp.Code)
 		}
@@ -445,19 +445,19 @@ func TestPortfolioRoutes(t *testing.T) {
 			"payload": map[string]interface{}{
 				"note": "from-test",
 			},
-		}, adminCookie)
+		}, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("action status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/actions/not-available", map[string]interface{}{}, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/actions/not-available", map[string]interface{}{}, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid action, got %d", errResp.Code)
 		}
 	})
 
 	t.Run("VirtualStatefulFlow", func(t *testing.T) {
-		profile := createVirtualPortfolioProfile(t, ts, adminCookie, "Virtual flow")
+		profile := createVirtualPortfolioProfile(t, ts, adminToken, "Virtual flow")
 
 		depositResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
 			"payload": map[string]interface{}{
@@ -465,12 +465,12 @@ func TestPortfolioRoutes(t *testing.T) {
 				"currency":    "RUB",
 				"executed_at": "2026-01-01",
 			},
-		}, adminCookie)
+		}, adminToken)
 		if depositResp.Code != http.StatusOK {
 			t.Fatalf("deposit action status = %d, body = %s", depositResp.Code, depositResp.Body.String())
 		}
 
-		summaryAfterDepositResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryAfterDepositResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryAfterDepositResp.Code != http.StatusOK {
 			t.Fatalf("summary after deposit status = %d, body = %s", summaryAfterDepositResp.Code, summaryAfterDepositResp.Body.String())
 		}
@@ -488,12 +488,12 @@ func TestPortfolioRoutes(t *testing.T) {
 				"currency": "RUB",
 				"date":     "2026-01-02",
 			},
-		}, adminCookie)
+		}, adminToken)
 		if buyResp.Code != http.StatusOK {
 			t.Fatalf("buy action status = %d, body = %s", buyResp.Code, buyResp.Body.String())
 		}
 
-		summaryAfterBuyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryAfterBuyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryAfterBuyResp.Code != http.StatusOK {
 			t.Fatalf("summary after buy status = %d, body = %s", summaryAfterBuyResp.Code, summaryAfterBuyResp.Body.String())
 		}
@@ -514,7 +514,7 @@ func TestPortfolioRoutes(t *testing.T) {
 				"currency":    "RUB",
 				"executed_at": "2026-01-03",
 			},
-		}, adminCookie)
+		}, adminToken)
 		if oversellResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected oversell to be rejected with 400, got %d", oversellResp.Code)
 		}
@@ -527,12 +527,12 @@ func TestPortfolioRoutes(t *testing.T) {
 				"currency":    "RUB",
 				"executed_at": "2026-01-03",
 			},
-		}, adminCookie)
+		}, adminToken)
 		if sellResp.Code != http.StatusOK {
 			t.Fatalf("sell action status = %d, body = %s", sellResp.Code, sellResp.Body.String())
 		}
 
-		summaryAfterSellResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryAfterSellResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryAfterSellResp.Code != http.StatusOK {
 			t.Fatalf("summary after sell status = %d, body = %s", summaryAfterSellResp.Code, summaryAfterSellResp.Body.String())
 		}
@@ -551,12 +551,12 @@ func TestPortfolioRoutes(t *testing.T) {
 				"currency": "RUB",
 				"date":     "2026-01-04",
 			},
-		}, adminCookie)
+		}, adminToken)
 		if negativeDepositResp.Code != http.StatusOK {
 			t.Fatalf("negative deposit status = %d, body = %s", negativeDepositResp.Code, negativeDepositResp.Body.String())
 		}
 
-		summaryAfterNegativeDepositResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminCookie)
+		summaryAfterNegativeDepositResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/summary", nil, adminToken)
 		if summaryAfterNegativeDepositResp.Code != http.StatusOK {
 			t.Fatalf("summary after negative deposit status = %d, body = %s", summaryAfterNegativeDepositResp.Code, summaryAfterNegativeDepositResp.Body.String())
 		}
@@ -566,7 +566,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("expected RUB cash 9380 after negative deposit, got %+v", summaryAfterNegativeDeposit.Money)
 		}
 
-		historyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/history?from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminCookie)
+		historyResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/history?from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminToken)
 		if historyResp.Code != http.StatusOK {
 			t.Fatalf("history status = %d, body = %s", historyResp.Code, historyResp.Body.String())
 		}
@@ -576,7 +576,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("expected 3 history points, got %d", len(history))
 		}
 
-		compositionResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/composition?date=2026-01-03", nil, adminCookie)
+		compositionResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/composition?date=2026-01-03", nil, adminToken)
 		if compositionResp.Code != http.StatusOK {
 			t.Fatalf("composition status = %d, body = %s", compositionResp.Code, compositionResp.Body.String())
 		}
@@ -586,12 +586,12 @@ func TestPortfolioRoutes(t *testing.T) {
 			t.Fatalf("unexpected composition result: %+v", composition)
 		}
 
-		seriesResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/composition/series?topCount=5&selectionMode=fixed&from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminCookie)
+		seriesResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/composition/series?topCount=5&selectionMode=fixed&from=2026-01-01&till=2026-01-03&intervalDays=1", nil, adminToken)
 		if seriesResp.Code != http.StatusOK {
 			t.Fatalf("composition series status = %d, body = %s", seriesResp.Code, seriesResp.Body.String())
 		}
 
-		operationsResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/operations?limit=20", nil, adminCookie)
+		operationsResp := doRequest(t, ts.router, http.MethodGet, "/api/me/portfolios/"+itoa(profile.ID)+"/operations?limit=20", nil, adminToken)
 		if operationsResp.Code != http.StatusOK {
 			t.Fatalf("operations status = %d, body = %s", operationsResp.Code, operationsResp.Body.String())
 		}
@@ -603,13 +603,13 @@ func TestPortfolioRoutes(t *testing.T) {
 	})
 
 	t.Run("DeleteProfile", func(t *testing.T) {
-		profile := createMockPortfolioProfile(t, ts, adminCookie, "Delete me")
-		resp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID), nil, adminCookie)
+		profile := createMockPortfolioProfile(t, ts, adminToken, "Delete me")
+		resp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/"+itoa(profile.ID), nil, adminToken)
 		if resp.Code != http.StatusNoContent {
 			t.Fatalf("delete profile status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/99999", nil, adminCookie)
+		errResp := doRequest(t, ts.router, http.MethodDelete, "/api/me/portfolios/99999", nil, adminToken)
 		if errResp.Code != http.StatusNotFound {
 			t.Fatalf("expected not found for missing profile delete, got %d", errResp.Code)
 		}

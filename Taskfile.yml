@@ -29,7 +29,7 @@ tasks:
   upxb:
     desc: Rebuild and recreate all compose services except web and server/api
     cmds:
-      - docker compose up --build --force-recreate {{.COMPOSE_NON_APP_SERVICES}}
+      - docker compose up --build --force-recreate -d {{.COMPOSE_NON_APP_SERVICES}}
 
   devxb:
     desc: Run upxb, then start API and web in dev mode

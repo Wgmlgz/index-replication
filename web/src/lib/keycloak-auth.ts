@@ -9,6 +9,9 @@ type KeycloakConfig = {
 
 const LEGACY_TOKEN_STORAGE_KEY = 'keycloak-tokens';
 const LEGACY_PENDING_STORAGE_KEY = 'keycloak-pending-auth';
+const THEME_STORAGE_KEY = 'theme';
+
+type ThemePreference = 'light' | 'dark' | 'system';
 
 let userManager: UserManager | null = null;
 let silentRenewEnabled = false;
@@ -39,6 +42,13 @@ const resolveOptionalURL = (value: string | undefined): string | undefined => {
     return trimmed;
   }
   return new URL(trimmed, window.location.origin).toString();
+};
+
+const normalizeThemePreference = (value: string | null): ThemePreference | null => {
+  if (value === 'light' || value === 'dark' || value === 'system') {
+    return value;
+  }
+  return null;
 };
 
 const getConfig = (): KeycloakConfig => ({
@@ -122,10 +132,15 @@ export const beginKeycloakLogin = async (
   if (nextPath) {
     redirectURL.searchParams.set('next', nextPath);
   }
+  const themePreference =
+    normalizeThemePreference(window.localStorage.getItem(THEME_STORAGE_KEY)) ?? 'system';
 
   await manager.clearStaleState();
   await manager.signinRedirect({
     redirect_uri: redirectURL.toString(),
+    extraQueryParams: {
+      theme: themePreference,
+    },
   });
 };
 

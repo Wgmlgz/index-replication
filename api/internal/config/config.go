@@ -19,12 +19,6 @@ type Config struct {
 	DBPort                         string
 	DBName                         string
 	ServerPort                     string
-	SessionSecret                  string
-	SessionCookieSecure            bool
-	SessionCookieDomain            string
-	SessionCookiePath              string
-	SessionCookieSameSite          string
-	KeycloakAuthEnabled            bool
 	KeycloakBaseURL                string
 	KeycloakRealm                  string
 	KeycloakIssuerURL              string
@@ -71,12 +65,6 @@ func LoadConfig() *Config {
 		DBName:      getEnv("DB_NAME", "postgres"),
 
 		ServerPort:                     getEnv("SERVER_PORT", "8080"),
-		SessionSecret:                  getEnv("SESSION_SECRET", "dev_secret"),
-		SessionCookieSecure:            getEnvBool("SESSION_COOKIE_SECURE", false),
-		SessionCookieDomain:            getEnv("SESSION_COOKIE_DOMAIN", ""),
-		SessionCookiePath:              getEnv("SESSION_COOKIE_PATH", "/"),
-		SessionCookieSameSite:          getEnv("SESSION_COOKIE_SAME_SITE", "lax"),
-		KeycloakAuthEnabled:            getEnvBool("KEYCLOAK_AUTH_ENABLED", true),
 		KeycloakBaseURL:                keycloakBaseURL,
 		KeycloakRealm:                  keycloakRealm,
 		KeycloakIssuerURL:              keycloakIssuerURL,

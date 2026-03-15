@@ -1,6 +1,6 @@
 # API (Backend)
 
-Go REST API with session-based auth, user management, and audit logging.
+Go REST API with Keycloak JWT auth, user management, and audit logging.
 
 ## Tech & Libraries
 
@@ -8,7 +8,6 @@ Go REST API with session-based auth, user management, and audit logging.
 - Gin (`github.com/gin-gonic/gin`) for HTTP routing
 - GORM for ORM and DB access
 - Postgres as the primary database
-- Sessions via `gin-contrib/sessions` + GORM session store
 - RBAC permissions with Casbin (`internal/config/model.conf`, `internal/config/permission.go`)
 - Migrations via Goose
 - OpenAPI via swaggo annotations in handlers
@@ -41,7 +40,7 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 - Business logic lives in feature/service packages (mostly `internal/services/`, with MOEX isolated in `internal/moex/`, T-Bank isolated in `internal/tbank/`, and Telegram verification isolated in `internal/telegram/`).
 - Provider-agnostic portfolio domain lives in `internal/portfolio/` (profile CRUD + provider registry/adapters).
 - Data access is isolated in `internal/repository/` using GORM.
-- Auth is session-based (cookie) and enforced by middleware.
+- Auth is Keycloak JWT bearer-based and enforced by middleware.
 - Authorization uses Casbin policies and permission constants.
 - Audit logging is a first-class concern.
 
@@ -70,14 +69,13 @@ Use this mapping to locate the right layer quickly:
 - Update API request/response structures: `internal/api/dto/`
 - Update persistence/domain structures: `internal/models/`
 - Add middleware or request/response behavior: `internal/middleware/`
-- Auth and session flow: `internal/handlers/auth.go`, `internal/middleware/session.go`
+- Auth flow: `internal/middleware/keycloak.go`, `internal/auth/keycloak.go`
 - User management endpoints: `internal/handlers/users.go`, `internal/repository/users.go`
 - T-Bank integration/test trading: `internal/handlers/tbank.go`, `internal/tbank/`
 - Unified portfolio API and providers: `internal/handlers/portfolio.go`, `internal/portfolio/`, `internal/repository/portfolio_profiles.go`
 - Audit log endpoints and behavior: `internal/handlers/audit_log.go`, `internal/services/audit_service.go`
 - Bot/token auth: `internal/middleware/token.go`
 - Add or change permissions: `internal/config/permission.go`, `internal/config/model.conf`
-- Session behavior (cookies, lifetime, storage): `internal/middleware/session.go`, `internal/models/user_session.go`
 - Audit logging behavior: `internal/services/audit_service.go`, `internal/models/audit_log.go`
 - Shared helpers: `internal/utils/`
 
@@ -99,7 +97,6 @@ Environment variables live in `.env`. Key settings:
 - `DATABASE_URL` (preferred)
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
-- `KEYCLOAK_AUTH_ENABLED` (default `true`, enables Keycloak bearer middleware on protected routes)
 - `KEYCLOAK_BASE_URL` (default `http://localhost:18081/auth`, used to build issuer URL; docker-compose sets internal default `http://keycloak:8080/auth`)
 - `KEYCLOAK_REALM` (default `index-replication`)
 - `KEYCLOAK_ISSUER_URL` (optional explicit issuer/discovery URL override)
@@ -177,7 +174,7 @@ The API now exposes DB-backed sync state endpoints:
 
 ## Keycloak Auth Middleware
 
-When `KEYCLOAK_AUTH_ENABLED=true`, protected routes require:
+Protected routes require:
 
 - `Authorization: Bearer <keycloak JWT>`
 
@@ -187,7 +184,6 @@ Behavior:
 - Reads `sub` and maps to local user (`users.keycloak_sub`).
 - Auto-creates a local `observer` user when `sub` is first seen.
 - Populates request context (user id + role) directly from JWT-linked user.
-- Session-based middleware is not used for protected routes in this mode.
 
 Implementation notes:
 

@@ -26,10 +26,10 @@ func TestUserRoutes(t *testing.T) {
 
 	seedAdminUser(t, ts, "admin_test", "password123")
 
-	adminCookie := login(t, ts.router, "admin_test", "password123")
+	adminToken := login(t, ts, "admin_test", "password123")
 
 	t.Run("Me", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/me", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/me", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("/api/me status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -53,19 +53,19 @@ func TestUserRoutes(t *testing.T) {
 			"full_name": "Operator Test",
 			"role_id":   4,
 		}
-		resp := doRequest(t, ts.router, http.MethodPost, "/api/users", body, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodPost, "/api/users", body, adminToken)
 		if resp.Code != http.StatusCreated {
 			t.Fatalf("create user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		operatorID = findUserIDByUsername(t, ts.router, adminCookie, "operator_test")
+		operatorID = findUserIDByUsername(t, ts.router, adminToken, "operator_test")
 		if operatorID == 0 {
 			t.Fatalf("expected operator user id to be set")
 		}
 	})
 
 	t.Run("ListUsers", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/users", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/users", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("list users status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -78,7 +78,7 @@ func TestUserRoutes(t *testing.T) {
 	})
 
 	t.Run("GetUser", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("get user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -96,12 +96,12 @@ func TestUserRoutes(t *testing.T) {
 			"role_id":   5,
 			"password":  "newpass123",
 		}
-		resp := doRequest(t, ts.router, http.MethodPut, pathUser(operatorID), body, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodPut, pathUser(operatorID), body, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("update user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		updated := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminCookie)
+		updated := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminToken)
 		var userResp userResponse
 		decodeJSON(t, updated, &userResp)
 		if userResp.RoleID != 5 {
@@ -113,24 +113,24 @@ func TestUserRoutes(t *testing.T) {
 	})
 
 	t.Run("BlockUnblockUser", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodPost, pathUserAction(operatorID, "block"), nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodPost, pathUserAction(operatorID, "block"), nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("block user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		blocked := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminCookie)
+		blocked := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminToken)
 		var userResp userResponse
 		decodeJSON(t, blocked, &userResp)
 		if !userResp.IsBlocked {
 			t.Fatalf("expected user to be blocked")
 		}
 
-		resp = doRequest(t, ts.router, http.MethodPost, pathUserAction(operatorID, "unblock"), nil, adminCookie)
+		resp = doRequest(t, ts.router, http.MethodPost, pathUserAction(operatorID, "unblock"), nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("unblock user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		unblocked := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminCookie)
+		unblocked := doRequest(t, ts.router, http.MethodGet, pathUser(operatorID), nil, adminToken)
 		decodeJSON(t, unblocked, &userResp)
 		if userResp.IsBlocked {
 			t.Fatalf("expected user to be unblocked")
@@ -145,27 +145,27 @@ func TestUserRoutes(t *testing.T) {
 			"full_name": "Admin Delete",
 			"role_id":   2,
 		}
-		resp := doRequest(t, ts.router, http.MethodPost, "/api/users", body, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodPost, "/api/users", body, adminToken)
 		if resp.Code != http.StatusCreated {
 			t.Fatalf("create admin user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		admin2ID = findUserIDByUsername(t, ts.router, adminCookie, "admin_delete")
+		admin2ID = findUserIDByUsername(t, ts.router, adminToken, "admin_delete")
 		if admin2ID == 0 {
 			t.Fatalf("expected admin_delete user id to be set")
 		}
 
-		resp = doRequest(t, ts.router, http.MethodPost, pathUserAction(admin2ID, "block"), nil, adminCookie)
+		resp = doRequest(t, ts.router, http.MethodPost, pathUserAction(admin2ID, "block"), nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("block admin user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		resp = doRequest(t, ts.router, http.MethodDelete, pathUser(admin2ID), nil, adminCookie)
+		resp = doRequest(t, ts.router, http.MethodDelete, pathUser(admin2ID), nil, adminToken)
 		if resp.Code != http.StatusNoContent {
 			t.Fatalf("delete user status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		resp = doRequest(t, ts.router, http.MethodGet, pathUser(admin2ID), nil, adminCookie)
+		resp = doRequest(t, ts.router, http.MethodGet, pathUser(admin2ID), nil, adminToken)
 		if resp.Code != http.StatusNotFound {
 			t.Fatalf("expected deleted user to be 404, got %d", resp.Code)
 		}
@@ -176,37 +176,37 @@ func TestUserRoutes(t *testing.T) {
 			"old_password": "password123",
 			"new_password": "password456",
 		}
-		resp := doRequest(t, ts.router, http.MethodPut, "/api/me/password", body, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodPut, "/api/me/password", body, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("change password status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		resp = doRequest(t, ts.router, http.MethodPost, "/api/login", map[string]interface{}{
-			"username": "admin_test",
-			"password": "password123",
-		}, nil)
-		if resp.Code == http.StatusOK {
-			t.Fatalf("expected old password to fail")
+		resp = doRequest(t, ts.router, http.MethodPut, "/api/me/password", map[string]string{
+			"old_password": "password123",
+			"new_password": "password999",
+		}, adminToken)
+		if resp.Code != http.StatusUnauthorized {
+			t.Fatalf("expected old password to fail after update, got %d", resp.Code)
 		}
 
-		resp = doRequest(t, ts.router, http.MethodPost, "/api/login", map[string]interface{}{
-			"username": "admin_test",
-			"password": "password456",
-		}, nil)
+		resp = doRequest(t, ts.router, http.MethodPut, "/api/me/password", map[string]string{
+			"old_password": "password456",
+			"new_password": "password789",
+		}, adminToken)
 		if resp.Code != http.StatusOK {
-			t.Fatalf("expected new password to succeed, got %d", resp.Code)
+			t.Fatalf("expected updated password to be accepted, got %d", resp.Code)
 		}
 	})
 
 	t.Run("Logout", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodPost, "/api/logout", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodPost, "/api/logout", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("logout status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		resp = doRequest(t, ts.router, http.MethodGet, "/api/me", nil, adminCookie)
-		if resp.Code != http.StatusUnauthorized {
-			t.Fatalf("expected /api/me unauthorized after logout, got %d", resp.Code)
+		resp = doRequest(t, ts.router, http.MethodGet, "/api/me", nil, adminToken)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("expected /api/me to remain authorized with bearer token, got %d", resp.Code)
 		}
 	})
 }

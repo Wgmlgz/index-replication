@@ -65,25 +65,6 @@ definitions:
       error:
         type: string
     type: object
-  LoginRequest:
-    properties:
-      password:
-        type: string
-      remember_me:
-        type: boolean
-      username:
-        type: string
-    type: object
-  LoginVerifyRequest:
-    properties:
-      challenge_id:
-        type: string
-    type: object
-  LoginVerifyStatusResponse:
-    properties:
-      status:
-        type: string
-    type: object
   MoexCoverageResponse:
     properties:
       dataset:
@@ -972,87 +953,9 @@ paths:
       summary: Get audit log actions and entity types
       tags:
       - audit-logs
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticates a user and starts a session
-      parameters:
-      - description: Login credentials
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Login
-      tags:
-      - auth
-  /login/verify:
-    post:
-      consumes:
-      - application/json
-      description: Checks Telegram challenge status and completes login when approved
-      parameters:
-      - description: Verification challenge
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/LoginVerifyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "202":
-          description: Accepted
-          schema:
-            $ref: '#/definitions/LoginVerifyStatusResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Complete login verification
-      tags:
-      - auth
   /logout:
     post:
-      description: Logs out the current user and clears the session
+      description: Logs out the current user
       produces:
       - application/json
       responses:
@@ -2445,7 +2348,7 @@ paths:
       - users
   /users/{id}/block:
     post:
-      description: Blocks a user and terminates their sessions
+      description: Blocks a user
       parameters:
       - description: User ID
         in: path

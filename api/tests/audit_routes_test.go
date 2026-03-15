@@ -33,14 +33,14 @@ func TestAuditLogRoutes(t *testing.T) {
 
 	seedAdminUser(t, ts, "admin_audit", "password123")
 	adminID := userIDByUsername(t, ts, "admin_audit")
-	adminCookie := login(t, ts.router, "admin_audit", "password123")
+	adminToken := login(t, ts, "admin_audit", "password123")
 
 	entityID := 42
 	logID := insertAuditLog(t, ts, adminID, "user_created", "user", &entityID, "{\"username\":\"audit_user\"}", time.Now().UTC())
 	_ = insertAuditLog(t, ts, adminID, "user_deleted", "user", &entityID, "{}", time.Now().UTC().Add(-time.Minute))
 
 	t.Run("ListAuditLogs", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/audit-logs", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/audit-logs", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("list audit logs status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -53,7 +53,7 @@ func TestAuditLogRoutes(t *testing.T) {
 	})
 
 	t.Run("GetAuditLogActions", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/audit-logs/actions", nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/audit-logs/actions", nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("audit log actions status = %d, body = %s", resp.Code, resp.Body.String())
 		}
@@ -69,7 +69,7 @@ func TestAuditLogRoutes(t *testing.T) {
 	})
 
 	t.Run("GetAuditLog", func(t *testing.T) {
-		resp := doRequest(t, ts.router, http.MethodGet, "/api/audit-logs/"+itoa(logID), nil, adminCookie)
+		resp := doRequest(t, ts.router, http.MethodGet, "/api/audit-logs/"+itoa(logID), nil, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("get audit log status = %d, body = %s", resp.Code, resp.Body.String())
 		}
