@@ -59,7 +59,7 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	keycloakRealm := getEnvNonEmpty("KEYCLOAK_REALM", "index-replication")
-	keycloakBaseURL := strings.TrimRight(getEnvNonEmpty("KEYCLOAK_BASE_URL", "http://localhost:18081"), "/")
+	keycloakBaseURL := strings.TrimRight(getEnvNonEmpty("KEYCLOAK_BASE_URL", "http://localhost:18081/auth"), "/")
 	keycloakIssuerURL := getEnvNonEmpty("KEYCLOAK_ISSUER_URL", fmt.Sprintf("%s/realms/%s", keycloakBaseURL, keycloakRealm))
 
 	return &Config{

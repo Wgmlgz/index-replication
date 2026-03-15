@@ -8,6 +8,7 @@ Next.js frontend for the index replication project. The UI includes auth, user m
 - Tailwind CSS v4 with design tokens in `web/src/app/globals.css`
 - shadcn/ui components built on Radix UI and class-variance-authority
 - Axios for API calls (with Tauri adapter support)
+- `oidc-client-ts` for OIDC/Keycloak browser login flow
 - React Hook Form + Zod for forms and validation
 - TanStack Table for data grids
 - Next Themes for theme switching
@@ -95,6 +96,25 @@ MOEX indexes page docs:
 By default in dev mode the frontend talks to the API at `http://localhost:18080`.
 In browser production mode, the frontend uses same-origin `/api` so the protocol (HTTPS/HTTP) always matches the current site.
 You can still override the base URL in the Settings page inside the app (`settings-api-url` in local storage). For non-browser contexts, `NEXT_PUBLIC_API_BASE_URL` is used as a fallback.
+
+## Auth Mode Configuration
+
+The login page supports two frontend auth modes:
+
+- `session` (legacy username/password + cookie session)
+- `keycloak` (OIDC redirect flow, bearer token for API calls)
+
+The selected mode is persisted in local storage (`settings-auth-mode`).
+Default mode can be overridden via:
+
+- `NEXT_PUBLIC_AUTH_MODE_DEFAULT` (`session` or `keycloak`)
+
+OIDC/Keycloak frontend settings:
+
+- `NEXT_PUBLIC_KEYCLOAK_BASE_URL` (default `/auth` in docker-compose; can be absolute URL)
+- `NEXT_PUBLIC_KEYCLOAK_REALM` (default `index-replication`)
+- `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID` (default `web`)
+- `NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI` (optional; enables silent token renew when set)
 
 MOEX data is fetched from the backend (`/api/moex/*`). The backend ISS base URL is configured via `MOEX_BASE_URL`.
 

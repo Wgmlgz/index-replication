@@ -23,6 +23,7 @@ Frontend:
 - Next.js App Router (React 19)
 - Tailwind CSS v4 + shadcn/ui (Radix UI + class-variance-authority)
 - Axios for API calls (with Tauri adapter support)
+- OIDC login option (`oidc-client-ts`) for Keycloak bearer auth mode
 - Lightweight Charts for market data visualization
 - React Hook Form + Zod (i18next-backed error messages)
 - OpenAPI Generator `typescript-axios` client in `web/src/api-client`
@@ -89,7 +90,8 @@ Docker compose includes Keycloak with no manual UI setup:
 - Realm user profile is managed by Terraform so end-user profile fields (`email`, `firstName`, `lastName`) are not required or editable by users.
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
 - Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.
-- `keycloak` starts the server on `127.0.0.1:${KEYCLOAK_PORT}`.
+- Keycloak is exposed by Traefik on the same app port under `${KEYCLOAK_HTTP_RELATIVE_PATH}` (default `/auth`).
+- `keycloak` is also reachable directly on `127.0.0.1:${KEYCLOAK_PORT}` for local debugging.
 
 DB reuse behavior:
 

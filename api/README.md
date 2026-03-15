@@ -100,7 +100,7 @@ Environment variables live in `.env`. Key settings:
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
 - `KEYCLOAK_AUTH_ENABLED` (default `true`, enables Keycloak bearer middleware on protected routes)
-- `KEYCLOAK_BASE_URL` (default `http://localhost:18081`, used to build issuer URL)
+- `KEYCLOAK_BASE_URL` (default `http://localhost:18081/auth`, used to build issuer URL; docker-compose sets internal default `http://keycloak:8080/auth`)
 - `KEYCLOAK_REALM` (default `index-replication`)
 - `KEYCLOAK_ISSUER_URL` (optional explicit issuer/discovery URL override)
 - `KEYCLOAK_CLIENT_ID` (optional audience/client check target)

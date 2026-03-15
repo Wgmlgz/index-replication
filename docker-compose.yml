@@ -16,6 +16,7 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_postgres_db: ${POSTGRES_DB}
   TF_VAR_postgres_user: ${POSTGRES_USER}
   TF_VAR_postgres_password: ${POSTGRES_PASSWORD}
+  TF_VAR_keycloak_url: ${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
   TF_VAR_keycloak_db_schema: ${KEYCLOAK_DB_SCHEMA:-keycloak}
   TF_VAR_keycloak_admin_user: ${KEYCLOAK_ADMIN_USER:-admin}
   TF_VAR_keycloak_admin_password: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
@@ -141,6 +142,7 @@ services:
       - KC_DB_SCHEMA=${KEYCLOAK_DB_SCHEMA:-keycloak}
       - KC_HTTP_ENABLED=true
       - KC_HTTP_PORT=8080
+      - KC_HTTP_RELATIVE_PATH=${KEYCLOAK_HTTP_RELATIVE_PATH:-/auth}
       - KC_HEALTH_ENABLED=true
       - KC_METRICS_ENABLED=true
       - KC_HOSTNAME_STRICT=false
@@ -155,6 +157,11 @@ services:
       retries: 60
     ports:
       - "127.0.0.1:${KEYCLOAK_PORT:-18081}:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=PathPrefix(`${KEYCLOAK_HTTP_RELATIVE_PATH:-/auth}`)"
+      - "traefik.http.routers.keycloak.entrypoints=web"
+      - "traefik.http.routers.keycloak.priority=90"
 
   keycloak-terraform:
     <<: *keycloak_terraform_build
@@ -190,7 +197,7 @@ services:
       - CORS_ORIGINS=http://${WEB_HOST}
       - RUN_MIGRATIONS=true
       - KEYCLOAK_AUTH_ENABLED=${KEYCLOAK_AUTH_ENABLED:-true}
-      - KEYCLOAK_BASE_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080}
+      - KEYCLOAK_BASE_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-index-replication}
       - KEYCLOAK_ISSUER_URL=${KEYCLOAK_ISSUER_URL:-}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-}
@@ -254,6 +261,13 @@ services:
   web:
     build:
       context: ./web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        NEXT_PUBLIC_AUTH_MODE_DEFAULT: ${NEXT_PUBLIC_AUTH_MODE_DEFAULT:-session}
+        NEXT_PUBLIC_KEYCLOAK_BASE_URL: ${NEXT_PUBLIC_KEYCLOAK_BASE_URL:-/auth}
+        NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM:-index-replication}
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID:-web}
+        NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI: ${NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI:-}
     depends_on:
       - api
     labels:

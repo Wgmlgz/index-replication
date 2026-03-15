@@ -17,6 +17,6 @@ Compose builds a Terraform image from this directory, so `.tf` files are availab
 remote environments (for example, Koolify) without host bind mounts.
 Terraform local state is stored in compose named volume `keycloak_terraform_state`.
 
-Most static values (DB host/port, Keycloak internal URL, web client defaults) are
+Most static values (DB host/port, Keycloak internal URL including relative path `/auth`, web client defaults) are
 defined in `variables.tf` defaults. Compose passes only values that typically vary
 per environment (DB credentials, admin credentials, realm/schema names, optional bootstrap user).

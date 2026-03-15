@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -120,7 +121,16 @@ func (a *KeycloakAuthenticator) getVerifier(ctx context.Context) (*oidc.IDTokenV
 
 	provider, err := oidc.NewProvider(initCtx, a.issuerURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load keycloak provider: %w", err)
+		fallbackIssuerURL, ok := withAuthRelativePathIssuerFallback(a.issuerURL)
+		if !ok {
+			return nil, fmt.Errorf("failed to load keycloak provider: %w", err)
+		}
+
+		provider, err = oidc.NewProvider(initCtx, fallbackIssuerURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load keycloak provider: %w", err)
+		}
+		a.issuerURL = fallbackIssuerURL
 	}
 
 	skipClientIDCheck := a.skipClientIDCheck || a.clientID == ""
@@ -131,4 +141,33 @@ func (a *KeycloakAuthenticator) getVerifier(ctx context.Context) (*oidc.IDTokenV
 	})
 
 	return a.verifier, nil
+}
+
+func withAuthRelativePathIssuerFallback(issuerURL string) (string, bool) {
+	trimmed := strings.TrimSpace(issuerURL)
+	if trimmed == "" {
+		return "", false
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return "", false
+	}
+
+	path := strings.TrimSpace(parsed.Path)
+	if path == "" || strings.HasPrefix(path, "/auth/") || path == "/auth" {
+		return "", false
+	}
+
+	if strings.HasPrefix(path, "/realms/") {
+		parsed.Path = "/auth" + path
+		return strings.TrimRight(parsed.String(), "/"), true
+	}
+
+	if strings.Contains(path, "/realms/") {
+		parsed.Path = strings.Replace(path, "/realms/", "/auth/realms/", 1)
+		return strings.TrimRight(parsed.String(), "/"), true
+	}
+
+	return "", false
 }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	keycloakauth "server/internal/auth"
 	"server/internal/repository"
@@ -39,6 +40,7 @@ func KeycloakJWTAuthMiddleware(
 			case errors.Is(err, keycloakauth.ErrInvalidKeycloakToken), errors.Is(err, keycloakauth.ErrMissingKeycloakSub):
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Keycloak token"})
 			default:
+				log.Printf("keycloak auth verify failed: %v", err)
 				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "Failed to verify Keycloak token"})
 			}
 			return

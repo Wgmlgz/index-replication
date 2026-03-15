@@ -11,9 +11,11 @@ import {
   UsersApi,
   VerificationApi
 } from "@/api-client";
-import axios from "axios";
-import type { AxiosResponse } from "axios";
+import axios, { AxiosHeaders } from "axios";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axiosTauriApiAdapter from '@/lib/axios-tauri-proxy';
+import { getAuthMode } from '@/lib/auth-mode';
+import { getValidKeycloakIDToken } from '@/lib/keycloak-auth';
 
 export const isTauri = () => {
   if (typeof window === 'undefined') {
@@ -173,9 +175,28 @@ export const getApiUrl = () => {
   return baseUrl ? `${baseUrl}/api` : '/api';
 }
 
+const setAuthorizationHeader = (
+  config: InternalAxiosRequestConfig,
+  token: string | null,
+) => {
+  const headers = AxiosHeaders.from(config.headers);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    headers.delete('Authorization');
+  }
+  config.headers = headers;
+};
+
 axiosClient.defaults.baseURL = getApiUrl();
-axiosClient.interceptors.request.use(config => {
+axiosClient.interceptors.request.use(async config => {
   config.baseURL = getApiUrl();
+  if (typeof window !== 'undefined' && getAuthMode() === 'keycloak') {
+    const token = await getValidKeycloakIDToken();
+    setAuthorizationHeader(config, token);
+  } else {
+    setAuthorizationHeader(config, null);
+  }
   return config;
 });
 

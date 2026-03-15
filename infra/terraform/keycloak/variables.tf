@@ -41,7 +41,7 @@ variable "keycloak_db_schema" {
 variable "keycloak_url" {
   description = "Keycloak base URL."
   type        = string
-  default     = "http://keycloak:8080"
+  default     = "http://keycloak:8080/auth"
 }
 
 variable "keycloak_admin_user" {

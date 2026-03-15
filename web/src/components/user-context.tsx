@@ -5,6 +5,8 @@ import { useIsRestoring, useQuery, useQueryClient } from '@tanstack/react-query'
 import { usersApi as api, authApi } from '@/lib/api';
 import { Permission } from '@/api-client';
 import axios from 'axios';
+import { getAuthMode } from '@/lib/auth-mode';
+import { clearKeycloakTokens } from '@/lib/keycloak-auth';
 
 type RoleKey = string;
 
@@ -69,6 +71,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           axios.isAxiosError(error) &&
           error.response?.status === axios.HttpStatusCode.Unauthorized
         ) {
+          if (typeof window !== 'undefined' && getAuthMode() === 'keycloak') {
+            clearKeycloakTokens();
+          }
           return emptyMeData;
         }
 
@@ -97,6 +102,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (e) {
       console.warn('logout error', e);
     } finally {
+      if (typeof window !== 'undefined' && getAuthMode() === 'keycloak') {
+        clearKeycloakTokens();
+      }
       queryClient.setQueryData(USER_QUERY_KEY, emptyMeData);
     }
   };

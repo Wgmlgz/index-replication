@@ -55,7 +55,7 @@
       },
       "access": {
         "title": "Secure access",
-        "description": "Use session auth with optional Telegram login verification."
+        "description": "Use session auth or OIDC login, with optional Telegram verification for session flow."
       }
     },
     "primaryAuthenticated": "Open dashboard",
@@ -707,6 +707,9 @@
   "auth": {
     "login": {
       "sessionNotReady": "Login was approved, but session is not ready yet. Please try again.",
+      "modeLabel": "Authorization method",
+      "modeSession": "Session",
+      "modeKeycloak": "OIDC",
       "verification": {
         "genericError": "Verification failed. Please try again.",
         "description": "Approve sign-in in Telegram to finish login.",
@@ -725,7 +728,14 @@
       "passwordPlaceholder": "Enter password",
       "rememberMe": "Remember me",
       "submitting": "Signing in...",
-      "submit": "Sign in"
+      "submit": "Sign in",
+      "keycloak": {
+        "description": "Sign in with your OIDC provider account.",
+        "submit": "Continue with OIDC",
+        "submitting": "Redirecting...",
+        "callbackError": "OIDC sign-in failed. Please try again.",
+        "configError": "OIDC sign-in is not configured."
+      }
     },
     "guard": {
       "redirectingToAppTitle": "Redirecting to the app",
