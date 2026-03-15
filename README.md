@@ -51,6 +51,14 @@ Fixed mappings:
 - Adminer: tailnet HTTPS `8443` -> `127.0.0.1:8081`
 - Temporal UI: tailnet HTTPS `9443` -> `127.0.0.1:8233`
 
+Authenticated admin access via Traefik + Keycloak:
+- Adminer: `http://${WEB_HOST}:${TRAEFIK_PORT}/adminer`
+- Temporal UI: `http://${WEB_HOST}:${TRAEFIK_PORT}/temporal`
+- Requests to `http://localhost:${TRAEFIK_PORT}/adminer` and `http://localhost:${TRAEFIK_PORT}/temporal` bypass auth.
+- Direct localhost ports also remain open with no auth: `http://localhost:8081`, `http://localhost:8233`.
+- These admin routes authenticate against `${KEYCLOAK_ADMIN_REALM}` (default `index-replication-admin`), not the app realm.
+- If you expose a different hostname/port, update `KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS` accordingly.
+
 ## Quick Start (Local)
 
 1. Start infra and services:
@@ -88,6 +96,9 @@ Docker compose includes Keycloak with no manual UI setup:
 - Single Terraform codebase in `infra/terraform/keycloak` is applied in two phases:
   - `keycloak-terraform-db` creates/ensures a dedicated Keycloak schema in existing Postgres.
   - `keycloak-terraform` applies Keycloak realm/client/user resources after Keycloak is healthy.
+- Terraform also provisions a confidential OIDC client for `oauth2-proxy` (`KEYCLOAK_ADMIN_PROXY_CLIENT_ID` /
+  `KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET`) in the admin realm (`KEYCLOAK_ADMIN_REALM`) used to protect
+  Adminer/Temporal routes in Traefik.
 - Realm user profile is managed by Terraform so end-user profile fields (`email`, `firstName`, `lastName`) are not required or editable by users.
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
 - Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.

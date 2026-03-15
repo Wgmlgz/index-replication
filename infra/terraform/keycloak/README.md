@@ -3,11 +3,13 @@
 This Terraform root manages:
 
 - PostgreSQL schema for Keycloak (`postgresql_schema`)
-- Keycloak realm (`keycloak_realm`)
-- Keycloak realm login theme (`keycloak_realm.login_theme`)
+- Keycloak app realm (`keycloak_realm.app`)
+- Keycloak admin-tools realm (`keycloak_realm.admin`)
+- Keycloak realm login themes (`keycloak_realm.app.login_theme`, `keycloak_realm.admin.login_theme`)
 - Keycloak realm user profile (`keycloak_realm_user_profile`) with only username editable for end users
 - Keycloak OIDC web client (`keycloak_openid_client`)
-- Optional bootstrap user (`keycloak_user`)
+- Keycloak OIDC confidential client for admin proxy (`keycloak_openid_client.admin_proxy`)
+- Optional bootstrap user in both app/admin realms (`keycloak_user.bootstrap`, `keycloak_user.admin_bootstrap`)
 
 Compose executes this root in two phases:
 

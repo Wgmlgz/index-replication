@@ -23,6 +23,11 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_keycloak_admin_password: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
   TF_VAR_keycloak_realm: ${KEYCLOAK_REALM:-index-replication}
   TF_VAR_keycloak_realm_display_name: "${KEYCLOAK_REALM_DISPLAY_NAME:-Index Replication}"
+  TF_VAR_keycloak_admin_realm: ${KEYCLOAK_ADMIN_REALM:-index-replication-admin}
+  TF_VAR_keycloak_admin_realm_display_name: "${KEYCLOAK_ADMIN_REALM_DISPLAY_NAME:-Index Replication Admin}"
+  TF_VAR_keycloak_admin_proxy_client_id: ${KEYCLOAK_ADMIN_PROXY_CLIENT_ID:-admin-proxy}
+  TF_VAR_keycloak_admin_proxy_client_secret: ${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
+  TF_VAR_keycloak_admin_proxy_redirect_uris: '${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-["http://localhost:30000/oauth2/callback","http://app123.localhost:30000/oauth2/callback"]}'
   TF_VAR_keycloak_bootstrap_user: "${KEYCLOAK_BOOTSTRAP_USER:-}"
   TF_VAR_keycloak_bootstrap_user_password: "${KEYCLOAK_BOOTSTRAP_USER_PASSWORD:-}"
   TF_VAR_keycloak_bootstrap_user_email: "${KEYCLOAK_BOOTSTRAP_USER_EMAIL:-}"
@@ -81,8 +86,19 @@ services:
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_UI_PORT=8082
+      - TEMPORAL_UI_PUBLIC_PATH=/temporal
     ports:
       - "127.0.0.1:${TEMPORAL_UI_PORT:-8233}:8082"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.temporal-ui-local.rule=Host(`localhost`) && PathPrefix(`/temporal`)"
+      - "traefik.http.routers.temporal-ui-local.entrypoints=web"
+      - "traefik.http.routers.temporal-ui-local.priority=131"
+      - "traefik.http.routers.temporal-ui.rule=PathPrefix(`/temporal`)"
+      - "traefik.http.routers.temporal-ui.entrypoints=web"
+      - "traefik.http.routers.temporal-ui.priority=120"
+      - "traefik.http.routers.temporal-ui.middlewares=admin-auth-errors@docker,admin-auth@docker"
+      - "traefik.http.services.temporal-ui.loadbalancer.server.port=8082"
 
   traefik:
     image: traefik:v2.11
@@ -94,6 +110,15 @@ services:
       - "${TRAEFIK_PORT}:${TRAEFIK_PORT}"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart: on-failure
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.admin-auth.forwardauth.address=http://oauth2-proxy:4180/oauth2/auth"
+      - "traefik.http.middlewares.admin-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.admin-auth.forwardauth.authResponseHeaders=X-Auth-Request-User,X-Auth-Request-Email,Authorization"
+      - "traefik.http.middlewares.admin-auth-errors.errors.status=401-403"
+      - "traefik.http.middlewares.admin-auth-errors.errors.service=oauth2-proxy@docker"
+      - "traefik.http.middlewares.admin-auth-errors.errors.query=/oauth2/sign_in?rd={url}"
 
   postgres:
     image: postgres:16
@@ -187,6 +212,32 @@ services:
       <<: *keycloak_terraform_env
     volumes:
       - keycloak_terraform_state:/workspace/terraform-state
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
+      - OAUTH2_PROXY_OIDC_ISSUER_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}/realms/${KEYCLOAK_ADMIN_REALM:-index-replication-admin}
+      - OAUTH2_PROXY_CLIENT_ID=${KEYCLOAK_ADMIN_PROXY_CLIENT_ID:-admin-proxy}
+      - OAUTH2_PROXY_CLIENT_SECRET=${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
+      - OAUTH2_PROXY_COOKIE_SECRET=${ADMIN_AUTH_COOKIE_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_UPSTREAMS=file:///dev/null
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SET_XAUTHREQUEST=true
+      - OAUTH2_PROXY_COOKIE_SECURE=false
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oauth2.rule=PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2.entrypoints=web"
+      - "traefik.http.routers.oauth2.priority=140"
+      - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
 
   api:
     build:
@@ -291,7 +342,17 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
     labels:
-      - "traefik.enable=false"
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer-local.rule=Host(`localhost`) && PathPrefix(`/adminer`)"
+      - "traefik.http.routers.adminer-local.entrypoints=web"
+      - "traefik.http.routers.adminer-local.priority=131"
+      - "traefik.http.routers.adminer-local.middlewares=adminer-strip@docker"
+      - "traefik.http.routers.adminer.rule=PathPrefix(`/adminer`)"
+      - "traefik.http.routers.adminer.entrypoints=web"
+      - "traefik.http.routers.adminer.priority=120"
+      - "traefik.http.routers.adminer.middlewares=admin-auth-errors@docker,admin-auth@docker,adminer-strip@docker"
+      - "traefik.http.middlewares.adminer-strip.stripprefix.prefixes=/adminer"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
 
 volumes:
   pgdata:

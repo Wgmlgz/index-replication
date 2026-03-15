@@ -67,6 +67,18 @@ variable "keycloak_realm_display_name" {
   default     = "Index Replication"
 }
 
+variable "keycloak_admin_realm" {
+  description = "Admin-tools realm name used by oauth2-proxy."
+  type        = string
+  default     = "index-replication-admin"
+}
+
+variable "keycloak_admin_realm_display_name" {
+  description = "Admin-tools realm display name."
+  type        = string
+  default     = "Index Replication Admin"
+}
+
 variable "keycloak_login_theme" {
   description = "Login theme name applied to the realm."
   type        = string
@@ -100,6 +112,28 @@ variable "keycloak_web_origins" {
   default = [
     "http://localhost:3000",
     "http://localhost:30000",
+  ]
+}
+
+variable "keycloak_admin_proxy_client_id" {
+  description = "OIDC client id for oauth2-proxy that protects Adminer/Temporal UI."
+  type        = string
+  default     = "admin-proxy"
+}
+
+variable "keycloak_admin_proxy_client_secret" {
+  description = "OIDC client secret for oauth2-proxy Adminer/Temporal guard."
+  type        = string
+  default     = "change-me"
+  sensitive   = true
+}
+
+variable "keycloak_admin_proxy_redirect_uris" {
+  description = "Valid redirect URIs for oauth2-proxy callback."
+  type        = list(string)
+  default = [
+    "http://localhost:30000/oauth2/callback",
+    "http://app123.localhost:30000/oauth2/callback",
   ]
 }
 
