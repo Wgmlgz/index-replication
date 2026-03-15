@@ -27,6 +27,7 @@ Frontend:
 - Lightweight Charts for market data visualization
 - React Hook Form + Zod (i18next-backed error messages)
 - OpenAPI Generator `typescript-axios` client in `web/src/api-client`
+- Keycloak login theme app in `auth-theme/` (Keycloakify + shared `web/src` UI primitives)
 - Portfolio UI (`/portfolio`) built on provider-agnostic portfolio profiles (`/api/me/portfolios/:id/*`)
   with providers: `tbank`, `mock`, `virtual`
   and optional per-profile replication config (benchmark/mode/exclusions) embedded in portfolio list/summary responses.
@@ -91,6 +92,9 @@ Docker compose includes Keycloak with no manual UI setup:
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
 - Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.
 - Keycloak is exposed by Traefik on the same app port under `${KEYCLOAK_HTTP_RELATIVE_PATH}` (default `/auth`).
+- Keycloak image build includes a custom login theme jar from `auth-theme/` (Keycloakify).
+- Realm login theme is configured by Terraform via `${KEYCLOAK_THEME_NAME}` (default `index-replication`),
+  and the same variable is passed to the Keycloak image build for Keycloakify theme naming.
 - `keycloak` is also reachable directly on `127.0.0.1:${KEYCLOAK_PORT}` for local debugging.
 
 DB reuse behavior:
@@ -135,6 +139,7 @@ If a docker context has multiple compose projects, pass `--source-project` / `--
 
 - `api/` Go REST API
 - `web/` Next.js frontend
+- `auth-theme/` Keycloak login theme app (Keycloakify, reuses `web/src` UI)
 - `Taskfile.yml` root-level tasks (currently Docker compose)
 - `docker-compose.yml` local stack
 

@@ -17,6 +17,7 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_postgres_user: ${POSTGRES_USER}
   TF_VAR_postgres_password: ${POSTGRES_PASSWORD}
   TF_VAR_keycloak_url: ${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
+  TF_VAR_keycloak_login_theme: ${KEYCLOAK_THEME_NAME:-index-replication}
   TF_VAR_keycloak_db_schema: ${KEYCLOAK_DB_SCHEMA:-keycloak}
   TF_VAR_keycloak_admin_user: ${KEYCLOAK_ADMIN_USER:-admin}
   TF_VAR_keycloak_admin_password: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
@@ -129,7 +130,13 @@ services:
       - keycloak_terraform_state:/workspace/terraform-state
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.1}
+    build:
+      context: .
+      dockerfile: scripts/keycloak/Dockerfile
+      args:
+        KEYCLOAK_VERSION: ${KEYCLOAK_VERSION:-26.1}
+        KEYCLOAK_THEME_NAME: ${KEYCLOAK_THEME_NAME:-index-replication}
+    image: index-replication-keycloak:${KEYCLOAK_VERSION:-26.1}
     command: ["start-dev"]
     depends_on:
       keycloak-terraform-db:

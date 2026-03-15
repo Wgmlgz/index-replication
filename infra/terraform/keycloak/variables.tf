@@ -67,6 +67,12 @@ variable "keycloak_realm_display_name" {
   default     = "Index Replication"
 }
 
+variable "keycloak_login_theme" {
+  description = "Login theme name applied to the realm."
+  type        = string
+  default     = "index-replication"
+}
+
 variable "keycloak_web_client_id" {
   description = "OIDC client id for the web app."
   type        = string

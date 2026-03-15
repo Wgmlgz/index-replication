@@ -116,6 +116,10 @@ OIDC/Keycloak frontend settings:
 - `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID` (default `web`)
 - `NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI` (optional; enables silent token renew when set)
 
+Keycloak hosted login UI is themed in a separate project:
+
+- `auth-theme/` (Keycloakify + shadcn components imported from `web/src`)
+
 MOEX data is fetched from the backend (`/api/moex/*`). The backend ISS base URL is configured via `MOEX_BASE_URL`.
 
 Before changing the MOEX client or screens, read `docs/moex/ISS-CONCEPTS.md`.

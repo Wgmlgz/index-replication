@@ -1,0 +1,13 @@
+@import "../../web/src/app/globals.css";
+
+@source "../../web/src/**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";
+
+:root {
+  --font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-geist-mono: "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+}
+
+body {
+  margin: 0;
+}

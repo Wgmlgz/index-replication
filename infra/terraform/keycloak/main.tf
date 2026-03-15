@@ -45,6 +45,7 @@ resource "keycloak_realm" "app" {
   realm        = var.keycloak_realm
   enabled      = true
   display_name = var.keycloak_realm_display_name
+  login_theme  = var.keycloak_login_theme
 }
 
 resource "keycloak_realm_user_profile" "app" {

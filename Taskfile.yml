@@ -92,10 +92,21 @@ tasks:
       - task -d web api:gen
 
   deps:
-    desc: Install API and web dependencies
+    desc: Install API, web and auth-theme dependencies
     cmds:
       - task -d api deps
       - task -d web install
+      - task -d auth-theme install
+
+  auth-theme:build:
+    desc: Build auth theme frontend bundle
+    cmds:
+      - task -d auth-theme build
+
+  auth-theme:build:keycloak:
+    desc: Build Keycloak theme jar (host Java + Maven required)
+    cmds:
+      - task -d auth-theme build:keycloak
 
   moex:docs:
     desc: Cache MOEX ISS docs locally
