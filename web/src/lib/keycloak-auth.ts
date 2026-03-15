@@ -101,7 +101,7 @@ export const isKeycloakAuthConfigured = (): boolean => {
   return Boolean(cfg.baseURL && cfg.realm && cfg.clientID);
 };
 
-export const clearKeycloakTokens = (): void => {
+export const clearKeycloakTokens = async (): Promise<void> => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -114,7 +114,43 @@ export const clearKeycloakTokens = (): void => {
     return;
   }
 
-  void manager.removeUser().catch(() => {});
+  await manager.removeUser().catch(() => {});
+};
+
+export const logoutFromKeycloak = async (): Promise<boolean> => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const manager = getUserManager();
+  if (!manager) {
+    await clearKeycloakTokens();
+    return false;
+  }
+
+  let idTokenHint: string | undefined;
+  try {
+    const user = await manager.getUser();
+    idTokenHint = user?.id_token;
+  } catch {
+  }
+
+  await clearKeycloakTokens();
+
+  try {
+    const cfg = getConfig();
+    await manager.clearStaleState();
+    await manager.signoutRedirect({
+      id_token_hint: idTokenHint,
+      post_logout_redirect_uri: `${window.location.origin}/login`,
+      extraQueryParams: {
+        client_id: cfg.clientID,
+      },
+    });
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export const beginKeycloakLogin = async (

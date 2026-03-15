@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +17,6 @@ type UserRepository struct {
 
 type CreateUserInput struct {
 	Username string
-	Password string
 	FullName string
 	RoleID   int
 	Comment  string
@@ -27,9 +24,6 @@ type CreateUserInput struct {
 
 type UpdateUserInput struct {
 	FullName string
-	Phone    string
-	Email    string
-	Password *string
 	RoleID   int
 	Comment  string
 }
@@ -37,7 +31,6 @@ type UpdateUserInput struct {
 type EnsureKeycloakUserInput struct {
 	Sub               string
 	PreferredUsername string
-	Email             string
 	FullName          string
 }
 
@@ -50,8 +43,8 @@ func (r *UserRepository) ListUsers(page, pageSize int, search string, sortBy, so
 	if search != "" {
 		like := "%" + search + "%"
 		dbQuery = dbQuery.Where(
-			"CAST(id AS CHAR) LIKE ? OR username LIKE ? OR keycloak_sub LIKE ? OR full_name LIKE ? OR CAST(role_id AS CHAR) LIKE ? OR phone LIKE ? OR email LIKE ? OR CAST(last_active AS CHAR) LIKE ? OR CAST(blocked_at AS CHAR) LIKE ? OR CAST(created_at AS CHAR) LIKE ?",
-			like, like, like, like, like, like, like, like, like, like,
+			"CAST(id AS CHAR) LIKE ? OR username LIKE ? OR keycloak_sub LIKE ? OR full_name LIKE ? OR CAST(role_id AS CHAR) LIKE ? OR CAST(last_active AS CHAR) LIKE ? OR CAST(blocked_at AS CHAR) LIKE ? OR CAST(created_at AS CHAR) LIKE ?",
+			like, like, like, like, like, like, like, like,
 		)
 	}
 
@@ -76,17 +69,11 @@ func (r *UserRepository) ListUsers(page, pageSize int, search string, sortBy, so
 }
 
 func (r *UserRepository) CreateUser(input CreateUserInput) (*models.User, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
-	}
-
 	user := models.User{
-		Username:     input.Username,
-		PasswordHash: string(hash),
-		FullName:     input.FullName,
-		RoleID:       input.RoleID,
-		Comment:      input.Comment,
+		Username: input.Username,
+		FullName: input.FullName,
+		RoleID:   input.RoleID,
+		Comment:  input.Comment,
 	}
 
 	if err := r.db.Create(&user).Error; err != nil {
@@ -119,23 +106,11 @@ func (r *UserRepository) UpdateUser(id string, input UpdateUserInput) (*models.U
 
 	oldUser := user
 
-	// Role changed
 	action := models.ActionUserUpdated
 
 	user.FullName = input.FullName
 	user.RoleID = input.RoleID
-	user.Phone = input.Phone
-	user.Email = input.Email
 	user.Comment = input.Comment
-
-	if input.Password != nil {
-		hash, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, "", nil, nil, fmt.Errorf("failed to hash password: %w", err)
-		}
-		user.PasswordHash = string(hash)
-		action = models.ActionPasswordReset
-	}
 
 	if err := r.db.Save(&user).Error; err != nil {
 		return nil, "", nil, nil, err
@@ -234,16 +209,6 @@ func (r *UserRepository) EnsureUserByKeycloakSub(input EnsureKeycloakUserInput) 
 		fullName = fullName[:255]
 	}
 
-	email := strings.TrimSpace(input.Email)
-	if len(email) > 255 {
-		email = email[:255]
-	}
-
-	randomPasswordHash, err := bcrypt.GenerateFromPassword([]byte(uuid.NewString()), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, false, fmt.Errorf("failed to generate password hash: %w", err)
-	}
-
 	subCopy := sub
 	for attempt := 0; attempt < 100; attempt++ {
 		username := makeKeycloakUsernameCandidate(baseUsername, attempt)
@@ -252,13 +217,11 @@ func (r *UserRepository) EnsureUserByKeycloakSub(input EnsureKeycloakUserInput) 
 		}
 
 		user := models.User{
-			Username:     username,
-			PasswordHash: string(randomPasswordHash),
-			KeycloakSub:  &subCopy,
-			FullName:     fullName,
-			RoleID:       roleID,
-			Email:        email,
-			Comment:      "Auto-created from Keycloak login",
+			Username:    username,
+			KeycloakSub: &subCopy,
+			FullName:    fullName,
+			RoleID:      roleID,
+			Comment:     "Auto-created from Keycloak login",
 		}
 
 		if err := r.db.Create(&user).Error; err == nil {
@@ -288,22 +251,6 @@ func (r *UserRepository) EnsureUserByKeycloakSub(input EnsureKeycloakUserInput) 
 func (r *UserRepository) UpdateLastActive(user *models.User) error {
 	now := time.Now()
 	return r.db.Model(user).Update("last_active", &now).Error
-}
-
-func (r *UserRepository) UpdatePassword(userID interface{}, newPassword string) error {
-	var user models.User
-	if err := r.db.Select("password_hash").Where("id = ?", userID).First(&user).Error; err != nil {
-		return err
-	}
-
-	// Verify old password (if needed, though not in the original logic)
-
-	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	return r.db.Model(&models.User{}).Where("id = ?", userID).Update("password_hash", string(newHash)).Error
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, id string) error {

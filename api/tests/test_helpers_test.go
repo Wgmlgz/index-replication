@@ -22,7 +22,6 @@ import (
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"server/internal/config"
@@ -184,26 +183,20 @@ func (s *testOIDCServer) issueToken(t *testing.T, claims jwt.MapClaims) string {
 	return signed
 }
 
-func seedAdminUser(t *testing.T, ts *testServer, username, password string) {
+func seedAdminUser(t *testing.T, ts *testServer, username, _ string) {
 	t.Helper()
-	insertUser(t, ts, username, password, "Admin Test", 2)
+	insertUser(t, ts, username, "", "Admin Test", 2)
 }
 
-func insertUser(t *testing.T, ts *testServer, username, password, fullName string, roleID int) {
+func insertUser(t *testing.T, ts *testServer, username, _ string, fullName string, roleID int) {
 	t.Helper()
 	if fullName == "" {
 		fullName = "Test User"
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		t.Fatalf("failed to hash password: %v", err)
-	}
-
 	result := ts.db.Exec(
-		"INSERT INTO users (username, password_hash, full_name, role_id, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
+		"INSERT INTO users (username, full_name, role_id, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
 		username,
-		string(hash),
 		fullName,
 		roleID,
 	)
@@ -248,28 +241,23 @@ func insertAuditLog(t *testing.T, ts *testServer, performedBy int, action, entit
 	return id
 }
 
-func login(t *testing.T, ts *testServer, username, password string) string {
+func login(t *testing.T, ts *testServer, username, _ string) string {
 	t.Helper()
 
 	var row struct {
-		ID           int
-		PasswordHash string
-		KeycloakSub  *string
-		FullName     string
-		Email        string
+		ID          int
+		KeycloakSub *string
+		FullName    string
 	}
 
 	if err := ts.db.Raw(
-		"SELECT id, password_hash, keycloak_sub, full_name, email FROM users WHERE username = ?",
+		"SELECT id, keycloak_sub, full_name FROM users WHERE username = ?",
 		username,
 	).Scan(&row).Error; err != nil {
 		t.Fatalf("failed to fetch user for login: %v", err)
 	}
 	if row.ID == 0 {
 		t.Fatalf("user not found for login: %s", username)
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(row.PasswordHash), []byte(password)); err != nil {
-		t.Fatalf("invalid credentials for %s", username)
 	}
 
 	sub := ""
@@ -287,7 +275,6 @@ func login(t *testing.T, ts *testServer, username, password string) string {
 		"sub":                sub,
 		"preferred_username": username,
 		"name":               row.FullName,
-		"email":              row.Email,
 	})
 }
 

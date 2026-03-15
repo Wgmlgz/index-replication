@@ -65,7 +65,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	verificationService.StartTelegramPolling(context.Background())
 
 	keycloakAuth := keycloakauth.NewKeycloakAuthenticator(cfg)
-	authHandler := h.NewAuthHandler(db, repoRegistry.UserRepo, auditService)
+	authHandler := h.NewAuthHandler(auditService)
 	settingsHandler := h.NewUserSettingsHandler(repoRegistry.UserSettingsRepo)
 	verificationHandler := h.NewVerificationHandler(verificationService)
 
@@ -167,8 +167,6 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.POST("/me/verification/telegram/connect", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.CreateTelegramConnectLink)
 		a.PATCH("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.PatchTelegramSettings)
 		a.DELETE("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.UnlinkTelegram)
-		a.PUT("/me/password", m.RPM(cs, config.SelfUpdatePassword), authHandler.ChangePassword)
-
 		a.GET("/users", m.RPM(cs, config.UsersView), userHandler.ListUsers)
 		a.POST("/users", m.RPM(cs, config.UsersCreate), userHandler.CreateUser)
 		a.PUT("/users/:id", m.RPM(cs, config.UsersEdit), userHandler.UpdateUser)

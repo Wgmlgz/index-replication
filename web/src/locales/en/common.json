@@ -89,21 +89,6 @@
       "connectLinkReady": "Open this one-time connect link:",
       "expiresAt": "Link expires at {{time}}"
     },
-    "changePassword": {
-      "validation": {
-        "currentRequired": "Current password is required.",
-        "newMinLength": "New password must contain at least 6 characters.",
-        "passwordMismatch": "Passwords do not match."
-      },
-      "success": "Password updated successfully.",
-      "error": "Failed to update password.",
-      "title": "Change password",
-      "currentPasswordLabel": "Current password",
-      "newPasswordLabel": "New password",
-      "confirmPasswordLabel": "Confirm new password",
-      "saving": "Saving...",
-      "save": "Save"
-    },
     "page": {
       "appSettingsTitle": "Application settings",
       "apiUrlLabel": "API base URL",
@@ -115,10 +100,8 @@
       "currentUserTitle": "Current user info",
       "loginLabel": "Login",
       "fullNameLabel": "Full name",
-      "emailLabel": "Email",
       "none": "(none)",
       "roleLabel": "Role",
-      "phoneLabel": "Phone",
       "blockedLabel": "Blocked",
       "yes": "Yes",
       "no": "No",

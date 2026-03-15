@@ -12,9 +12,6 @@ docs/BrandingApi.md
 docs/CreateUserRequest.md
 docs/DtoTickerLogoResolveResponse.md
 docs/ErrorResponse.md
-docs/LoginRequest.md
-docs/LoginVerifyRequest.md
-docs/LoginVerifyStatusResponse.md
 docs/MoexApi.md
 docs/MoexCoverageResponse.md
 docs/MoexIndex.md
@@ -25,7 +22,6 @@ docs/MoexIndexTickerAnalyticsPoint.md
 docs/MoexIndexesOverviewResponse.md
 docs/MoexSyncRunResponse.md
 docs/MoexSyncStateResponse.md
-docs/PasswordChangeRequest.md
 docs/Permission.md
 docs/PermissionsResponse.md
 docs/PortfolioActionRequest.md

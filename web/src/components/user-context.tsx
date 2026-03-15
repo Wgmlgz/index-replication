@@ -2,10 +2,10 @@
 
 import React, { createContext, useContext } from 'react';
 import { useIsRestoring, useQuery, useQueryClient } from '@tanstack/react-query';
-import { usersApi as api } from '@/lib/api';
+import { authApi, usersApi as api } from '@/lib/api';
 import { Permission } from '@/api-client';
 import axios from 'axios';
-import { clearKeycloakTokens } from '@/lib/keycloak-auth';
+import { clearKeycloakTokens, logoutFromKeycloak } from '@/lib/keycloak-auth';
 
 type RoleKey = string;
 
@@ -17,8 +17,6 @@ export interface User {
   role_key: RoleKey;
   organization_id?: number;
   organization_name?: string;
-  phone?: string;
-  email?: string;
   last_active?: string;
   is_blocked: boolean;
   created_at: string;
@@ -70,7 +68,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           axios.isAxiosError(error) &&
           error.response?.status === axios.HttpStatusCode.Unauthorized
         ) {
-          clearKeycloakTokens();
+          await clearKeycloakTokens();
           return emptyMeData;
         }
 
@@ -93,10 +91,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     await refetch();
   };
 
-  const logoutUser = (): Promise<void> => {
-    clearKeycloakTokens();
+  const logoutUser = async (): Promise<void> => {
     queryClient.setQueryData(USER_QUERY_KEY, emptyMeData);
-    return Promise.resolve();
+
+    await authApi.logoutPost().catch(() => {});
+
+    const redirected = await logoutFromKeycloak();
+    if (!redirected && typeof window !== 'undefined') {
+      window.location.assign('/login');
+    }
   };
 
   const setUser = (nextUser: User | null) => {
@@ -145,8 +148,7 @@ export type PermissionStr =
   | 'audit_logs:view'
   | 'settings:view'
   | 'system_metadata:view'
-  | 'self:view'
-  | 'self:reset_password';
+  | 'self:view';
 
 export type PermissionChecker = (permissionStr: PermissionStr) => boolean;
 export type UseUserRet = UserContextValue & {

@@ -22,14 +22,12 @@ var (
 type KeycloakClaims struct {
 	Sub               string
 	PreferredUsername string
-	Email             string
 	Name              string
 }
 
 type keycloakTokenClaims struct {
 	Subject           string `json:"sub"`
 	PreferredUsername string `json:"preferred_username"`
-	Email             string `json:"email"`
 	Name              string `json:"name"`
 }
 
@@ -89,7 +87,6 @@ func (a *KeycloakAuthenticator) VerifyToken(ctx context.Context, rawToken string
 	return &KeycloakClaims{
 		Sub:               strings.TrimSpace(claims.Subject),
 		PreferredUsername: strings.TrimSpace(claims.PreferredUsername),
-		Email:             strings.TrimSpace(claims.Email),
 		Name:              strings.TrimSpace(claims.Name),
 	}, nil
 }

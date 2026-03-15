@@ -24,8 +24,6 @@ const (
 	ActionUserDeleted                = "user_deleted"
 	ActionUserBlocked                = "user_blocked"
 	ActionUserUnblocked              = "user_unblocked"
-	ActionPasswordReset              = "password_reset"
-	ActionPasswordChanged            = "password_changed"
 	ActionUserLogin                  = "user_login"
 	ActionUserLogout                 = "user_logout"
 	ActionLoginVerificationRequested = "login_verification_requested"

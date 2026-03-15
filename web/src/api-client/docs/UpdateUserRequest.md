@@ -6,10 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **comment** | **string** |  | [optional] [default to undefined]
-**email** | **string** |  | [optional] [default to undefined]
 **full_name** | **string** |  | [optional] [default to undefined]
-**password** | **string** |  | [optional] [default to undefined]
-**phone** | **string** |  | [optional] [default to undefined]
 **role_id** | **number** |  | [optional] [default to undefined]
 
 ## Example
@@ -19,10 +16,7 @@ import { UpdateUserRequest } from './api';
 
 const instance: UpdateUserRequest = {
     comment,
-    email,
     full_name,
-    password,
-    phone,
     role_id,
 };
 ```

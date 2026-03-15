@@ -22,8 +22,6 @@ type UserResponse struct {
 	FullName   string     `json:"full_name" binding:"required"`
 	RoleID     int        `json:"role_id" binding:"required"`
 	RoleKey    string     `json:"role_key" binding:"required"`
-	Phone      string     `json:"phone,omitempty" binding:"required"`
-	Email      string     `json:"email,omitempty" binding:"required"`
 	LastActive *time.Time `json:"last_active,omitempty" binding:"required"`
 	BlockedAt  *time.Time `json:"blocked_at,omitempty" binding:"required"`
 	IsBlocked  bool       `json:"is_blocked" binding:"required"`
@@ -40,19 +38,15 @@ type UserListResponse struct {
 
 type CreateUserRequest struct {
 	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
 	FullName string `json:"full_name" binding:"required"`
 	RoleID   int    `json:"role_id" binding:"required"`
 	Comment  string `json:"comment"`
 } //@name CreateUserRequest
 
 type UpdateUserRequest struct {
-	FullName string  `json:"full_name"`
-	Phone    string  `json:"phone"`
-	Email    string  `json:"email"`
-	Password *string `json:"password"`
-	RoleID   int     `json:"role_id"`
-	Comment  string  `json:"comment"`
+	FullName string `json:"full_name"`
+	RoleID   int    `json:"role_id"`
+	Comment  string `json:"comment"`
 } //@name UpdateUserRequest
 
 func NewUserResponse(user *models.User) UserResponse {
@@ -61,8 +55,6 @@ func NewUserResponse(user *models.User) UserResponse {
 		Username:   user.Username,
 		FullName:   user.FullName,
 		RoleID:     user.RoleID,
-		Phone:      user.Phone,
-		Email:      user.Email,
 		LastActive: user.LastActive,
 		BlockedAt:  user.BlockedAt,
 		IsBlocked:  user.BlockedAt != nil,

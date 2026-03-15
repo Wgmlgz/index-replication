@@ -4,15 +4,6 @@ const apiError = (message: string, status = 400) =>
   HttpResponse.json({ error: message }, { status });
 
 export const storybookDefaultHandlers = [
-  http.put(/\/api\/me\/password$/, async ({ request }) => {
-    const body = (await request.json()) as { old_password?: string; new_password?: string };
-    if (!body.old_password || !body.new_password) {
-      return apiError('old_password and new_password are required');
-    }
-    return new HttpResponse(null, { status: 204 });
-  }),
-
-
   http.post(/\/api\/users$/, async ({ request }) => {
     const body = (await request.json()) as { username?: string; full_name?: string; role_id?: number };
     if (!body.username || !body.full_name || !body.role_id) {

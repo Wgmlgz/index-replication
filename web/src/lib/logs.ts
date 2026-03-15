@@ -6,8 +6,6 @@ export const actionLabels: Record<string, string> = {
   user_blocked: "Пользователь заблокирован",
   user_unblocked: "Пользователь разблокирован",
 
-  password_reset: "Сброс пароля",
-  password_changed: "Пароль изменен",
   user_login: "Вход пользователя",
   user_logout: "Выход пользователя",
 
@@ -28,8 +26,6 @@ export const actionColors: Record<string, string> = {
   user_blocked: "bg-red-100 text-red-800",
   user_unblocked: "bg-yellow-100 text-yellow-800",
 
-  password_reset: "bg-orange-100 text-orange-800",
-  password_changed: "bg-purple-100 text-purple-800",
   user_login: "bg-green-100 text-green-800",
   user_logout: "bg-gray-100 text-gray-800",
 

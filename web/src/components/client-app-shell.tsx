@@ -10,6 +10,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { QueryProvider } from '@/components/query-provider';
 import { UserProvider, useUser } from '@/components/user-context';
 import { AppSidebar } from '@/components/app-sidebar';
+import { FullPageRedirectStatus } from '@/components/full-page-redirect-status';
 import { Toaster } from 'sonner';
 import { initI18n } from '@/lib/i18n';
 import {
@@ -20,17 +21,6 @@ import {
 
 moment.locale('ru');
 const i18n = initI18n();
-
-function FullPageStatus({ title, description }: { title: string; description: string }) {
-  return (
-    <div className='flex min-h-svh items-center justify-center p-6 text-center'>
-      <div className='space-y-2'>
-        <h1 className='text-xl font-semibold'>{title}</h1>
-        <p className='text-sm text-muted-foreground'>{description}</p>
-      </div>
-    </div>
-  );
-}
 
 function ProtectedPageSkeleton() {
   return (
@@ -52,9 +42,8 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
 
   useEffect(() => {
     if (!isPublic && authState === 'unauthenticated') {
-      const requestedPath = `${pathname}${
-        searchParamsString ? `?${searchParamsString}` : ''
-      }`;
+      const requestedPath = `${pathname}${searchParamsString ? `?${searchParamsString}` : ''
+        }`;
       router.replace(`/login?next=${encodeURIComponent(requestedPath)}`);
     }
   }, [authState, isPublic, pathname, router, searchParamsString]);
@@ -67,12 +56,7 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
 
   if (isPublic) {
     if (pathname === '/login' && authState === 'authenticated') {
-      return (
-        <FullPageStatus
-          title={t('auth.guard.redirectingToAppTitle')}
-          description={t('auth.guard.redirectingToAppDescription')}
-        />
-      );
+      return null;
     }
 
     return <div className='min-h-svh'>{children}</div>;
@@ -84,9 +68,11 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
 
   if (authState === 'unauthenticated') {
     return (
-      <FullPageStatus
+      <FullPageRedirectStatus
         title={t('auth.guard.redirectingToLoginTitle')}
         description={t('auth.guard.redirectingToLoginDescription')}
+        revealDelayMs={5000}
+        fadeInMs={1000}
       />
     );
   }

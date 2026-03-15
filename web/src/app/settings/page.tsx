@@ -4,7 +4,6 @@ import { useUser } from "@/components/user-context";
 import { Time } from "@/components/ui/time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { H3 } from "@/components/ui/typography";
-import { ChangePasswordForm } from "@/components/change-password-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useLocalStorage } from 'react-use';
@@ -92,7 +91,7 @@ export default function SettingsPage() {
             <div className="col-span-3 lg:col-span-3">
               <ChangeServerUrl></ChangeServerUrl>
             </div>
-            <Card className="h-full w-full col-span-2">
+            <Card className="h-full w-full col-span-3">
               <CardHeader>
                 <CardTitle>
                   <H3>
@@ -108,11 +107,9 @@ export default function SettingsPage() {
                       <div className="space-y-4">
                         <div><b>{t("settings.page.loginLabel")}:</b> {user.username}</div>
                         <div><b>{t("settings.page.fullNameLabel")}:</b> {user.full_name}</div>
-                        <div><b>{t("settings.page.emailLabel")}:</b> {user.email || <span className="text-muted-foreground">{t("settings.page.none")}</span>}</div>
                         <div><b>{t("settings.page.roleLabel")}:</b> {user.role_key}</div>
                       </div>
                       <div className="space-y-4">
-                        <div><b>{t("settings.page.phoneLabel")}:</b> {user.phone || <span className="text-muted-foreground">{t("settings.page.none")}</span>}</div>
                         <div><b>{t("settings.page.blockedLabel")}:</b> {user.is_blocked ? t("settings.page.yes") : t("settings.page.no")}</div>
                         <div><b>{t("settings.page.createdLabel")}:</b> <Time className="inline" time={user.created_at} /></div>
                         <div><b>{t("settings.page.lastActiveLabel")}:</b> <Time className="inline" time={user.last_active} fallback={t("settings.page.never")} /></div>
@@ -123,10 +120,6 @@ export default function SettingsPage() {
 
               </CardContent>
             </Card>
-            {user &&
-              <div className="col-span-2 lg:col-span-1">
-                <ChangePasswordForm />
-              </div>}
           </div>
         </div >}
     </>

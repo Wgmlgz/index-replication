@@ -77,12 +77,6 @@ export const columns = (_ctx: UseUserRet): ColumnDef<User>[] => {
         </Tooltip>
       },
     },
-    {
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Email" />
-      ),
-      accessorKey: "email",
-    },
      {
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Дата блокировки" />

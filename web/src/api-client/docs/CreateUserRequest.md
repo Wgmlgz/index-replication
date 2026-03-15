@@ -7,7 +7,6 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **comment** | **string** |  | [optional] [default to undefined]
 **full_name** | **string** |  | [default to undefined]
-**password** | **string** |  | [default to undefined]
 **role_id** | **number** |  | [default to undefined]
 **username** | **string** |  | [default to undefined]
 
@@ -19,7 +18,6 @@ import { CreateUserRequest } from './api';
 const instance: CreateUserRequest = {
     comment,
     full_name,
-    password,
     role_id,
     username,
 };

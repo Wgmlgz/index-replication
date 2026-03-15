@@ -49,7 +49,6 @@ func TestUserRoutes(t *testing.T) {
 	t.Run("CreateUser", func(t *testing.T) {
 		body := map[string]interface{}{
 			"username":  "operator_test",
-			"password":  "password123",
 			"full_name": "Operator Test",
 			"role_id":   4,
 		}
@@ -94,7 +93,6 @@ func TestUserRoutes(t *testing.T) {
 		body := map[string]interface{}{
 			"full_name": "Operator Updated",
 			"role_id":   5,
-			"password":  "newpass123",
 		}
 		resp := doRequest(t, ts.router, http.MethodPut, pathUser(operatorID), body, adminToken)
 		if resp.Code != http.StatusOK {
@@ -141,7 +139,6 @@ func TestUserRoutes(t *testing.T) {
 	t.Run("DeleteUser", func(t *testing.T) {
 		body := map[string]interface{}{
 			"username":  "admin_delete",
-			"password":  "password123",
 			"full_name": "Admin Delete",
 			"role_id":   2,
 		}
@@ -168,33 +165,6 @@ func TestUserRoutes(t *testing.T) {
 		resp = doRequest(t, ts.router, http.MethodGet, pathUser(admin2ID), nil, adminToken)
 		if resp.Code != http.StatusNotFound {
 			t.Fatalf("expected deleted user to be 404, got %d", resp.Code)
-		}
-	})
-
-	t.Run("ChangePassword", func(t *testing.T) {
-		body := map[string]string{
-			"old_password": "password123",
-			"new_password": "password456",
-		}
-		resp := doRequest(t, ts.router, http.MethodPut, "/api/me/password", body, adminToken)
-		if resp.Code != http.StatusOK {
-			t.Fatalf("change password status = %d, body = %s", resp.Code, resp.Body.String())
-		}
-
-		resp = doRequest(t, ts.router, http.MethodPut, "/api/me/password", map[string]string{
-			"old_password": "password123",
-			"new_password": "password999",
-		}, adminToken)
-		if resp.Code != http.StatusUnauthorized {
-			t.Fatalf("expected old password to fail after update, got %d", resp.Code)
-		}
-
-		resp = doRequest(t, ts.router, http.MethodPut, "/api/me/password", map[string]string{
-			"old_password": "password456",
-			"new_password": "password789",
-		}, adminToken)
-		if resp.Code != http.StatusOK {
-			t.Fatalf("expected updated password to be accepted, got %d", resp.Code)
 		}
 	})
 

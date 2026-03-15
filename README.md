@@ -178,4 +178,4 @@ cd web
 task api:gen
 ```
 
-The spec is output to `api/docs/swagger.json`. The web generator script reads this file and handles both Docker (`/local/...`) and local path modes automatically.
+The spec is output to `api/docs/swagger.json`. The web task copies it to `web/tmp/openapi/swagger.json` and runs `openapi-generator-cli` locally.

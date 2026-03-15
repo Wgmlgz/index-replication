@@ -4,127 +4,12 @@ All URIs are relative to *http://localhost:8080/api*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**loginPost**](#loginpost) | **POST** /login | Login|
-|[**loginVerifyPost**](#loginverifypost) | **POST** /login/verify | Complete login verification|
 |[**logoutPost**](#logoutpost) | **POST** /logout | Logout|
-|[**mePasswordPut**](#mepasswordput) | **PUT** /me/password | Change Password|
-
-# **loginPost**
-> { [key: string]: any; } loginPost(body)
-
-Authenticates a user and starts a session
-
-### Example
-
-```typescript
-import {
-    AuthApi,
-    Configuration,
-    LoginRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new AuthApi(configuration);
-
-let body: LoginRequest; //Login credentials
-
-const { status, data } = await apiInstance.loginPost(
-    body
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **body** | **LoginRequest**| Login credentials | |
-
-
-### Return type
-
-**{ [key: string]: any; }**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | OK |  -  |
-|**400** | Bad Request |  -  |
-|**401** | Unauthorized |  -  |
-|**403** | Forbidden |  -  |
-|**500** | Internal Server Error |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **loginVerifyPost**
-> { [key: string]: any; } loginVerifyPost(body)
-
-Checks Telegram challenge status and completes login when approved
-
-### Example
-
-```typescript
-import {
-    AuthApi,
-    Configuration,
-    LoginVerifyRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new AuthApi(configuration);
-
-let body: LoginVerifyRequest; //Verification challenge
-
-const { status, data } = await apiInstance.loginVerifyPost(
-    body
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **body** | **LoginVerifyRequest**| Verification challenge | |
-
-
-### Return type
-
-**{ [key: string]: any; }**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | OK |  -  |
-|**202** | Accepted |  -  |
-|**400** | Bad Request |  -  |
-|**401** | Unauthorized |  -  |
-|**500** | Internal Server Error |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **logoutPost**
 > { [key: string]: string; } logoutPost()
 
-Logs out the current user and clears the session
+Logs out the current user
 
 ### Example
 
@@ -162,61 +47,6 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | OK |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **mePasswordPut**
-> { [key: string]: any; } mePasswordPut(body)
-
-Changes the password for the current user
-
-### Example
-
-```typescript
-import {
-    AuthApi,
-    Configuration,
-    PasswordChangeRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new AuthApi(configuration);
-
-let body: PasswordChangeRequest; //Password change info
-
-const { status, data } = await apiInstance.mePasswordPut(
-    body
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **body** | **PasswordChangeRequest**| Password change info | |
-
-
-### Return type
-
-**{ [key: string]: any; }**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | OK |  -  |
-|**400** | Bad Request |  -  |
-|**401** | Unauthorized |  -  |
-|**500** | Internal Server Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

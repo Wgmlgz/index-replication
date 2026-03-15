@@ -126,7 +126,7 @@ No authorization required
 # **usersIdBlockPost**
 > { [key: string]: string; } usersIdBlockPost()
 
-Blocks a user and terminates their sessions
+Blocks a user
 
 ### Example
 

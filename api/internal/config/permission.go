@@ -27,7 +27,6 @@ var (
 	SystemMetadataView = Permission{"system_metadata", "view"}
 	MoexView           = Permission{"moex", "view"}
 	SelfView           = Permission{"self", "view"}
-	SelfUpdatePassword = Permission{"self", "update_password"}
 	SelfUpdateSettings = Permission{"self", "update_settings"}
 )
 
@@ -50,7 +49,6 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		MoexView,
 		SelfView,
-		SelfUpdatePassword,
 		SelfUpdateSettings,
 	},
 	"manager": {
@@ -65,7 +63,6 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		MoexView,
 		SelfView,
-		SelfUpdatePassword,
 		SelfUpdateSettings,
 	},
 
@@ -74,7 +71,6 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		MoexView,
 		SelfView,
-		SelfUpdatePassword,
 		SelfUpdateSettings,
 	},
 
@@ -83,7 +79,6 @@ var RolePermissions = map[string][]Permission{
 		SystemMetadataView,
 		MoexView,
 		SelfView,
-		SelfUpdatePassword,
 		SelfUpdateSettings,
 	},
 }

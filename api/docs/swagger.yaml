@@ -48,15 +48,12 @@ definitions:
         type: string
       full_name:
         type: string
-      password:
-        type: string
       role_id:
         type: integer
       username:
         type: string
     required:
     - full_name
-    - password
     - role_id
     - username
     type: object
@@ -220,13 +217,6 @@ definitions:
       status:
         type: string
       updatedAt:
-        type: string
-    type: object
-  PasswordChangeRequest:
-    properties:
-      new_password:
-        type: string
-      old_password:
         type: string
     type: object
   Permission:
@@ -734,13 +724,7 @@ definitions:
     properties:
       comment:
         type: string
-      email:
-        type: string
       full_name:
-        type: string
-      password:
-        type: string
-      phone:
         type: string
       role_id:
         type: integer
@@ -766,8 +750,6 @@ definitions:
         type: string
       created_at:
         type: string
-      email:
-        type: string
       full_name:
         type: string
       id:
@@ -775,8 +757,6 @@ definitions:
       is_blocked:
         type: boolean
       last_active:
-        type: string
-      phone:
         type: string
       role_id:
         type: integer
@@ -788,12 +768,10 @@ definitions:
     - blocked_at
     - comment
     - created_at
-    - email
     - full_name
     - id
     - is_blocked
     - last_active
-    - phone
     - role_id
     - role_key
     - username
@@ -991,41 +969,6 @@ paths:
       summary: Get self info
       tags:
       - users
-  /me/password:
-    put:
-      consumes:
-      - application/json
-      description: Changes the password for the current user
-      parameters:
-      - description: Password change info
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/PasswordChangeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Change Password
-      tags:
-      - auth
   /me/portfolios:
     get:
       description: Returns current user portfolio profiles with provider capabilities

@@ -30,7 +30,9 @@ export default function LoginPage(
     auth,
     registrationDisabled,
     messagesPerField,
-    enableWebAuthnConditionalUI
+    enableWebAuthnConditionalUI,
+    message,
+    isAppInitiatedAction
   } = kcContext;
 
   const { msg, msgStr } = i18n;
@@ -40,6 +42,17 @@ export default function LoginPage(
   const fieldError = messagesPerField.existsError("username", "password")
     ? messagesPerField.getFirstError("username", "password")
     : undefined;
+  const showGlobalMessage =
+    message !== undefined && (message.type !== "warning" || !isAppInitiatedAction);
+
+  const globalMessageClassName = showGlobalMessage
+    ? {
+      error: "mb-4 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive",
+      warning: "mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300",
+      success: "mb-4 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300",
+      info: "mb-4 rounded-md border border-blue-500/20 bg-blue-500/10 p-3 text-sm text-blue-700 dark:text-blue-300",
+    }[message.type]
+    : "";
 
   const usernameLabel = !realm.loginWithEmailAllowed
     ? msgStr("username")
@@ -53,8 +66,9 @@ export default function LoginPage(
       i18n={i18n}
       doUseDefaultCss={false}
       classes={{}}
-      headerNode={msg("loginAccountTitle")}
-      displayMessage={!fieldError}
+      bodyClassName="auth-theme-login"
+      headerNode={null}
+      displayMessage={false}
       displayInfo={false}
     >
       <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -64,6 +78,12 @@ export default function LoginPage(
             <CardDescription>{msg("doLogIn")}</CardDescription>
           </CardHeader>
           <CardContent>
+            {showGlobalMessage && (
+              <div
+                className={globalMessageClassName}
+                dangerouslySetInnerHTML={{ __html: kcSanitize(message.summary) }}
+              />
+            )}
             {fieldError && (
               <div
                 className="mb-4 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive"

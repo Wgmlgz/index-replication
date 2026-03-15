@@ -11,3 +11,14 @@
 body {
   margin: 0;
 }
+
+body.auth-theme-login #kc-header,
+body.auth-theme-login #kc-page-title {
+  display: none;
+}
+
+body.auth-theme-login #kc-content,
+body.auth-theme-login #kc-content-wrapper {
+  padding: 0;
+  margin: 0;
+}

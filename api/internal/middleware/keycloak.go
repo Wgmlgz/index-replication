@@ -43,7 +43,6 @@ func KeycloakJWTAuthMiddleware(
 		user, _, err := userRepo.EnsureUserByKeycloakSub(repository.EnsureKeycloakUserInput{
 			Sub:               claims.Sub,
 			PreferredUsername: claims.PreferredUsername,
-			Email:             claims.Email,
 			FullName:          claims.Name,
 		})
 		if err != nil {

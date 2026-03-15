@@ -42,7 +42,6 @@ export interface AuditLogResponse {
 export interface CreateUserRequest {
     'comment'?: string;
     'full_name': string;
-    'password': string;
     'role_id': number;
     'username': string;
 }
@@ -54,17 +53,6 @@ export interface DtoTickerLogoResolveResponse {
 }
 export interface ErrorResponse {
     'error'?: string;
-}
-export interface LoginRequest {
-    'password'?: string;
-    'remember_me'?: boolean;
-    'username'?: string;
-}
-export interface LoginVerifyRequest {
-    'challenge_id'?: string;
-}
-export interface LoginVerifyStatusResponse {
-    'status'?: string;
 }
 export interface MoexCoverageResponse {
     'dataset'?: string;
@@ -144,10 +132,6 @@ export interface MoexSyncStateResponse {
     'retryCount'?: number;
     'status'?: string;
     'updatedAt'?: string;
-}
-export interface PasswordChangeRequest {
-    'new_password'?: string;
-    'old_password'?: string;
 }
 export interface Permission {
     'act': string;
@@ -401,10 +385,7 @@ export interface TelegramStatusResponse {
 }
 export interface UpdateUserRequest {
     'comment'?: string;
-    'email'?: string;
     'full_name'?: string;
-    'password'?: string;
-    'phone'?: string;
     'role_id'?: number;
 }
 export interface UserListResponse {
@@ -417,12 +398,10 @@ export interface UserResponse {
     'blocked_at': string;
     'comment': string;
     'created_at': string;
-    'email': string;
     'full_name': string;
     'id': number;
     'is_blocked': boolean;
     'last_active': string;
-    'phone': string;
     'role_id': number;
     'role_key': string;
     'username': string;
@@ -742,77 +721,7 @@ export class AuditLogsApi extends BaseAPI {
 export const AuthApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Authenticates a user and starts a session
-         * @summary Login
-         * @param {LoginRequest} body Login credentials
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        loginPost: async (body: LoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('loginPost', 'body', body)
-            const localVarPath = `/login`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Checks Telegram challenge status and completes login when approved
-         * @summary Complete login verification
-         * @param {LoginVerifyRequest} body Verification challenge
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        loginVerifyPost: async (body: LoginVerifyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('loginVerifyPost', 'body', body)
-            const localVarPath = `/login/verify`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Logs out the current user and clears the session
+         * Logs out the current user
          * @summary Logout
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -841,41 +750,6 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
                 options: localVarRequestOptions,
             };
         },
-        /**
-         * Changes the password for the current user
-         * @summary Change Password
-         * @param {PasswordChangeRequest} body Password change info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        mePasswordPut: async (body: PasswordChangeRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'body' is not null or undefined
-            assertParamExists('mePasswordPut', 'body', body)
-            const localVarPath = `/me/password`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
     }
 };
 
@@ -886,33 +760,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = AuthApiAxiosParamCreator(configuration)
     return {
         /**
-         * Authenticates a user and starts a session
-         * @summary Login
-         * @param {LoginRequest} body Login credentials
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async loginPost(body: LoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.loginPost(body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['AuthApi.loginPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Checks Telegram challenge status and completes login when approved
-         * @summary Complete login verification
-         * @param {LoginVerifyRequest} body Verification challenge
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async loginVerifyPost(body: LoginVerifyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.loginVerifyPost(body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['AuthApi.loginVerifyPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Logs out the current user and clears the session
+         * Logs out the current user
          * @summary Logout
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -921,19 +769,6 @@ export const AuthApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.logoutPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.logoutPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Changes the password for the current user
-         * @summary Change Password
-         * @param {PasswordChangeRequest} body Password change info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: any; }>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.mePasswordPut(body, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['AuthApi.mePasswordPut']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -946,43 +781,13 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
     const localVarFp = AuthApiFp(configuration)
     return {
         /**
-         * Authenticates a user and starts a session
-         * @summary Login
-         * @param {LoginRequest} body Login credentials
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        loginPost(body: LoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
-            return localVarFp.loginPost(body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Checks Telegram challenge status and completes login when approved
-         * @summary Complete login verification
-         * @param {LoginVerifyRequest} body Verification challenge
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        loginVerifyPost(body: LoginVerifyRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
-            return localVarFp.loginVerifyPost(body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Logs out the current user and clears the session
+         * Logs out the current user
          * @summary Logout
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         logoutPost(options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: string; }> {
             return localVarFp.logoutPost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Changes the password for the current user
-         * @summary Change Password
-         * @param {PasswordChangeRequest} body Password change info
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }> {
-            return localVarFp.mePasswordPut(body, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -992,46 +797,13 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
  */
 export class AuthApi extends BaseAPI {
     /**
-     * Authenticates a user and starts a session
-     * @summary Login
-     * @param {LoginRequest} body Login credentials
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public loginPost(body: LoginRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).loginPost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Checks Telegram challenge status and completes login when approved
-     * @summary Complete login verification
-     * @param {LoginVerifyRequest} body Verification challenge
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public loginVerifyPost(body: LoginVerifyRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).loginVerifyPost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Logs out the current user and clears the session
+     * Logs out the current user
      * @summary Logout
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     public logoutPost(options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).logoutPost(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Changes the password for the current user
-     * @summary Change Password
-     * @param {PasswordChangeRequest} body Password change info
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public mePasswordPut(body: PasswordChangeRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).mePasswordPut(body, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -3734,7 +3506,7 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Blocks a user and terminates their sessions
+         * Blocks a user
          * @summary Block user
          * @param {number} id User ID
          * @param {*} [options] Override http request option.
@@ -3982,7 +3754,7 @@ export const UsersApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Blocks a user and terminates their sessions
+         * Blocks a user
          * @summary Block user
          * @param {number} id User ID
          * @param {*} [options] Override http request option.
@@ -4093,7 +3865,7 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.usersGet(page, pageSize, search, sortBy, sortDir, options).then((request) => request(axios, basePath));
         },
         /**
-         * Blocks a user and terminates their sessions
+         * Blocks a user
          * @summary Block user
          * @param {number} id User ID
          * @param {*} [options] Override http request option.
@@ -4186,7 +3958,7 @@ export class UsersApi extends BaseAPI {
     }
 
     /**
-     * Blocks a user and terminates their sessions
+     * Blocks a user
      * @summary Block user
      * @param {number} id User ID
      * @param {*} [options] Override http request option.

@@ -129,7 +129,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 	user, err := h.userRepo.CreateUser(repository.CreateUserInput{
 		Username: req.Username,
-		Password: req.Password,
 		FullName: req.FullName,
 		RoleID:   req.RoleID,
 		Comment:  req.Comment,
@@ -224,9 +223,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 	user, action, oldUser, newUser, err := h.userRepo.UpdateUser(id, repository.UpdateUserInput{
 		FullName: req.FullName,
-		Phone:    req.Phone,
-		Email:    req.Email,
-		Password: req.Password,
 		RoleID:   req.RoleID,
 		Comment:  req.Comment,
 	})

@@ -15,14 +15,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { User } from './columns';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { usersApi as api } from '@/lib/api';
-import {
-  CreateUserRequest,
-  UpdateUserRequest,
-} from '@/api-client/api';
+import { CreateUserRequest, UpdateUserRequest } from '@/api-client/api';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Switch } from '../ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,36 +47,31 @@ export const roleOptions = [
     value: 1,
     label: 'Root',
     key: 'root',
-    description:
-      'Главный администратор системы с полными правами. Не может быть удален/изменен/заблокирован. Единственный в системе.',
+    description: 'System superuser with full permissions.',
   },
   {
     value: 2,
-    label: 'Администратор',
+    label: 'Administrator',
     key: 'administrator',
-    description:
-      'Управление всей системой: пользователями, журналом и настройками.',
+    description: 'Manages users, logs, and system settings.',
   },
   {
     value: 3,
-    label: 'Руководитель',
+    label: 'Manager',
     key: 'manager',
-    description:
-      'Руководитель команды. Управляет пользователями (Операторы/Наблюдатели), настройками.',
+    description: 'Manages operators/observers and team-level settings.',
   },
   {
     value: 4,
-    label: 'Оператор',
+    label: 'Operator',
     key: 'operator',
-    description:
-      'Не может управлять пользователями или удалять данные.',
+    description: 'Operational role with limited administration rights.',
   },
   {
     value: 5,
-    label: 'Наблюдатель',
+    label: 'Observer',
     key: 'observer',
-    description:
-      'Нет возможности управления БВС или внесения изменений.',
+    description: 'Read-only role for monitoring.',
   },
 ] as const;
 
@@ -91,12 +82,6 @@ const userFormSchema = z.object({
     .max(50)
     .optional(),
   full_name: z.string().min(2, { message: 'Full name is required.' }),
-  phone: z.string().optional(),
-  email: z.string().optional(),
-  password: z.union([
-    z.null(),
-    z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  ]),
   role_id: z.string().min(1, { message: 'Role is required.' }),
   comment: z.string().optional(),
 });
@@ -105,13 +90,13 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 
 export function UserForm({ mode, user, onSuccess }: UserFormProps) {
   const { hasPermission } = useUser();
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const showBlock = mode === 'edit' && hasPermission('users:block');
   const deleteKey = roleOptions.find(x => x.value === user?.role_id)?.key;
   const showDelete =
     mode === 'edit' &&
-    hasPermission('users:delete') && (user?.blocked_at) &&
+    hasPermission('users:delete') &&
+    user?.blocked_at &&
     (deleteKey ? hasPermission(`users:delete_role_${deleteKey}`) : false);
 
   const form = useForm<UserFormValues>({
@@ -119,9 +104,6 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
     defaultValues: {
       username: user?.username || '',
       full_name: user?.full_name || '',
-      phone: user?.phone || '',
-      email: user?.email || '',
-      password: '',
       role_id: user?.role_id ? String(user.role_id) : '2',
       comment: user?.comment || '',
     },
@@ -131,40 +113,25 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
     if (mode === 'edit' && user) {
       form.reset({
         username: user.username,
-        password: null,
         full_name: user.full_name,
         role_id: String(user.role_id),
-        phone: user.phone || '',
-        email: user.email || '',
         comment: user?.comment || '',
       });
     } else if (mode === 'create') {
       form.reset({
         username: '',
-        password: '',
         full_name: '',
         role_id: '',
-        phone: '',
-        email: '',
         comment: '',
-        // blocked: false,
       });
     }
   }, [form, mode, user]);
 
-  useEffect(() => {
-    if (mode === 'create') {
-      form.setValue('password', '');
-      return;
-    }
-    if (mode === 'edit') {
-      if (isChangingPassword) {
-        form.setValue('password', '');
-      } else {
-        form.setValue('password', null);
-      }
-    }
-  }, [form, isChangingPassword, mode]);
+  const {
+    handleSubmit,
+    setError,
+    formState: { isSubmitting },
+  } = form;
 
   const handleBlockToggle = async () => {
     try {
@@ -197,32 +164,21 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
       setError('root', { type: 'server', message });
     }
   };
-  const {
-    handleSubmit,
-    setError,
-    formState: { isSubmitting },
-  } = form;
 
   const onSubmit = async (values: UserFormValues) => {
     try {
       if (mode === 'create') {
-        const body: CreateUserRequest = {
+        const body = {
           username: values.username ?? '',
           full_name: values.full_name,
-          // phone: values.phone,
-          // email: values.email,
-          password: values.password ?? '',
           role_id: Number(values.role_id),
           comment: values.comment,
-        };
+        } as CreateUserRequest;
         await api.usersPost(body);
       } else if (mode === 'edit' && user) {
         const body: UpdateUserRequest = {
           full_name: values.full_name,
-          phone: values.phone,
-          email: values.email,
           role_id: Number(values.role_id),
-          password: values.password ?? undefined,
           comment: values.comment,
         };
         await api.usersIdPut(user.id, body);
@@ -250,13 +206,13 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
           name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Логин</FormLabel>
+              <FormLabel>Login</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   autoComplete='off'
                   disabled={mode === 'edit'}
-                  placeholder='Ivan123'
+                  placeholder='ivan123'
                 />
               </FormControl>
               <FormMessage />
@@ -268,109 +224,26 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
           name='full_name'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ФИО</FormLabel>
+              <FormLabel>Full name</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   autoComplete='off'
                   disabled={isSubmitting}
-                  placeholder='Иванов Иван Иванович'
+                  placeholder='Ivan Ivanov'
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name='phone'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Номер телефона</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  autoComplete='off'
-                  disabled={isSubmitting}
-                  placeholder='88001234567'
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type='email'
-                  {...field}
-                  autoComplete='off'
-                  disabled={isSubmitting}
-                  placeholder='example@example.com'
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className='flex  gap-3 col-span-2'>
-          {mode === 'edit' && (
-            <div className='flex items-center gap-3'>
-              <Switch
-                id='resetPassword'
-                checked={isChangingPassword}
-                onCheckedChange={checked =>
-                  setIsChangingPassword(Boolean(checked))
-                }
-              />
-              <Label htmlFor='resetPassword'>Сбросить пароль</Label>
-            </div>
-          )}
-          {/* {(mode === 'create' || (mode === 'edit' && isChangingPassword)) && (
-            )} */}
-
-          <FormField
-            control={form.control}
-            name='password'
-            render={({ field }) => (
-              <FormItem className='flex-grow'>
-                {mode !== 'edit' && (
-                  <FormLabel>
-                    {/* {mode === "edit" ? "Новый пароль" : "Пароль"} */}
-                    Пароль
-                  </FormLabel>
-                )}
-
-                <FormControl>
-                  <Input
-                    placeholder={
-                      mode === 'edit' ? 'Введите новый пароль' : 'Пароль'
-                    }
-                    type='password'
-                    {...field}
-                    value={field.value || ''}
-                    autoComplete='new-password'
-                    disabled={mode === 'edit' && !isChangingPassword}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         <FormField
           control={form.control}
           name='role_id'
           render={({ field }) => (
             <FormItem className='col-span-2'>
-              <FormLabel>Роль</FormLabel>
+              <FormLabel>Role</FormLabel>
               <RadioGroup
                 value={field.value}
                 onValueChange={field.onChange}
@@ -415,7 +288,7 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
             name='comment'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Комментарий</FormLabel>
+                <FormLabel>Comment</FormLabel>
                 <FormControl>
                   <Textarea
                     {...field}
@@ -443,20 +316,20 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
                 variant={'destructive'}
                 type='button'
               >
-                <Trash /> Удалить
+                <Trash /> Delete
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Пользователь будет удален
+                  This user will be deleted.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => void handleDelete()}>
-                  Продолжить
+                  Continue
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -467,24 +340,22 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
             <AlertDialogTrigger asChild>
               <Button variant={'destructive'} type='button'>
                 {user?.is_blocked ? <LockOpen /> : <Lock />}{' '}
-                {user?.is_blocked ? 'Разблокировать' : 'Заблокировать'}
+                {user?.is_blocked ? 'Unblock' : 'Block'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {user?.is_blocked
-                    ? 'Пользователь будет разблокирован, и он сможет войти в систему или пользоваться ей.'
-                    : 'Пользователь будет заблокирован, и он не сможет войти в систему или пользоваться ей.'}
-                  <br />
-                  Изменение вступит в силу немедленно.
+                    ? 'The user will be unblocked immediately.'
+                    : 'The user will be blocked immediately.'}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => void handleBlockToggle()}>
-                  Продолжить
+                  Continue
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -498,8 +369,8 @@ export function UserForm({ mode, user, onSuccess }: UserFormProps) {
                 ? 'Creating...'
                 : 'Saving...'
               : mode === 'create'
-              ? 'Создать пользователя'
-              : 'Сохранить изменения'}
+                ? 'Create user'
+                : 'Save changes'}
           </Button>
         </div>
       </form>

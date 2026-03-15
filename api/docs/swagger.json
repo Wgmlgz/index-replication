@@ -214,59 +214,6 @@
                 }
             }
         },
-        "/me/password": {
-            "put": {
-                "description": "Changes the password for the current user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Change Password",
-                "parameters": [
-                    {
-                        "description": "Password change info",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/PasswordChangeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/me/portfolios": {
             "get": {
                 "description": "Returns current user portfolio profiles with provider capabilities",
@@ -2412,7 +2359,6 @@
             "type": "object",
             "required": [
                 "full_name",
-                "password",
                 "role_id",
                 "username"
             ],
@@ -2421,9 +2367,6 @@
                     "type": "string"
                 },
                 "full_name": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string"
                 },
                 "role_id": {
@@ -2678,17 +2621,6 @@
                     "type": "string"
                 },
                 "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "PasswordChangeRequest": {
-            "type": "object",
-            "properties": {
-                "new_password": {
-                    "type": "string"
-                },
-                "old_password": {
                     "type": "string"
                 }
             }
@@ -3457,16 +3389,7 @@
                 "comment": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "full_name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
                     "type": "string"
                 },
                 "role_id": {
@@ -3500,12 +3423,10 @@
                 "blocked_at",
                 "comment",
                 "created_at",
-                "email",
                 "full_name",
                 "id",
                 "is_blocked",
                 "last_active",
-                "phone",
                 "role_id",
                 "role_key",
                 "username"
@@ -3520,9 +3441,6 @@
                 "created_at": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "full_name": {
                     "type": "string"
                 },
@@ -3533,9 +3451,6 @@
                     "type": "boolean"
                 },
                 "last_active": {
-                    "type": "string"
-                },
-                "phone": {
                     "type": "string"
                 },
                 "role_id": {

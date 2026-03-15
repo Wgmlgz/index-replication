@@ -220,59 +220,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/me/password": {
-            "put": {
-                "description": "Changes the password for the current user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Change Password",
-                "parameters": [
-                    {
-                        "description": "Password change info",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/PasswordChangeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/me/portfolios": {
             "get": {
                 "description": "Returns current user portfolio profiles with provider capabilities",
@@ -2418,7 +2365,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "full_name",
-                "password",
                 "role_id",
                 "username"
             ],
@@ -2427,9 +2373,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "full_name": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string"
                 },
                 "role_id": {
@@ -2684,17 +2627,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "PasswordChangeRequest": {
-            "type": "object",
-            "properties": {
-                "new_password": {
-                    "type": "string"
-                },
-                "old_password": {
                     "type": "string"
                 }
             }
@@ -3463,16 +3395,7 @@ const docTemplate = `{
                 "comment": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "full_name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
                     "type": "string"
                 },
                 "role_id": {
@@ -3506,12 +3429,10 @@ const docTemplate = `{
                 "blocked_at",
                 "comment",
                 "created_at",
-                "email",
                 "full_name",
                 "id",
                 "is_blocked",
                 "last_active",
-                "phone",
                 "role_id",
                 "role_key",
                 "username"
@@ -3526,9 +3447,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "full_name": {
                     "type": "string"
                 },
@@ -3539,9 +3457,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "last_active": {
-                    "type": "string"
-                },
-                "phone": {
                     "type": "string"
                 },
                 "role_id": {

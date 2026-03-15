@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { LogIn, LogOut, Package, PanelLeftIcon, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/components/user-context';
@@ -36,7 +36,6 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { user, hasPermission, logoutUser } = useUser();
@@ -45,11 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isPortfolioSectionActive = pathname.startsWith('/portfolio');
 
   const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } finally {
-      router.push('/login');
-    }
+    await logoutUser();
   };
 
   const isPortfolioSubItemActive = (item: SidebarSubItem): boolean => {
