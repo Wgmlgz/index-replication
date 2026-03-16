@@ -129,12 +129,9 @@ variable "keycloak_admin_proxy_client_secret" {
 }
 
 variable "keycloak_admin_proxy_redirect_uris" {
-  description = "Valid redirect URIs for oauth2-proxy callback."
-  type        = list(string)
-  default = [
-    "http://localhost:30000/oauth2/callback",
-    "http://app123.localhost:30000/oauth2/callback",
-  ]
+  description = "Valid redirect URIs for oauth2-proxy callback, as a JSON array or comma-separated string."
+  type        = string
+  default     = "[\"http://localhost:30000/oauth2/callback\",\"http://app123.localhost:30000/oauth2/callback\"]"
 }
 
 variable "keycloak_bootstrap_user" {

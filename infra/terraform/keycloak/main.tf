@@ -34,6 +34,17 @@ provider "keycloak" {
 
 locals {
   bootstrap_user_enabled = trimspace(var.keycloak_bootstrap_user) != ""
+  admin_proxy_redirect_uris_raw = trimspace(var.keycloak_admin_proxy_redirect_uris)
+  admin_proxy_redirect_uris_unquoted = (
+    length(local.admin_proxy_redirect_uris_raw) >= 2 &&
+    (
+      (startswith(local.admin_proxy_redirect_uris_raw, "'") && endswith(local.admin_proxy_redirect_uris_raw, "'")) ||
+      (startswith(local.admin_proxy_redirect_uris_raw, "\"") && endswith(local.admin_proxy_redirect_uris_raw, "\""))
+    )
+  ) ? substr(local.admin_proxy_redirect_uris_raw, 1, length(local.admin_proxy_redirect_uris_raw) - 2) : local.admin_proxy_redirect_uris_raw
+  admin_proxy_redirect_uris = can(jsondecode(local.admin_proxy_redirect_uris_unquoted))
+    ? tolist(jsondecode(local.admin_proxy_redirect_uris_unquoted))
+    : [for uri in split(",", local.admin_proxy_redirect_uris_unquoted) : trimspace(uri) if trimspace(uri) != ""]
 }
 
 resource "postgresql_schema" "keycloak" {
@@ -184,7 +195,7 @@ resource "keycloak_openid_client" "admin_proxy" {
   implicit_flow_enabled           = false
   direct_access_grants_enabled    = false
   service_accounts_enabled        = false
-  valid_redirect_uris             = var.keycloak_admin_proxy_redirect_uris
+  valid_redirect_uris             = local.admin_proxy_redirect_uris
   valid_post_logout_redirect_uris = ["+"]
   web_origins                     = ["+"]
   client_secret                   = var.keycloak_admin_proxy_client_secret
