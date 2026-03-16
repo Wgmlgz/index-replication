@@ -59,6 +59,8 @@ Authenticated admin access via Traefik + Keycloak:
 - These admin routes authenticate against `${KEYCLOAK_ADMIN_REALM}` (default `index-replication-admin`), not the app realm.
 - If you expose a different hostname/port, update `KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS` accordingly.
   Use a comma-separated list such as `http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback`.
+- Behind a TLS-terminating proxy, set `OAUTH2_PROXY_REDIRECT_URL` to the public HTTPS callback URL
+  (for example `https://replicant.amogos.pro/oauth2/callback`) and set `OAUTH2_PROXY_COOKIE_SECURE=true`.
 
 ## Quick Start (Local)
 
