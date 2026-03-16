@@ -104,7 +104,7 @@ Docker compose includes Keycloak with no manual UI setup:
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
 - Terraform provider binaries are also baked into that image from GitHub releases and wired through a local filesystem mirror (`terraformrc`), so runtime `terraform init` can run without `registry.terraform.io`.
 - Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.
-- Keycloak is exposed by Traefik on the same app port under `${KEYCLOAK_HTTP_RELATIVE_PATH}` (default `/auth`).
+- Keycloak is exposed by Traefik on the same app port under `/auth`.
 - Keycloak image build includes a custom login theme jar from `auth-theme/` (Keycloakify).
 - Realm login theme is configured by Terraform via `${KEYCLOAK_THEME_NAME}` (default `index-replication`),
   and the same variable is passed to the Keycloak image build for Keycloakify theme naming.
