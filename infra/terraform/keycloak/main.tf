@@ -42,9 +42,11 @@ locals {
       (startswith(local.admin_proxy_redirect_uris_raw, "\"") && endswith(local.admin_proxy_redirect_uris_raw, "\""))
     )
   ) ? substr(local.admin_proxy_redirect_uris_raw, 1, length(local.admin_proxy_redirect_uris_raw) - 2) : local.admin_proxy_redirect_uris_raw
-  admin_proxy_redirect_uris = can(jsondecode(local.admin_proxy_redirect_uris_unquoted))
+  admin_proxy_redirect_uris = (
+    can(jsondecode(local.admin_proxy_redirect_uris_unquoted))
     ? tolist(jsondecode(local.admin_proxy_redirect_uris_unquoted))
     : [for uri in split(",", local.admin_proxy_redirect_uris_unquoted) : trimspace(uri) if trimspace(uri) != ""]
+  )
 }
 
 resource "postgresql_schema" "keycloak" {
