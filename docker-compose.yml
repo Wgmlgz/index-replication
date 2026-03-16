@@ -26,9 +26,11 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_keycloak_realm_display_name: "${KEYCLOAK_REALM_DISPLAY_NAME:-Index Replication}"
   TF_VAR_keycloak_admin_realm: ${KEYCLOAK_ADMIN_REALM:-index-replication-admin}
   TF_VAR_keycloak_admin_realm_display_name: "${KEYCLOAK_ADMIN_REALM_DISPLAY_NAME:-Index Replication Admin}"
+  TF_VAR_keycloak_web_redirect_uris: ${KEYCLOAK_WEB_REDIRECT_URIS:-http://localhost:3000/login*,http://localhost:30000/login*}
+  TF_VAR_keycloak_web_origins: ${KEYCLOAK_WEB_ORIGINS:-http://localhost:3000,http://localhost:30000}
   TF_VAR_keycloak_admin_proxy_client_id: ${KEYCLOAK_ADMIN_PROXY_CLIENT_ID:-admin-proxy}
   TF_VAR_keycloak_admin_proxy_client_secret: ${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
-  TF_VAR_keycloak_admin_proxy_redirect_uris: ${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-["http://localhost:30000/oauth2/callback","http://app123.localhost:30000/oauth2/callback"]}
+  TF_VAR_keycloak_admin_proxy_redirect_uris: ${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback}
   TF_VAR_keycloak_bootstrap_user: "${KEYCLOAK_BOOTSTRAP_USER:-}"
   TF_VAR_keycloak_bootstrap_user_password: "${KEYCLOAK_BOOTSTRAP_USER_PASSWORD:-}"
   TF_VAR_keycloak_bootstrap_user_email: "${KEYCLOAK_BOOTSTRAP_USER_EMAIL:-}"

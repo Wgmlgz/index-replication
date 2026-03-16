@@ -98,21 +98,15 @@ variable "keycloak_web_public_client" {
 }
 
 variable "keycloak_web_redirect_uris" {
-  description = "Valid redirect URIs for web OIDC client."
-  type        = list(string)
-  default = [
-    "http://localhost:3000/login*",
-    "http://localhost:30000/login*",
-  ]
+  description = "Valid redirect URIs for web OIDC client as a comma-separated list."
+  type        = string
+  default     = "http://localhost:3000/login*,http://localhost:30000/login*"
 }
 
 variable "keycloak_web_origins" {
-  description = "Valid web origins for web OIDC client."
-  type        = list(string)
-  default = [
-    "http://localhost:3000",
-    "http://localhost:30000",
-  ]
+  description = "Valid web origins for web OIDC client as a comma-separated list."
+  type        = string
+  default     = "http://localhost:3000,http://localhost:30000"
 }
 
 variable "keycloak_admin_proxy_client_id" {
@@ -129,9 +123,9 @@ variable "keycloak_admin_proxy_client_secret" {
 }
 
 variable "keycloak_admin_proxy_redirect_uris" {
-  description = "Valid redirect URIs for oauth2-proxy callback, as a JSON array or comma-separated string."
+  description = "Valid redirect URIs for oauth2-proxy callback as a comma-separated list."
   type        = string
-  default     = "[\"http://localhost:30000/oauth2/callback\",\"http://app123.localhost:30000/oauth2/callback\"]"
+  default     = "http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback"
 }
 
 variable "keycloak_bootstrap_user" {

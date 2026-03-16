@@ -58,7 +58,7 @@ Authenticated admin access via Traefik + Keycloak:
 - Direct localhost ports also remain open with no auth: `http://localhost:8081`, `http://localhost:8233`.
 - These admin routes authenticate against `${KEYCLOAK_ADMIN_REALM}` (default `index-replication-admin`), not the app realm.
 - If you expose a different hostname/port, update `KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS` accordingly.
-  This value can be either a JSON array or a comma-separated list. For Coolify/Koolify, prefer a comma-separated list such as `http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback`.
+  Use a comma-separated list such as `http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback`.
 
 ## Quick Start (Local)
 
