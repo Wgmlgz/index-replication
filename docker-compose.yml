@@ -13,6 +13,7 @@ x-temporal-server-build: &temporal_server_build
       TEMPORAL_VERSION: ${TEMPORAL_VERSION:-1.30.1}
 
 x-keycloak-terraform-env: &keycloak_terraform_env
+  TF_CLI_ARGS_init: -plugin-dir=/opt/terraform/providers
   TF_VAR_postgres_db: ${POSTGRES_DB}
   TF_VAR_postgres_user: ${POSTGRES_USER}
   TF_VAR_postgres_password: ${POSTGRES_PASSWORD}
@@ -38,6 +39,8 @@ x-keycloak-terraform-build: &keycloak_terraform_build
     dockerfile: Dockerfile
     args:
       TERRAFORM_VERSION: ${TERRAFORM_VERSION:-1.7.5}
+      POSTGRESQL_PROVIDER_VERSION: ${POSTGRESQL_PROVIDER_VERSION:-1.26.0}
+      KEYCLOAK_PROVIDER_VERSION: ${KEYCLOAK_PROVIDER_VERSION:-5.3.0}
 
 services:
   temporal-admin-tools:
@@ -131,7 +134,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-app}"]
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
       interval: 5s
       timeout: 3s
       retries: 10

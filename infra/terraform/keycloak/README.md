@@ -18,6 +18,9 @@ Compose executes this root in two phases:
 
 Compose builds a Terraform image from this directory, so `.tf` files are available in
 remote environments (for example, Koolify) without host bind mounts.
+Provider binaries (`cyrilgdn/postgresql`, `keycloak/keycloak`) are downloaded at image build time
+into `/opt/terraform/providers`, and compose sets `TF_CLI_ARGS_init=-plugin-dir=/opt/terraform/providers`
+so runtime `terraform init` does not need `registry.terraform.io`.
 Terraform local state is stored in compose named volume `keycloak_terraform_state`.
 
 Most static values (DB host/port, Keycloak internal URL including relative path `/auth`, web client defaults) are

@@ -101,6 +101,7 @@ Docker compose includes Keycloak with no manual UI setup:
   Adminer/Temporal routes in Traefik.
 - Realm user profile is managed by Terraform so end-user profile fields (`email`, `firstName`, `lastName`) are not required or editable by users.
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
+- Terraform provider binaries are also baked into that image from GitHub releases, so runtime `terraform init` can run without `registry.terraform.io`.
 - Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.
 - Keycloak is exposed by Traefik on the same app port under `${KEYCLOAK_HTTP_RELATIVE_PATH}` (default `/auth`).
 - Keycloak image build includes a custom login theme jar from `auth-theme/` (Keycloakify).
