@@ -152,6 +152,14 @@ services:
       - /bin/sh
       - -ec
       - |
+          redirect_uris="$$TF_VAR_keycloak_admin_proxy_redirect_uris"
+          case "$$redirect_uris" in
+            \"*\") redirect_uris="$${redirect_uris#\"}"; redirect_uris="$${redirect_uris%\"}" ;;
+          esac
+          case "$$redirect_uris" in
+            \'*\') redirect_uris="$${redirect_uris#\'}"; redirect_uris="$${redirect_uris%\'}" ;;
+          esac
+          export TF_VAR_keycloak_admin_proxy_redirect_uris="$$redirect_uris"
           terraform init -input=false
           terraform apply -input=false -auto-approve -state=/workspace/terraform-state/terraform.tfstate -target=postgresql_schema.keycloak
     volumes:
@@ -208,6 +216,14 @@ services:
       - /bin/sh
       - -ec
       - |
+          redirect_uris="$$TF_VAR_keycloak_admin_proxy_redirect_uris"
+          case "$$redirect_uris" in
+            \"*\") redirect_uris="$${redirect_uris#\"}"; redirect_uris="$${redirect_uris%\"}" ;;
+          esac
+          case "$$redirect_uris" in
+            \'*\') redirect_uris="$${redirect_uris#\'}"; redirect_uris="$${redirect_uris%\'}" ;;
+          esac
+          export TF_VAR_keycloak_admin_proxy_redirect_uris="$$redirect_uris"
           terraform init -input=false
           terraform apply -input=false -auto-approve -state=/workspace/terraform-state/terraform.tfstate
     restart: on-failure
