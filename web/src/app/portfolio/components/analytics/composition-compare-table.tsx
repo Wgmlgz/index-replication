@@ -1,26 +1,14 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ColumnDef,
-  SortingState,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { ColumnDef } from '@tanstack/react-table';
 import { useTheme } from 'next-themes';
-import { SortHeader } from '@/app/portfolio/components/sortable-data-table';
-import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  SortHeader,
+  SortableDataTable,
+} from '@/app/portfolio/components/sortable-data-table';
+import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
 import type { CompositionCompareRow, CompositionCompareSummary } from './types';
 import {
   boundedPercentDivergingColorStyle,
@@ -50,8 +38,10 @@ export function CompositionCompareTable({
 }: CompositionCompareTableProps) {
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const colorScale = useMemo(() => resolveCompositionCompareColorScale(), [resolvedTheme]);
+  const colorScale = useMemo(() => {
+    void resolvedTheme;
+    return resolveCompositionCompareColorScale();
+  }, [resolvedTheme]);
 
   const formatStatus = useCallback(
     (status: CompositionCompareRow['status']): string =>
@@ -227,16 +217,6 @@ export function CompositionCompareTable({
     [colorScale, formatStatus, scales, t],
   );
 
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: { sorting },
-    getRowId: row => row.key,
-  });
-
   return (
     <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden'>
       {loading && (
@@ -311,39 +291,16 @@ export function CompositionCompareTable({
             </div>
           </div>
 
-          <div className='relative h-full rounded border overflow-auto'>
+          <div className='relative h-full'>
             <div className='absolute inset-0'>
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.map(row => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map(cell => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <SortableDataTable
+                data={rows}
+                columns={columns}
+                emptyLabel={noDataMessage}
+                getRowKey={row => row.key}
+                className='h-full rounded border overflow-auto'
+              />
             </div>
-
           </div>
         </div>
       )}

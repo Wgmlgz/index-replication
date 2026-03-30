@@ -54,19 +54,10 @@ const COLOR_TOKENS = {
 } as const;
 
 type CompositionCompareColorToken =
-  | typeof COLOR_TOKENS.baseMetric.from
-  | typeof COLOR_TOKENS.baseMetric.to
-  | typeof COLOR_TOKENS.activeWeight.negative
-  | typeof COLOR_TOKENS.activeWeight.neutral
-  | typeof COLOR_TOKENS.activeWeight.positive
-  | typeof COLOR_TOKENS.contributionPct.negative
-  | typeof COLOR_TOKENS.contributionPct.neutral
-  | typeof COLOR_TOKENS.contributionPct.positive
-  | typeof COLOR_TOKENS.summaryHigherIsWorse.from
-  | typeof COLOR_TOKENS.summaryHigherIsWorse.to
-  | typeof COLOR_TOKENS.summaryOverlap.low
-  | typeof COLOR_TOKENS.summaryOverlap.mid
-  | typeof COLOR_TOKENS.summaryOverlap.high;
+  | '--muted-foreground'
+  | '--foreground'
+  | '--destructive'
+  | '--chart-2';
 
 const FALLBACK_THEME_COLOR_VALUES: Record<CompositionCompareColorToken, string> = {
   '--muted-foreground': 'oklch(0.556 0 0)',
