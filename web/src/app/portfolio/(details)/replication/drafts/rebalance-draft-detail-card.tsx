@@ -139,7 +139,7 @@ export function RebalanceDraftDetailCard({
         </p>
       </div>
 
-      <div className='rounded-md border'>
+      <div className='max-h-[50svh] overflow-y-auto rounded-md border'>
         <Table>
           <TableHeader>
             <TableRow>
