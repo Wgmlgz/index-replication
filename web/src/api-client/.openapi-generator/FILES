@@ -49,6 +49,7 @@ docs/PortfolioRebalanceOutput.md
 docs/PortfolioRebalancePlanningParams.md
 docs/PortfolioRebalanceRun.md
 docs/PortfolioRebalanceSummary.md
+docs/PortfolioRebalanceTransaction.md
 docs/PortfolioReplicationConfig.md
 docs/PortfolioReplicationConfigUpsertRequest.md
 docs/PortfolioSummaryMoneyBalance.md

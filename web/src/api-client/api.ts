@@ -244,6 +244,7 @@ export interface PortfolioRebalanceDetailResponse {
     'output'?: PortfolioRebalanceOutput;
     'run'?: PortfolioRebalanceRun;
     'summary'?: PortfolioRebalanceSummary;
+    'transactions'?: Array<PortfolioRebalanceTransaction>;
 }
 export interface PortfolioRebalanceHolding {
     'current_quantity'?: number;
@@ -274,6 +275,7 @@ export interface PortfolioRebalanceItem {
     'current_quantity'?: number;
     'current_weight'?: number;
     'delta_quantity'?: number;
+    'ideal_weight'?: number;
     'instrument_id'?: string;
     'metadata'?: { [key: string]: any; };
     'planned_amount'?: number;
@@ -323,6 +325,17 @@ export interface PortfolioRebalanceSummary {
     'investable_capital'?: number;
     'items_total'?: number;
     'unresolved_items'?: number;
+}
+export interface PortfolioRebalanceTransaction {
+    'amount'?: number;
+    'currency'?: string;
+    'instrument_id'?: string;
+    'lot_size'?: number;
+    'price'?: number;
+    'quantity'?: number;
+    'sequence'?: number;
+    'side'?: string;
+    'ticker'?: string;
 }
 export interface PortfolioReplicationConfig {
     'benchmark_secid'?: string;

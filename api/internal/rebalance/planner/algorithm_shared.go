@@ -206,6 +206,7 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			CurrentQuantity: state.currentQuantity,
 			CurrentWeight:   state.currentWeight,
 			TargetWeight:    state.targetWeight,
+			IdealWeight:     state.targetWeight,
 			ReferencePrice:  clonePtr(state.referencePrice),
 			Metadata:        map[string]interface{}{},
 		}
@@ -215,6 +216,12 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			item.Status = ItemStatusUnresolved
 			item.TargetQuantity = state.currentQuantity
 			item.DeltaQuantity = 0
+			item.TargetWeight = resolveTargetWeightFromQuantity(
+				item.TargetQuantity,
+				state.referencePrice,
+				input.InvestableCapital,
+				state.targetWeight,
+			)
 			item.Side = chooseSideByWeight(state.currentWeight, state.targetWeight, item.CurrentQuantity, item.TargetQuantity)
 			item.Metadata["reason"] = state.resolvedReason
 			warnings = appendUniqueWarning(warnings, state.resolvedReason)
@@ -228,6 +235,12 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 
 		item.TargetQuantity = targetQuantity
 		item.DeltaQuantity = deltaQuantity
+		item.TargetWeight = resolveTargetWeightFromQuantity(
+			item.TargetQuantity,
+			state.referencePrice,
+			input.InvestableCapital,
+			state.targetWeight,
+		)
 		item.Side = chooseSide(deltaQuantity, state.currentWeight, state.targetWeight)
 		item.Status = ItemStatusPlanned
 
@@ -240,6 +253,12 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			item.Status = ItemStatusUnresolved
 			item.TargetQuantity = state.currentQuantity
 			item.DeltaQuantity = 0
+			item.TargetWeight = resolveTargetWeightFromQuantity(
+				item.TargetQuantity,
+				state.referencePrice,
+				input.InvestableCapital,
+				state.targetWeight,
+			)
 			item.Side = chooseSideByWeight(state.currentWeight, state.targetWeight, item.CurrentQuantity, item.TargetQuantity)
 		}
 		if state.desiredTargetLots > state.finalTargetLots {
@@ -641,6 +660,22 @@ func chooseSide(delta, currentWeight, targetWeight float64) string {
 		return ItemSideSell
 	}
 	return ItemSideBuy
+}
+
+func resolveTargetWeightFromQuantity(
+	targetQuantity float64,
+	referencePrice *float64,
+	investableCapital float64,
+	fallback float64,
+) float64 {
+	if investableCapital <= 0 || referencePrice == nil || *referencePrice <= 0 {
+		return round(fallback, 6)
+	}
+	targetValue := targetQuantity * *referencePrice
+	if targetValue <= 0 {
+		return 0
+	}
+	return round((targetValue/investableCapital)*100, 6)
 }
 
 func chooseSideByWeight(currentWeight, targetWeight, currentQuantity, targetQuantity float64) string {

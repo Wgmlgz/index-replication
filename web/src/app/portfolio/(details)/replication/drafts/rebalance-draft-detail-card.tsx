@@ -3,7 +3,13 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { PortfolioRebalanceDetailResponse } from '@/api-client';
+import type {
+  PortfolioRebalanceDetailResponse,
+  PortfolioRebalanceInput,
+  PortfolioRebalanceOutput,
+  PortfolioRebalanceSummary,
+  PortfolioRebalanceTransaction,
+} from '@/api-client';
 import { SortableDataTable } from '@/app/portfolio/components/sortable-data-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +19,7 @@ import {
   buildInstrumentsColumns,
   buildItemColumns,
   buildMoneyColumns,
+  buildTransactionsColumns,
 } from './rebalance-draft-detail-columns';
 import { formatDateTime, formatNumber } from './rebalance-draft-detail-helpers';
 
@@ -27,9 +34,10 @@ export function RebalanceDraftDetailCard({
 }: RebalanceDraftDetailCardProps) {
   const { t } = useTranslation();
   const run = detail.run;
-  const input = detail.input;
-  const output = detail.output;
-  const summary = detail.summary;
+  const input: PortfolioRebalanceInput | undefined = detail.input;
+  const output: PortfolioRebalanceOutput | undefined = detail.output;
+  const summary: PortfolioRebalanceSummary | undefined = detail.summary;
+  const transactions: PortfolioRebalanceTransaction[] = detail.transactions ?? [];
 
   const warnings = output?.warnings ?? [];
   const inputHoldings = input?.holdings ?? [];
@@ -38,6 +46,12 @@ export function RebalanceDraftDetailCard({
   const inputMoney = input?.money ?? [];
   const outputItems = output?.items ?? [];
   const outputMoney = output?.money ?? [];
+  const inputInvestableCapital: number | undefined = input?.investable_capital;
+  const summaryItemsTotal: number | undefined = summary?.items_total;
+  const summaryActionableItems: number | undefined = summary?.actionable_items;
+  const summaryUnresolvedItems: number | undefined = summary?.unresolved_items;
+  const summaryEstimatedTurnover: number | undefined =
+    summary?.estimated_turnover_abs;
 
   const itemColumns = useMemo(() => buildItemColumns(t), [t]);
   const holdingsColumns = useMemo(() => buildHoldingsColumns(t), [t]);
@@ -47,6 +61,7 @@ export function RebalanceDraftDetailCard({
     [language, t],
   );
   const moneyColumns = useMemo(() => buildMoneyColumns(t), [t]);
+  const transactionColumns = useMemo(() => buildTransactionsColumns(t), [t]);
 
   return (
     <div className='flex flex-col min-w-0 gap-3 h-full'>
@@ -85,7 +100,7 @@ export function RebalanceDraftDetailCard({
           </p>
           <p>
             {t('portfolio.replication.rebalances.inputInvestableCapital')}:{' '}
-            {formatNumber(input?.investable_capital, 2)}
+            {formatNumber(inputInvestableCapital, 2)}
           </p>
           <p>
             {t('portfolio.replication.rebalances.inputHoldingsCount')}:{' '}
@@ -111,19 +126,19 @@ export function RebalanceDraftDetailCard({
           </p>
           <p>
             {t('portfolio.replication.rebalances.summaryItemsTotal')}:{' '}
-            {formatNumber(summary?.items_total, 0)}
+            {formatNumber(summaryItemsTotal, 0)}
           </p>
           <p>
             {t('portfolio.replication.rebalances.summaryActionable')}:{' '}
-            {formatNumber(summary?.actionable_items, 0)}
+            {formatNumber(summaryActionableItems, 0)}
           </p>
           <p>
             {t('portfolio.replication.rebalances.summaryUnresolved')}:{' '}
-            {formatNumber(summary?.unresolved_items, 0)}
+            {formatNumber(summaryUnresolvedItems, 0)}
           </p>
           <p>
             {t('portfolio.replication.rebalances.summaryTurnover')}:{' '}
-            {formatNumber(summary?.estimated_turnover_abs, 2)}
+            {formatNumber(summaryEstimatedTurnover, 2)}
           </p>
         </div>
       </div>
@@ -147,6 +162,9 @@ export function RebalanceDraftDetailCard({
           </TabsTrigger>
           <TabsTrigger value='output-money'>
             {t('portfolio.replication.rebalances.tabs.outputMoney')}
+          </TabsTrigger>
+          <TabsTrigger value='transactions'>
+            {t('portfolio.replication.rebalances.tabs.transactions')}
           </TabsTrigger>
         </TabsList>
 
@@ -211,6 +229,17 @@ export function RebalanceDraftDetailCard({
                 columns={moneyColumns}
                 emptyLabel={t('portfolio.replication.rebalances.emptyMoney')}
                 getRowKey={(row, index) => `${index}-${row.currency ?? ''}`}
+              />
+            </TabsContent>
+
+            <TabsContent value='transactions'>
+              <SortableDataTable
+                data={transactions}
+                columns={transactionColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyTransactions')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.instrument_id ?? ''}-${row.side ?? ''}-${row.sequence ?? 0}`
+                }
               />
             </TabsContent>
           </div>

@@ -59,6 +59,9 @@ func TestPortfolioRebalanceAPI_CreateDraftSuccess(t *testing.T) {
 	if len(resp.Output.Items) == 0 {
 		t.Fatalf("expected planned items")
 	}
+	if len(resp.Transactions) == 0 {
+		t.Fatalf("expected derived transactions")
+	}
 }
 
 func TestPortfolioRebalanceAPI_InvalidProfileOrConfig(t *testing.T) {
@@ -138,6 +141,9 @@ func TestPortfolioRebalanceAPI_DetailAndListContract(t *testing.T) {
 	}
 	if len(detailResp.Output.Items) == 0 {
 		t.Fatalf("expected detail items")
+	}
+	if len(detailResp.Transactions) == 0 {
+		t.Fatalf("expected detail transactions")
 	}
 }
 

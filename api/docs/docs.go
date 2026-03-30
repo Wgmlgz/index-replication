@@ -2976,6 +2976,12 @@ const docTemplate = `{
                 },
                 "summary": {
                     "$ref": "#/definitions/PortfolioRebalanceSummary"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioRebalanceTransaction"
+                    }
                 }
             }
         },
@@ -3074,6 +3080,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "delta_quantity": {
+                    "type": "number"
+                },
+                "ideal_weight": {
                     "type": "number"
                 },
                 "instrument_id": {
@@ -3229,6 +3238,38 @@ const docTemplate = `{
                 },
                 "unresolved_items": {
                     "type": "integer"
+                }
+            }
+        },
+        "PortfolioRebalanceTransaction": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "lot_size": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "ticker": {
+                    "type": "string"
                 }
             }
         },

@@ -82,6 +82,7 @@ type PortfolioRebalanceItem struct {
 	DeltaQuantity   float64                `json:"delta_quantity"`
 	CurrentWeight   float64                `json:"current_weight"`
 	TargetWeight    float64                `json:"target_weight"`
+	IdealWeight     float64                `json:"ideal_weight"`
 	ReferencePrice  *float64               `json:"reference_price"`
 	PlannedAmount   *float64               `json:"planned_amount"`
 	Status          string                 `json:"status"`
@@ -103,9 +104,22 @@ type PortfolioRebalanceSummary struct {
 	InvestableCapital    float64 `json:"investable_capital"`
 } //@name PortfolioRebalanceSummary
 
+type PortfolioRebalanceTransaction struct {
+	Sequence     int      `json:"sequence"`
+	Ticker       string   `json:"ticker"`
+	InstrumentID string   `json:"instrument_id"`
+	Side         string   `json:"side"`
+	Quantity     float64  `json:"quantity"`
+	Price        *float64 `json:"price"`
+	Amount       *float64 `json:"amount"`
+	Currency     string   `json:"currency"`
+	LotSize      int64    `json:"lot_size"`
+} //@name PortfolioRebalanceTransaction
+
 type PortfolioRebalanceDetailResponse struct {
-	Run     PortfolioRebalanceRun     `json:"run"`
-	Input   PortfolioRebalanceInput   `json:"input"`
-	Output  PortfolioRebalanceOutput  `json:"output"`
-	Summary PortfolioRebalanceSummary `json:"summary"`
+	Run          PortfolioRebalanceRun           `json:"run"`
+	Input        PortfolioRebalanceInput         `json:"input"`
+	Output       PortfolioRebalanceOutput        `json:"output"`
+	Summary      PortfolioRebalanceSummary       `json:"summary"`
+	Transactions []PortfolioRebalanceTransaction `json:"transactions"`
 } //@name PortfolioRebalanceDetailResponse

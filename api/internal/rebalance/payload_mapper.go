@@ -3,6 +3,9 @@ package rebalance
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
+	"strings"
 
 	"server/internal/api/dto"
 	"server/internal/models"
@@ -90,6 +93,7 @@ func toPlanOutputDTO(output planner.Output) dto.PortfolioRebalanceOutput {
 			DeltaQuantity:   row.DeltaQuantity,
 			CurrentWeight:   row.CurrentWeight,
 			TargetWeight:    row.TargetWeight,
+			IdealWeight:     row.IdealWeight,
 			ReferencePrice:  cloneFloatPtr(row.ReferencePrice),
 			PlannedAmount:   cloneFloatPtr(row.PlannedAmount),
 			Status:          row.Status,
@@ -175,13 +179,118 @@ func toDetailDTO(model *models.PortfolioRebalanceRun) (*dto.PortfolioRebalanceDe
 			return nil, fmt.Errorf("decode run summary payload: %w", err)
 		}
 	}
+	transactions := buildExecutionTransactions(input, output)
 
 	return &dto.PortfolioRebalanceDetailResponse{
-		Run:     toRunDTO(model),
-		Input:   input,
-		Output:  output,
-		Summary: summary,
+		Run:          toRunDTO(model),
+		Input:        input,
+		Output:       output,
+		Summary:      summary,
+		Transactions: transactions,
 	}, nil
+}
+
+func buildExecutionTransactions(
+	input dto.PortfolioRebalanceInput,
+	output dto.PortfolioRebalanceOutput,
+) []dto.PortfolioRebalanceTransaction {
+	if len(output.Items) == 0 {
+		return []dto.PortfolioRebalanceTransaction{}
+	}
+
+	instrumentInfoByKey := map[string]dto.PortfolioRebalanceInstrumentInfo{}
+	for _, row := range input.Instruments {
+		key := transactionInstrumentKey(row.Ticker, row.InstrumentID)
+		if key == "" {
+			continue
+		}
+		instrumentInfoByKey[key] = row
+	}
+
+	result := make([]dto.PortfolioRebalanceTransaction, 0, len(output.Items))
+	for _, item := range output.Items {
+		if item.Status != planner.ItemStatusPlanned {
+			continue
+		}
+		quantity := math.Abs(item.DeltaQuantity)
+		if quantity <= 0 {
+			continue
+		}
+
+		side := strings.ToLower(strings.TrimSpace(item.Side))
+		if side != planner.ItemSideBuy && side != planner.ItemSideSell {
+			if item.DeltaQuantity < 0 {
+				side = planner.ItemSideSell
+			} else {
+				side = planner.ItemSideBuy
+			}
+		}
+
+		info := instrumentInfoByKey[transactionInstrumentKey(item.Ticker, item.InstrumentID)]
+		amount := cloneFloatPtr(item.PlannedAmount)
+		if amount != nil {
+			*amount = math.Abs(*amount)
+		}
+
+		result = append(result, dto.PortfolioRebalanceTransaction{
+			Ticker:       item.Ticker,
+			InstrumentID: item.InstrumentID,
+			Side:         side,
+			Quantity:     quantity,
+			Price:        cloneFloatPtr(item.ReferencePrice),
+			Amount:       amount,
+			Currency:     info.Currency,
+			LotSize:      info.LotSize,
+		})
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		left := result[i]
+		right := result[j]
+		leftWeight := transactionSideWeight(left.Side)
+		rightWeight := transactionSideWeight(right.Side)
+		if leftWeight != rightWeight {
+			return leftWeight < rightWeight
+		}
+		if left.Currency != right.Currency {
+			return left.Currency < right.Currency
+		}
+		if left.Ticker != right.Ticker {
+			return left.Ticker < right.Ticker
+		}
+		return left.InstrumentID < right.InstrumentID
+	})
+
+	for i := range result {
+		result[i].Sequence = i + 1
+	}
+	return result
+}
+
+func transactionSideWeight(side string) int {
+	switch strings.ToLower(strings.TrimSpace(side)) {
+	case planner.ItemSideSell:
+		return 0
+	case planner.ItemSideBuy:
+		return 1
+	default:
+		return 2
+	}
+}
+
+func transactionInstrumentKey(ticker string, instrumentID string) string {
+	normalizedTicker := strings.ToUpper(strings.TrimSpace(ticker))
+	normalizedInstrumentID := strings.ToUpper(strings.TrimSpace(instrumentID))
+	if normalizedInstrumentID == "" {
+		normalizedInstrumentID = normalizedTicker
+	}
+	if normalizedTicker == "" {
+		normalizedTicker = normalizedInstrumentID
+	}
+	if normalizedInstrumentID == "" {
+		return ""
+	}
+	return normalizedTicker + "::" + normalizedInstrumentID
 }
 
 func toJSONMap(value interface{}) (datatypes.JSONMap, error) {

@@ -448,6 +448,10 @@ definitions:
         $ref: '#/definitions/PortfolioRebalanceRun'
       summary:
         $ref: '#/definitions/PortfolioRebalanceSummary'
+      transactions:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceTransaction'
+        type: array
     type: object
   PortfolioRebalanceHolding:
     properties:
@@ -512,6 +516,8 @@ definitions:
       current_weight:
         type: number
       delta_quantity:
+        type: number
+      ideal_weight:
         type: number
       instrument_id:
         type: string
@@ -615,6 +621,27 @@ definitions:
         type: integer
       unresolved_items:
         type: integer
+    type: object
+  PortfolioRebalanceTransaction:
+    properties:
+      amount:
+        type: number
+      currency:
+        type: string
+      instrument_id:
+        type: string
+      lot_size:
+        type: integer
+      price:
+        type: number
+      quantity:
+        type: number
+      sequence:
+        type: integer
+      side:
+        type: string
+      ticker:
+        type: string
     type: object
   PortfolioReplicationConfig:
     properties:

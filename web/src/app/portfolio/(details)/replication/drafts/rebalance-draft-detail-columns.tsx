@@ -7,7 +7,9 @@ import type {
   PortfolioRebalanceInstrumentInfo,
   PortfolioRebalanceItem,
   PortfolioRebalanceMoney,
+  PortfolioRebalanceTransaction,
 } from '@/api-client';
+import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
 import { Badge } from '@/components/ui/badge';
 import { SortHeader } from '@/app/portfolio/components/sortable-data-table';
 import {
@@ -15,6 +17,14 @@ import {
   formatNumber,
   unresolvedReason,
 } from './rebalance-draft-detail-helpers';
+
+function renderTickerWithLogo(ticker?: string | null, fallback?: string | null) {
+  const normalizedTicker = ticker?.trim();
+  if (normalizedTicker) {
+    return <TickerWithLogo ticker={normalizedTicker} textClassName='font-medium' />;
+  }
+  return fallback?.trim() || '-';
+}
 
 export function buildItemColumns(t: TFunction): ColumnDef<PortfolioRebalanceItem>[] {
   return [
@@ -27,7 +37,7 @@ export function buildItemColumns(t: TFunction): ColumnDef<PortfolioRebalanceItem
           label={t('portfolio.replication.rebalances.itemsColumns.ticker')}
         />
       ),
-      cell: ({ row }) => row.original.ticker || row.original.instrument_id || '-',
+      cell: ({ row }) => renderTickerWithLogo(row.original.ticker, row.original.instrument_id),
     },
     {
       accessorFn: row => row.instrument_id || '',
@@ -122,6 +132,20 @@ export function buildItemColumns(t: TFunction): ColumnDef<PortfolioRebalanceItem
       ),
     },
     {
+      accessorFn: row => row.ideal_weight ?? 0,
+      id: 'ideal_weight',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.idealWeight')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => (
+        <div className='text-right'>{formatNumber(row.original.ideal_weight)}</div>
+      ),
+    },
+    {
       accessorFn: row => row.status || '',
       id: 'status',
       header: ({ column }) => (
@@ -159,7 +183,7 @@ export function buildHoldingsColumns(
           label={t('portfolio.replication.rebalances.itemsColumns.ticker')}
         />
       ),
-      cell: ({ row }) => row.original.ticker || '-',
+      cell: ({ row }) => renderTickerWithLogo(row.original.ticker),
     },
     {
       accessorFn: row => row.instrument_id || '',
@@ -202,7 +226,7 @@ export function buildBenchmarkColumns(
           label={t('portfolio.replication.rebalances.itemsColumns.ticker')}
         />
       ),
-      cell: ({ row }) => row.original.ticker || '-',
+      cell: ({ row }) => renderTickerWithLogo(row.original.ticker),
     },
     {
       accessorFn: row => row.instrument_id || '',
@@ -246,7 +270,7 @@ export function buildInstrumentsColumns(
           label={t('portfolio.replication.rebalances.itemsColumns.ticker')}
         />
       ),
-      cell: ({ row }) => row.original.ticker || '-',
+      cell: ({ row }) => renderTickerWithLogo(row.original.ticker),
     },
     {
       accessorFn: row => row.instrument_id || '',
@@ -355,6 +379,117 @@ export function buildMoneyColumns(t: TFunction): ColumnDef<PortfolioRebalanceMon
         />
       ),
       cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.blocked, 2)}</div>,
+    },
+  ];
+}
+
+export function buildTransactionsColumns(
+  t: TFunction,
+): ColumnDef<PortfolioRebalanceTransaction>[] {
+  return [
+    {
+      accessorFn: row => row.sequence ?? 0,
+      id: 'sequence',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.sequence')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.sequence, 0)}</div>,
+    },
+    {
+      accessorFn: row => row.ticker || row.instrument_id || '',
+      id: 'ticker',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.ticker')}
+        />
+      ),
+      cell: ({ row }) => renderTickerWithLogo(row.original.ticker, row.original.instrument_id),
+    },
+    {
+      accessorFn: row => row.instrument_id || '',
+      id: 'instrument_id',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.instrumentId')}
+        />
+      ),
+      cell: ({ row }) => row.original.instrument_id || '-',
+    },
+    {
+      accessorFn: row => row.side || '',
+      id: 'side',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.side')}
+        />
+      ),
+      cell: ({ row }) => row.original.side || '-',
+    },
+    {
+      accessorFn: row => row.quantity ?? 0,
+      id: 'quantity',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.quantity')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.quantity)}</div>,
+    },
+    {
+      accessorFn: row => row.price ?? 0,
+      id: 'price',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.price')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.price, 6)}</div>,
+    },
+    {
+      accessorFn: row => row.amount ?? 0,
+      id: 'amount',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.amount')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.amount, 2)}</div>,
+    },
+    {
+      accessorFn: row => row.currency || '',
+      id: 'currency',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.currency')}
+        />
+      ),
+      cell: ({ row }) => row.original.currency || '-',
+    },
+    {
+      accessorFn: row => row.lot_size ?? 0,
+      id: 'lot_size',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.itemsColumns.lotSize')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.lot_size, 0)}</div>,
     },
   ];
 }

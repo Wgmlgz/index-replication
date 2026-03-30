@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **output** | [**PortfolioRebalanceOutput**](PortfolioRebalanceOutput.md) |  | [optional] [default to undefined]
 **run** | [**PortfolioRebalanceRun**](PortfolioRebalanceRun.md) |  | [optional] [default to undefined]
 **summary** | [**PortfolioRebalanceSummary**](PortfolioRebalanceSummary.md) |  | [optional] [default to undefined]
+**transactions** | [**Array&lt;PortfolioRebalanceTransaction&gt;**](PortfolioRebalanceTransaction.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -20,6 +21,7 @@ const instance: PortfolioRebalanceDetailResponse = {
     output,
     run,
     summary,
+    transactions,
 };
 ```
 

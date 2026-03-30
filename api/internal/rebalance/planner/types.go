@@ -60,6 +60,7 @@ type Item struct {
 	DeltaQuantity   float64
 	CurrentWeight   float64
 	TargetWeight    float64
+	IdealWeight     float64
 	ReferencePrice  *float64
 	PlannedAmount   *float64
 	Status          string

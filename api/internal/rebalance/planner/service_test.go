@@ -149,13 +149,19 @@ func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 		}
 	}
 
-	if aaa.TargetWeight != 62.5 {
-		t.Fatalf("expected AAA target weight 62.5, got %v", aaa.TargetWeight)
+	if aaa.TargetWeight != 60 {
+		t.Fatalf("expected AAA target weight 60, got %v", aaa.TargetWeight)
 	}
-	if bbb.TargetWeight != 37.5 {
-		t.Fatalf("expected BBB target weight 37.5, got %v", bbb.TargetWeight)
+	if aaa.IdealWeight != 62.5 {
+		t.Fatalf("expected AAA ideal weight 62.5, got %v", aaa.IdealWeight)
 	}
-	if ccc.TargetWeight != 0 || ccc.Side != ItemSideSell {
+	if bbb.TargetWeight != 40 {
+		t.Fatalf("expected BBB target weight 40, got %v", bbb.TargetWeight)
+	}
+	if bbb.IdealWeight != 37.5 {
+		t.Fatalf("expected BBB ideal weight 37.5, got %v", bbb.IdealWeight)
+	}
+	if ccc.TargetWeight != 0 || ccc.IdealWeight != 0 || ccc.Side != ItemSideSell {
 		t.Fatalf("expected CCC to be sell to zero, got %+v", ccc)
 	}
 }
