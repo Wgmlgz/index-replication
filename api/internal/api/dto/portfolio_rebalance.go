@@ -28,7 +28,6 @@ type PortfolioRebalanceRun struct {
 } //@name PortfolioRebalanceRun
 
 type PortfolioRebalancePlanningParams struct {
-	IncludeZeroDeltas bool    `json:"include_zero_deltas"`
 	QuantityPrecision int     `json:"quantity_precision"`
 	MinDeltaQuantity  float64 `json:"min_delta_quantity"`
 } //@name PortfolioRebalancePlanningParams

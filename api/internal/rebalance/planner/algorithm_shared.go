@@ -267,9 +267,6 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			warnings = appendUniqueWarning(warnings, "insufficient_cash")
 		}
 
-		if math.Abs(item.DeltaQuantity) <= params.MinDeltaQuantity && !params.IncludeZeroDeltas {
-			continue
-		}
 		items = append(items, item)
 	}
 

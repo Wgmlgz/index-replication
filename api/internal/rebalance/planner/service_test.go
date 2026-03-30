@@ -22,7 +22,6 @@ func TestPlanner_DeterministicOutput(t *testing.T) {
 		InvestableCapital: 2000,
 		Params: PlanningParams{
 			QuantityPrecision: 6,
-			MinDeltaQuantity:  1e-6,
 		},
 		Holdings: []Holding{
 			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10},
@@ -61,7 +60,6 @@ func TestPlanner_FullModeBasicScenario(t *testing.T) {
 		InvestableCapital: 2000,
 		Params: PlanningParams{
 			QuantityPrecision: 6,
-			MinDeltaQuantity:  1e-6,
 		},
 		Holdings: []Holding{
 			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10},
@@ -112,7 +110,7 @@ func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 			"target_count": 2,
 		},
 		InvestableCapital: 1000,
-		Params:            PlanningParams{QuantityPrecision: 6, MinDeltaQuantity: 1e-6},
+		Params:            PlanningParams{QuantityPrecision: 6},
 		Holdings: []Holding{
 			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 4},
 			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 3},
@@ -173,7 +171,7 @@ func TestPlanner_MissingPriceCreatesUnresolvedItem(t *testing.T) {
 		ModeKey:           "full",
 		ModeParams:        map[string]interface{}{},
 		InvestableCapital: 1000,
-		Params:            PlanningParams{QuantityPrecision: 6, MinDeltaQuantity: 1e-6},
+		Params:            PlanningParams{QuantityPrecision: 6},
 		Holdings:          []Holding{},
 		Benchmark: []BenchmarkConstituent{
 			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
@@ -195,14 +193,14 @@ func TestPlanner_MissingPriceCreatesUnresolvedItem(t *testing.T) {
 	}
 }
 
-func TestPlanner_RoundingAndZeroDeltaFiltering(t *testing.T) {
+func TestPlanner_RoundingAndZeroDeltaIncludedInOutput(t *testing.T) {
 	svc := newPlannerService()
 
 	output, err := svc.Plan(Input{
 		ModeKey:           "full",
 		ModeParams:        map[string]interface{}{},
 		InvestableCapital: 100,
-		Params:            PlanningParams{QuantityPrecision: 2, MinDeltaQuantity: 0.05},
+		Params:            PlanningParams{QuantityPrecision: 2},
 		Holdings: []Holding{
 			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 1.0},
 		},
@@ -217,8 +215,11 @@ func TestPlanner_RoundingAndZeroDeltaFiltering(t *testing.T) {
 		t.Fatalf("plan rounding scenario: %v", err)
 	}
 
-	if len(output.Items) != 0 {
-		t.Fatalf("expected zero-delta item to be filtered, got %d items", len(output.Items))
+	if len(output.Items) != 1 {
+		t.Fatalf("expected zero-delta item to be included, got %d items", len(output.Items))
+	}
+	if output.Items[0].DeltaQuantity != 0 {
+		t.Fatalf("expected zero delta quantity, got %v", output.Items[0].DeltaQuantity)
 	}
 }
 

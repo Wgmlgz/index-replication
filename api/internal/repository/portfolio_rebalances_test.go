@@ -63,7 +63,7 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 			BenchmarkSecidSnapshot:        &benchmark,
 			ReplicationModeKeySnapshot:    "full",
 			ReplicationModeParamsSnapshot: datatypes.JSONMap{"mode": "full"},
-			PlanningParamsSnapshot:        datatypes.JSONMap{"include_zero_deltas": false},
+			PlanningParamsSnapshot:        datatypes.JSONMap{"quantity_precision": 6.0},
 			ExecutionMode:                 models.PortfolioRebalanceExecutionModeManual,
 			ConfirmationRequired:          true,
 			Status:                        models.PortfolioRebalanceRunStatusDraft,

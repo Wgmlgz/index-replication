@@ -5,7 +5,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**include_zero_deltas** | **boolean** |  | [optional] [default to undefined]
 **min_delta_quantity** | **number** |  | [optional] [default to undefined]
 **quantity_precision** | **number** |  | [optional] [default to undefined]
 
@@ -15,7 +14,6 @@ Name | Type | Description | Notes
 import { PortfolioRebalancePlanningParams } from './api';
 
 const instance: PortfolioRebalancePlanningParams = {
-    include_zero_deltas,
     min_delta_quantity,
     quantity_precision,
 };

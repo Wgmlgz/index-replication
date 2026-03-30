@@ -6,7 +6,6 @@ import (
 )
 
 type PlanningParams struct {
-	IncludeZeroDeltas bool
 	QuantityPrecision int
 	MinDeltaQuantity  float64
 }

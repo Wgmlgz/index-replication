@@ -297,7 +297,6 @@ export interface PortfolioRebalanceOutput {
     'warnings'?: Array<string>;
 }
 export interface PortfolioRebalancePlanningParams {
-    'include_zero_deltas'?: boolean;
     'min_delta_quantity'?: number;
     'quantity_precision'?: number;
 }

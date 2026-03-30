@@ -3155,9 +3155,6 @@ const docTemplate = `{
         "PortfolioRebalancePlanningParams": {
             "type": "object",
             "properties": {
-                "include_zero_deltas": {
-                    "type": "boolean"
-                },
                 "min_delta_quantity": {
                     "type": "number"
                 },

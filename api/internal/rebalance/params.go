@@ -33,22 +33,17 @@ func normalizeExecutionMode(raw string) (string, error) {
 
 func normalizePlanningParams(raw map[string]interface{}) (planner.PlanningParams, map[string]interface{}) {
 	params := planner.PlanningParams{
-		IncludeZeroDeltas: false,
 		QuantityPrecision: 6,
 		MinDeltaQuantity:  1e-6,
 	}
 
 	if len(raw) == 0 {
 		return params, map[string]interface{}{
-			"include_zero_deltas": params.IncludeZeroDeltas,
-			"quantity_precision":  float64(params.QuantityPrecision),
-			"min_delta_quantity":  params.MinDeltaQuantity,
+			"quantity_precision": float64(params.QuantityPrecision),
+			"min_delta_quantity": params.MinDeltaQuantity,
 		}
 	}
 
-	if value, ok := raw["include_zero_deltas"]; ok {
-		params.IncludeZeroDeltas = asBool(value, false)
-	}
 	if value, ok := raw["quantity_precision"]; ok {
 		precision, ok := asInt(value)
 		if ok {
@@ -69,30 +64,10 @@ func normalizePlanningParams(raw map[string]interface{}) (planner.PlanningParams
 	}
 
 	snapshot := map[string]interface{}{
-		"include_zero_deltas": params.IncludeZeroDeltas,
-		"quantity_precision":  float64(params.QuantityPrecision),
-		"min_delta_quantity":  params.MinDeltaQuantity,
+		"quantity_precision": float64(params.QuantityPrecision),
+		"min_delta_quantity": params.MinDeltaQuantity,
 	}
 	return params, snapshot
-}
-
-func asBool(value interface{}, fallback bool) bool {
-	switch typed := value.(type) {
-	case bool:
-		return typed
-	case string:
-		normalized := strings.ToLower(strings.TrimSpace(typed))
-		switch normalized {
-		case "1", "true", "yes", "on":
-			return true
-		case "0", "false", "no", "off":
-			return false
-		default:
-			return fallback
-		}
-	default:
-		return fallback
-	}
 }
 
 func asInt(value interface{}) (int, bool) {

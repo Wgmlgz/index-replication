@@ -70,7 +70,6 @@ func toPlanInputDTO(input planner.Input) dto.PortfolioRebalanceInput {
 		Instruments:       instruments,
 		Money:             money,
 		Params: dto.PortfolioRebalancePlanningParams{
-			IncludeZeroDeltas: input.Params.IncludeZeroDeltas,
 			QuantityPrecision: input.Params.QuantityPrecision,
 			MinDeltaQuantity:  input.Params.MinDeltaQuantity,
 		},
