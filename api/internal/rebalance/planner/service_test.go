@@ -32,7 +32,7 @@ func TestPlanner_DeterministicOutput(t *testing.T) {
 			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
 			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 40},
 		},
-		Prices: []InstrumentPrice{
+		Instruments: []InstrumentInfo{
 			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
 			{Ticker: "BBB", InstrumentID: "BBB", Price: 200},
 		},
@@ -71,7 +71,7 @@ func TestPlanner_FullModeBasicScenario(t *testing.T) {
 			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
 			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 40},
 		},
-		Prices: []InstrumentPrice{
+		Instruments: []InstrumentInfo{
 			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
 			{Ticker: "BBB", InstrumentID: "BBB", Price: 200},
 		},
@@ -123,7 +123,7 @@ func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 30},
 			{Ticker: "CCC", InstrumentID: "CCC", TargetWeight: 20},
 		},
-		Prices: []InstrumentPrice{
+		Instruments: []InstrumentInfo{
 			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
 			{Ticker: "BBB", InstrumentID: "BBB", Price: 100},
 			{Ticker: "CCC", InstrumentID: "CCC", Price: 100},
@@ -172,7 +172,7 @@ func TestPlanner_MissingPriceCreatesUnresolvedItem(t *testing.T) {
 		Benchmark: []BenchmarkConstituent{
 			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
 		},
-		Prices: []InstrumentPrice{},
+		Instruments: []InstrumentInfo{},
 	})
 	if err != nil {
 		t.Fatalf("plan full mode with missing prices: %v", err)
@@ -203,7 +203,7 @@ func TestPlanner_RoundingAndZeroDeltaFiltering(t *testing.T) {
 		Benchmark: []BenchmarkConstituent{
 			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 100},
 		},
-		Prices: []InstrumentPrice{
+		Instruments: []InstrumentInfo{
 			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
 		},
 	})
@@ -213,5 +213,126 @@ func TestPlanner_RoundingAndZeroDeltaFiltering(t *testing.T) {
 
 	if len(output.Items) != 0 {
 		t.Fatalf("expected zero-delta item to be filtered, got %d items", len(output.Items))
+	}
+}
+
+func TestPlanner_LotSizeProducesIntegerTrades(t *testing.T) {
+	svc := newPlannerService()
+
+	output, err := svc.Plan(Input{
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 1000,
+		Holdings:          []Holding{},
+		Benchmark: []BenchmarkConstituent{
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 100},
+		},
+		Instruments: []InstrumentInfo{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 90, Currency: "RUB", LotSize: 10},
+		},
+		Money: []Money{{Currency: "RUB", Available: 1000}},
+	})
+	if err != nil {
+		t.Fatalf("plan lot-size scenario: %v", err)
+	}
+
+	if len(output.Items) != 1 {
+		t.Fatalf("expected one item, got %d", len(output.Items))
+	}
+	item := output.Items[0]
+	if item.TargetQuantity != 10 {
+		t.Fatalf("expected target quantity 10, got %v", item.TargetQuantity)
+	}
+	if item.DeltaQuantity != 10 {
+		t.Fatalf("expected delta quantity 10, got %v", item.DeltaQuantity)
+	}
+}
+
+func TestPlanner_SellFundsBuysInSameCurrency(t *testing.T) {
+	svc := newPlannerService()
+
+	output, err := svc.Plan(Input{
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 1000,
+		Holdings: []Holding{
+			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10},
+		},
+		Benchmark: []BenchmarkConstituent{
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 0},
+			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 100},
+		},
+		Instruments: []InstrumentInfo{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 100, Currency: "RUB"},
+			{Ticker: "BBB", InstrumentID: "BBB", Price: 100, Currency: "RUB"},
+		},
+		Money: []Money{{Currency: "RUB", Available: 0}},
+	})
+	if err != nil {
+		t.Fatalf("plan sell-funds-buy scenario: %v", err)
+	}
+
+	if len(output.Items) != 2 {
+		t.Fatalf("expected two items, got %d", len(output.Items))
+	}
+	var sellFound, buyFound bool
+	for _, item := range output.Items {
+		if item.Ticker == "AAA" && item.Side == ItemSideSell && item.DeltaQuantity == -10 {
+			sellFound = true
+		}
+		if item.Ticker == "BBB" && item.Side == ItemSideBuy && item.DeltaQuantity == 10 {
+			buyFound = true
+		}
+	}
+	if !sellFound || !buyFound {
+		t.Fatalf("expected sell AAA -10 and buy BBB +10, got %+v", output.Items)
+	}
+	if len(output.Money) != 1 || output.Money[0].Currency != "RUB" {
+		t.Fatalf("expected RUB money output, got %+v", output.Money)
+	}
+	if output.Money[0].Available != 0 {
+		t.Fatalf("expected RUB available 0 after rebalance, got %v", output.Money[0].Available)
+	}
+}
+
+func TestPlanner_MultiCurrencyBudgetSeparation(t *testing.T) {
+	svc := newPlannerService()
+
+	output, err := svc.Plan(Input{
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 2000,
+		Holdings:          []Holding{},
+		Benchmark: []BenchmarkConstituent{
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 50},
+			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 50},
+		},
+		Instruments: []InstrumentInfo{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 100, Currency: "RUB"},
+			{Ticker: "BBB", InstrumentID: "BBB", Price: 100, Currency: "USD"},
+		},
+		Money: []Money{
+			{Currency: "RUB", Available: 1000},
+			{Currency: "USD", Available: 0},
+		},
+	})
+	if err != nil {
+		t.Fatalf("plan multi-currency scenario: %v", err)
+	}
+
+	if len(output.Items) != 2 {
+		t.Fatalf("expected two items, got %d", len(output.Items))
+	}
+	var rubPlanned, usdBlocked bool
+	for _, item := range output.Items {
+		if item.Ticker == "AAA" && item.Status == ItemStatusPlanned && item.DeltaQuantity == 10 {
+			rubPlanned = true
+		}
+		if item.Ticker == "BBB" && item.Status == ItemStatusUnresolved && item.Metadata["reason"] == "insufficient_cash" {
+			usdBlocked = true
+		}
+	}
+	if !rubPlanned || !usdBlocked {
+		t.Fatalf("expected RUB buy planned and USD buy unresolved, got %+v", output.Items)
 	}
 }

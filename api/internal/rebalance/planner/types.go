@@ -23,13 +23,20 @@ type BenchmarkConstituent struct {
 	TargetWeight float64
 }
 
-type InstrumentPrice struct {
+type Money struct {
+	Currency  string
+	Available float64
+	Blocked   float64
+}
+
+type InstrumentInfo struct {
 	Ticker       string
 	InstrumentID string
 	Price        float64
 	Currency     string
 	AsOfAt       time.Time
 	Source       string
+	LotSize      int64
 }
 
 type Input struct {
@@ -39,7 +46,8 @@ type Input struct {
 	InvestableCapital float64
 	Holdings          []Holding
 	Benchmark         []BenchmarkConstituent
-	Prices            []InstrumentPrice
+	Instruments       []InstrumentInfo
+	Money             []Money
 	Params            PlanningParams
 }
 
@@ -70,6 +78,7 @@ type Summary struct {
 type Output struct {
 	Items    []Item
 	Warnings []string
+	Money    []Money
 }
 
 type Algorithm interface {

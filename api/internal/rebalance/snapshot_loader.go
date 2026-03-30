@@ -170,7 +170,8 @@ func (l *SnapshotLoader) Load(
 	typedPlanningParams, planningParamsSnapshot := normalizePlanningParams(planningParams)
 	holdings := toPlannerHoldings(portfolioComposition)
 	targets := toPlannerTargets(benchmarkComposition)
-	prices := l.resolvePlannerPrices(ctx, providerProfile.Provider, resolvedAsOfAt, portfolioComposition, targets)
+	instruments := l.resolvePlannerInstruments(ctx, providerProfile.Provider, resolvedAsOfAt, portfolioComposition, targets)
+	money := toPlannerMoney(summary)
 	totalValue := resolvePortfolioTotalValue(summary, portfolioComposition)
 	cashAvailable := resolveCashAvailable(summary)
 	modeParams := mapFromJSONMap(replicationConfig.ModeParams)
@@ -196,7 +197,8 @@ func (l *SnapshotLoader) Load(
 			InvestableCapital: totalValue,
 			Holdings:          holdings,
 			Benchmark:         targets,
-			Prices:            prices,
+			Instruments:       instruments,
+			Money:             money,
 			Params:            typedPlanningParams,
 		},
 		CashAvailable:  cashAvailable,
@@ -316,14 +318,14 @@ type plannerPriceCandidate struct {
 	InstrumentID string
 }
 
-func (l *SnapshotLoader) resolvePlannerPrices(
+func (l *SnapshotLoader) resolvePlannerInstruments(
 	ctx context.Context,
 	provider string,
 	asOfAt time.Time,
 	composition []dto.PortfolioCompositionEntry,
 	targets []planner.BenchmarkConstituent,
-) []planner.InstrumentPrice {
-	pricesByKey := map[string]planner.InstrumentPrice{}
+) []planner.InstrumentInfo {
+	instrumentsByKey := map[string]planner.InstrumentInfo{}
 	candidatesByKey := map[string]plannerPriceCandidate{}
 
 	for _, row := range composition {
@@ -334,13 +336,14 @@ func (l *SnapshotLoader) resolvePlannerPrices(
 		key := snapshotInstrumentKey(ticker, instrumentID)
 		candidatesByKey[key] = plannerPriceCandidate{Ticker: ticker, InstrumentID: instrumentID}
 		if row.CurrentPrice > 0 {
-			pricesByKey[key] = planner.InstrumentPrice{
+			instrumentsByKey[key] = planner.InstrumentInfo{
 				Ticker:       ticker,
 				InstrumentID: instrumentID,
 				Price:        row.CurrentPrice,
 				Currency:     strings.ToUpper(strings.TrimSpace(row.Currency)),
 				AsOfAt:       asOfAt,
 				Source:       "portfolio_composition",
+				LotSize:      1,
 			}
 		}
 	}
@@ -357,7 +360,7 @@ func (l *SnapshotLoader) resolvePlannerPrices(
 	if l.marketPrices != nil {
 		candidateKeys := make([]string, 0, len(candidatesByKey))
 		for key := range candidatesByKey {
-			if _, exists := pricesByKey[key]; exists {
+			if _, exists := instrumentsByKey[key]; exists {
 				continue
 			}
 			candidateKeys = append(candidateKeys, key)
@@ -382,26 +385,27 @@ func (l *SnapshotLoader) resolvePlannerPrices(
 			if !ok || price <= 0 {
 				continue
 			}
-			pricesByKey[key] = planner.InstrumentPrice{
+			instrumentsByKey[key] = planner.InstrumentInfo{
 				Ticker:       candidate.Ticker,
 				InstrumentID: candidate.InstrumentID,
 				Price:        price,
 				Currency:     "",
 				AsOfAt:       asOfAt,
 				Source:       "market_asof",
+				LotSize:      1,
 			}
 		}
 	}
 
-	keys := make([]string, 0, len(pricesByKey))
-	for key := range pricesByKey {
+	keys := make([]string, 0, len(instrumentsByKey))
+	for key := range instrumentsByKey {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 
-	result := make([]planner.InstrumentPrice, 0, len(keys))
+	result := make([]planner.InstrumentInfo, 0, len(keys))
 	for _, key := range keys {
-		result = append(result, pricesByKey[key])
+		result = append(result, instrumentsByKey[key])
 	}
 	return result
 }
@@ -467,6 +471,25 @@ func resolveCashAvailable(summary *dto.PortfolioSummaryResponse) float64 {
 		cash += row.Available
 	}
 	return cash
+}
+
+func toPlannerMoney(summary *dto.PortfolioSummaryResponse) []planner.Money {
+	if summary == nil || len(summary.Money) == 0 {
+		return []planner.Money{}
+	}
+	result := make([]planner.Money, 0, len(summary.Money))
+	for _, row := range summary.Money {
+		currency := strings.ToUpper(strings.TrimSpace(row.Currency))
+		if currency == "" {
+			continue
+		}
+		result = append(result, planner.Money{
+			Currency:  currency,
+			Available: row.Available,
+			Blocked:   row.Blocked,
+		})
+	}
+	return result
 }
 
 func mapFromJSONMap(value datatypes.JSONMap) map[string]interface{} {
