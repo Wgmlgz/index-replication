@@ -214,6 +214,7 @@ func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, 
 		profilesRepo,
 		replicationRepo,
 		benchmarkRead,
+		nil,
 		mockProvider,
 	)
 	plannerService := rebalanceplanner.NewService(

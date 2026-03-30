@@ -1,6 +1,9 @@
 package planner
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type PlanningParams struct {
 	IncludeZeroDeltas bool
@@ -12,24 +15,32 @@ type Holding struct {
 	Ticker          string
 	InstrumentID    string
 	CurrentQuantity float64
-	CurrentWeight   float64
-	ReferencePrice  *float64
 }
 
 type BenchmarkConstituent struct {
 	Ticker       string
 	InstrumentID string
-	TargetWeight *float64
+	TargetWeight float64
+}
+
+type InstrumentPrice struct {
+	Ticker       string
+	InstrumentID string
+	Price        float64
+	Currency     string
+	AsOfAt       time.Time
+	Source       string
 }
 
 type Input struct {
-	AsOfDate            string
-	ModeKey             string
-	ModeParams          map[string]interface{}
-	TotalPortfolioValue float64
-	Holdings            []Holding
-	Benchmark           []BenchmarkConstituent
-	Params              PlanningParams
+	AsOfAt            time.Time
+	ModeKey           string
+	ModeParams        map[string]interface{}
+	InvestableCapital float64
+	Holdings          []Holding
+	Benchmark         []BenchmarkConstituent
+	Prices            []InstrumentPrice
+	Params            PlanningParams
 }
 
 type Item struct {
@@ -53,12 +64,11 @@ type Summary struct {
 	UnresolvedItems      int
 	FilteredZeroDelta    int
 	EstimatedTurnoverAbs float64
-	TotalPortfolioValue  float64
+	InvestableCapital    float64
 }
 
 type Output struct {
 	Items    []Item
-	Summary  Summary
 	Warnings []string
 }
 

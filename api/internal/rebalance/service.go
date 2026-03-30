@@ -97,19 +97,20 @@ func (s *Service) CreateDraft(
 		return nil, fmt.Errorf("%w: %v", ErrPlanningFailed, err)
 	}
 	endedAt := time.Now().UTC()
+	planSummary := planner.BuildSummary(planOutput.Items, snapshot.PlannerInput.InvestableCapital)
 
-	asOfDate, parseErr := time.Parse("2006-01-02", snapshot.AsOfDate)
-	if parseErr != nil {
+	asOfDate := snapshot.PlannerInput.AsOfAt
+	if asOfDate.IsZero() {
 		asOfDate = time.Now().UTC()
 	}
 
 	summaryJSON := datatypes.JSONMap{
-		"items_total":            float64(planOutput.Summary.ItemsTotal),
-		"actionable_items":       float64(planOutput.Summary.ActionableItems),
-		"unresolved_items":       float64(planOutput.Summary.UnresolvedItems),
-		"filtered_zero_delta":    float64(planOutput.Summary.FilteredZeroDelta),
-		"estimated_turnover_abs": planOutput.Summary.EstimatedTurnoverAbs,
-		"total_portfolio_value":  planOutput.Summary.TotalPortfolioValue,
+		"items_total":            float64(planSummary.ItemsTotal),
+		"actionable_items":       float64(planSummary.ActionableItems),
+		"unresolved_items":       float64(planSummary.UnresolvedItems),
+		"filtered_zero_delta":    float64(planSummary.FilteredZeroDelta),
+		"estimated_turnover_abs": planSummary.EstimatedTurnoverAbs,
+		"total_portfolio_value":  planSummary.InvestableCapital,
 		"cash_available":         snapshot.CashAvailable,
 		"holdings_count":         float64(snapshot.HoldingsCount),
 		"benchmark_count":        float64(snapshot.BenchmarkCount),

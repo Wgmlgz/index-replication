@@ -119,6 +119,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		repoRegistry.PortfolioProfilesRepo,
 		repoRegistry.PortfolioReplicationConfigsRepo,
 		moexReadService,
+		marketPriceService,
 		tbankProvider,
 		mockProvider,
 		virtualProvider,

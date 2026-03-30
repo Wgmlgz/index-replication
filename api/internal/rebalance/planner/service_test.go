@@ -17,20 +17,24 @@ func TestPlanner_DeterministicOutput(t *testing.T) {
 	svc := newPlannerService()
 
 	input := Input{
-		ModeKey:             "full",
-		ModeParams:          map[string]interface{}{},
-		TotalPortfolioValue: 2000,
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 2000,
 		Params: PlanningParams{
 			QuantityPrecision: 6,
 			MinDeltaQuantity:  1e-6,
 		},
 		Holdings: []Holding{
-			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10, CurrentWeight: 50, ReferencePrice: ptrFloat(100)},
-			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 5, CurrentWeight: 50, ReferencePrice: ptrFloat(200)},
+			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10},
+			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 5},
 		},
 		Benchmark: []BenchmarkConstituent{
-			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: ptrFloat(60)},
-			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: ptrFloat(40)},
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
+			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 40},
+		},
+		Prices: []InstrumentPrice{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
+			{Ticker: "BBB", InstrumentID: "BBB", Price: 200},
 		},
 	}
 
@@ -52,20 +56,24 @@ func TestPlanner_FullModeBasicScenario(t *testing.T) {
 	svc := newPlannerService()
 
 	output, err := svc.Plan(Input{
-		ModeKey:             "full",
-		ModeParams:          map[string]interface{}{},
-		TotalPortfolioValue: 2000,
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 2000,
 		Params: PlanningParams{
 			QuantityPrecision: 6,
 			MinDeltaQuantity:  1e-6,
 		},
 		Holdings: []Holding{
-			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10, CurrentWeight: 50, ReferencePrice: ptrFloat(100)},
-			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 5, CurrentWeight: 50, ReferencePrice: ptrFloat(200)},
+			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 10},
+			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 5},
 		},
 		Benchmark: []BenchmarkConstituent{
-			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: ptrFloat(60)},
-			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: ptrFloat(40)},
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
+			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 40},
+		},
+		Prices: []InstrumentPrice{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
+			{Ticker: "BBB", InstrumentID: "BBB", Price: 200},
 		},
 	})
 	if err != nil {
@@ -88,8 +96,10 @@ func TestPlanner_FullModeBasicScenario(t *testing.T) {
 	if output.Items[1].DeltaQuantity != -1 {
 		t.Fatalf("expected BBB delta -1, got %v", output.Items[1].DeltaQuantity)
 	}
-	if output.Summary.UnresolvedItems != 0 {
-		t.Fatalf("expected no unresolved items, got %d", output.Summary.UnresolvedItems)
+
+	summary := BuildSummary(output.Items, 2000)
+	if summary.UnresolvedItems != 0 {
+		t.Fatalf("expected no unresolved items, got %d", summary.UnresolvedItems)
 	}
 }
 
@@ -101,17 +111,22 @@ func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 		ModeParams: map[string]interface{}{
 			"target_count": 2,
 		},
-		TotalPortfolioValue: 1000,
-		Params:              PlanningParams{QuantityPrecision: 6, MinDeltaQuantity: 1e-6},
+		InvestableCapital: 1000,
+		Params:            PlanningParams{QuantityPrecision: 6, MinDeltaQuantity: 1e-6},
 		Holdings: []Holding{
-			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 4, CurrentWeight: 40, ReferencePrice: ptrFloat(100)},
-			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 3, CurrentWeight: 30, ReferencePrice: ptrFloat(100)},
-			{Ticker: "CCC", InstrumentID: "CCC", CurrentQuantity: 3, CurrentWeight: 30, ReferencePrice: ptrFloat(100)},
+			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 4},
+			{Ticker: "BBB", InstrumentID: "BBB", CurrentQuantity: 3},
+			{Ticker: "CCC", InstrumentID: "CCC", CurrentQuantity: 3},
 		},
 		Benchmark: []BenchmarkConstituent{
-			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: ptrFloat(50)},
-			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: ptrFloat(30)},
-			{Ticker: "CCC", InstrumentID: "CCC", TargetWeight: ptrFloat(20)},
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 50},
+			{Ticker: "BBB", InstrumentID: "BBB", TargetWeight: 30},
+			{Ticker: "CCC", InstrumentID: "CCC", TargetWeight: 20},
+		},
+		Prices: []InstrumentPrice{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
+			{Ticker: "BBB", InstrumentID: "BBB", Price: 100},
+			{Ticker: "CCC", InstrumentID: "CCC", Price: 100},
 		},
 	})
 	if err != nil {
@@ -145,42 +160,32 @@ func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 	}
 }
 
-func TestPlanner_MissingBenchmarkDataCreatesUnresolvedItem(t *testing.T) {
+func TestPlanner_MissingPriceCreatesUnresolvedItem(t *testing.T) {
 	svc := newPlannerService()
 
 	output, err := svc.Plan(Input{
-		ModeKey:             "full",
-		ModeParams:          map[string]interface{}{},
-		TotalPortfolioValue: 1000,
-		Params:              PlanningParams{QuantityPrecision: 6, MinDeltaQuantity: 1e-6},
-		Holdings:            []Holding{},
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 1000,
+		Params:            PlanningParams{QuantityPrecision: 6, MinDeltaQuantity: 1e-6},
+		Holdings:          []Holding{},
 		Benchmark: []BenchmarkConstituent{
-			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: ptrFloat(60)},
-			{Ticker: "MISSING", InstrumentID: "MISSING", TargetWeight: nil},
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 60},
 		},
+		Prices: []InstrumentPrice{},
 	})
 	if err != nil {
-		t.Fatalf("plan full mode with missing benchmark data: %v", err)
+		t.Fatalf("plan full mode with missing prices: %v", err)
 	}
 
-	if output.Summary.UnresolvedItems == 0 {
-		t.Fatalf("expected unresolved items")
+	if len(output.Items) != 1 {
+		t.Fatalf("expected one unresolved item, got %d", len(output.Items))
 	}
-
-	foundMissing := false
-	for _, item := range output.Items {
-		if item.Ticker == "MISSING" {
-			foundMissing = true
-			if item.Status != ItemStatusUnresolved {
-				t.Fatalf("expected unresolved status, got %+v", item)
-			}
-			if item.Metadata["reason"] != "missing_target_weight" {
-				t.Fatalf("expected missing_target_weight reason, got %+v", item.Metadata)
-			}
-		}
+	if output.Items[0].Status != ItemStatusUnresolved {
+		t.Fatalf("expected unresolved status, got %+v", output.Items[0])
 	}
-	if !foundMissing {
-		t.Fatalf("expected unresolved MISSING item")
+	if output.Items[0].Metadata["reason"] != "missing_reference_price" {
+		t.Fatalf("expected missing_reference_price reason, got %+v", output.Items[0].Metadata)
 	}
 }
 
@@ -188,15 +193,18 @@ func TestPlanner_RoundingAndZeroDeltaFiltering(t *testing.T) {
 	svc := newPlannerService()
 
 	output, err := svc.Plan(Input{
-		ModeKey:             "full",
-		ModeParams:          map[string]interface{}{},
-		TotalPortfolioValue: 100,
-		Params:              PlanningParams{QuantityPrecision: 2, MinDeltaQuantity: 0.05},
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 100,
+		Params:            PlanningParams{QuantityPrecision: 2, MinDeltaQuantity: 0.05},
 		Holdings: []Holding{
-			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 1.0, CurrentWeight: 100, ReferencePrice: ptrFloat(100)},
+			{Ticker: "AAA", InstrumentID: "AAA", CurrentQuantity: 1.0},
 		},
 		Benchmark: []BenchmarkConstituent{
-			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: ptrFloat(100)},
+			{Ticker: "AAA", InstrumentID: "AAA", TargetWeight: 100},
+		},
+		Prices: []InstrumentPrice{
+			{Ticker: "AAA", InstrumentID: "AAA", Price: 100},
 		},
 	})
 	if err != nil {
@@ -206,11 +214,4 @@ func TestPlanner_RoundingAndZeroDeltaFiltering(t *testing.T) {
 	if len(output.Items) != 0 {
 		t.Fatalf("expected zero-delta item to be filtered, got %d items", len(output.Items))
 	}
-	if output.Summary.FilteredZeroDelta != 1 {
-		t.Fatalf("expected one filtered zero-delta item, got %d", output.Summary.FilteredZeroDelta)
-	}
-}
-
-func ptrFloat(value float64) *float64 {
-	return &value
 }

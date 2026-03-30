@@ -10,45 +10,52 @@ type normalizedHolding struct {
 	Ticker          string
 	InstrumentID    string
 	CurrentQuantity float64
-	CurrentWeight   float64
-	ReferencePrice  *float64
 }
 
 type normalizedTarget struct {
 	Ticker       string
 	InstrumentID string
-	TargetWeight *float64
+	TargetWeight float64
+}
+
+type normalizedPrice struct {
+	Ticker       string
+	InstrumentID string
+	Price        float64
 }
 
 func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []string) (Output, error) {
 	params := normalizePlanningParams(input.Params)
 	holdings := normalizeHoldings(input.Holdings)
 	normalizedTargets := normalizeTargets(targets)
+	prices := normalizePrices(input.Prices)
 
 	keys := unionInstrumentKeys(holdings, normalizedTargets)
 	items := make([]Item, 0, len(keys))
 	warnings := append([]string{}, initialWarnings...)
-	summary := Summary{TotalPortfolioValue: round(input.TotalPortfolioValue, 4)}
+	currentValues, currentTotalValue := resolveCurrentValues(holdings, prices)
 
 	for _, key := range keys {
 		holding := holdings[key]
 		target := normalizedTargets[key]
+		price := prices[key]
 
 		currentQuantity := round(holding.CurrentQuantity, params.QuantityPrecision)
-		currentWeight := round(holding.CurrentWeight, 6)
-
-		targetWeight := 0.0
-		hasTargetWeight := true
-		if target.TargetWeight == nil {
-			hasTargetWeight = false
-		} else {
-			targetWeight = round(*target.TargetWeight, 6)
+		currentWeight := 0.0
+		if currentTotalValue > 0 {
+			currentWeight = round((currentValues[key]/currentTotalValue)*100, 6)
 		}
+		targetWeight := round(target.TargetWeight, 6)
 
 		instrumentID := chooseNonEmpty(target.InstrumentID, holding.InstrumentID)
 		ticker := chooseNonEmpty(target.Ticker, holding.Ticker)
 		if ticker == "" {
 			ticker = instrumentID
+		}
+		var referencePrice *float64
+		if price.Price > 0 {
+			copy := price.Price
+			referencePrice = &copy
 		}
 
 		item := Item{
@@ -57,28 +64,21 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			CurrentQuantity: currentQuantity,
 			CurrentWeight:   currentWeight,
 			TargetWeight:    targetWeight,
-			ReferencePrice:  holding.ReferencePrice,
+			ReferencePrice:  referencePrice,
 			Metadata:        map[string]interface{}{},
 		}
 
 		reason := ""
-		if !hasTargetWeight {
-			reason = "missing_target_weight"
-			item.TargetWeight = 0
-		}
-
 		targetQuantity := 0.0
-		if reason == "" {
+		if targetWeight > 0 {
 			switch {
-			case targetWeight == 0:
-				targetQuantity = 0
-			case input.TotalPortfolioValue <= 0:
+			case input.InvestableCapital <= 0:
 				reason = "invalid_total_value"
-			case holding.ReferencePrice == nil || *holding.ReferencePrice <= 0:
+			case referencePrice == nil || *referencePrice <= 0:
 				reason = "missing_reference_price"
 			default:
-				targetValue := input.TotalPortfolioValue * targetWeight / 100
-				targetQuantity = targetValue / *holding.ReferencePrice
+				targetValue := input.InvestableCapital * targetWeight / 100
+				targetQuantity = targetValue / *referencePrice
 				item.Metadata["target_value"] = round(targetValue, 2)
 			}
 		}
@@ -90,7 +90,6 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			item.Side = chooseSideByWeight(currentWeight, targetWeight, currentQuantity, item.TargetQuantity)
 			item.Metadata["reason"] = reason
 			warnings = appendUniqueWarning(warnings, reason)
-			summary.UnresolvedItems++
 			items = append(items, item)
 			continue
 		}
@@ -100,25 +99,20 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 		item.Side = chooseSide(item.DeltaQuantity, currentWeight, targetWeight)
 		item.Status = ItemStatusPlanned
 
-		if holding.ReferencePrice != nil && *holding.ReferencePrice > 0 {
-			plannedAmount := round(item.DeltaQuantity**holding.ReferencePrice, 2)
+		if referencePrice != nil && *referencePrice > 0 {
+			plannedAmount := round(item.DeltaQuantity**referencePrice, 2)
 			item.PlannedAmount = &plannedAmount
-			summary.EstimatedTurnoverAbs = round(summary.EstimatedTurnoverAbs+math.Abs(plannedAmount), 2)
 		}
 
 		if math.Abs(item.DeltaQuantity) <= params.MinDeltaQuantity && !params.IncludeZeroDeltas {
-			summary.FilteredZeroDelta++
 			continue
 		}
 
-		summary.ActionableItems++
 		items = append(items, item)
 	}
 
-	summary.ItemsTotal = len(items)
 	return Output{
 		Items:    items,
-		Summary:  summary,
 		Warnings: warnings,
 	}, nil
 }
@@ -159,23 +153,16 @@ func normalizeHoldings(rows []Holding) map[string]normalizedHolding {
 				Ticker:          ticker,
 				InstrumentID:    instrumentID,
 				CurrentQuantity: row.CurrentQuantity,
-				CurrentWeight:   row.CurrentWeight,
-				ReferencePrice:  clonePtr(row.ReferencePrice),
 			}
 			continue
 		}
 
 		existing.CurrentQuantity += row.CurrentQuantity
-		existing.CurrentWeight += row.CurrentWeight
-		if existing.ReferencePrice == nil && row.ReferencePrice != nil {
-			existing.ReferencePrice = clonePtr(row.ReferencePrice)
-		}
 		result[key] = existing
 	}
 
 	for key, row := range result {
 		row.CurrentQuantity = round(row.CurrentQuantity, 8)
-		row.CurrentWeight = round(row.CurrentWeight, 6)
 		result[key] = row
 	}
 	return result
@@ -211,29 +198,69 @@ func normalizeTargets(rows []BenchmarkConstituent) map[string]normalizedTarget {
 			result[key] = normalizedTarget{
 				Ticker:       ticker,
 				InstrumentID: instrumentID,
-				TargetWeight: clonePtr(row.TargetWeight),
+				TargetWeight: row.TargetWeight,
 			}
 			continue
 		}
 
-		switch {
-		case existing.TargetWeight == nil && row.TargetWeight != nil:
-			existing.TargetWeight = clonePtr(row.TargetWeight)
-		case existing.TargetWeight != nil && row.TargetWeight != nil:
-			combined := *existing.TargetWeight + *row.TargetWeight
-			existing.TargetWeight = &combined
-		}
+		existing.TargetWeight += row.TargetWeight
 		result[key] = existing
 	}
 
 	for key, row := range result {
-		if row.TargetWeight != nil {
-			value := round(*row.TargetWeight, 6)
-			row.TargetWeight = &value
-		}
+		row.TargetWeight = round(row.TargetWeight, 6)
 		result[key] = row
 	}
 	return result
+}
+
+func normalizePrices(rows []InstrumentPrice) map[string]normalizedPrice {
+	result := make(map[string]normalizedPrice, len(rows))
+	for _, row := range rows {
+		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
+		instrumentID := strings.ToUpper(strings.TrimSpace(row.InstrumentID))
+		if instrumentID == "" {
+			instrumentID = ticker
+		}
+		if ticker == "" {
+			ticker = instrumentID
+		}
+		if instrumentID == "" || row.Price <= 0 {
+			continue
+		}
+
+		key := instrumentKey(ticker, instrumentID)
+		if _, exists := result[key]; exists {
+			continue
+		}
+		result[key] = normalizedPrice{
+			Ticker:       ticker,
+			InstrumentID: instrumentID,
+			Price:        row.Price,
+		}
+	}
+	return result
+}
+
+func resolveCurrentValues(
+	holdings map[string]normalizedHolding,
+	prices map[string]normalizedPrice,
+) (map[string]float64, float64) {
+	values := make(map[string]float64, len(holdings))
+	total := 0.0
+	for key, holding := range holdings {
+		price, ok := prices[key]
+		if !ok || price.Price <= 0 {
+			continue
+		}
+		value := round(holding.CurrentQuantity*price.Price, 8)
+		if value <= 0 {
+			continue
+		}
+		values[key] = value
+		total += value
+	}
+	return values, round(total, 8)
 }
 
 func unionInstrumentKeys(holdings map[string]normalizedHolding, targets map[string]normalizedTarget) []string {
