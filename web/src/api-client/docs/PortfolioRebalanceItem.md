@@ -8,11 +8,9 @@ Name | Type | Description | Notes
 **current_quantity** | **number** |  | [optional] [default to undefined]
 **current_weight** | **number** |  | [optional] [default to undefined]
 **delta_quantity** | **number** |  | [optional] [default to undefined]
-**id** | **number** |  | [optional] [default to undefined]
 **instrument_id** | **string** |  | [optional] [default to undefined]
 **metadata** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
 **planned_amount** | **number** |  | [optional] [default to undefined]
-**rebalance_run_id** | **number** |  | [optional] [default to undefined]
 **reference_price** | **number** |  | [optional] [default to undefined]
 **side** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [optional] [default to undefined]
@@ -29,11 +27,9 @@ const instance: PortfolioRebalanceItem = {
     current_quantity,
     current_weight,
     delta_quantity,
-    id,
     instrument_id,
     metadata,
     planned_amount,
-    rebalance_run_id,
     reference_price,
     side,
     status,

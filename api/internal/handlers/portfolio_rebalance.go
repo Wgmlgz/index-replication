@@ -97,7 +97,7 @@ func (h *PortfolioRebalanceHandler) ListRebalances(c *gin.Context) {
 // GetRebalanceDetail godoc
 //
 //	@Summary		Get rebalance draft detail
-//	@Description	Returns run summary and planned items for selected rebalance draft
+//	@Description	Returns run metadata and persisted planning payload (input, output, summary)
 //	@Tags			portfolio
 //	@Produce		json
 //	@Param			id			path		int	true	"Portfolio profile id"

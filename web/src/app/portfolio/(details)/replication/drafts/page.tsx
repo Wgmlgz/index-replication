@@ -251,7 +251,6 @@ export default function PortfolioReplicationDraftsPage() {
   ]);
 
   const selectedRun = rebalanceDetail?.run;
-  const selectedItems = rebalanceDetail?.items ?? [];
 
   const onOpenDraftDetail = useCallback(
     (runID: number | null) => {
@@ -499,8 +498,7 @@ export default function PortfolioReplicationDraftsPage() {
 
               {selectedRebalanceID && !rebalanceDetailLoading && selectedRun ? (
                 <RebalanceDraftDetailCard
-                  run={selectedRun}
-                  items={selectedItems}
+                  detail={rebalanceDetail}
                   language={i18n.language || 'en'}
                 />
               ) : null}

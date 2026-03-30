@@ -55,7 +55,7 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 	}
 	benchmark := "IMOEX"
 
-	run, items, err := repo.CreateRunWithItems(
+	run, err := repo.CreateRun(
 		&models.PortfolioRebalanceRun{
 			UserID:                        101,
 			PortfolioProfileID:            profileID,
@@ -68,49 +68,19 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 			ConfirmationRequired:          true,
 			Status:                        models.PortfolioRebalanceRunStatusDraft,
 			AsOfDate:                      asOfDate,
+			InputJSON:                     datatypes.JSONMap{"mode_key": "full"},
+			OutputJSON:                    datatypes.JSONMap{"warnings": []string{"missing_reference_price"}},
 			SummaryJSON:                   datatypes.JSONMap{"items_total": 2.0, "unresolved_items": 1.0},
-			WarningsJSON:                  datatypes.JSON([]byte(`["missing reference price"]`)),
-		},
-		[]models.PortfolioRebalanceItem{
-			{
-				Ticker:          "MOCKA",
-				InstrumentID:    "MOCKA",
-				Side:            models.PortfolioRebalanceItemSideBuy,
-				CurrentQuantity: 10,
-				TargetQuantity:  12,
-				DeltaQuantity:   2,
-				CurrentWeight:   45,
-				TargetWeight:    55,
-				ReferencePrice:  ptrFloat(100),
-				PlannedAmount:   ptrFloat(200),
-				Status:          models.PortfolioRebalanceItemStatusPlanned,
-				MetadataJSON:    datatypes.JSONMap{},
-			},
-			{
-				Ticker:          "MOCKB",
-				InstrumentID:    "MOCKB",
-				Side:            models.PortfolioRebalanceItemSideBuy,
-				CurrentQuantity: 0,
-				TargetQuantity:  0,
-				DeltaQuantity:   0,
-				CurrentWeight:   0,
-				TargetWeight:    12,
-				Status:          models.PortfolioRebalanceItemStatusUnresolved,
-				MetadataJSON:    datatypes.JSONMap{"reason": "missing_reference_price"},
-			},
 		},
 	)
 	if err != nil {
-		t.Fatalf("create run with items: %v", err)
+		t.Fatalf("create run: %v", err)
 	}
 	if run.ID <= 0 {
 		t.Fatalf("expected run id > 0")
 	}
-	if len(items) != 2 {
-		t.Fatalf("expected 2 items, got %d", len(items))
-	}
-	if items[0].ID <= 0 || items[1].ID <= 0 {
-		t.Fatalf("expected item ids to be assigned")
+	if run.InputJSON["mode_key"] != "full" {
+		t.Fatalf("expected input json payload")
 	}
 
 	list, err := repo.ListRunsByPortfolio(101, profileID, 10)
@@ -133,11 +103,8 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list items by run id: %v", err)
 	}
-	if len(detailItems) != 2 {
-		t.Fatalf("expected 2 detail items, got %d", len(detailItems))
-	}
-	if detailItems[1].Status != models.PortfolioRebalanceItemStatusUnresolved {
-		t.Fatalf("expected unresolved item, got %q", detailItems[1].Status)
+	if len(detailItems) != 0 {
+		t.Fatalf("expected no detail items, got %d", len(detailItems))
 	}
 }
 
@@ -157,7 +124,7 @@ func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {
 		t.Fatalf("parse as-of date: %v", err)
 	}
 
-	run, items, err := repo.CreateRunWithItems(
+	run, err := repo.CreateRun(
 		&models.PortfolioRebalanceRun{
 			UserID:                     102,
 			PortfolioProfileID:         profileID,
@@ -167,30 +134,19 @@ func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {
 			ConfirmationRequired:       true,
 			Status:                     models.PortfolioRebalanceRunStatusDraft,
 			AsOfDate:                   asOfDate,
-			WarningsJSON:               datatypes.JSON([]byte("[]")),
+			InputJSON:                  datatypes.JSONMap{"mode_key": "full"},
+			OutputJSON:                 datatypes.JSONMap{"warnings": []string{}},
+			SummaryJSON:                datatypes.JSONMap{},
 		},
-		[]models.PortfolioRebalanceItem{{
-			Ticker:          "MOCKA",
-			InstrumentID:    "MOCKA",
-			Side:            models.PortfolioRebalanceItemSideSell,
-			CurrentQuantity: 5,
-			TargetQuantity:  0,
-			DeltaQuantity:   -5,
-			Status:          models.PortfolioRebalanceItemStatusPlanned,
-		}},
 	)
 	if err != nil {
-		t.Fatalf("create run with items: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item")
+		t.Fatalf("create run: %v", err)
 	}
 
 	if err := repo.CreateExecutionLink(&models.PortfolioRebalanceExecutionLink{
-		RebalanceRunID:  run.ID,
-		RebalanceItemID: &items[0].ID,
-		Status:          "pending",
-		MetadataJSON:    datatypes.JSONMap{},
+		RebalanceRunID: run.ID,
+		Status:         "pending",
+		MetadataJSON:   datatypes.JSONMap{},
 	}); err != nil {
 		t.Fatalf("insert execution link: %v", err)
 	}
@@ -240,8 +196,4 @@ func assertCount(t *testing.T, db *gorm.DB, table string, where string, arg any,
 	if count != expected {
 		t.Fatalf("expected %d rows in %s, got %d", expected, table, count)
 	}
-}
-
-func ptrFloat(value float64) *float64 {
-	return &value
 }

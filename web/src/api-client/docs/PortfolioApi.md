@@ -669,7 +669,7 @@ No authorization required
 # **mePortfoliosIdRebalancesRebalanceIdGet**
 > PortfolioRebalanceDetailResponse mePortfoliosIdRebalancesRebalanceIdGet()
 
-Returns run summary and planned items for selected rebalance draft
+Returns run metadata and persisted planning payload (input, output, summary)
 
 ### Example
 

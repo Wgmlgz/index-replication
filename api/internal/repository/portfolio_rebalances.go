@@ -15,6 +15,20 @@ func NewPortfolioRebalancesRepository(db *gorm.DB) *PortfolioRebalancesRepositor
 	return &PortfolioRebalancesRepository{db: db}
 }
 
+func (r *PortfolioRebalancesRepository) CreateRun(
+	run *models.PortfolioRebalanceRun,
+) (*models.PortfolioRebalanceRun, error) {
+	if run == nil {
+		return nil, gorm.ErrInvalidData
+	}
+	fillRebalanceRunDefaults(run)
+
+	if err := r.db.Create(run).Error; err != nil {
+		return nil, err
+	}
+	return r.GetRunByID(run.UserID, run.PortfolioProfileID, run.ID)
+}
+
 func (r *PortfolioRebalancesRepository) CreateRunWithItems(
 	run *models.PortfolioRebalanceRun,
 	items []models.PortfolioRebalanceItem,
@@ -22,19 +36,7 @@ func (r *PortfolioRebalancesRepository) CreateRunWithItems(
 	if run == nil {
 		return nil, nil, gorm.ErrInvalidData
 	}
-
-	if run.ReplicationModeParamsSnapshot == nil {
-		run.ReplicationModeParamsSnapshot = datatypes.JSONMap{}
-	}
-	if run.PlanningParamsSnapshot == nil {
-		run.PlanningParamsSnapshot = datatypes.JSONMap{}
-	}
-	if run.SummaryJSON == nil {
-		run.SummaryJSON = datatypes.JSONMap{}
-	}
-	if len(run.WarningsJSON) == 0 {
-		run.WarningsJSON = datatypes.JSON([]byte("[]"))
-	}
+	fillRebalanceRunDefaults(run)
 
 	for i := range items {
 		if items[i].MetadataJSON == nil {
@@ -157,4 +159,25 @@ func (r *PortfolioRebalancesRepository) ListConfirmationRecordsByRunID(runID int
 		Order("created_at ASC, id ASC").
 		Find(&rows).Error
 	return rows, err
+}
+
+func fillRebalanceRunDefaults(run *models.PortfolioRebalanceRun) {
+	if run.ReplicationModeParamsSnapshot == nil {
+		run.ReplicationModeParamsSnapshot = datatypes.JSONMap{}
+	}
+	if run.PlanningParamsSnapshot == nil {
+		run.PlanningParamsSnapshot = datatypes.JSONMap{}
+	}
+	if run.InputJSON == nil {
+		run.InputJSON = datatypes.JSONMap{}
+	}
+	if run.OutputJSON == nil {
+		run.OutputJSON = datatypes.JSONMap{}
+	}
+	if run.SummaryJSON == nil {
+		run.SummaryJSON = datatypes.JSONMap{}
+	}
+	if len(run.WarningsJSON) == 0 {
+		run.WarningsJSON = datatypes.JSON([]byte("[]"))
+	}
 }

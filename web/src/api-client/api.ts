@@ -228,6 +228,11 @@ export interface PortfolioProviderAction {
     'id'?: string;
     'label'?: string;
 }
+export interface PortfolioRebalanceBenchmarkConstituent {
+    'instrument_id'?: string;
+    'target_weight'?: number;
+    'ticker'?: string;
+}
 export interface PortfolioRebalanceCreateRequest {
     'as_of_date'?: string;
     'confirmation_required'?: boolean;
@@ -235,24 +240,64 @@ export interface PortfolioRebalanceCreateRequest {
     'planning_params'?: { [key: string]: any; };
 }
 export interface PortfolioRebalanceDetailResponse {
-    'items'?: Array<PortfolioRebalanceItem>;
+    'input'?: PortfolioRebalanceInput;
+    'output'?: PortfolioRebalanceOutput;
     'run'?: PortfolioRebalanceRun;
+    'summary'?: PortfolioRebalanceSummary;
+}
+export interface PortfolioRebalanceHolding {
+    'current_quantity'?: number;
+    'instrument_id'?: string;
+    'ticker'?: string;
+}
+export interface PortfolioRebalanceInput {
+    'as_of_at'?: string;
+    'benchmark'?: Array<PortfolioRebalanceBenchmarkConstituent>;
+    'holdings'?: Array<PortfolioRebalanceHolding>;
+    'instruments'?: Array<PortfolioRebalanceInstrumentInfo>;
+    'investable_capital'?: number;
+    'mode_key'?: string;
+    'mode_params'?: { [key: string]: any; };
+    'money'?: Array<PortfolioRebalanceMoney>;
+    'params'?: PortfolioRebalancePlanningParams;
+}
+export interface PortfolioRebalanceInstrumentInfo {
+    'as_of_at'?: string;
+    'currency'?: string;
+    'instrument_id'?: string;
+    'lot_size'?: number;
+    'price'?: number;
+    'source'?: string;
+    'ticker'?: string;
 }
 export interface PortfolioRebalanceItem {
     'current_quantity'?: number;
     'current_weight'?: number;
     'delta_quantity'?: number;
-    'id'?: number;
     'instrument_id'?: string;
     'metadata'?: { [key: string]: any; };
     'planned_amount'?: number;
-    'rebalance_run_id'?: number;
     'reference_price'?: number;
     'side'?: string;
     'status'?: string;
     'target_quantity'?: number;
     'target_weight'?: number;
     'ticker'?: string;
+}
+export interface PortfolioRebalanceMoney {
+    'available'?: number;
+    'blocked'?: number;
+    'currency'?: string;
+}
+export interface PortfolioRebalanceOutput {
+    'items'?: Array<PortfolioRebalanceItem>;
+    'money'?: Array<PortfolioRebalanceMoney>;
+    'warnings'?: Array<string>;
+}
+export interface PortfolioRebalancePlanningParams {
+    'include_zero_deltas'?: boolean;
+    'min_delta_quantity'?: number;
+    'quantity_precision'?: number;
 }
 export interface PortfolioRebalanceRun {
     'as_of_date'?: string;
@@ -269,9 +314,15 @@ export interface PortfolioRebalanceRun {
     'provider'?: string;
     'started_at'?: string;
     'status'?: string;
-    'summary'?: { [key: string]: any; };
     'updated_at'?: string;
-    'warnings'?: Array<string>;
+}
+export interface PortfolioRebalanceSummary {
+    'actionable_items'?: number;
+    'estimated_turnover_abs'?: number;
+    'filtered_zero_delta'?: number;
+    'investable_capital'?: number;
+    'items_total'?: number;
+    'unresolved_items'?: number;
 }
 export interface PortfolioReplicationConfig {
     'benchmark_secid'?: string;
@@ -2069,7 +2120,7 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Returns run summary and planned items for selected rebalance draft
+         * Returns run metadata and persisted planning payload (input, output, summary)
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
          * @param {number} rebalanceId Rebalance run id
@@ -2419,7 +2470,7 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns run summary and planned items for selected rebalance draft
+         * Returns run metadata and persisted planning payload (input, output, summary)
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
          * @param {number} rebalanceId Rebalance run id
@@ -2623,7 +2674,7 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdRebalancesRebalanceIdDelete(id, rebalanceId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns run summary and planned items for selected rebalance draft
+         * Returns run metadata and persisted planning payload (input, output, summary)
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
          * @param {number} rebalanceId Rebalance run id
@@ -2821,7 +2872,7 @@ export class PortfolioApi extends BaseAPI {
     }
 
     /**
-     * Returns run summary and planned items for selected rebalance draft
+     * Returns run metadata and persisted planning payload (input, output, summary)
      * @summary Get rebalance draft detail
      * @param {number} id Portfolio profile id
      * @param {number} rebalanceId Rebalance run id

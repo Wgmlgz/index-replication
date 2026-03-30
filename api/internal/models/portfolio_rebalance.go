@@ -32,6 +32,8 @@ type PortfolioRebalanceRun struct {
 	ConfirmationRequired          bool              `gorm:"column:confirmation_required;not null;default:true"`
 	Status                        string            `gorm:"column:status;not null;default:draft;index:idx_portfolio_rebalance_runs_status"`
 	AsOfDate                      time.Time         `gorm:"column:as_of_date;type:date;not null"`
+	InputJSON                     datatypes.JSONMap `gorm:"column:input_json;type:jsonb;not null;default:'{}'"`
+	OutputJSON                    datatypes.JSONMap `gorm:"column:output_json;type:jsonb;not null;default:'{}'"`
 	SummaryJSON                   datatypes.JSONMap `gorm:"column:summary_json;type:jsonb;not null;default:'{}'"`
 	WarningsJSON                  datatypes.JSON    `gorm:"column:warnings_json;type:jsonb;not null;default:'[]'"`
 	StartedAt                     *time.Time        `gorm:"column:started_at"`

@@ -2,7 +2,6 @@ package rebalance
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -16,14 +15,10 @@ import (
 )
 
 type runRepository interface {
-	CreateRunWithItems(
-		run *models.PortfolioRebalanceRun,
-		items []models.PortfolioRebalanceItem,
-	) (*models.PortfolioRebalanceRun, []models.PortfolioRebalanceItem, error)
+	CreateRun(run *models.PortfolioRebalanceRun) (*models.PortfolioRebalanceRun, error)
 	ListRunsByPortfolio(userID int, portfolioProfileID int, limit int) ([]models.PortfolioRebalanceRun, error)
 	GetRunByID(userID int, portfolioProfileID int, runID int) (*models.PortfolioRebalanceRun, error)
 	DeleteRunByID(userID int, portfolioProfileID int, runID int) error
-	ListItemsByRunID(runID int) ([]models.PortfolioRebalanceItem, error)
 }
 
 type auditLogger interface {
@@ -98,26 +93,29 @@ func (s *Service) CreateDraft(
 	}
 	endedAt := time.Now().UTC()
 	planSummary := planner.BuildSummary(planOutput.Items, snapshot.PlannerInput.InvestableCapital)
+	planInputDTO := toPlanInputDTO(snapshot.PlannerInput)
+	planOutputDTO := toPlanOutputDTO(planOutput)
+	planSummaryDTO := toPlanSummaryDTO(planSummary)
 
 	asOfDate := snapshot.PlannerInput.AsOfAt
 	if asOfDate.IsZero() {
 		asOfDate = time.Now().UTC()
 	}
 
-	summaryJSON := datatypes.JSONMap{
-		"items_total":            float64(planSummary.ItemsTotal),
-		"actionable_items":       float64(planSummary.ActionableItems),
-		"unresolved_items":       float64(planSummary.UnresolvedItems),
-		"filtered_zero_delta":    float64(planSummary.FilteredZeroDelta),
-		"estimated_turnover_abs": planSummary.EstimatedTurnoverAbs,
-		"total_portfolio_value":  planSummary.InvestableCapital,
-		"cash_available":         snapshot.CashAvailable,
-		"holdings_count":         float64(snapshot.HoldingsCount),
-		"benchmark_count":        float64(snapshot.BenchmarkCount),
+	inputJSON, err := toJSONMap(planInputDTO)
+	if err != nil {
+		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
+		return nil, fmt.Errorf("%w: encode plan input: %v", ErrPlanningFailed, err)
 	}
-	warningsJSON, marshalErr := json.Marshal(planOutput.Warnings)
-	if marshalErr != nil {
-		warningsJSON = []byte("[]")
+	outputJSON, err := toJSONMap(planOutputDTO)
+	if err != nil {
+		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
+		return nil, fmt.Errorf("%w: encode plan output: %v", ErrPlanningFailed, err)
+	}
+	summaryJSON, err := toJSONMap(planSummaryDTO)
+	if err != nil {
+		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
+		return nil, fmt.Errorf("%w: encode plan summary: %v", ErrPlanningFailed, err)
 	}
 
 	runModel := &models.PortfolioRebalanceRun{
@@ -132,39 +130,14 @@ func (s *Service) CreateDraft(
 		ConfirmationRequired:          confirmationRequired,
 		Status:                        models.PortfolioRebalanceRunStatusDraft,
 		AsOfDate:                      asOfDate,
+		InputJSON:                     inputJSON,
+		OutputJSON:                    outputJSON,
 		SummaryJSON:                   summaryJSON,
-		WarningsJSON:                  datatypes.JSON(warningsJSON),
 		StartedAt:                     &startedAt,
 		EndedAt:                       &endedAt,
 	}
 
-	itemModels := make([]models.PortfolioRebalanceItem, 0, len(planOutput.Items))
-	for _, item := range planOutput.Items {
-		metadata := datatypes.JSONMap{}
-		for key, value := range item.Metadata {
-			metadata[key] = value
-		}
-		if len(metadata) == 0 {
-			metadata = datatypes.JSONMap{}
-		}
-
-		itemModels = append(itemModels, models.PortfolioRebalanceItem{
-			Ticker:          item.Ticker,
-			InstrumentID:    item.InstrumentID,
-			Side:            item.Side,
-			CurrentQuantity: item.CurrentQuantity,
-			TargetQuantity:  item.TargetQuantity,
-			DeltaQuantity:   item.DeltaQuantity,
-			CurrentWeight:   item.CurrentWeight,
-			TargetWeight:    item.TargetWeight,
-			ReferencePrice:  cloneFloatPtr(item.ReferencePrice),
-			PlannedAmount:   cloneFloatPtr(item.PlannedAmount),
-			Status:          item.Status,
-			MetadataJSON:    metadata,
-		})
-	}
-
-	savedRun, savedItems, err := s.runsRepo.CreateRunWithItems(runModel, itemModels)
+	savedRun, err := s.runsRepo.CreateRun(runModel)
 	if err != nil {
 		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
 		return nil, err
@@ -179,13 +152,10 @@ func (s *Service) CreateDraft(
 		"execution_mode":        savedRun.ExecutionMode,
 		"confirmation_required": savedRun.ConfirmationRequired,
 		"status":                savedRun.Status,
-		"items_total":           len(savedItems),
+		"items_total":           len(planOutput.Items),
 	})
 
-	return &dto.PortfolioRebalanceDetailResponse{
-		Run:   toRunDTO(savedRun),
-		Items: toItemDTOList(savedItems),
-	}, nil
+	return toDetailDTO(savedRun)
 }
 
 func (s *Service) ListRuns(
@@ -236,15 +206,11 @@ func (s *Service) GetRunDetail(
 		}
 		return nil, err
 	}
-	items, err := s.runsRepo.ListItemsByRunID(run.ID)
+	detail, err := toDetailDTO(run)
 	if err != nil {
 		return nil, err
 	}
-
-	return &dto.PortfolioRebalanceDetailResponse{
-		Run:   toRunDTO(run),
-		Items: toItemDTOList(items),
-	}, nil
+	return detail, nil
 }
 
 func (s *Service) DeleteDraft(
@@ -310,18 +276,6 @@ func toRunDTO(model *models.PortfolioRebalanceRun) dto.PortfolioRebalanceRun {
 	for key, value := range model.PlanningParamsSnapshot {
 		planningParams[key] = value
 	}
-	summary := map[string]interface{}{}
-	for key, value := range model.SummaryJSON {
-		summary[key] = value
-	}
-
-	warnings := make([]string, 0)
-	if len(model.WarningsJSON) > 0 {
-		_ = json.Unmarshal(model.WarningsJSON, &warnings)
-	}
-	if warnings == nil {
-		warnings = []string{}
-	}
 
 	return dto.PortfolioRebalanceRun{
 		ID:                   model.ID,
@@ -335,48 +289,11 @@ func toRunDTO(model *models.PortfolioRebalanceRun) dto.PortfolioRebalanceRun {
 		ConfirmationRequired: model.ConfirmationRequired,
 		Status:               model.Status,
 		AsOfDate:             model.AsOfDate.UTC().Format("2006-01-02"),
-		Summary:              summary,
-		Warnings:             warnings,
 		StartedAt:            model.StartedAt,
 		EndedAt:              model.EndedAt,
 		CreatedAt:            model.CreatedAt,
 		UpdatedAt:            model.UpdatedAt,
 	}
-}
-
-func toItemDTOList(modelsRows []models.PortfolioRebalanceItem) []dto.PortfolioRebalanceItem {
-	items := make([]dto.PortfolioRebalanceItem, 0, len(modelsRows))
-	for _, model := range modelsRows {
-		metadata := map[string]interface{}{}
-		for key, value := range model.MetadataJSON {
-			metadata[key] = value
-		}
-		items = append(items, dto.PortfolioRebalanceItem{
-			ID:              model.ID,
-			RebalanceRunID:  model.RebalanceRunID,
-			Ticker:          model.Ticker,
-			InstrumentID:    model.InstrumentID,
-			Side:            model.Side,
-			CurrentQuantity: model.CurrentQuantity,
-			TargetQuantity:  model.TargetQuantity,
-			DeltaQuantity:   model.DeltaQuantity,
-			CurrentWeight:   model.CurrentWeight,
-			TargetWeight:    model.TargetWeight,
-			ReferencePrice:  model.ReferencePrice,
-			PlannedAmount:   model.PlannedAmount,
-			Status:          model.Status,
-			Metadata:        metadata,
-		})
-	}
-	return items
-}
-
-func cloneFloatPtr(value *float64) *float64 {
-	if value == nil {
-		return nil
-	}
-	copy := *value
-	return &copy
 }
 
 func strPtr(value string) *string {

@@ -5,8 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**items** | [**Array&lt;PortfolioRebalanceItem&gt;**](PortfolioRebalanceItem.md) |  | [optional] [default to undefined]
+**input** | [**PortfolioRebalanceInput**](PortfolioRebalanceInput.md) |  | [optional] [default to undefined]
+**output** | [**PortfolioRebalanceOutput**](PortfolioRebalanceOutput.md) |  | [optional] [default to undefined]
 **run** | [**PortfolioRebalanceRun**](PortfolioRebalanceRun.md) |  | [optional] [default to undefined]
+**summary** | [**PortfolioRebalanceSummary**](PortfolioRebalanceSummary.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -14,8 +16,10 @@ Name | Type | Description | Notes
 import { PortfolioRebalanceDetailResponse } from './api';
 
 const instance: PortfolioRebalanceDetailResponse = {
-    items,
+    input,
+    output,
     run,
+    summary,
 };
 ```
 

@@ -417,6 +417,15 @@ definitions:
       label:
         type: string
     type: object
+  PortfolioRebalanceBenchmarkConstituent:
+    properties:
+      instrument_id:
+        type: string
+      target_weight:
+        type: number
+      ticker:
+        type: string
+    type: object
   PortfolioRebalanceCreateRequest:
     properties:
       as_of_date:
@@ -431,12 +440,70 @@ definitions:
     type: object
   PortfolioRebalanceDetailResponse:
     properties:
-      items:
-        items:
-          $ref: '#/definitions/PortfolioRebalanceItem'
-        type: array
+      input:
+        $ref: '#/definitions/PortfolioRebalanceInput'
+      output:
+        $ref: '#/definitions/PortfolioRebalanceOutput'
       run:
         $ref: '#/definitions/PortfolioRebalanceRun'
+      summary:
+        $ref: '#/definitions/PortfolioRebalanceSummary'
+    type: object
+  PortfolioRebalanceHolding:
+    properties:
+      current_quantity:
+        type: number
+      instrument_id:
+        type: string
+      ticker:
+        type: string
+    type: object
+  PortfolioRebalanceInput:
+    properties:
+      as_of_at:
+        type: string
+      benchmark:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceBenchmarkConstituent'
+        type: array
+      holdings:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceHolding'
+        type: array
+      instruments:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceInstrumentInfo'
+        type: array
+      investable_capital:
+        type: number
+      mode_key:
+        type: string
+      mode_params:
+        additionalProperties: true
+        type: object
+      money:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceMoney'
+        type: array
+      params:
+        $ref: '#/definitions/PortfolioRebalancePlanningParams'
+    type: object
+  PortfolioRebalanceInstrumentInfo:
+    properties:
+      as_of_at:
+        type: string
+      currency:
+        type: string
+      instrument_id:
+        type: string
+      lot_size:
+        type: integer
+      price:
+        type: number
+      source:
+        type: string
+      ticker:
+        type: string
     type: object
   PortfolioRebalanceItem:
     properties:
@@ -446,8 +513,6 @@ definitions:
         type: number
       delta_quantity:
         type: number
-      id:
-        type: integer
       instrument_id:
         type: string
       metadata:
@@ -455,8 +520,6 @@ definitions:
         type: object
       planned_amount:
         type: number
-      rebalance_run_id:
-        type: integer
       reference_price:
         type: number
       side:
@@ -469,6 +532,39 @@ definitions:
         type: number
       ticker:
         type: string
+    type: object
+  PortfolioRebalanceMoney:
+    properties:
+      available:
+        type: number
+      blocked:
+        type: number
+      currency:
+        type: string
+    type: object
+  PortfolioRebalanceOutput:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceItem'
+        type: array
+      money:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceMoney'
+        type: array
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  PortfolioRebalancePlanningParams:
+    properties:
+      include_zero_deltas:
+        type: boolean
+      min_delta_quantity:
+        type: number
+      quantity_precision:
+        type: integer
     type: object
   PortfolioRebalanceRun:
     properties:
@@ -502,15 +598,23 @@ definitions:
         type: string
       status:
         type: string
-      summary:
-        additionalProperties: true
-        type: object
       updated_at:
         type: string
-      warnings:
-        items:
-          type: string
-        type: array
+    type: object
+  PortfolioRebalanceSummary:
+    properties:
+      actionable_items:
+        type: integer
+      estimated_turnover_abs:
+        type: number
+      filtered_zero_delta:
+        type: integer
+      investable_capital:
+        type: number
+      items_total:
+        type: integer
+      unresolved_items:
+        type: integer
     type: object
   PortfolioReplicationConfig:
     properties:
@@ -1417,7 +1521,8 @@ paths:
       tags:
       - portfolio
     get:
-      description: Returns run summary and planned items for selected rebalance draft
+      description: Returns run metadata and persisted planning payload (input, output,
+        summary)
       parameters:
       - description: Portfolio profile id
         in: path

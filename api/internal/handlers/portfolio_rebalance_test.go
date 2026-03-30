@@ -56,7 +56,7 @@ func TestPortfolioRebalanceAPI_CreateDraftSuccess(t *testing.T) {
 	if resp.Run.ModeKey != "full" {
 		t.Fatalf("expected mode full, got %q", resp.Run.ModeKey)
 	}
-	if len(resp.Items) == 0 {
+	if len(resp.Output.Items) == 0 {
 		t.Fatalf("expected planned items")
 	}
 }
@@ -136,7 +136,7 @@ func TestPortfolioRebalanceAPI_DetailAndListContract(t *testing.T) {
 	if detailResp.Run.ID != created.Run.ID {
 		t.Fatalf("expected detail run id %d, got %d", created.Run.ID, detailResp.Run.ID)
 	}
-	if len(detailResp.Items) == 0 {
+	if len(detailResp.Output.Items) == 0 {
 		t.Fatalf("expected detail items")
 	}
 }

@@ -21,17 +21,59 @@ type PortfolioRebalanceRun struct {
 	ConfirmationRequired bool                   `json:"confirmation_required"`
 	Status               string                 `json:"status"`
 	AsOfDate             string                 `json:"as_of_date"`
-	Summary              map[string]interface{} `json:"summary"`
-	Warnings             []string               `json:"warnings"`
 	StartedAt            *time.Time             `json:"started_at"`
 	EndedAt              *time.Time             `json:"ended_at"`
 	CreatedAt            time.Time              `json:"created_at"`
 	UpdatedAt            time.Time              `json:"updated_at"`
 } //@name PortfolioRebalanceRun
 
+type PortfolioRebalancePlanningParams struct {
+	IncludeZeroDeltas bool    `json:"include_zero_deltas"`
+	QuantityPrecision int     `json:"quantity_precision"`
+	MinDeltaQuantity  float64 `json:"min_delta_quantity"`
+} //@name PortfolioRebalancePlanningParams
+
+type PortfolioRebalanceHolding struct {
+	Ticker          string  `json:"ticker"`
+	InstrumentID    string  `json:"instrument_id"`
+	CurrentQuantity float64 `json:"current_quantity"`
+} //@name PortfolioRebalanceHolding
+
+type PortfolioRebalanceBenchmarkConstituent struct {
+	Ticker       string  `json:"ticker"`
+	InstrumentID string  `json:"instrument_id"`
+	TargetWeight float64 `json:"target_weight"`
+} //@name PortfolioRebalanceBenchmarkConstituent
+
+type PortfolioRebalanceMoney struct {
+	Currency  string  `json:"currency"`
+	Available float64 `json:"available"`
+	Blocked   float64 `json:"blocked"`
+} //@name PortfolioRebalanceMoney
+
+type PortfolioRebalanceInstrumentInfo struct {
+	Ticker       string    `json:"ticker"`
+	InstrumentID string    `json:"instrument_id"`
+	Price        float64   `json:"price"`
+	Currency     string    `json:"currency"`
+	AsOfAt       time.Time `json:"as_of_at"`
+	Source       string    `json:"source"`
+	LotSize      int64     `json:"lot_size"`
+} //@name PortfolioRebalanceInstrumentInfo
+
+type PortfolioRebalanceInput struct {
+	AsOfAt            time.Time                                `json:"as_of_at"`
+	ModeKey           string                                   `json:"mode_key"`
+	ModeParams        map[string]interface{}                   `json:"mode_params"`
+	InvestableCapital float64                                  `json:"investable_capital"`
+	Holdings          []PortfolioRebalanceHolding              `json:"holdings"`
+	Benchmark         []PortfolioRebalanceBenchmarkConstituent `json:"benchmark"`
+	Instruments       []PortfolioRebalanceInstrumentInfo       `json:"instruments"`
+	Money             []PortfolioRebalanceMoney                `json:"money"`
+	Params            PortfolioRebalancePlanningParams         `json:"params"`
+} //@name PortfolioRebalanceInput
+
 type PortfolioRebalanceItem struct {
-	ID              int                    `json:"id"`
-	RebalanceRunID  int                    `json:"rebalance_run_id"`
 	Ticker          string                 `json:"ticker"`
 	InstrumentID    string                 `json:"instrument_id"`
 	Side            string                 `json:"side"`
@@ -46,7 +88,24 @@ type PortfolioRebalanceItem struct {
 	Metadata        map[string]interface{} `json:"metadata"`
 } //@name PortfolioRebalanceItem
 
+type PortfolioRebalanceOutput struct {
+	Items    []PortfolioRebalanceItem  `json:"items"`
+	Warnings []string                  `json:"warnings"`
+	Money    []PortfolioRebalanceMoney `json:"money"`
+} //@name PortfolioRebalanceOutput
+
+type PortfolioRebalanceSummary struct {
+	ItemsTotal           int     `json:"items_total"`
+	ActionableItems      int     `json:"actionable_items"`
+	UnresolvedItems      int     `json:"unresolved_items"`
+	FilteredZeroDelta    int     `json:"filtered_zero_delta"`
+	EstimatedTurnoverAbs float64 `json:"estimated_turnover_abs"`
+	InvestableCapital    float64 `json:"investable_capital"`
+} //@name PortfolioRebalanceSummary
+
 type PortfolioRebalanceDetailResponse struct {
-	Run   PortfolioRebalanceRun    `json:"run"`
-	Items []PortfolioRebalanceItem `json:"items"`
+	Run     PortfolioRebalanceRun     `json:"run"`
+	Input   PortfolioRebalanceInput   `json:"input"`
+	Output  PortfolioRebalanceOutput  `json:"output"`
+	Summary PortfolioRebalanceSummary `json:"summary"`
 } //@name PortfolioRebalanceDetailResponse

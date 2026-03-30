@@ -19,9 +19,7 @@ Name | Type | Description | Notes
 **provider** | **string** |  | [optional] [default to undefined]
 **started_at** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [optional] [default to undefined]
-**summary** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
 **updated_at** | **string** |  | [optional] [default to undefined]
-**warnings** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -43,9 +41,7 @@ const instance: PortfolioRebalanceRun = {
     provider,
     started_at,
     status,
-    summary,
     updated_at,
-    warnings,
 };
 ```
 
