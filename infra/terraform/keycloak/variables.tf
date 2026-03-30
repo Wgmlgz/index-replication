@@ -100,7 +100,7 @@ variable "keycloak_web_public_client" {
 variable "keycloak_web_redirect_uris" {
   description = "Valid redirect URIs for web OIDC client as a comma-separated list."
   type        = string
-  default     = "http://localhost:3000/login*,http://localhost:30000/login*"
+  default     = "http://localhost:3000/login*,http://localhost:30000/login*,http://localhost:3000/auth/silent-callback,http://localhost:30000/auth/silent-callback"
 }
 
 variable "keycloak_web_origins" {

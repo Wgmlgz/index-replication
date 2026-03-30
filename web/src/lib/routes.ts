@@ -1,4 +1,4 @@
-export const PUBLIC_ROUTES = ['/', '/login'] as const;
+export const PUBLIC_ROUTES = ['/', '/login', '/auth/silent-callback'] as const;
 
 export const DEFAULT_AUTHENTICATED_ROUTE = '/dashboard';
 

@@ -106,7 +106,13 @@ OIDC/Keycloak frontend settings:
 - `NEXT_PUBLIC_KEYCLOAK_BASE_URL` (default `/auth` in docker-compose; can be absolute URL)
 - `NEXT_PUBLIC_KEYCLOAK_REALM` (default `index-replication`)
 - `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID` (default `web`)
-- `NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI` (optional; enables silent token renew when set)
+- `NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI` (default `/auth/silent-callback`; enables automatic silent token renew)
+
+Keycloak `web` client redirect URIs must include both login and silent callback paths, for example:
+- `http://localhost:3000/login*`
+- `http://localhost:30000/login*`
+- `http://localhost:3000/auth/silent-callback`
+- `http://localhost:30000/auth/silent-callback`
 
 Keycloak hosted login UI is themed in a separate project:
 

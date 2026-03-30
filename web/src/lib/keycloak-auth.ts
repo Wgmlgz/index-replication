@@ -15,6 +15,7 @@ type ThemePreference = 'light' | 'dark' | 'system';
 
 let userManager: UserManager | null = null;
 let silentRenewEnabled = false;
+let silentRenewInFlight: Promise<string | null> | null = null;
 
 const normalizeURL = (value: string) => value.trim().replace(/\/+$/, '');
 
@@ -205,6 +206,49 @@ export const consumeKeycloakLoginCallback = async (
   return true;
 };
 
+export const consumeKeycloakSilentCallback = async (): Promise<boolean> => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const manager = getUserManager();
+  if (!manager || !silentRenewEnabled) {
+    return false;
+  }
+
+  await manager.signinSilentCallback(window.location.href);
+  return true;
+};
+
+export const renewKeycloakIDToken = async (): Promise<string | null> => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const manager = getUserManager();
+  if (!manager || !silentRenewEnabled) {
+    return null;
+  }
+
+  if (silentRenewInFlight) {
+    return silentRenewInFlight;
+  }
+
+  silentRenewInFlight = (async () => {
+    try {
+      const user = await manager.signinSilent();
+      return user?.id_token || null;
+    } catch {
+      await manager.removeUser().catch(() => {});
+      return null;
+    } finally {
+      silentRenewInFlight = null;
+    }
+  })();
+
+  return silentRenewInFlight;
+};
+
 export const getValidKeycloakIDToken = async (): Promise<string | null> => {
   if (typeof window === 'undefined') {
     return null;
@@ -215,26 +259,13 @@ export const getValidKeycloakIDToken = async (): Promise<string | null> => {
     return null;
   }
 
-  let user = await manager.getUser();
+  const user = await manager.getUser();
   if (!user) {
     return null;
   }
 
   if (user.expired) {
-    if (!silentRenewEnabled) {
-      await manager.removeUser();
-      return null;
-    }
-    try {
-      user = await manager.signinSilent();
-    } catch {
-      await manager.removeUser();
-      return null;
-    }
-  }
-
-  if (!user) {
-    return null;
+    return renewKeycloakIDToken();
   }
 
   return user.id_token || null;

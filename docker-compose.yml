@@ -26,7 +26,7 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_keycloak_realm_display_name: "${KEYCLOAK_REALM_DISPLAY_NAME:-Index Replication}"
   TF_VAR_keycloak_admin_realm: ${KEYCLOAK_ADMIN_REALM:-index-replication-admin}
   TF_VAR_keycloak_admin_realm_display_name: "${KEYCLOAK_ADMIN_REALM_DISPLAY_NAME:-Index Replication Admin}"
-  TF_VAR_keycloak_web_redirect_uris: ${KEYCLOAK_WEB_REDIRECT_URIS:-http://localhost:3000/login*,http://localhost:30000/login*}
+  TF_VAR_keycloak_web_redirect_uris: ${KEYCLOAK_WEB_REDIRECT_URIS:-http://localhost:3000/login*,http://localhost:30000/login*,http://localhost:3000/auth/silent-callback,http://localhost:30000/auth/silent-callback}
   TF_VAR_keycloak_web_origins: ${KEYCLOAK_WEB_ORIGINS:-http://localhost:3000,http://localhost:30000}
   TF_VAR_keycloak_admin_proxy_client_id: ${KEYCLOAK_ADMIN_PROXY_CLIENT_ID:-admin-proxy}
   TF_VAR_keycloak_admin_proxy_client_secret: ${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
@@ -330,7 +330,7 @@ services:
         NEXT_PUBLIC_KEYCLOAK_BASE_URL: ${NEXT_PUBLIC_KEYCLOAK_BASE_URL:-/auth}
         NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM:-index-replication}
         NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID:-web}
-        NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI: ${NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI:-}
+        NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI: ${NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI:-/auth/silent-callback}
     depends_on:
       - api
     labels:

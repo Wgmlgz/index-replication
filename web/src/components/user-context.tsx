@@ -53,6 +53,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const queryClient = useQueryClient();
   const isRestoring = useIsRestoring();
+  const isSilentCallbackRoute =
+    typeof window !== 'undefined' && window.location.pathname === '/auth/silent-callback';
 
   const { data, isPending, refetch } = useQuery<MeData>({
     queryKey: USER_QUERY_KEY,
@@ -78,6 +80,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     retry: false,
     initialData: () => queryClient.getQueryData<MeData>(USER_QUERY_KEY),
     refetchOnMount: 'always',
+    enabled: !isSilentCallbackRoute,
   });
 
   const loading = isRestoring || (isPending && !data);

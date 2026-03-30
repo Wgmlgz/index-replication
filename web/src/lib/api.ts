@@ -14,7 +14,7 @@ import {
 import axios, { AxiosHeaders } from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axiosTauriApiAdapter from '@/lib/axios-tauri-proxy';
-import { getValidKeycloakIDToken } from '@/lib/keycloak-auth';
+import { getValidKeycloakIDToken, renewKeycloakIDToken } from '@/lib/keycloak-auth';
 
 export const isTauri = () => {
   if (typeof window === 'undefined') {
@@ -128,6 +128,11 @@ const setAuthorizationHeader = (
   config.headers = headers;
 };
 
+const AUTH_RETRY_FLAG = '__keycloakAuthRetried';
+type RetriableAuthConfig = InternalAxiosRequestConfig & {
+  [AUTH_RETRY_FLAG]?: boolean;
+};
+
 axiosClient.defaults.baseURL = getApiUrl();
 axiosClient.interceptors.request.use(async config => {
   config.baseURL = getApiUrl();
@@ -135,6 +140,34 @@ axiosClient.interceptors.request.use(async config => {
   setAuthorizationHeader(config, token);
   return config;
 });
+
+axiosClient.interceptors.response.use(
+  response => response,
+  async error => {
+    if (!axios.isAxiosError(error)) {
+      throw error instanceof Error ? error : new Error('Unknown request error');
+    }
+
+    const status = error.response?.status;
+    const originalConfig = error.config as RetriableAuthConfig | undefined;
+    if (
+      status !== axios.HttpStatusCode.Unauthorized
+      || !originalConfig
+      || originalConfig[AUTH_RETRY_FLAG]
+    ) {
+      throw error;
+    }
+
+    const token = await renewKeycloakIDToken();
+    if (!token) {
+      throw error;
+    }
+
+    originalConfig[AUTH_RETRY_FLAG] = true;
+    setAuthorizationHeader(originalConfig, token);
+    return axiosClient.request(originalConfig);
+  },
+);
 
 const config = new Configuration({
   basePath: getApiUrl(),
