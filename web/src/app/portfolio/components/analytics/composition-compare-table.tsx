@@ -305,7 +305,7 @@ export function CompositionCompareTable({
         <div className='text-sm text-muted-foreground'>{noDataMessage}</div>
       )}
       {!loading && !hasError && rows.length > 0 && (
-        <>
+        <div className='h-full flex flex-col gap-4'>
           <div className='grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3'>
             <div className='rounded border p-2'>
               {t('portfolio.composition.compare.summary.trackingError')}:{' '}
@@ -363,38 +363,41 @@ export function CompositionCompareTable({
             </div>
           </div>
 
-          <div className='min-h-0 flex-1 overflow-auto rounded border'>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map(headerGroup => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map(row => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map(cell => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className='relative h-full rounded border overflow-auto'>
+            <div className='absolute inset-0'>
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map(header => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.map(row => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map(cell => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
           </div>
-        </>
+        </div>
       )}
     </div>
   );

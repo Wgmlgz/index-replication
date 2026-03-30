@@ -93,7 +93,7 @@ export default function PortfolioOverviewLayout({
     <Tabs
       value={activeTab}
       onValueChange={handleTabChange}
-      className='min-h-0 min-w-0 flex-1 gap-4 overflow-hidden'
+      className='h-full w-full'
     >
       <TabsList className='grid h-auto w-full grid-cols-3 md:w-auto'>
         <TabsTrigger value='summary'>
@@ -110,7 +110,7 @@ export default function PortfolioOverviewLayout({
         </TabsTrigger>
       </TabsList>
 
-      <div className='min-h-0 min-w-0 flex-1 overflow-hidden'>
+      <div className='h-full'>
         {children}
       </div>
     </Tabs>
