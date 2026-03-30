@@ -1,63 +1,20 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type {
-  PortfolioRebalanceDetailResponse,
-  PortfolioRebalanceItem,
-  PortfolioRebalanceMoney,
-} from '@/api-client';
+import type { PortfolioRebalanceDetailResponse } from '@/api-client';
+import { SortableDataTable } from '@/app/portfolio/components/sortable-data-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-
-function formatDateTime(value: string | undefined, language: string): string {
-  if (!value) {
-    return '-';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-  return new Intl.DateTimeFormat(language || 'en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
-}
-
-function formatNumber(value: number | undefined, fractionDigits = 4): string {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return '-';
-  }
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: fractionDigits,
-  }).format(value);
-}
-
-function unresolvedReason(item: PortfolioRebalanceItem): string {
-  const reason: unknown = item.metadata?.reason;
-  return typeof reason === 'string' && reason.trim().length > 0 ? reason : '-';
-}
-
-function renderMoneyRows(money: PortfolioRebalanceMoney[], digits = 2): string {
-  if (money.length === 0) {
-    return '-';
-  }
-  return money
-    .map(
-      row =>
-        `${row.currency || '-'}: ${formatNumber(row.available, digits)} (blocked ${formatNumber(row.blocked, digits)})`,
-    )
-    .join('; ');
-}
+  buildBenchmarkColumns,
+  buildHoldingsColumns,
+  buildInstrumentsColumns,
+  buildItemColumns,
+  buildMoneyColumns,
+} from './rebalance-draft-detail-columns';
+import { formatDateTime, formatNumber } from './rebalance-draft-detail-helpers';
 
 type RebalanceDraftDetailCardProps = {
   detail: PortfolioRebalanceDetailResponse;
@@ -69,38 +26,47 @@ export function RebalanceDraftDetailCard({
   language,
 }: RebalanceDraftDetailCardProps) {
   const { t } = useTranslation();
-
   const run = detail.run;
   const input = detail.input;
   const output = detail.output;
   const summary = detail.summary;
 
   const warnings = output?.warnings ?? [];
-  const items = output?.items ?? [];
-  const outputMoney = output?.money ?? [];
+  const inputHoldings = input?.holdings ?? [];
+  const inputBenchmark = input?.benchmark ?? [];
+  const inputInstruments = input?.instruments ?? [];
   const inputMoney = input?.money ?? [];
+  const outputItems = output?.items ?? [];
+  const outputMoney = output?.money ?? [];
+
+  const itemColumns = useMemo(() => buildItemColumns(t), [t]);
+  const holdingsColumns = useMemo(() => buildHoldingsColumns(t), [t]);
+  const benchmarkColumns = useMemo(() => buildBenchmarkColumns(t), [t]);
+  const instrumentsColumns = useMemo(
+    () => buildInstrumentsColumns(t, language),
+    [language, t],
+  );
+  const moneyColumns = useMemo(() => buildMoneyColumns(t), [t]);
 
   return (
-    <div className='grid gap-3'>
-      <div className='grid gap-2'>
-        <div className='grid gap-1 text-xs text-muted-foreground'>
-          <p>
-            {t('portfolio.replication.rebalances.detailModeLabel')}:{' '}
-            {run?.mode_key || '-'}
-          </p>
-          <p>
-            {t('portfolio.replication.rebalances.detailExecutionLabel')}:{' '}
-            {run?.execution_mode || '-'}
-          </p>
-          <p>
-            {t('portfolio.replication.rebalances.detailAsOfLabel')}:{' '}
-            {run?.as_of_date || '-'}
-          </p>
-          <p>
-            {t('portfolio.replication.rebalances.detailCreatedLabel')}:{' '}
-            {formatDateTime(run?.created_at, language)}
-          </p>
-        </div>
+    <div className='flex flex-col min-w-0 gap-3 h-full'>
+      <div className='grid gap-1 text-xs text-muted-foreground'>
+        <p>
+          {t('portfolio.replication.rebalances.detailModeLabel')}:{' '}
+          {run?.mode_key || '-'}
+        </p>
+        <p>
+          {t('portfolio.replication.rebalances.detailExecutionLabel')}:{' '}
+          {run?.execution_mode || '-'}
+        </p>
+        <p>
+          {t('portfolio.replication.rebalances.detailAsOfLabel')}:{' '}
+          {run?.as_of_date || '-'}
+        </p>
+        <p>
+          {t('portfolio.replication.rebalances.detailCreatedLabel')}:{' '}
+          {formatDateTime(run?.created_at, language)}
+        </p>
       </div>
 
       {warnings.length > 0 ? (
@@ -112,129 +78,144 @@ export function RebalanceDraftDetailCard({
         </Alert>
       ) : null}
 
-      <div className='grid gap-1 text-xs text-muted-foreground'>
-        <p className='font-medium text-foreground'>
-          {t('portfolio.replication.rebalances.inputTitle')}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.inputInvestableCapital')}:{' '}
-          {formatNumber(input?.investable_capital, 2)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.inputHoldingsCount')}:{' '}
-          {formatNumber(input?.holdings?.length, 0)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.inputBenchmarkCount')}:{' '}
-          {formatNumber(input?.benchmark?.length, 0)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.inputInstrumentsCount')}:{' '}
-          {formatNumber(input?.instruments?.length, 0)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.inputMoneyLabel')}:{' '}
-          {renderMoneyRows(inputMoney)}
-        </p>
+      <div className='grid gap-3 text-xs text-muted-foreground md:grid-cols-2'>
+        <div className='grid gap-1 rounded border p-3'>
+          <p className='font-medium text-foreground'>
+            {t('portfolio.replication.rebalances.inputTitle')}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.inputInvestableCapital')}:{' '}
+            {formatNumber(input?.investable_capital, 2)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.inputHoldingsCount')}:{' '}
+            {formatNumber(inputHoldings.length, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.inputBenchmarkCount')}:{' '}
+            {formatNumber(inputBenchmark.length, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.inputInstrumentsCount')}:{' '}
+            {formatNumber(inputInstruments.length, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.inputMoneyCount')}:{' '}
+            {formatNumber(inputMoney.length, 0)}
+          </p>
+        </div>
+
+        <div className='grid gap-1 rounded border p-3'>
+          <p className='font-medium text-foreground'>
+            {t('portfolio.replication.rebalances.summaryTitle')}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.summaryItemsTotal')}:{' '}
+            {formatNumber(summary?.items_total, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.summaryActionable')}:{' '}
+            {formatNumber(summary?.actionable_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.summaryUnresolved')}:{' '}
+            {formatNumber(summary?.unresolved_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.summaryTurnover')}:{' '}
+            {formatNumber(summary?.estimated_turnover_abs, 2)}
+          </p>
+        </div>
       </div>
 
-      <div className='grid gap-1 text-xs text-muted-foreground'>
-        <p className='font-medium text-foreground'>
-          {t('portfolio.replication.rebalances.outputTitle')}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.outputMoneyLabel')}:{' '}
-          {renderMoneyRows(outputMoney)}
-        </p>
-      </div>
+      <Tabs defaultValue='input-holdings' className='grow min-w-0 gap-3 h-full flex flex-col'>
+        <TabsList className='h-auto w-full justify-start overflow-x-auto'>
+          <TabsTrigger value='input-holdings'>
+            {t('portfolio.replication.rebalances.tabs.inputHoldings')}
+          </TabsTrigger>
+          <TabsTrigger value='input-benchmark'>
+            {t('portfolio.replication.rebalances.tabs.inputBenchmark')}
+          </TabsTrigger>
+          <TabsTrigger value='input-instruments'>
+            {t('portfolio.replication.rebalances.tabs.inputInstruments')}
+          </TabsTrigger>
+          <TabsTrigger value='input-money'>
+            {t('portfolio.replication.rebalances.tabs.inputMoney')}
+          </TabsTrigger>
+          <TabsTrigger value='output-items'>
+            {t('portfolio.replication.rebalances.tabs.outputItems')}
+          </TabsTrigger>
+          <TabsTrigger value='output-money'>
+            {t('portfolio.replication.rebalances.tabs.outputMoney')}
+          </TabsTrigger>
+        </TabsList>
 
-      <div className='grid gap-1 text-xs text-muted-foreground'>
-        <p className='font-medium text-foreground'>
-          {t('portfolio.replication.rebalances.summaryTitle')}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.summaryItemsTotal')}:{' '}
-          {formatNumber(summary?.items_total, 0)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.summaryActionable')}:{' '}
-          {formatNumber(summary?.actionable_items, 0)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.summaryUnresolved')}:{' '}
-          {formatNumber(summary?.unresolved_items, 0)}
-        </p>
-        <p>
-          {t('portfolio.replication.rebalances.summaryTurnover')}:{' '}
-          {formatNumber(summary?.estimated_turnover_abs, 2)}
-        </p>
-      </div>
+        <div className='grow  relative w-full'>
+          <div className='absolute inset-0 overflow-auto'>
+            <TabsContent value='input-holdings'>
+              <SortableDataTable
+                data={inputHoldings}
+                columns={holdingsColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyInputHoldings')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.instrument_id ?? ''}-${row.ticker ?? ''}`
+                }
+              />
+            </TabsContent>
 
-      <div className='max-h-[50svh] overflow-y-auto rounded-md border'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.ticker')}
-              </TableHead>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.side')}
-              </TableHead>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.currentQty')}
-              </TableHead>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.targetQty')}
-              </TableHead>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.deltaQty')}
-              </TableHead>
-              <TableHead>
-                {t(
-                  'portfolio.replication.rebalances.itemsColumns.currentWeight',
-                )}
-              </TableHead>
-              <TableHead>
-                {t(
-                  'portfolio.replication.rebalances.itemsColumns.targetWeight',
-                )}
-              </TableHead>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.status')}
-              </TableHead>
-              <TableHead>
-                {t('portfolio.replication.rebalances.itemsColumns.reason')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className='text-muted-foreground'>
-                  {t('portfolio.replication.rebalances.emptyItems')}
-                </TableCell>
-              </TableRow>
-            ) : null}
-            {items.map((item, index) => (
-              <TableRow
-                key={`${index}-${item.ticker ?? ''}-${item.instrument_id ?? ''}`}
-              >
-                <TableCell>{item.ticker || item.instrument_id || '-'}</TableCell>
-                <TableCell>{item.side || '-'}</TableCell>
-                <TableCell>{formatNumber(item.current_quantity)}</TableCell>
-                <TableCell>{formatNumber(item.target_quantity)}</TableCell>
-                <TableCell>{formatNumber(item.delta_quantity)}</TableCell>
-                <TableCell>{formatNumber(item.current_weight)}</TableCell>
-                <TableCell>{formatNumber(item.target_weight)}</TableCell>
-                <TableCell>
-                  <Badge variant='outline'>{item.status || '-'}</Badge>
-                </TableCell>
-                <TableCell>{unresolvedReason(item)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            <TabsContent value='input-benchmark'>
+              <SortableDataTable
+                data={inputBenchmark}
+                columns={benchmarkColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyInputBenchmark')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.instrument_id ?? ''}-${row.ticker ?? ''}`
+                }
+              />
+            </TabsContent>
+
+            <TabsContent value='input-instruments'>
+              <SortableDataTable
+                data={inputInstruments}
+                columns={instrumentsColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyInputInstruments')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.instrument_id ?? ''}-${row.ticker ?? ''}`
+                }
+              />
+            </TabsContent>
+
+            <TabsContent value='input-money'>
+              <SortableDataTable
+                data={inputMoney}
+                columns={moneyColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyMoney')}
+                getRowKey={(row, index) => `${index}-${row.currency ?? ''}`}
+              />
+            </TabsContent>
+
+            <TabsContent value='output-items'>
+              <SortableDataTable
+                data={outputItems}
+                columns={itemColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyItems')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.ticker ?? ''}-${row.instrument_id ?? ''}-${row.side ?? ''}`
+                }
+              />
+            </TabsContent>
+
+            <TabsContent value='output-money'>
+              <SortableDataTable
+                data={outputMoney}
+                columns={moneyColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyMoney')}
+                getRowKey={(row, index) => `${index}-${row.currency ?? ''}`}
+              />
+            </TabsContent>
+          </div>
+        </div>
+      </Tabs>
     </div>
   );
 }

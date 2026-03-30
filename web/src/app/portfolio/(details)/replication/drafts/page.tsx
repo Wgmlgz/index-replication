@@ -473,7 +473,7 @@ export default function PortfolioReplicationDraftsPage() {
             }
           }}
         >
-          <DialogContent className='max-h-[90svh] sm:max-w-6xl'>
+          <DialogContent className='sm:max-w-6xl overflow-hidden'>
             <DialogTitle className='font-semibold'>
               <div className='flex flex-wrap items-center gap-2'>
                 {t('portfolio.replication.rebalances.detailTitle', {
@@ -483,7 +483,7 @@ export default function PortfolioReplicationDraftsPage() {
               </div>
             </DialogTitle>
 
-            <div className='min-h-0 overflow-y-auto'>
+            <div className='h-[80svh]  overflow-y-auto overflow-x-hidden'>
               {!selectedRebalanceID ? (
                 <p className='text-xs text-muted-foreground'>
                   {t('portfolio.replication.rebalances.selectPrompt')}

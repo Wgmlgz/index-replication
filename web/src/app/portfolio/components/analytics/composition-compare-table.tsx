@@ -10,10 +10,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { SortHeader } from '@/app/portfolio/components/sortable-data-table';
 import { TickerWithLogo } from '@/components/ticker/ticker-with-logo';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -84,26 +83,15 @@ export function CompositionCompareTable({
     };
   }, [rows]);
 
-  const renderSortIcon = (sorted: false | 'asc' | 'desc') => {
-    if (sorted === 'asc') return <ArrowUp className='size-4' />;
-    if (sorted === 'desc') return <ArrowDown className='size-4' />;
-    return <ArrowUpDown className='size-4' />;
-  };
-
   const columns = useMemo<ColumnDef<CompositionCompareRow>[]>(
     () => [
       {
         accessorKey: 'ticker',
         header: ({ column }) => (
-          <Button
-            variant='ghost'
-            size='sm'
-            className='-ml-3 h-8'
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            {t('portfolio.composition.compare.columns.ticker')}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.ticker')}
+          />
         ),
         cell: ({ row }) => (
           <TickerWithLogo ticker={row.original.ticker} textClassName='font-medium' />
@@ -112,31 +100,20 @@ export function CompositionCompareTable({
       {
         accessorKey: 'name',
         header: ({ column }) => (
-          <Button
-            variant='ghost'
-            size='sm'
-            className='-ml-3 h-8'
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            {t('portfolio.composition.compare.columns.name')}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.name')}
+          />
         ),
       },
       {
         accessorKey: 'portfolioWeight',
         header: ({ column }) => (
-          <div className='text-right'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='-ml-3 h-8'
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              {t('portfolio.composition.compare.columns.portfolioWeight')}
-              {renderSortIcon(column.getIsSorted())}
-            </Button>
-          </div>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.portfolioWeight')}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <div
@@ -153,17 +130,11 @@ export function CompositionCompareTable({
       {
         accessorKey: 'benchmarkWeight',
         header: ({ column }) => (
-          <div className='text-right'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='-ml-3 h-8'
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              {t('portfolio.composition.compare.columns.benchmarkWeight')}
-              {renderSortIcon(column.getIsSorted())}
-            </Button>
-          </div>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.benchmarkWeight')}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <div
@@ -180,17 +151,11 @@ export function CompositionCompareTable({
       {
         accessorKey: 'activeWeight',
         header: ({ column }) => (
-          <div className='text-right'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='-ml-3 h-8'
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              {t('portfolio.composition.compare.columns.activeWeight')}
-              {renderSortIcon(column.getIsSorted())}
-            </Button>
-          </div>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.activeWeight')}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <div
@@ -208,17 +173,11 @@ export function CompositionCompareTable({
       {
         accessorKey: 'absActive',
         header: ({ column }) => (
-          <div className='text-right'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='-ml-3 h-8'
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              {t('portfolio.composition.compare.columns.absActive')}
-              {renderSortIcon(column.getIsSorted())}
-            </Button>
-          </div>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.absActive')}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <div
@@ -235,17 +194,11 @@ export function CompositionCompareTable({
       {
         accessorKey: 'contributionPct',
         header: ({ column }) => (
-          <div className='text-right'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='-ml-3 h-8'
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              {t('portfolio.composition.compare.columns.errorContribution')}
-              {renderSortIcon(column.getIsSorted())}
-            </Button>
-          </div>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.errorContribution')}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <div
@@ -263,15 +216,10 @@ export function CompositionCompareTable({
       {
         accessorKey: 'status',
         header: ({ column }) => (
-          <Button
-            variant='ghost'
-            size='sm'
-            className='-ml-3 h-8'
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            {t('portfolio.composition.compare.columns.status')}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t('portfolio.composition.compare.columns.status')}
+          />
         ),
         cell: ({ row }) => formatStatus(row.original.status),
       },
