@@ -59,7 +59,7 @@ const getConfig = (): KeycloakConfig => ({
   realm: (process.env.NEXT_PUBLIC_KEYCLOAK_REALM || 'index-replication').trim(),
   clientID: (process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'web').trim(),
   silentRedirectURI: resolveOptionalURL(
-    process.env.NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI,
+    process.env.NEXT_PUBLIC_KEYCLOAK_SILENT_REDIRECT_URI || '/auth/silent-callback',
   ),
 });
 

@@ -137,30 +137,40 @@ axiosClient.defaults.baseURL = getApiUrl();
 axiosClient.interceptors.request.use(async config => {
   config.baseURL = getApiUrl();
   const token = await getValidKeycloakIDToken();
-  setAuthorizationHeader(config, token);
+  if (token) {
+    setAuthorizationHeader(config, token);
+    return config;
+  }
+
+  // Fallback: try a silent renew even when no local token was returned.
+  const renewedToken = await renewKeycloakIDToken();
+  setAuthorizationHeader(config, renewedToken);
   return config;
 });
 
 axiosClient.interceptors.response.use(
   response => response,
   async error => {
-    if (!axios.isAxiosError(error)) {
-      throw error instanceof Error ? error : new Error('Unknown request error');
-    }
-
-    const status = error.response?.status;
-    const originalConfig = error.config as RetriableAuthConfig | undefined;
+    const status =
+      axios.isAxiosError(error)
+        ? error.response?.status
+        : (error as { response?: { status?: number } } | null | undefined)?.response?.status;
+    const originalConfig = (
+      axios.isAxiosError(error)
+        ? error.config
+        : (error as { config?: RetriableAuthConfig } | null | undefined)?.config
+    ) as RetriableAuthConfig | undefined;
     if (
       status !== axios.HttpStatusCode.Unauthorized
       || !originalConfig
       || originalConfig[AUTH_RETRY_FLAG]
     ) {
-      throw error;
+      throw (error instanceof Error ? error : new Error('Unknown request error'));
     }
 
     const token = await renewKeycloakIDToken();
     if (!token) {
-      throw error;
+      throw (error instanceof Error ? error : new Error('Unknown request error'));
     }
 
     originalConfig[AUTH_RETRY_FLAG] = true;
