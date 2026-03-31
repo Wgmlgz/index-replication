@@ -1,8 +1,8 @@
-import { PortfolioDepositCashAction } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-deposit-cash-action";
-import { PortfolioSandboxPayInAction } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-sandbox-pay-in-action";
+import { useTranslation } from "react-i18next";
+
+import { getPortfolioActionFormConfig } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-action-form-schema";
+import { PortfolioActionRJSFForm } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-action-rjsf-form";
 import { PortfolioSimpleAction } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-simple-action";
-import { PortfolioTBankTestBuyAction } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-tbank-test-buy-action";
-import { PortfolioTradeAction } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-trade-action";
 import type { PortfolioActionControlProps } from "@/app/portfolio/components/portfolio-summary-actions/types";
 
 export function PortfolioActionControl({
@@ -10,39 +10,17 @@ export function PortfolioActionControl({
   working,
   onRunAction,
 }: PortfolioActionControlProps) {
-  if (action.id === "sandbox_pay_in") {
+  const { t } = useTranslation();
+  const config = getPortfolioActionFormConfig(action.id, t);
+
+  if (config) {
     return (
-      <PortfolioSandboxPayInAction
+      <PortfolioActionRJSFForm
         action={action}
         working={working}
         onRunAction={onRunAction}
+        config={config}
       />
-    );
-  }
-
-  if (action.id === "test_buy") {
-    return (
-      <PortfolioTBankTestBuyAction
-        action={action}
-        working={working}
-        onRunAction={onRunAction}
-      />
-    );
-  }
-
-  if (action.id === "deposit_cash") {
-    return (
-      <PortfolioDepositCashAction
-        action={action}
-        working={working}
-        onRunAction={onRunAction}
-      />
-    );
-  }
-
-  if (action.id === "buy" || action.id === "sell") {
-    return (
-      <PortfolioTradeAction action={action} working={working} onRunAction={onRunAction} />
     );
   }
 
