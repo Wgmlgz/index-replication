@@ -6,12 +6,10 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o moex-worker ./cmd/moex-worker
 RUN CGO_ENABLED=0 GOOS=linux go build -o moex-scheduler ./cmd/moex-scheduler
 RUN CGO_ENABLED=0 GOOS=linux go build -o moex-backfill ./cmd/moex-backfill
-RUN CGO_ENABLED=0 GOOS=linux go build -o temporal-setup ./cmd/temporal-setup
 
 FROM alpine:latest
 WORKDIR /root/
 COPY --from=builder /app/moex-worker .
 COPY --from=builder /app/moex-scheduler .
 COPY --from=builder /app/moex-backfill .
-COPY --from=builder /app/temporal-setup .
 CMD ["./moex-worker"]

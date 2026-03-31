@@ -25,7 +25,7 @@ Common tasks:
 
 - `task dev`
 - `task worker:dev`
-- `task schedules:apply` (manual/local; Docker startup auto-applies schedules)
+- `task schedules:apply` (manual/local schedule upsert only; Docker startup auto-applies namespace/search-attributes/schedules via `infra/temporal-setup`)
 - `task lint`
 - `task test`
 - `task migrate:up`

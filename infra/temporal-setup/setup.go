@@ -1,4 +1,4 @@
-package temporalsetup
+package main
 
 import (
 	"context"
@@ -15,75 +15,75 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-type SetupOptions struct {
-	Address                 string
-	Namespace               string
-	TaskQueue               string
-	TimeZone                string
-	EnableSearchAttributes  bool
-	EnableMonthlyDeepResync bool
-	NamespaceRetentionDays  int
-	WaitTimeout             time.Duration
-	WaitInterval            time.Duration
+type setupOptions struct {
+	address                 string
+	namespace               string
+	taskQueue               string
+	timeZone                string
+	enableSearchAttributes  bool
+	enableMonthlyDeepResync bool
+	namespaceRetentionDays  int
+	waitTimeout             time.Duration
+	waitInterval            time.Duration
 }
 
-func Run(ctx context.Context, options SetupOptions) error {
-	if options.Address == "" {
+func runSetup(ctx context.Context, options setupOptions) error {
+	if options.address == "" {
 		return errors.New("temporal address is required")
 	}
-	if options.Namespace == "" {
+	if options.namespace == "" {
 		return errors.New("temporal namespace is required")
 	}
-	if options.TaskQueue == "" {
+	if options.taskQueue == "" {
 		return errors.New("temporal task queue is required")
 	}
-	if options.TimeZone == "" {
+	if options.timeZone == "" {
 		return errors.New("temporal schedule timezone is required")
 	}
-	if options.NamespaceRetentionDays <= 0 {
-		options.NamespaceRetentionDays = 3
+	if options.namespaceRetentionDays <= 0 {
+		options.namespaceRetentionDays = 3
 	}
-	if options.WaitTimeout <= 0 {
-		options.WaitTimeout = 2 * time.Minute
+	if options.waitTimeout <= 0 {
+		options.waitTimeout = 2 * time.Minute
 	}
-	if options.WaitInterval <= 0 {
-		options.WaitInterval = 3 * time.Second
+	if options.waitInterval <= 0 {
+		options.waitInterval = 3 * time.Second
 	}
 
 	adminClient, err := client.Dial(client.Options{
-		HostPort: options.Address,
+		HostPort: options.address,
 	})
 	if err != nil {
 		return fmt.Errorf("temporal admin dial failed: %w", err)
 	}
 	defer adminClient.Close()
 
-	if err := waitForServerReady(ctx, adminClient, options.WaitTimeout, options.WaitInterval); err != nil {
+	if err := waitForServerReady(ctx, adminClient, options.waitTimeout, options.waitInterval); err != nil {
 		return err
 	}
-	if err := ensureNamespace(ctx, adminClient, options.Namespace, options.NamespaceRetentionDays); err != nil {
+	if err := ensureNamespace(ctx, adminClient, options.namespace, options.namespaceRetentionDays); err != nil {
 		return err
 	}
-	if err := waitForNamespaceReady(ctx, adminClient, options.Namespace, options.WaitTimeout, options.WaitInterval); err != nil {
+	if err := waitForNamespaceReady(ctx, adminClient, options.namespace, options.waitTimeout, options.waitInterval); err != nil {
 		return err
 	}
 
-	ensureSearchAttributes(ctx, adminClient, options.Namespace)
+	ensureSearchAttributes(ctx, adminClient, options.namespace)
 
 	namespaceClient, err := client.Dial(client.Options{
-		HostPort:  options.Address,
-		Namespace: options.Namespace,
+		HostPort:  options.address,
+		Namespace: options.namespace,
 	})
 	if err != nil {
 		return fmt.Errorf("temporal namespace dial failed: %w", err)
 	}
 	defer namespaceClient.Close()
 
-	if err := ApplySchedules(ctx, namespaceClient, ScheduleOptions{
-		TaskQueue:               options.TaskQueue,
-		TimeZone:                options.TimeZone,
-		EnableSearchAttributes:  options.EnableSearchAttributes,
-		EnableMonthlyDeepResync: options.EnableMonthlyDeepResync,
+	if err := applySchedules(ctx, namespaceClient, scheduleOptions{
+		taskQueue:               options.taskQueue,
+		timeZone:                options.timeZone,
+		enableSearchAttributes:  options.enableSearchAttributes,
+		enableMonthlyDeepResync: options.enableMonthlyDeepResync,
 	}); err != nil {
 		return err
 	}

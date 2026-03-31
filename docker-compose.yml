@@ -306,8 +306,7 @@ services:
 
   temporal-setup:
     build:
-      context: ./api
-      dockerfile: Dockerfile.worker
+      context: ./infra/temporal-setup
     command: ["./temporal-setup"]
     restart: on-failure
     environment:

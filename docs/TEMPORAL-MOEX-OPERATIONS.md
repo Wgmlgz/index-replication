@@ -7,6 +7,7 @@ This runbook explains what happens, when it happens, and where to check state fo
 - Services: `temporal`, `temporal-admin-tools`, `temporal-setup`, `moex-worker`
 - Workflows: `moex.meta_refresh`, `moex.daily_sync`
 - Storage: `moex_sync_state`, `moex_data_coverage`, `moex_sync_runs`, plus MOEX data tables
+- Setup implementation location: `infra/temporal-setup` (separate compose build context, independent from `api`)
 
 ## Startup Orchestration
 

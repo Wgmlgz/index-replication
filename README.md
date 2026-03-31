@@ -86,6 +86,7 @@ Temporal services are based on the official `samples-server` postgres compose pa
 Temporal admin-tools bootstrap scripts are baked into a custom image during compose build (instead of runtime bind mounts) to keep remote deployments consistent.
 Temporal dynamic config (`scripts/temporal/dynamicconfig/docker.yaml`) is also baked into a custom Temporal server image for the same reason.
 MOEX namespace/search-attributes/schedules are applied automatically on startup by the one-shot `temporal-setup` service (no manual schedule bootstrapping needed in Docker).
+The `temporal-setup` container is built from `infra/temporal-setup` (independent from `api` and `moex-worker` images).
 Operational timeline and monitoring details are documented in `docs/TEMPORAL-MOEX-OPERATIONS.md`.
 Historical MOEX API reads are DB-backed; coverage status is exposed via response headers and sync admin endpoints.
 Portfolio `virtual` and `tbank` mark-to-market valuation now uses on-demand MOEX share security history cache
@@ -156,6 +157,7 @@ If a docker context has multiple compose projects, pass `--source-project` / `--
 - `api/` Go REST API
 - `web/` Next.js frontend
 - `auth-theme/` Keycloak login theme app (Keycloakify, reuses `web/src` UI)
+- `infra/` infrastructure apps/config (including `infra/temporal-setup` and `infra/terraform/keycloak`)
 - `Taskfile.yml` root-level tasks (currently Docker compose)
 - `docker-compose.yml` local stack
 
