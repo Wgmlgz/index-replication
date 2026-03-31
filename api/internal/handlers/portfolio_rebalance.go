@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -250,9 +251,11 @@ func writePortfolioRebalanceError(c *gin.Context, err error) {
 	case errors.Is(err, rebalance.ErrProfileNotFound),
 		errors.Is(err, rebalance.ErrReplicationConfigNotFound),
 		errors.Is(err, rebalance.ErrBenchmarkNotFound),
-		errors.Is(err, rebalance.ErrRebalanceNotFound):
+		errors.Is(err, rebalance.ErrRebalanceNotFound),
+		errors.Is(err, rebalance.ErrExecutionNotFound):
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 	default:
+		log.Printf("portfolio rebalance request failed: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Rebalance request failed"})
 	}
 }

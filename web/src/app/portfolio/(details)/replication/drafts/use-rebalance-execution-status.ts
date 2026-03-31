@@ -21,6 +21,7 @@ type UseRebalanceExecutionStatusParams = {
   portfolioID: number | null;
   rebalanceID: number | null;
   detailDialogOpen: boolean;
+  enabled: boolean;
   t: TFunction;
   parseErrorMessage: (error: unknown, fallback: string) => string;
   onRunUpdate: (run: PortfolioRebalanceRun) => void;
@@ -30,6 +31,7 @@ export function useRebalanceExecutionStatus({
   portfolioID,
   rebalanceID,
   detailDialogOpen,
+  enabled,
   t,
   parseErrorMessage,
   onRunUpdate,
@@ -92,14 +94,14 @@ export function useRebalanceExecutionStatus({
   }, [clearExecutionStatus, portfolioID, rebalanceID]);
 
   useEffect(() => {
-    if (!detailDialogOpen || !portfolioID || !rebalanceID) {
+    if (!enabled || !detailDialogOpen || !portfolioID || !rebalanceID) {
       return;
     }
     void refreshExecutionStatus();
-  }, [detailDialogOpen, portfolioID, rebalanceID, refreshExecutionStatus]);
+  }, [detailDialogOpen, enabled, portfolioID, rebalanceID, refreshExecutionStatus]);
 
   useEffect(() => {
-    if (!detailDialogOpen || !portfolioID || !rebalanceID) {
+    if (!enabled || !detailDialogOpen || !portfolioID || !rebalanceID) {
       return;
     }
     const runStatus = executionStatus?.run?.status;
@@ -114,6 +116,7 @@ export function useRebalanceExecutionStatus({
     };
   }, [
     detailDialogOpen,
+    enabled,
     executionStatus?.run?.status,
     portfolioID,
     rebalanceID,

@@ -152,6 +152,7 @@ export default function PortfolioReplicationDraftsPage() {
     portfolioID,
     rebalanceID: selectedRebalanceID,
     detailDialogOpen,
+    enabled: Boolean(rebalanceDetail?.run && rebalanceDetail.run.status !== 'draft'),
     t,
     parseErrorMessage,
     onRunUpdate: applyRunUpdate,

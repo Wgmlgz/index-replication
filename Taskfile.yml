@@ -3,7 +3,9 @@ output: prefixed
 vars:
   COMPOSE_NON_APP_SERVICES_RAW:
     sh: docker compose config --services
-  COMPOSE_NON_APP_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api") }}'
+  COMPOSE_INFRA_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api" "moex-worker") }}'
+  COMPOSE_WAIT_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api" "moex-worker" "temporal-admin-tools" "temporal-setup" "keycloak-terraform-db" "keycloak-terraform") }}'
+  COMPOSE_WAIT_TIMEOUT: '{{.COMPOSE_WAIT_TIMEOUT | default "180"}}'
 tasks:
   default:
     cmds:
@@ -16,23 +18,25 @@ tasks:
       - docker compose up --build --force-recreate
 
   upx:
-    desc: Compose up services except web and server/api
+    desc: Compose up infra services (without web/api/moex-worker)
     cmds:
-      - docker compose up -d {{.COMPOSE_NON_APP_SERVICES}}
+      - docker compose up -d {{.COMPOSE_INFRA_SERVICES}}
+      - docker compose up --wait --wait-timeout {{.COMPOSE_WAIT_TIMEOUT}} -d {{.COMPOSE_WAIT_SERVICES}}
 
   devx:
-    desc: Run upx, then start API and web in dev mode
+    desc: Run upx, then start API, worker and web in dev mode
     cmds:
       - task upx
       - task dev
 
   upxb:
-    desc: Rebuild and recreate all compose services except web and server/api
+    desc: Rebuild and recreate infra services (without web/api/moex-worker)
     cmds:
-      - docker compose up --build --force-recreate -d {{.COMPOSE_NON_APP_SERVICES}}
+      - docker compose up --build --force-recreate -d {{.COMPOSE_INFRA_SERVICES}}
+      - docker compose up --wait --wait-timeout {{.COMPOSE_WAIT_TIMEOUT}} -d {{.COMPOSE_WAIT_SERVICES}}
 
   devxb:
-    desc: Run upxb, then start API and web in dev mode
+    desc: Run upxb, then start API, worker and web in dev mode
     cmds:
       - task upxb
       - task dev
@@ -74,9 +78,10 @@ tasks:
       - docker compose build --no-cache moex-worker
 
   dev:
-    desc: Run API and web in dev mode
+    desc: Run API, worker and web in dev mode
     deps:
       - dev:api
+      - dev:worker
       - dev:web
 
   lint:
@@ -150,6 +155,10 @@ tasks:
   dev:api:
     cmds:
       - task -d api dev
+
+  dev:worker:
+    cmds:
+      - task -d api worker:dev
 
   dev:web:
     cmds:

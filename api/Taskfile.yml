@@ -7,6 +7,7 @@ vars:
   GOOSE_VERSION: v3.26.0
   MIGRATIONS_DIR: ./migrations
   DATABASE_URL: '{{.DATABASE_URL | default "postgres://app:app@localhost:5432/app?sslmode=disable"}}'
+  WORKER_BIN: '{{if eq OS "windows"}}./tmp/moex-worker.exe{{else}}./tmp/moex-worker{{end}}'
 
 tasks:
   default:
@@ -58,9 +59,9 @@ tasks:
       - go run github.com/air-verse/air@latest
 
   worker:dev:
-    desc: Run MOEX Temporal worker locally
+    desc: Run MOEX Temporal worker locally with hot reload
     cmds:
-      - go run ./cmd/moex-worker
+      - go run github.com/air-verse/air@latest --build.cmd "go build -o {{.WORKER_BIN}} ./cmd/moex-worker" --build.entrypoint "{{.WORKER_BIN}}"
 
   schedules:apply:
     desc: Create/update Temporal schedules for MOEX sync workflows

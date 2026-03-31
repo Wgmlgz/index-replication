@@ -7,12 +7,14 @@ import (
 
 	"server/internal/api/dto"
 	"server/internal/models"
+	"server/internal/workflows"
 
 	"gorm.io/gorm"
 )
 
 type ExecutionStarter interface {
 	StartRebalanceExecution(ctx context.Context, userID int, portfolioID int, runID int) error
+	GetRebalanceExecutionStatus(ctx context.Context, runID int) (*workflows.RebalanceExecutionResult, error)
 }
 
 func (s *Service) ExecuteRun(
@@ -45,27 +47,9 @@ func (s *Service) ExecuteRun(
 	case models.PortfolioRebalanceRunStatusCompleted,
 		models.PortfolioRebalanceRunStatusPartiallyCompleted:
 		return nil, ErrRebalanceNotExecutable
-	case models.PortfolioRebalanceRunStatusQueued,
-		models.PortfolioRebalanceRunStatusExecuting:
-		dtoRun := toRunDTO(run)
-		return &dtoRun, nil
-	}
-
-	previousStatus := run.Status
-	if err := s.runsRepo.SetRunStatus(userID, portfolioID, runID, models.PortfolioRebalanceRunStatusQueued); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrRebalanceNotFound
-		}
-		return nil, err
 	}
 
 	if err := s.executor.StartRebalanceExecution(ctx, userID, portfolioID, runID); err != nil {
-		_ = s.runsRepo.SetRunStatus(userID, portfolioID, runID, previousStatus)
-		return nil, err
-	}
-
-	queuedRun, err := s.runsRepo.GetRunByID(userID, portfolioID, runID)
-	if err != nil {
 		return nil, err
 	}
 
@@ -78,6 +62,7 @@ func (s *Service) ExecuteRun(
 		})
 	}
 
-	dtoRun := toRunDTO(queuedRun)
+	dtoRun := toRunDTO(run)
+	dtoRun.Status = models.PortfolioRebalanceRunStatusQueued
 	return &dtoRun, nil
 }

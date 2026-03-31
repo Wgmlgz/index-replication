@@ -20,6 +20,7 @@ import (
 	"server/internal/services"
 	"server/internal/testutil"
 	"server/internal/utils"
+	"server/internal/workflows"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
@@ -220,7 +221,8 @@ func TestPortfolioRebalanceAPI_ExecuteDraft(t *testing.T) {
 }
 
 func TestPortfolioRebalanceAPI_GetExecutionStatus(t *testing.T) {
-	router, db, profileID := setupRebalanceTestRouter(t, true)
+	starter := &fakeRebalanceExecutionStarter{}
+	router, db, profileID := setupRebalanceTestRouterWithStarter(t, true, starter)
 
 	createPayload := dto.PortfolioRebalanceCreateRequest{
 		ExecutionMode: "manual",
@@ -241,12 +243,6 @@ func TestPortfolioRebalanceAPI_GetExecutionStatus(t *testing.T) {
 		Where("id = ?", created.Run.ID).
 		Update("status", models.PortfolioRebalanceRunStatusExecuting).Error; err != nil {
 		t.Fatalf("update run status: %v", err)
-	}
-	if err := db.Model(&models.PortfolioRebalanceItem{}).
-		Where("rebalance_run_id = ?", created.Run.ID).
-		Limit(1).
-		Update("status", models.PortfolioRebalanceItemStatusExecuting).Error; err != nil {
-		t.Fatalf("update item status: %v", err)
 	}
 
 	executionRec := performJSONRequest(t, router, http.MethodGet,
@@ -433,4 +429,27 @@ func (s *fakeRebalanceExecutionStarter) StartRebalanceExecution(_ context.Contex
 	s.portfolioID = portfolioID
 	s.runID = runID
 	return nil
+}
+
+func (s *fakeRebalanceExecutionStarter) GetRebalanceExecutionStatus(_ context.Context, runID int) (*workflows.RebalanceExecutionResult, error) {
+	return &workflows.RebalanceExecutionResult{
+		RunID:     runID,
+		RunStatus: models.PortfolioRebalanceRunStatusExecuting,
+		Progress: workflows.RebalanceExecutionProgress{
+			TotalItems:      1,
+			ActionableItems: 1,
+			PendingItems:    1,
+			IsTerminal:      false,
+		},
+		Items: []workflows.RebalanceExecutionItem{
+			{
+				ID:           1,
+				Ticker:       "MOCKA",
+				InstrumentID: "MOCKA",
+				Side:         models.PortfolioRebalanceItemSideBuy,
+				Status:       models.PortfolioRebalanceItemStatusPlanned,
+			},
+		},
+		Links: []workflows.RebalanceExecutionLink{},
+	}, nil
 }

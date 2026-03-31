@@ -236,9 +236,12 @@ Action payload requirement:
 - The same `action_id` can be reused by callers (for example Temporal retries) to keep provider-side execution idempotent.
 
 Rebalance execution:
-- `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` queues execution in Temporal.
-- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution` returns pollable execution status
-  (run status, progress counters, item statuses, execution links).
+- `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` starts Temporal workflow orchestration.
+- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution` is Temporal-driven and returns
+  pollable execution status (run status, progress counters, item statuses, execution links) from
+  workflow heartbeat/result without DB fallback.
+- During execution, DB is not used as execution state storage: per-item statuses and execution links
+  are not written to DB in-flight; DB keeps draft payloads plus run timestamps/final terminal status.
 - Current automatic execution activity is implemented for `virtual` provider runs.
 
 Provider model:

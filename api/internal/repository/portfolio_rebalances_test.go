@@ -22,9 +22,6 @@ func TestPortfolioRebalances_MigrationsCreateTables(t *testing.T) {
 
 	tableNames := []string{
 		"portfolio_rebalance_runs",
-		"portfolio_rebalance_items",
-		"portfolio_rebalance_execution_links",
-		"portfolio_rebalance_confirmation_records",
 	}
 
 	for _, tableName := range tableNames {
@@ -99,13 +96,6 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 		t.Fatalf("unexpected execution mode: %s", detail.ExecutionMode)
 	}
 
-	detailItems, err := repo.ListItemsByRunID(run.ID)
-	if err != nil {
-		t.Fatalf("list items by run id: %v", err)
-	}
-	if len(detailItems) != 0 {
-		t.Fatalf("expected no detail items, got %d", len(detailItems))
-	}
 }
 
 func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {
@@ -143,29 +133,9 @@ func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {
 		t.Fatalf("create run: %v", err)
 	}
 
-	if err := repo.CreateExecutionLink(&models.PortfolioRebalanceExecutionLink{
-		RebalanceRunID: run.ID,
-		Status:         "pending",
-		MetadataJSON:   datatypes.JSONMap{},
-	}); err != nil {
-		t.Fatalf("insert execution link: %v", err)
-	}
-	if err := repo.CreateConfirmationRecord(&models.PortfolioRebalanceConfirmationRecord{
-		RebalanceRunID:   run.ID,
-		ConfirmationType: "initial",
-		Status:           "pending",
-		PayloadJSON:      datatypes.JSONMap{},
-	}); err != nil {
-		t.Fatalf("insert confirmation record: %v", err)
-	}
-
 	if err := repo.DeleteRunByID(102, profileID, run.ID); err != nil {
 		t.Fatalf("delete rebalance run: %v", err)
 	}
-
-	assertCount(t, db, "portfolio_rebalance_items", "rebalance_run_id = ?", run.ID, 0)
-	assertCount(t, db, "portfolio_rebalance_execution_links", "rebalance_run_id = ?", run.ID, 0)
-	assertCount(t, db, "portfolio_rebalance_confirmation_records", "rebalance_run_id = ?", run.ID, 0)
 
 	if err := repo.DeleteRunByID(102, profileID, run.ID); !errors.Is(err, gorm.ErrRecordNotFound) {
 		t.Fatalf("expected gorm.ErrRecordNotFound, got %v", err)
@@ -185,15 +155,4 @@ func createPortfolioProfileForRebalance(t *testing.T, db *gorm.DB, userID int) i
 		t.Fatalf("create profile: %v", err)
 	}
 	return profile.ID
-}
-
-func assertCount(t *testing.T, db *gorm.DB, table string, where string, arg any, expected int64) {
-	t.Helper()
-	var count int64
-	if err := db.Table(table).Where(where, arg).Count(&count).Error; err != nil {
-		t.Fatalf("count %s: %v", table, err)
-	}
-	if count != expected {
-		t.Fatalf("expected %d rows in %s, got %d", expected, table, count)
-	}
 }

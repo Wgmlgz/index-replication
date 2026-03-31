@@ -16,6 +16,7 @@ import (
 	"server/internal/workflows"
 
 	"github.com/google/uuid"
+	"go.temporal.io/sdk/activity"
 )
 
 var rebalanceActionNamespace = uuid.MustParse("9be36bcf-7ac0-4f08-9f3c-3aa2283c8f21")
@@ -43,7 +44,15 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 	ctx context.Context,
 	params workflows.RebalanceExecutionParams,
 ) (workflows.RebalanceExecutionResult, error) {
-	result := workflows.RebalanceExecutionResult{}
+	result := workflows.RebalanceExecutionResult{
+		RunID:     params.RunID,
+		RunStatus: models.PortfolioRebalanceRunStatusExecuting,
+		Progress: workflows.RebalanceExecutionProgress{
+			IsTerminal: false,
+		},
+		Items: []workflows.RebalanceExecutionItem{},
+		Links: []workflows.RebalanceExecutionLink{},
+	}
 	if a == nil || a.runsRepo == nil || a.portfolioService == nil {
 		return result, fmt.Errorf("rebalance execution activity is not initialized")
 	}
@@ -55,55 +64,114 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 	if err != nil {
 		return result, err
 	}
-	if run.Provider != "virtual" {
-		_ = a.runsRepo.MarkRunExecutionFinished(params.UserID, params.PortfolioID, params.RunID, models.PortfolioRebalanceRunStatusFailed, time.Now().UTC())
-		return result, fmt.Errorf("unsupported provider for execution: %s", run.Provider)
-	}
-
-	if err := a.runsRepo.MarkRunExecutionStarted(params.UserID, params.PortfolioID, params.RunID, time.Now().UTC()); err != nil {
+	startedAt := time.Now().UTC()
+	result.StartedAt = &startedAt
+	if err := a.runsRepo.MarkRunExecutionStarted(params.UserID, params.PortfolioID, params.RunID, startedAt); err != nil {
 		return result, err
 	}
 
-	items, err := a.runsRepo.ListItemsByRunID(params.RunID)
+	items, err := loadExecutionItemsFromRunOutput(run.OutputJSON)
 	if err != nil {
 		return result, err
 	}
-	if len(items) == 0 {
-		_ = a.runsRepo.MarkRunExecutionFinished(params.UserID, params.PortfolioID, params.RunID, models.PortfolioRebalanceRunStatusFailed, time.Now().UTC())
-		return result, fmt.Errorf("no persisted run items for rebalance run %d", params.RunID)
+	result.Items = items
+	recomputeExecutionProgress(&result)
+	recordExecutionHeartbeat(ctx, &result)
+
+	if run.Provider != "virtual" {
+		result.RunStatus = models.PortfolioRebalanceRunStatusFailed
+		finished := time.Now().UTC()
+		result.EndedAt = &finished
+		result.Progress.IsTerminal = true
+		if markErr := a.runsRepo.MarkRunExecutionFinished(
+			params.UserID,
+			params.PortfolioID,
+			params.RunID,
+			models.PortfolioRebalanceRunStatusFailed,
+			finished,
+		); markErr != nil {
+			return result, markErr
+		}
+		recordExecutionHeartbeat(ctx, &result)
+		return result, nil
+	}
+
+	if len(result.Items) == 0 {
+		result.RunStatus = models.PortfolioRebalanceRunStatusFailed
+		finished := time.Now().UTC()
+		result.EndedAt = &finished
+		result.Progress.IsTerminal = true
+		if markErr := a.runsRepo.MarkRunExecutionFinished(
+			params.UserID,
+			params.PortfolioID,
+			params.RunID,
+			models.PortfolioRebalanceRunStatusFailed,
+			finished,
+		); markErr != nil {
+			return result, markErr
+		}
+		recordExecutionHeartbeat(ctx, &result)
+		return result, nil
 	}
 
 	currencyByInstrument := parseCurrencyMap(run.InputJSON)
+	itemIndexByID := mapItemIndexByID(result.Items)
 
-	for idx := range items {
-		item := items[idx]
-		if item.Status == models.PortfolioRebalanceItemStatusCompleted || item.Status == models.PortfolioRebalanceItemStatusUnresolved {
+	for idx := range result.Items {
+		item := result.Items[idx]
+		snapshotIndex, ok := itemIndexByID[item.ID]
+		if !ok {
 			continue
 		}
-		if item.Status == models.PortfolioRebalanceItemStatusFailed {
-			result.Failed++
+
+		switch item.Status {
+		case models.PortfolioRebalanceItemStatusCompleted,
+			models.PortfolioRebalanceItemStatusUnresolved,
+			models.PortfolioRebalanceItemStatusFailed:
 			continue
 		}
-		result.Total++
 
 		side := normalizeRebalanceSide(item)
 		quantity := math.Abs(item.DeltaQuantity)
-		if side == "" || quantity <= 0 {
-			result.Failed++
-			_ = a.runsRepo.UpdateItemStatus(params.RunID, item.ID, models.PortfolioRebalanceItemStatusFailed)
-			_ = a.runsRepo.CreateExecutionLink(&models.PortfolioRebalanceExecutionLink{
-				RebalanceRunID:  params.RunID,
-				RebalanceItemID: intPtr(item.ID),
-				Status:          models.PortfolioRebalanceItemStatusFailed,
-				MetadataJSON: map[string]interface{}{
-					"error":    "invalid rebalance item payload",
+		if quantity <= 0 {
+			link, linkErr := a.completeNoopItem(
+				item,
+				"zero delta quantity; execution skipped",
+				map[string]interface{}{
 					"item_id":  item.ID,
 					"side":     side,
 					"quantity": quantity,
 				},
-			})
+			)
+			if linkErr != nil {
+				return result, linkErr
+			}
+			applyCompletedItemResult(&result, snapshotIndex, "", link)
+			recordExecutionHeartbeat(ctx, &result)
 			continue
 		}
+		if side == "" {
+			link, linkErr := a.failItem(
+				item,
+				"",
+				"invalid rebalance item payload",
+				map[string]interface{}{
+					"item_id":  item.ID,
+					"side":     side,
+					"quantity": quantity,
+				},
+			)
+			if linkErr != nil {
+				return result, linkErr
+			}
+			applyFailedItemResult(&result, snapshotIndex, "", link)
+			recordExecutionHeartbeat(ctx, &result)
+			continue
+		}
+
+		result.Items[snapshotIndex].Status = models.PortfolioRebalanceItemStatusExecuting
+		recomputeExecutionProgress(&result)
+		recordExecutionHeartbeat(ctx, &result)
 
 		actionID := makeRebalanceActionID(params.RunID, item.ID, side)
 		payload := map[string]interface{}{
@@ -124,69 +192,257 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		}
 		if side == models.PortfolioRebalanceItemSideBuy {
 			if _, ok := payload["price"]; !ok {
-				result.Failed++
-				_ = a.runsRepo.UpdateItemStatus(params.RunID, item.ID, models.PortfolioRebalanceItemStatusFailed)
-				_ = a.runsRepo.CreateExecutionLink(&models.PortfolioRebalanceExecutionLink{
-					RebalanceRunID:  params.RunID,
-					RebalanceItemID: intPtr(item.ID),
-					Status:          models.PortfolioRebalanceItemStatusFailed,
-					MetadataJSON: map[string]interface{}{
-						"action_id": actionID,
-						"error":     "missing reference price for buy action",
-						"payload":   payload,
-					},
-				})
+				link, linkErr := a.failItem(
+					item,
+					actionID,
+					"missing reference price for buy action",
+					map[string]interface{}{"payload": payload},
+				)
+				if linkErr != nil {
+					return result, linkErr
+				}
+				applyFailedItemResult(&result, snapshotIndex, actionID, link)
+				recordExecutionHeartbeat(ctx, &result)
 				continue
 			}
 		}
 
-		_ = a.runsRepo.UpdateItemStatus(params.RunID, item.ID, models.PortfolioRebalanceItemStatusExecuting)
-
 		resp, runErr := a.portfolioService.RunAction(ctx, params.UserID, params.PortfolioID, side, payload)
 		if runErr != nil {
-			result.Failed++
-			_ = a.runsRepo.UpdateItemStatus(params.RunID, item.ID, models.PortfolioRebalanceItemStatusFailed)
-			_ = a.runsRepo.CreateExecutionLink(&models.PortfolioRebalanceExecutionLink{
-				RebalanceRunID:  params.RunID,
-				RebalanceItemID: intPtr(item.ID),
-				Status:          models.PortfolioRebalanceItemStatusFailed,
-				MetadataJSON: map[string]interface{}{
-					"action_id": actionID,
-					"error":     runErr.Error(),
-					"payload":   payload,
-				},
+			link, linkErr := a.failItem(item, actionID, runErr.Error(), map[string]interface{}{
+				"payload": payload,
 			})
+			if linkErr != nil {
+				return result, linkErr
+			}
+			applyFailedItemResult(&result, snapshotIndex, actionID, link)
+			recordExecutionHeartbeat(ctx, &result)
 			continue
 		}
 
-		result.Completed++
-		_ = a.runsRepo.UpdateItemStatus(params.RunID, item.ID, models.PortfolioRebalanceItemStatusCompleted)
-		_ = a.runsRepo.CreateExecutionLink(&models.PortfolioRebalanceExecutionLink{
-			RebalanceRunID:      params.RunID,
-			RebalanceItemID:     intPtr(item.ID),
-			ProviderOperationID: parseProviderOperationID(resp),
-			Status:              models.PortfolioRebalanceItemStatusCompleted,
-			MetadataJSON: map[string]interface{}{
-				"action_id": actionID,
-				"payload":   payload,
-				"result":    actionResultMap(resp),
-			},
-		})
+		link, linkErr := a.completeItem(item, actionID, payload, resp)
+		if linkErr != nil {
+			return result, linkErr
+		}
+		applyCompletedItemResult(&result, snapshotIndex, actionID, link)
+		recordExecutionHeartbeat(ctx, &result)
 	}
 
-	finalStatus := models.PortfolioRebalanceRunStatusCompleted
-	if result.Failed > 0 && result.Completed > 0 {
-		finalStatus = models.PortfolioRebalanceRunStatusPartiallyCompleted
-	} else if result.Failed > 0 && result.Completed == 0 {
-		finalStatus = models.PortfolioRebalanceRunStatusFailed
-	}
-	if result.Total == 0 {
-		finalStatus = models.PortfolioRebalanceRunStatusCompleted
-	}
-	if err := a.runsRepo.MarkRunExecutionFinished(params.UserID, params.PortfolioID, params.RunID, finalStatus, time.Now().UTC()); err != nil {
+	finalStatus := resolveFinalRunStatus(result.Progress)
+	result.RunStatus = finalStatus
+	result.Progress.IsTerminal = true
+	finishedAt := time.Now().UTC()
+	result.EndedAt = &finishedAt
+	if err := a.runsRepo.MarkRunExecutionFinished(
+		params.UserID,
+		params.PortfolioID,
+		params.RunID,
+		finalStatus,
+		finishedAt,
+	); err != nil {
 		return result, err
 	}
+	recordExecutionHeartbeat(ctx, &result)
 	return result, nil
+}
+
+func (a *RebalanceExecutionActivities) failItem(
+	item workflows.RebalanceExecutionItem,
+	actionID string,
+	errMsg string,
+	metadata map[string]interface{},
+) (*workflows.RebalanceExecutionLink, error) {
+	now := time.Now().UTC()
+	link := &workflows.RebalanceExecutionLink{
+		RebalanceItemID: intPtr(item.ID),
+		Status:          models.PortfolioRebalanceItemStatusFailed,
+		Metadata: map[string]interface{}{
+			"action_id": actionID,
+			"error":     errMsg,
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	for key, value := range metadata {
+		link.Metadata[key] = value
+	}
+	return link, nil
+}
+
+func (a *RebalanceExecutionActivities) completeItem(
+	item workflows.RebalanceExecutionItem,
+	actionID string,
+	payload map[string]interface{},
+	resp *dto.PortfolioActionResponse,
+) (*workflows.RebalanceExecutionLink, error) {
+	now := time.Now().UTC()
+	link := &workflows.RebalanceExecutionLink{
+		RebalanceItemID:     intPtr(item.ID),
+		ProviderOperationID: parseProviderOperationID(resp),
+		Status:              models.PortfolioRebalanceItemStatusCompleted,
+		Metadata: map[string]interface{}{
+			"action_id": actionID,
+			"payload":   payload,
+			"result":    actionResultMap(resp),
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	return link, nil
+}
+
+func (a *RebalanceExecutionActivities) completeNoopItem(
+	item workflows.RebalanceExecutionItem,
+	reason string,
+	metadata map[string]interface{},
+) (*workflows.RebalanceExecutionLink, error) {
+	now := time.Now().UTC()
+	link := &workflows.RebalanceExecutionLink{
+		RebalanceItemID: intPtr(item.ID),
+		Status:          models.PortfolioRebalanceItemStatusCompleted,
+		Metadata: map[string]interface{}{
+			"reason": reason,
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	for key, value := range metadata {
+		link.Metadata[key] = value
+	}
+	return link, nil
+}
+
+func mapItemIndexByID(items []workflows.RebalanceExecutionItem) map[int]int {
+	result := make(map[int]int, len(items))
+	for i := range items {
+		result[items[i].ID] = i
+	}
+	return result
+}
+
+func applyFailedItemResult(
+	result *workflows.RebalanceExecutionResult,
+	itemIndex int,
+	actionID string,
+	link *workflows.RebalanceExecutionLink,
+) {
+	if result == nil || itemIndex < 0 || itemIndex >= len(result.Items) {
+		return
+	}
+	errMsg := metadataString(link.Metadata, "error")
+	result.Items[itemIndex].Status = models.PortfolioRebalanceItemStatusFailed
+	result.Items[itemIndex].LastError = strPtr(errMsg)
+	result.Items[itemIndex].LastActionID = strPtr(actionID)
+	result.Items[itemIndex].ProviderOperationID = cloneStringPtr(link.ProviderOperationID)
+	now := timestampOrNow(link.CreatedAt)
+	result.Items[itemIndex].LastEventAt = &now
+	appendExecutionLink(result, link)
+	recomputeExecutionProgress(result)
+}
+
+func applyCompletedItemResult(
+	result *workflows.RebalanceExecutionResult,
+	itemIndex int,
+	actionID string,
+	link *workflows.RebalanceExecutionLink,
+) {
+	if result == nil || itemIndex < 0 || itemIndex >= len(result.Items) {
+		return
+	}
+	result.Items[itemIndex].Status = models.PortfolioRebalanceItemStatusCompleted
+	result.Items[itemIndex].LastError = nil
+	result.Items[itemIndex].LastActionID = strPtr(actionID)
+	result.Items[itemIndex].ProviderOperationID = cloneStringPtr(link.ProviderOperationID)
+	now := timestampOrNow(link.CreatedAt)
+	result.Items[itemIndex].LastEventAt = &now
+	appendExecutionLink(result, link)
+	recomputeExecutionProgress(result)
+}
+
+func recomputeExecutionProgress(result *workflows.RebalanceExecutionResult) {
+	if result == nil {
+		return
+	}
+	progress := workflows.RebalanceExecutionProgress{
+		TotalItems:      len(result.Items),
+		ActionableItems: len(result.Items),
+		IsTerminal:      result.Progress.IsTerminal,
+	}
+	for i := range result.Items {
+		item := result.Items[i]
+		progress.LastEventAt = laterTimePtr(progress.LastEventAt, item.LastEventAt)
+		switch item.Status {
+		case models.PortfolioRebalanceItemStatusUnresolved:
+			progress.UnresolvedItems++
+			progress.ActionableItems--
+		case models.PortfolioRebalanceItemStatusExecuting:
+			progress.ExecutingItems++
+		case models.PortfolioRebalanceItemStatusCompleted:
+			progress.CompletedItems++
+		case models.PortfolioRebalanceItemStatusFailed:
+			progress.FailedItems++
+		default:
+			progress.PendingItems++
+		}
+	}
+	terminalItems := progress.CompletedItems + progress.FailedItems
+	if progress.ActionableItems > 0 {
+		progress.CompletionPercent = math.Min(
+			100,
+			(100*float64(terminalItems))/float64(progress.ActionableItems),
+		)
+	} else if progress.TotalItems == 0 || progress.IsTerminal {
+		progress.CompletionPercent = 100
+	}
+	result.Progress = progress
+}
+
+func resolveFinalRunStatus(progress workflows.RebalanceExecutionProgress) string {
+	if progress.CompletedItems > 0 && progress.FailedItems > 0 {
+		return models.PortfolioRebalanceRunStatusPartiallyCompleted
+	}
+	if progress.FailedItems > 0 && progress.CompletedItems == 0 {
+		return models.PortfolioRebalanceRunStatusFailed
+	}
+	return models.PortfolioRebalanceRunStatusCompleted
+}
+
+func appendExecutionLink(
+	result *workflows.RebalanceExecutionResult,
+	link *workflows.RebalanceExecutionLink,
+) {
+	if result == nil || link == nil {
+		return
+	}
+	copied := *link
+	if copied.ID <= 0 {
+		copied.ID = len(result.Links) + 1
+	}
+	if copied.CreatedAt.IsZero() {
+		copied.CreatedAt = time.Now().UTC()
+	}
+	if copied.UpdatedAt.IsZero() {
+		copied.UpdatedAt = copied.CreatedAt
+	}
+	copied.Metadata = copyMetadata(copied.Metadata)
+	result.Links = append(result.Links, copied)
+}
+
+func timestampOrNow(value time.Time) time.Time {
+	if value.IsZero() {
+		return time.Now().UTC()
+	}
+	return value.UTC()
+}
+
+func recordExecutionHeartbeat(ctx context.Context, result *workflows.RebalanceExecutionResult) {
+	if result == nil {
+		return
+	}
+	copy := *result
+	copy.Items = append([]workflows.RebalanceExecutionItem{}, result.Items...)
+	copy.Links = append([]workflows.RebalanceExecutionLink{}, result.Links...)
+	activity.RecordHeartbeat(ctx, copy)
 }
 
 func makeRebalanceActionID(runID int, itemID int, side string) string {
@@ -194,7 +450,7 @@ func makeRebalanceActionID(runID int, itemID int, side string) string {
 	return uuid.NewSHA1(rebalanceActionNamespace, []byte(token)).String()
 }
 
-func normalizeRebalanceSide(item models.PortfolioRebalanceItem) string {
+func normalizeRebalanceSide(item workflows.RebalanceExecutionItem) string {
 	side := strings.ToLower(strings.TrimSpace(item.Side))
 	if side == models.PortfolioRebalanceItemSideBuy || side == models.PortfolioRebalanceItemSideSell {
 		return side
@@ -205,7 +461,7 @@ func normalizeRebalanceSide(item models.PortfolioRebalanceItem) string {
 	return models.PortfolioRebalanceItemSideBuy
 }
 
-func resolveItemCurrency(item models.PortfolioRebalanceItem, currencyByInstrument map[string]string) string {
+func resolveItemCurrency(item workflows.RebalanceExecutionItem, currencyByInstrument map[string]string) string {
 	key := strings.ToUpper(strings.TrimSpace(item.InstrumentID))
 	if key == "" {
 		key = strings.ToUpper(strings.TrimSpace(item.Ticker))
@@ -237,6 +493,46 @@ func parseCurrencyMap(inputJSON map[string]interface{}) map[string]string {
 		result[key] = strings.TrimSpace(row.Currency)
 	}
 	return result
+}
+
+func loadExecutionItemsFromRunOutput(
+	outputJSON map[string]interface{},
+) ([]workflows.RebalanceExecutionItem, error) {
+	if len(outputJSON) == 0 {
+		return []workflows.RebalanceExecutionItem{}, nil
+	}
+
+	encoded, err := json.Marshal(outputJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	var output dto.PortfolioRebalanceOutput
+	if err := json.Unmarshal(encoded, &output); err != nil {
+		return nil, err
+	}
+
+	result := make([]workflows.RebalanceExecutionItem, 0, len(output.Items))
+	for i := range output.Items {
+		row := output.Items[i]
+		status := strings.TrimSpace(row.Status)
+		if status == "" {
+			status = models.PortfolioRebalanceItemStatusPlanned
+		}
+		result = append(result, workflows.RebalanceExecutionItem{
+			ID:              i + 1,
+			Ticker:          strings.TrimSpace(row.Ticker),
+			InstrumentID:    strings.TrimSpace(row.InstrumentID),
+			Side:            strings.TrimSpace(row.Side),
+			CurrentQuantity: row.CurrentQuantity,
+			TargetQuantity:  row.TargetQuantity,
+			DeltaQuantity:   row.DeltaQuantity,
+			ReferencePrice:  cloneFloatPtr(row.ReferencePrice),
+			PlannedAmount:   cloneFloatPtr(row.PlannedAmount),
+			Status:          status,
+		})
+	}
+	return result, nil
 }
 
 func parseProviderOperationID(resp *dto.PortfolioActionResponse) *string {
@@ -277,6 +573,67 @@ func actionResultMap(resp *dto.PortfolioActionResponse) map[string]interface{} {
 		result[key] = value
 	}
 	return result
+}
+
+func metadataString(metadata map[string]interface{}, key string) string {
+	if len(metadata) == 0 {
+		return ""
+	}
+	raw, ok := metadata[key]
+	if !ok || raw == nil {
+		return ""
+	}
+	value, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	return value
+}
+
+func copyMetadata(source map[string]interface{}) map[string]interface{} {
+	if len(source) == 0 {
+		return map[string]interface{}{}
+	}
+	result := make(map[string]interface{}, len(source))
+	for key, value := range source {
+		result[key] = value
+	}
+	return result
+}
+
+func cloneStringPtr(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	copy := *value
+	return &copy
+}
+
+func cloneFloatPtr(value *float64) *float64 {
+	if value == nil {
+		return nil
+	}
+	copy := *value
+	return &copy
+}
+
+func laterTimePtr(base *time.Time, candidate *time.Time) *time.Time {
+	if candidate == nil {
+		return base
+	}
+	if base == nil || candidate.After(*base) {
+		copy := candidate.UTC()
+		return &copy
+	}
+	return base
+}
+
+func strPtr(value string) *string {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	copy := value
+	return &copy
 }
 
 func intPtr(value int) *int {
