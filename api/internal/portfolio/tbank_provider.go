@@ -31,8 +31,16 @@ func (p *TBankProvider) Capabilities(_ context.Context, _ *Profile) dto.Portfoli
 				Label: "Sandbox top up",
 			},
 			{
-				ID:    "test_buy",
-				Label: "Test buy",
+				ID:    "sandbox_pay_out",
+				Label: "Sandbox withdraw",
+			},
+			{
+				ID:    "buy",
+				Label: "Buy",
+			},
+			{
+				ID:    "sell",
+				Label: "Sell",
 			},
 		},
 	}
@@ -326,45 +334,108 @@ func (p *TBankProvider) RunAction(
 			"environment": resp.Environment,
 			"action_id":   actionID,
 		}, nil
-	case "test_buy":
-		req := &tbank.TestBuyRequest{
-			AccountID:    profileAccountID(profile),
-			InstrumentID: "",
-			Quantity:     1,
-			ActionID:     actionID,
+	case "sandbox_pay_out":
+		req := &tbank.SandboxPayOutRequest{
+			AccountID: profileAccountID(profile),
+			Currency:  "RUB",
+			Units:     1_000_000,
 		}
 		if payload != nil {
 			if accountID := stringValue(payload["account_id"]); accountID != "" {
 				req.AccountID = accountID
 			}
-			if instrumentID := strings.ToUpper(stringValue(payload["instrument_id"])); instrumentID != "" {
-				req.InstrumentID = instrumentID
+			if currency := strings.ToUpper(stringValue(payload["currency"])); currency != "" {
+				req.Currency = currency
 			}
-			if quantity := int64Value(payload["quantity"]); quantity > 0 {
-				req.Quantity = quantity
+			if units := int64Value(payload["units"]); units > 0 {
+				req.Units = units
 			}
-		}
-		if req.InstrumentID == "" {
-			return nil, ErrInvalidRequest
 		}
 
-		resp, err := p.service.CreateTestBuyOrder(ctx, profile.UserID, req)
+		resp, err := p.service.SandboxPayOut(ctx, profile.UserID, req)
 		if err != nil {
 			return nil, err
 		}
 		return map[string]interface{}{
-			"environment":             resp.Environment,
-			"account_id":              resp.AccountID,
-			"instrument_id":           resp.InstrumentID,
-			"quantity":                resp.Quantity,
-			"order_id":                resp.OrderID,
-			"execution_report_status": resp.ExecutionReportStatus,
-			"response":                resp.Response,
-			"action_id":               actionID,
+			"account_id":  req.AccountID,
+			"currency":    req.Currency,
+			"units":       req.Units,
+			"environment": resp.Environment,
+			"action_id":   actionID,
 		}, nil
+	case "buy":
+		return p.runTradeAction(ctx, profile, actionID, payload, false)
+	case "sell":
+		return p.runTradeAction(ctx, profile, actionID, payload, true)
 	default:
 		return nil, ErrInvalidAction
 	}
+}
+
+func (p *TBankProvider) runTradeAction(
+	ctx context.Context,
+	profile *Profile,
+	actionID string,
+	payload map[string]interface{},
+	isSell bool,
+) (map[string]interface{}, error) {
+	req := &tbank.MarketOrderRequest{
+		AccountID:    profileAccountID(profile),
+		InstrumentID: "",
+		Quantity:     0,
+		ActionID:     actionID,
+	}
+	if payload != nil {
+		if accountID := stringValue(payload["account_id"]); accountID != "" {
+			req.AccountID = accountID
+		}
+		if instrumentID := strings.ToUpper(stringValue(payload["instrument_id"])); instrumentID != "" {
+			req.InstrumentID = instrumentID
+		}
+		if quantity := int64Value(payload["quantity"]); quantity > 0 {
+			req.Quantity = quantity
+		}
+	}
+	if req.InstrumentID == "" {
+		return nil, ErrInvalidRequest
+	}
+	if req.Quantity <= 0 {
+		return nil, ErrInvalidRequest
+	}
+
+	var (
+		orderResp *tbank.MarketOrderResponse
+		err       error
+	)
+	if isSell {
+		orderResp, err = p.service.CreateMarketSellOrder(ctx, profile.UserID, req)
+	} else {
+		orderResp, err = p.service.CreateMarketBuyOrder(ctx, profile.UserID, req)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if orderResp == nil {
+		return nil, ErrInvalidRequest
+	}
+
+	result := map[string]interface{}{
+		"environment":             orderResp.Environment,
+		"account_id":              orderResp.AccountID,
+		"instrument_id":           orderResp.InstrumentID,
+		"quantity":                orderResp.Quantity,
+		"order_id":                orderResp.OrderID,
+		"operation_id":            orderResp.OrderID,
+		"execution_report_status": orderResp.ExecutionReportStatus,
+		"response":                orderResp.Response,
+		"action_id":               actionID,
+	}
+	if isSell {
+		result["side"] = "sell"
+	} else {
+		result["side"] = "buy"
+	}
+	return result, nil
 }
 
 func profileAccountID(profile *Profile) string {

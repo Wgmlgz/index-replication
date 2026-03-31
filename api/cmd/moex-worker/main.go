@@ -7,6 +7,7 @@ import (
 	"server/internal/portfolio"
 	"server/internal/repository"
 	"server/internal/services"
+	"server/internal/tbank"
 	"server/internal/workflows"
 
 	"go.temporal.io/sdk/activity"
@@ -32,11 +33,23 @@ func main() {
 
 	w := worker.New(temporalClient, cfg.TemporalQueue, worker.Options{})
 	acts := activities.NewMoexSyncActivities(db, cfg.MoexBaseURL, cfg.MoexMutableDays, cfg.MoexImmutableBeforeDate)
+	tbankService := tbank.NewService(
+		tbank.Config{
+			TBankInvestGrpcEndpoint:        cfg.TBankInvestGrpcEndpoint,
+			TBankInvestSandboxGrpcEndpoint: cfg.TBankInvestSandboxGrpcEndpoint,
+			TBankCACertFile:                cfg.TBankCACertFile,
+		},
+		repos.UserSettingsRepo,
+		auditService,
+		nil,
+	)
+	tbankProvider := portfolio.NewTBankProvider(tbankService)
 	virtualProvider := portfolio.NewVirtualProvider(repos.VirtualPortfolioTransactionsRepo, nil)
 	portfolioService := portfolio.NewService(
 		repos.PortfolioProfilesRepo,
 		repos.PortfolioReplicationConfigsRepo,
 		auditService,
+		tbankProvider,
 		virtualProvider,
 	)
 	rebalanceActs := activities.NewRebalanceExecutionActivities(

@@ -287,6 +287,8 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile.worker
+    volumes:
+      - ./api/certs:/root/certs:ro
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       - MOEX_BASE_URL=${MOEX_BASE_URL:-https://iss.amogos.pro/iss}
@@ -294,6 +296,9 @@ services:
       - MOEX_IMMUTABLE_BEFORE_DATE=${MOEX_IMMUTABLE_BEFORE_DATE:-}
       - MOEX_SCHEDULE_TIMEZONE=${MOEX_SCHEDULE_TIMEZONE:-Europe/Moscow}
       - MOEX_ENABLE_MONTHLY_DEEP_RESYNC=${MOEX_ENABLE_MONTHLY_DEEP_RESYNC:-false}
+      - TBANK_INVEST_GRPC_ENDPOINT=${TBANK_INVEST_GRPC_ENDPOINT:-invest-public-api.tbank.ru:443}
+      - TBANK_INVEST_SANDBOX_GRPC_ENDPOINT=${TBANK_INVEST_SANDBOX_GRPC_ENDPOINT:-sandbox-invest-public-api.tbank.ru:443}
+      - TBANK_CA_CERT_FILE=${TBANK_CA_CERT_FILE:-/root/certs/tbank-root-ca.pem}
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
       - TEMPORAL_TASK_QUEUE=${TEMPORAL_TASK_QUEUE:-moex-sync}

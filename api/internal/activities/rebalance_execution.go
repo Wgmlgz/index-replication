@@ -78,7 +78,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 	recomputeExecutionProgress(&result)
 	recordExecutionHeartbeat(ctx, &result)
 
-	if run.Provider != "virtual" {
+	if !supportsAutomaticExecutionProvider(run.Provider) {
 		result.RunStatus = models.PortfolioRebalanceRunStatusFailed
 		finished := time.Now().UTC()
 		result.EndedAt = &finished
@@ -190,7 +190,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		if currency := resolveItemCurrency(item, currencyByInstrument); currency != "" {
 			payload["currency"] = currency
 		}
-		if side == models.PortfolioRebalanceItemSideBuy {
+		if side == models.PortfolioRebalanceItemSideBuy && requiresBuyReferencePrice(run.Provider) {
 			if _, ok := payload["price"]; !ok {
 				link, linkErr := a.failItem(
 					item,
@@ -461,6 +461,19 @@ func normalizeRebalanceSide(item workflows.RebalanceExecutionItem) string {
 	return models.PortfolioRebalanceItemSideBuy
 }
 
+func supportsAutomaticExecutionProvider(provider string) bool {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "virtual", "tbank":
+		return true
+	default:
+		return false
+	}
+}
+
+func requiresBuyReferencePrice(provider string) bool {
+	return strings.EqualFold(strings.TrimSpace(provider), "virtual")
+}
+
 func resolveItemCurrency(item workflows.RebalanceExecutionItem, currencyByInstrument map[string]string) string {
 	key := strings.ToUpper(strings.TrimSpace(item.InstrumentID))
 	if key == "" {
@@ -541,7 +554,10 @@ func parseProviderOperationID(resp *dto.PortfolioActionResponse) *string {
 	}
 	rawOperationID, ok := resp.Result["operation_id"]
 	if !ok || rawOperationID == nil {
-		return nil
+		rawOperationID, ok = resp.Result["order_id"]
+		if !ok || rawOperationID == nil {
+			return nil
+		}
 	}
 	switch typed := rawOperationID.(type) {
 	case string:

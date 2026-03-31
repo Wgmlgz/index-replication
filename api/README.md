@@ -205,7 +205,9 @@ Authenticated user endpoints for integration status, connection, and instrument 
 Trading/top-up operations are exposed through unified portfolio profile actions:
 
 - `POST /api/me/portfolios/:id/actions/sandbox_pay_in`
-- `POST /api/me/portfolios/:id/actions/test_buy`
+- `POST /api/me/portfolios/:id/actions/sandbox_pay_out`
+- `POST /api/me/portfolios/:id/actions/buy`
+- `POST /api/me/portfolios/:id/actions/sell`
 
 ## Unified Portfolio Endpoints
 
@@ -241,7 +243,7 @@ Rebalance execution:
   workflow heartbeat/result without DB fallback.
 - During execution, DB is not used as execution state storage: per-item statuses and execution links
   are not written to DB in-flight; DB keeps draft payloads plus run timestamps/final terminal status.
-- Current automatic execution activity is implemented for `virtual` provider runs.
+- Current automatic execution activity is implemented for `virtual` and `tbank` provider runs.
 
 Provider model:
 

@@ -14,7 +14,7 @@ import (
 	pb "opensource.tbank.ru/invest/invest-go/proto"
 )
 
-var ErrTBankSandboxOnly = errors.New("sandbox top-up is available only in sandbox environment")
+var ErrTBankSandboxOnly = errors.New("sandbox cash operations are available only in sandbox environment")
 
 type tbankConnection struct {
 	token            string
@@ -246,6 +246,64 @@ func (s *Service) SandboxPayIn(
 	)
 
 	return &SandboxPayInResponse{
+		Environment: conn.environment,
+		AccountID:   resolvedAccountID,
+		Currency:    currency,
+		Units:       units,
+	}, nil
+}
+
+func (s *Service) SandboxPayOut(
+	ctx context.Context,
+	userID int,
+	req *SandboxPayOutRequest,
+) (*SandboxPayOutResponse, error) {
+	if req == nil {
+		return nil, errors.New("request is required")
+	}
+
+	conn, err := s.getConnectedTBankConnection(userID)
+	if err != nil {
+		return nil, err
+	}
+	if conn.environment != dto.TBankEnvironmentSandbox {
+		return nil, ErrTBankSandboxOnly
+	}
+
+	units := req.Units
+	if units < 0 {
+		return nil, errors.New("units must be greater than 0")
+	}
+	if units == 0 {
+		units = sandboxAutoPayInUnits
+	}
+	currency := strings.ToUpper(strings.TrimSpace(req.Currency))
+	if currency == "" {
+		currency = sandboxAutoPayInCurrency
+	}
+
+	resolvedAccountID, err := s.resolveAccountID(ctx, conn, req.AccountID, true, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.sandboxPayIn(ctx, conn.token, resolvedAccountID, currency, -units); err != nil {
+		return nil, err
+	}
+
+	_ = s.auditLogger.LogUserAction(
+		userID,
+		models.ActionTBankSandboxPayOut,
+		userID,
+		map[string]interface{}{
+			"environment": conn.environment,
+			"account_id":  resolvedAccountID,
+			"currency":    currency,
+			"units":       units,
+		},
+	)
+
+	return &SandboxPayOutResponse{
 		Environment: conn.environment,
 		AccountID:   resolvedAccountID,
 		Currency:    currency,

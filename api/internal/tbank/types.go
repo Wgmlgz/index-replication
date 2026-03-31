@@ -2,14 +2,14 @@ package tbank
 
 import "time"
 
-type TestBuyRequest struct {
+type MarketOrderRequest struct {
 	AccountID    string
 	InstrumentID string
 	Quantity     int64
 	ActionID     string
 }
 
-type TestBuyResponse struct {
+type MarketOrderResponse struct {
 	Environment           string
 	AccountID             string
 	InstrumentID          string
@@ -26,6 +26,19 @@ type SandboxPayInRequest struct {
 }
 
 type SandboxPayInResponse struct {
+	Environment string
+	AccountID   string
+	Currency    string
+	Units       int64
+}
+
+type SandboxPayOutRequest struct {
+	AccountID string
+	Currency  string
+	Units     int64
+}
+
+type SandboxPayOutResponse struct {
 	Environment string
 	AccountID   string
 	Currency    string

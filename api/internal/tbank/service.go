@@ -198,11 +198,29 @@ func (s *Service) Disconnect(userID int) error {
 	return nil
 }
 
-func (s *Service) CreateTestBuyOrder(
+func (s *Service) CreateMarketBuyOrder(
 	ctx context.Context,
 	userID int,
-	req *TestBuyRequest,
-) (*TestBuyResponse, error) {
+	req *MarketOrderRequest,
+) (*MarketOrderResponse, error) {
+	return s.createMarketOrder(ctx, userID, req, pb.OrderDirection_ORDER_DIRECTION_BUY, models.ActionTBankBuyOrderCreated)
+}
+
+func (s *Service) CreateMarketSellOrder(
+	ctx context.Context,
+	userID int,
+	req *MarketOrderRequest,
+) (*MarketOrderResponse, error) {
+	return s.createMarketOrder(ctx, userID, req, pb.OrderDirection_ORDER_DIRECTION_SELL, models.ActionTBankSellOrderCreated)
+}
+
+func (s *Service) createMarketOrder(
+	ctx context.Context,
+	userID int,
+	req *MarketOrderRequest,
+	direction pb.OrderDirection,
+	auditAction string,
+) (*MarketOrderResponse, error) {
 	if req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -210,6 +228,9 @@ func (s *Service) CreateTestBuyOrder(
 	instrumentID := strings.TrimSpace(req.InstrumentID)
 	if instrumentID == "" {
 		return nil, errors.New("instrument_id is required")
+	}
+	if req.Quantity <= 0 {
+		return nil, errors.New("quantity must be positive")
 	}
 	actionID := strings.TrimSpace(req.ActionID)
 	if actionID == "" {
@@ -260,22 +281,25 @@ func (s *Service) CreateTestBuyOrder(
 	orderReq := &pb.PostOrderRequest{
 		InstrumentId: instrumentID,
 		Quantity:     req.Quantity,
-		Direction:    pb.OrderDirection_ORDER_DIRECTION_BUY,
+		Direction:    direction,
 		AccountId:    accountID,
 		OrderType:    pb.OrderType_ORDER_TYPE_MARKET,
 		OrderId:      actionID,
 	}
 
-	orderResp, err := s.postMarketBuyOrder(ctx, environment, token, orderReq)
-	if err != nil && environment == dto.TBankEnvironmentSandbox && isTBankErrorCode(err, "30034") {
+	orderResp, err := s.postMarketOrder(ctx, environment, token, orderReq)
+	if err != nil &&
+		direction == pb.OrderDirection_ORDER_DIRECTION_BUY &&
+		environment == dto.TBankEnvironmentSandbox &&
+		isTBankErrorCode(err, "30034") {
 		if payInErr := s.sandboxPayIn(ctx, token, accountID, sandboxAutoPayInCurrency, sandboxAutoPayInUnits); payInErr == nil {
-			orderResp, err = s.postMarketBuyOrder(ctx, environment, token, orderReq)
+			orderResp, err = s.postMarketOrder(ctx, environment, token, orderReq)
 		}
 	}
 	if err != nil {
 		existingOrder, orderErr := s.getOrderState(ctx, environment, token, accountID, actionID)
 		if orderErr == nil && existingOrder != nil && strings.TrimSpace(existingOrder.GetOrderId()) != "" {
-			return &TestBuyResponse{
+			return &MarketOrderResponse{
 				Environment:           environment,
 				AccountID:             accountID,
 				InstrumentID:          instrumentID,
@@ -290,7 +314,7 @@ func (s *Service) CreateTestBuyOrder(
 		return nil, err
 	}
 
-	resp := &TestBuyResponse{
+	resp := &MarketOrderResponse{
 		Environment:           environment,
 		AccountID:             accountID,
 		InstrumentID:          instrumentID,
@@ -302,13 +326,14 @@ func (s *Service) CreateTestBuyOrder(
 
 	_ = s.auditLogger.LogUserAction(
 		userID,
-		models.ActionTBankTestBuyCreated,
+		auditAction,
 		userID,
 		map[string]interface{}{
 			"environment":   environment,
 			"account_id":    accountID,
 			"instrument_id": instrumentID,
 			"quantity":      req.Quantity,
+			"direction":     strings.ToLower(orderDirectionLabel(direction)),
 			"order_id":      resp.OrderID,
 		},
 	)
@@ -389,7 +414,7 @@ func (s *Service) sandboxPayIn(
 	})
 }
 
-func (s *Service) postMarketBuyOrder(
+func (s *Service) postMarketOrder(
 	ctx context.Context,
 	environment string,
 	token string,
@@ -408,6 +433,17 @@ func (s *Service) postMarketBuyOrder(
 		return nil, err
 	}
 	return orderResp, nil
+}
+
+func orderDirectionLabel(direction pb.OrderDirection) string {
+	switch direction {
+	case pb.OrderDirection_ORDER_DIRECTION_BUY:
+		return "buy"
+	case pb.OrderDirection_ORDER_DIRECTION_SELL:
+		return "sell"
+	default:
+		return direction.String()
+	}
 }
 
 func (s *Service) getOrderState(
