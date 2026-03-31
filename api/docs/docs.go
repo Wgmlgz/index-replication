@@ -947,6 +947,111 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/portfolios/{id}/rebalances/{rebalanceId}/execute": {
+            "post": {
+                "description": "Starts Temporal workflow to execute planned rebalance transactions",
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Execute rebalance draft",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Rebalance run id",
+                        "name": "rebalanceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceRun"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/portfolios/{id}/rebalances/{rebalanceId}/execution": {
+            "get": {
+                "description": "Returns pollable execution state with live item statuses and execution links",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get rebalance execution status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Rebalance run id",
+                        "name": "rebalanceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceExecutionStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/portfolios/{id}/replication": {
             "put": {
                 "description": "Creates or updates replication config for selected portfolio profile",
@@ -2982,6 +3087,144 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/PortfolioRebalanceTransaction"
                     }
+                }
+            }
+        },
+        "PortfolioRebalanceExecutionItem": {
+            "type": "object",
+            "properties": {
+                "current_quantity": {
+                    "type": "number"
+                },
+                "delta_quantity": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "instrument_id": {
+                    "type": "string"
+                },
+                "last_action_id": {
+                    "type": "string"
+                },
+                "last_error": {
+                    "type": "string"
+                },
+                "last_event_at": {
+                    "type": "string"
+                },
+                "planned_amount": {
+                    "type": "number"
+                },
+                "provider_operation_id": {
+                    "type": "string"
+                },
+                "reference_price": {
+                    "type": "number"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target_quantity": {
+                    "type": "number"
+                },
+                "ticker": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceExecutionLink": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "provider_operation_cursor": {
+                    "type": "string"
+                },
+                "provider_operation_id": {
+                    "type": "string"
+                },
+                "rebalance_item_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceExecutionProgress": {
+            "type": "object",
+            "properties": {
+                "actionable_items": {
+                    "type": "integer"
+                },
+                "completed_items": {
+                    "type": "integer"
+                },
+                "completion_percent": {
+                    "type": "number"
+                },
+                "executing_items": {
+                    "type": "integer"
+                },
+                "failed_items": {
+                    "type": "integer"
+                },
+                "is_terminal": {
+                    "type": "boolean"
+                },
+                "last_event_at": {
+                    "type": "string"
+                },
+                "pending_items": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "unresolved_items": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PortfolioRebalanceExecutionStatusResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioRebalanceExecutionItem"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioRebalanceExecutionLink"
+                    }
+                },
+                "progress": {
+                    "$ref": "#/definitions/PortfolioRebalanceExecutionProgress"
+                },
+                "run": {
+                    "$ref": "#/definitions/PortfolioRebalanceRun"
                 }
             }
         },

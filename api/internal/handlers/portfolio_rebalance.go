@@ -158,6 +158,71 @@ func (h *PortfolioRebalanceHandler) DeleteRebalanceDraft(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ExecuteRebalance godoc
+//
+//	@Summary		Execute rebalance draft
+//	@Description	Starts Temporal workflow to execute planned rebalance transactions
+//	@Tags			portfolio
+//	@Param			id			path		int	true	"Portfolio profile id"
+//	@Param			rebalanceId	path		int	true	"Rebalance run id"
+//	@Success		202			{object}	dto.PortfolioRebalanceRun
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances/{rebalanceId}/execute [post]
+func (h *PortfolioRebalanceHandler) ExecuteRebalance(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	runID, ok := parseRebalanceID(c)
+	if !ok {
+		return
+	}
+
+	resp, err := h.service.ExecuteRun(c.Request.Context(), userID, portfolioID, runID)
+	if err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, resp)
+}
+
+// GetRebalanceExecutionStatus godoc
+//
+//	@Summary		Get rebalance execution status
+//	@Description	Returns pollable execution state with live item statuses and execution links
+//	@Tags			portfolio
+//	@Produce		json
+//	@Param			id			path		int	true	"Portfolio profile id"
+//	@Param			rebalanceId	path		int	true	"Rebalance run id"
+//	@Success		200			{object}	dto.PortfolioRebalanceExecutionStatusResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances/{rebalanceId}/execution [get]
+func (h *PortfolioRebalanceHandler) GetRebalanceExecutionStatus(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	runID, ok := parseRebalanceID(c)
+	if !ok {
+		return
+	}
+
+	resp, err := h.service.GetRunExecutionStatus(c.Request.Context(), userID, portfolioID, runID)
+	if err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
 func parseRebalanceID(c *gin.Context) (int, bool) {
 	runID, err := strconv.Atoi(strings.TrimSpace(c.Param("rebalanceId")))
 	if err != nil || runID <= 0 {
@@ -174,10 +239,14 @@ func writePortfolioRebalanceError(c *gin.Context, err error) {
 		errors.Is(err, rebalance.ErrInvalidExecutionMode),
 		errors.Is(err, rebalance.ErrInvalidProfileID),
 		errors.Is(err, rebalance.ErrInvalidRebalanceID),
+		errors.Is(err, rebalance.ErrRebalanceNotExecutable),
 		errors.Is(err, rebalance.ErrReplicationConfigDisabled),
 		errors.Is(err, rebalance.ErrBenchmarkNotConfigured),
-		errors.Is(err, rebalance.ErrProviderNotFound):
+		errors.Is(err, rebalance.ErrProviderNotFound),
+		errors.Is(err, rebalance.ErrExecutionProviderUnsupported):
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	case errors.Is(err, rebalance.ErrExecutionUnavailable):
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: err.Error()})
 	case errors.Is(err, rebalance.ErrProfileNotFound),
 		errors.Is(err, rebalance.ErrReplicationConfigNotFound),
 		errors.Is(err, rebalance.ErrBenchmarkNotFound),

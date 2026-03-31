@@ -15,6 +15,8 @@ All URIs are relative to *http://localhost:8080/api*
 |[**mePortfoliosIdRebalancesGet**](#meportfoliosidrebalancesget) | **GET** /me/portfolios/{id}/rebalances | List rebalance drafts|
 |[**mePortfoliosIdRebalancesPost**](#meportfoliosidrebalancespost) | **POST** /me/portfolios/{id}/rebalances | Create rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdDelete**](#meportfoliosidrebalancesrebalanceiddelete) | **DELETE** /me/portfolios/{id}/rebalances/{rebalanceId} | Delete rebalance draft|
+|[**mePortfoliosIdRebalancesRebalanceIdExecutePost**](#meportfoliosidrebalancesrebalanceidexecutepost) | **POST** /me/portfolios/{id}/rebalances/{rebalanceId}/execute | Execute rebalance draft|
+|[**mePortfoliosIdRebalancesRebalanceIdExecutionGet**](#meportfoliosidrebalancesrebalanceidexecutionget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId}/execution | Get rebalance execution status|
 |[**mePortfoliosIdRebalancesRebalanceIdGet**](#meportfoliosidrebalancesrebalanceidget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId} | Get rebalance draft detail|
 |[**mePortfoliosIdReplicationDelete**](#meportfoliosidreplicationdelete) | **DELETE** /me/portfolios/{id}/replication | Delete portfolio replication config|
 |[**mePortfoliosIdReplicationPut**](#meportfoliosidreplicationput) | **PUT** /me/portfolios/{id}/replication | Upsert portfolio replication config|
@@ -660,6 +662,120 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**204** | No Content |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesRebalanceIdExecutePost**
+> PortfolioRebalanceRun mePortfoliosIdRebalancesRebalanceIdExecutePost()
+
+Starts Temporal workflow to execute planned rebalance transactions
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let rebalanceId: number; //Rebalance run id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdExecutePost(
+    id,
+    rebalanceId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+| **rebalanceId** | [**number**] | Rebalance run id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceRun**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**202** | Accepted |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesRebalanceIdExecutionGet**
+> PortfolioRebalanceExecutionStatusResponse mePortfoliosIdRebalancesRebalanceIdExecutionGet()
+
+Returns pollable execution state with live item statuses and execution links
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let rebalanceId: number; //Rebalance run id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdExecutionGet(
+    id,
+    rebalanceId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+| **rebalanceId** | [**number**] | Rebalance run id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceExecutionStatusResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
 |**400** | Bad Request |  -  |
 |**404** | Not Found |  -  |
 |**500** | Internal Server Error |  -  |

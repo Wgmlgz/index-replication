@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2 } from 'lucide-react';
+import { Play, Plus, Trash2 } from 'lucide-react';
 
 import type {
   PortfolioRebalanceCreateRequest,
@@ -38,6 +38,12 @@ import {
   type RebalanceDraftExecutionMode,
 } from './rebalance-draft-create-form';
 import { RebalanceDraftDetailCard } from './rebalance-draft-detail-card';
+import {
+  canExecuteRunStatus,
+  isRunExecutionInProgress,
+  mergeRunByID,
+} from './rebalance-execution-utils';
+import { useRebalanceExecutionStatus } from './use-rebalance-execution-status';
 
 type RebalanceDraftFormState = {
   executionMode: RebalanceDraftExecutionMode;
@@ -72,6 +78,16 @@ function formatDateTime(value: string | undefined, language: string): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
+}
+
+function executeButtonLabelKey(status: string | undefined): string {
+  if (isRunExecutionInProgress(status)) {
+    return 'portfolio.replication.rebalances.executeDraftRunning';
+  }
+  if (!canExecuteRunStatus(status)) {
+    return 'portfolio.replication.rebalances.executeDraftDone';
+  }
+  return 'portfolio.replication.rebalances.executeDraftButton';
 }
 
 export default function PortfolioReplicationDraftsPage() {
@@ -112,6 +128,34 @@ export default function PortfolioReplicationDraftsPage() {
 
     return fallback;
   }, []);
+
+  const applyRunUpdate = useCallback((nextRun: PortfolioRebalanceRun) => {
+    setRebalanceRuns(prev => mergeRunByID(prev, nextRun));
+    setRebalanceDetail(prev => {
+      if (!prev?.run || prev.run.id !== nextRun.id) {
+        return prev;
+      }
+      return {
+        ...prev,
+        run: nextRun,
+      };
+    });
+  }, []);
+
+  const {
+    executionStatus,
+    executionLoading,
+    executionError,
+    refreshExecutionStatus,
+    clearExecutionStatus,
+  } = useRebalanceExecutionStatus({
+    portfolioID,
+    rebalanceID: selectedRebalanceID,
+    detailDialogOpen,
+    t,
+    parseErrorMessage,
+    onRunUpdate: applyRunUpdate,
+  });
 
   const setSelectedRebalanceInQuery = useCallback(
     (runID: number | null) => {
@@ -224,13 +268,14 @@ export default function PortfolioReplicationDraftsPage() {
       );
       const detail = response.data ?? null;
       setRebalanceDetail(detail);
+      if (detail?.run) {
+        applyRunUpdate(detail.run);
+      }
 
       const runID = detail?.run?.id;
       if (typeof runID === 'number' && runID > 0) {
         setSelectedRebalanceInQuery(runID);
       }
-
-      await loadRebalanceRuns();
       return true;
     } catch (err) {
       setRebalanceError(
@@ -243,14 +288,14 @@ export default function PortfolioReplicationDraftsPage() {
   }, [
     draftForm.asOfDate,
     draftForm.executionMode,
-    loadRebalanceRuns,
+    applyRunUpdate,
     parseErrorMessage,
     portfolioID,
     setSelectedRebalanceInQuery,
     t,
   ]);
 
-  const selectedRun = rebalanceDetail?.run;
+  const selectedRun = executionStatus?.run ?? rebalanceDetail?.run;
 
   const onOpenDraftDetail = useCallback(
     (runID: number | null) => {
@@ -266,6 +311,46 @@ export default function PortfolioReplicationDraftsPage() {
       setCreateDialogOpen(false);
     }
   }, [onCreateDraft]);
+
+  const onExecuteDraft = useCallback(
+    async (runID: number) => {
+      if (!portfolioID || runID <= 0) {
+        return;
+      }
+
+      setRebalanceWorking(true);
+      setRebalanceError('');
+      try {
+        const response =
+          await portfolioApi.mePortfoliosIdRebalancesRebalanceIdExecutePost(
+            portfolioID,
+            runID,
+          );
+        const run = response.data;
+        if (run) {
+          applyRunUpdate(run);
+        }
+        if (selectedRebalanceID === runID && detailDialogOpen) {
+          await refreshExecutionStatus();
+        }
+      } catch (err) {
+        setRebalanceError(
+          parseErrorMessage(err, t('portfolio.replication.errors.executeDraft')),
+        );
+      } finally {
+        setRebalanceWorking(false);
+      }
+    },
+    [
+      applyRunUpdate,
+      detailDialogOpen,
+      parseErrorMessage,
+      portfolioID,
+      refreshExecutionStatus,
+      selectedRebalanceID,
+      t,
+    ],
+  );
 
   const onDeleteDraft = useCallback(
     async (runID: number) => {
@@ -284,6 +369,7 @@ export default function PortfolioReplicationDraftsPage() {
           setRebalanceDetail(null);
           setDetailDialogOpen(false);
           setSelectedRebalanceInQuery(null);
+          clearExecutionStatus();
         }
         await loadRebalanceRuns();
       } catch (err) {
@@ -298,6 +384,7 @@ export default function PortfolioReplicationDraftsPage() {
       loadRebalanceRuns,
       parseErrorMessage,
       portfolioID,
+      clearExecutionStatus,
       selectedRebalanceID,
       setSelectedRebalanceInQuery,
       t,
@@ -331,10 +418,10 @@ export default function PortfolioReplicationDraftsPage() {
         </CardHeader>
 
         <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
-          {rebalanceError ? (
+          {rebalanceError || executionError ? (
             <Alert variant='destructive'>
               <AlertTitle>{t('common.error')}</AlertTitle>
-              <AlertDescription>{rebalanceError}</AlertDescription>
+              <AlertDescription>{rebalanceError || executionError}</AlertDescription>
             </Alert>
           ) : null}
 
@@ -379,7 +466,7 @@ export default function PortfolioReplicationDraftsPage() {
                       <Badge variant='outline'>{run.status || '-'}</Badge>
                     </div>
                     <span className='text-muted-foreground'>
-                      {run.as_of_date || '-'} · {run.execution_mode || '-'}
+                      {run.as_of_date || '-'} | {run.execution_mode || '-'}
                     </span>
                     <span className='text-muted-foreground'>
                       {formatDateTime(run.created_at, i18n.language || 'en')}
@@ -387,6 +474,16 @@ export default function PortfolioReplicationDraftsPage() {
                   </div>
 
                   <div className='flex items-center gap-2'>
+                    <Button
+                      type='button'
+                      variant='secondary'
+                      size='sm'
+                      onClick={() => void onExecuteDraft(runID)}
+                      disabled={!runID || rebalanceWorking || !canExecuteRunStatus(run.status)}
+                    >
+                      <Play className='size-4' />
+                      {t(executeButtonLabelKey(run.status))}
+                    </Button>
                     <Button
                       type='button'
                       variant='outline'
@@ -470,6 +567,7 @@ export default function PortfolioReplicationDraftsPage() {
             setDetailDialogOpen(open);
             if (!open) {
               setSelectedRebalanceInQuery(null);
+              clearExecutionStatus();
             }
           }}
         >
@@ -496,15 +594,37 @@ export default function PortfolioReplicationDraftsPage() {
                 </p>
               ) : null}
 
-              {selectedRebalanceID && !rebalanceDetailLoading && selectedRun ? (
+              {selectedRebalanceID &&
+              !rebalanceDetailLoading &&
+              selectedRun &&
+              rebalanceDetail ? (
                 <RebalanceDraftDetailCard
                   detail={rebalanceDetail}
+                  executionStatus={executionStatus}
+                  executionLoading={executionLoading}
                   language={i18n.language || 'en'}
                 />
               ) : null}
             </div>
 
             <DialogFooter>
+              <Button
+                type='button'
+                variant='secondary'
+                onClick={() =>
+                  selectedRebalanceID
+                    ? void onExecuteDraft(selectedRebalanceID)
+                    : undefined
+                }
+                disabled={
+                  !selectedRebalanceID ||
+                  rebalanceWorking ||
+                  !canExecuteRunStatus(selectedRun.status)
+                }
+              >
+                <Play className='size-4' />
+                {t(executeButtonLabelKey(selectedRun.status))}
+              </Button>
               <Button
                 type='button'
                 variant='outline'
@@ -519,3 +639,4 @@ export default function PortfolioReplicationDraftsPage() {
     </>
   );
 }
+

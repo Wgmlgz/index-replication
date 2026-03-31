@@ -221,7 +221,9 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `POST /api/me/portfolios/:id/rebalances`
 - `GET /api/me/portfolios/:id/rebalances`
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId`
+- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution`
 - `DELETE /api/me/portfolios/:id/rebalances/:rebalanceId`
+- `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute`
 - `GET /api/me/portfolios/:id/summary`
 - `GET /api/me/portfolios/:id/history`
 - `GET /api/me/portfolios/:id/composition`
@@ -232,6 +234,12 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 Action payload requirement:
 - `POST /api/me/portfolios/:id/actions/:action` now requires `payload.action_id` (UUID string).
 - The same `action_id` can be reused by callers (for example Temporal retries) to keep provider-side execution idempotent.
+
+Rebalance execution:
+- `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` queues execution in Temporal.
+- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution` returns pollable execution status
+  (run status, progress counters, item statuses, execution links).
+- Current automatic execution activity is implemented for `virtual` provider runs.
 
 Provider model:
 

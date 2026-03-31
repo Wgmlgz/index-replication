@@ -10,10 +10,18 @@ const (
 	PortfolioRebalanceExecutionModeManual    = "manual"
 	PortfolioRebalanceExecutionModeAutomatic = "automatic"
 
-	PortfolioRebalanceRunStatusDraft = "draft"
+	PortfolioRebalanceRunStatusDraft              = "draft"
+	PortfolioRebalanceRunStatusQueued             = "queued"
+	PortfolioRebalanceRunStatusExecuting          = "executing"
+	PortfolioRebalanceRunStatusPartiallyCompleted = "partially_completed"
+	PortfolioRebalanceRunStatusCompleted          = "completed"
+	PortfolioRebalanceRunStatusFailed             = "failed"
 
 	PortfolioRebalanceItemStatusPlanned    = "planned"
 	PortfolioRebalanceItemStatusUnresolved = "unresolved"
+	PortfolioRebalanceItemStatusExecuting  = "executing"
+	PortfolioRebalanceItemStatusCompleted  = "completed"
+	PortfolioRebalanceItemStatusFailed     = "failed"
 
 	PortfolioRebalanceItemSideBuy  = "buy"
 	PortfolioRebalanceItemSideSell = "sell"

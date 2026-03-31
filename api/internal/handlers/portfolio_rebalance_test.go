@@ -187,7 +187,97 @@ func TestPortfolioRebalanceAPI_DeleteDraft(t *testing.T) {
 	}
 }
 
+func TestPortfolioRebalanceAPI_ExecuteDraft(t *testing.T) {
+	starter := &fakeRebalanceExecutionStarter{}
+	router, _, profileID := setupRebalanceTestRouterWithStarter(t, true, starter)
+
+	createPayload := dto.PortfolioRebalanceCreateRequest{
+		ExecutionMode: "automatic",
+		AsOfDate:      "2025-01-15",
+	}
+	createRec := performJSONRequest(t, router, http.MethodPost,
+		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	}
+
+	var created dto.PortfolioRebalanceDetailResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+
+	executeRec := performJSONRequest(t, router, http.MethodPost,
+		fmt.Sprintf("/me/portfolios/%d/rebalances/%d/execute", profileID, created.Run.ID), nil)
+	if executeRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d body=%s", executeRec.Code, executeRec.Body.String())
+	}
+	if starter.calls != 1 {
+		t.Fatalf("expected execution starter to be called once, got %d", starter.calls)
+	}
+	if starter.runID != created.Run.ID {
+		t.Fatalf("expected starter run id %d, got %d", created.Run.ID, starter.runID)
+	}
+}
+
+func TestPortfolioRebalanceAPI_GetExecutionStatus(t *testing.T) {
+	router, db, profileID := setupRebalanceTestRouter(t, true)
+
+	createPayload := dto.PortfolioRebalanceCreateRequest{
+		ExecutionMode: "manual",
+		AsOfDate:      "2025-01-15",
+	}
+	createRec := performJSONRequest(t, router, http.MethodPost,
+		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	}
+
+	var created dto.PortfolioRebalanceDetailResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+
+	if err := db.Model(&models.PortfolioRebalanceRun{}).
+		Where("id = ?", created.Run.ID).
+		Update("status", models.PortfolioRebalanceRunStatusExecuting).Error; err != nil {
+		t.Fatalf("update run status: %v", err)
+	}
+	if err := db.Model(&models.PortfolioRebalanceItem{}).
+		Where("rebalance_run_id = ?", created.Run.ID).
+		Limit(1).
+		Update("status", models.PortfolioRebalanceItemStatusExecuting).Error; err != nil {
+		t.Fatalf("update item status: %v", err)
+	}
+
+	executionRec := performJSONRequest(t, router, http.MethodGet,
+		fmt.Sprintf("/me/portfolios/%d/rebalances/%d/execution", profileID, created.Run.ID), nil)
+	if executionRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d body=%s", executionRec.Code, executionRec.Body.String())
+	}
+
+	var executionResp dto.PortfolioRebalanceExecutionStatusResponse
+	if err := json.Unmarshal(executionRec.Body.Bytes(), &executionResp); err != nil {
+		t.Fatalf("decode execution response: %v", err)
+	}
+	if executionResp.Run.ID != created.Run.ID {
+		t.Fatalf("expected run id %d, got %d", created.Run.ID, executionResp.Run.ID)
+	}
+	if executionResp.Run.Status != models.PortfolioRebalanceRunStatusExecuting {
+		t.Fatalf("expected run status %q, got %q", models.PortfolioRebalanceRunStatusExecuting, executionResp.Run.Status)
+	}
+	if executionResp.Progress.TotalItems == 0 {
+		t.Fatalf("expected progress total_items > 0")
+	}
+	if len(executionResp.Items) == 0 {
+		t.Fatalf("expected execution items")
+	}
+}
+
 func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, *gorm.DB, int) {
+	return setupRebalanceTestRouterWithStarter(t, withReplication, nil)
+}
+
+func setupRebalanceTestRouterWithStarter(t *testing.T, withReplication bool, starter rebalance.ExecutionStarter) (*gin.Engine, *gorm.DB, int) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -236,6 +326,7 @@ func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, 
 		snapshotLoader,
 		plannerService,
 		services.NewAuditService(db),
+		starter,
 	)
 	handler := NewPortfolioRebalanceHandler(service)
 
@@ -247,7 +338,9 @@ func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, 
 	router.POST("/me/portfolios/:id/rebalances", handler.CreateRebalanceDraft)
 	router.GET("/me/portfolios/:id/rebalances", handler.ListRebalances)
 	router.GET("/me/portfolios/:id/rebalances/:rebalanceId", handler.GetRebalanceDetail)
+	router.GET("/me/portfolios/:id/rebalances/:rebalanceId/execution", handler.GetRebalanceExecutionStatus)
 	router.DELETE("/me/portfolios/:id/rebalances/:rebalanceId", handler.DeleteRebalanceDraft)
+	router.POST("/me/portfolios/:id/rebalances/:rebalanceId/execute", handler.ExecuteRebalance)
 
 	return router, db, profileID
 }
@@ -325,4 +418,19 @@ func (s *fakeBenchmarkReadService) GetIndexComposition(_ context.Context, _ stri
 	rows := make([]moexdomain.IndexCompositionEntry, 0, len(s.rows))
 	rows = append(rows, s.rows...)
 	return rows, nil, nil
+}
+
+type fakeRebalanceExecutionStarter struct {
+	calls       int
+	userID      int
+	portfolioID int
+	runID       int
+}
+
+func (s *fakeRebalanceExecutionStarter) StartRebalanceExecution(_ context.Context, userID int, portfolioID int, runID int) error {
+	s.calls++
+	s.userID = userID
+	s.portfolioID = portfolioID
+	s.runID = runID
+	return nil
 }

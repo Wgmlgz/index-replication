@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"server/internal/api/dto"
@@ -16,9 +17,16 @@ import (
 
 type runRepository interface {
 	CreateRun(run *models.PortfolioRebalanceRun) (*models.PortfolioRebalanceRun, error)
+	CreateRunWithItems(run *models.PortfolioRebalanceRun, items []models.PortfolioRebalanceItem) (*models.PortfolioRebalanceRun, []models.PortfolioRebalanceItem, error)
 	ListRunsByPortfolio(userID int, portfolioProfileID int, limit int) ([]models.PortfolioRebalanceRun, error)
 	GetRunByID(userID int, portfolioProfileID int, runID int) (*models.PortfolioRebalanceRun, error)
 	DeleteRunByID(userID int, portfolioProfileID int, runID int) error
+	ListItemsByRunID(runID int) ([]models.PortfolioRebalanceItem, error)
+	ListExecutionLinksByRunID(runID int) ([]models.PortfolioRebalanceExecutionLink, error)
+	SetRunStatus(userID int, portfolioProfileID int, runID int, status string) error
+	MarkRunExecutionStarted(userID int, portfolioProfileID int, runID int, startedAt time.Time) error
+	MarkRunExecutionFinished(userID int, portfolioProfileID int, runID int, status string, endedAt time.Time) error
+	UpdateItemStatus(runID int, itemID int, status string) error
 }
 
 type auditLogger interface {
@@ -35,6 +43,7 @@ type Service struct {
 	snapshotLoader *SnapshotLoader
 	planner        plannerService
 	audit          auditLogger
+	executor       ExecutionStarter
 }
 
 func NewService(
@@ -43,13 +52,19 @@ func NewService(
 	snapshotLoader *SnapshotLoader,
 	planner plannerService,
 	audit auditLogger,
+	executor ...ExecutionStarter,
 ) *Service {
+	var executionStarter ExecutionStarter
+	if len(executor) > 0 {
+		executionStarter = executor[0]
+	}
 	return &Service{
 		profilesRepo:   profilesRepo,
 		runsRepo:       runsRepo,
 		snapshotLoader: snapshotLoader,
 		planner:        planner,
 		audit:          audit,
+		executor:       executionStarter,
 	}
 }
 
@@ -137,7 +152,8 @@ func (s *Service) CreateDraft(
 		EndedAt:                       &endedAt,
 	}
 
-	savedRun, err := s.runsRepo.CreateRun(runModel)
+	runItems := toRunItems(planOutput.Items)
+	savedRun, _, err := s.runsRepo.CreateRunWithItems(runModel, runItems)
 	if err != nil {
 		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
 		return nil, err
@@ -306,4 +322,32 @@ func derefString(value *string) string {
 		return ""
 	}
 	return *value
+}
+
+func toRunItems(items []planner.Item) []models.PortfolioRebalanceItem {
+	if len(items) == 0 {
+		return []models.PortfolioRebalanceItem{}
+	}
+	result := make([]models.PortfolioRebalanceItem, 0, len(items))
+	for _, row := range items {
+		metadata := datatypes.JSONMap{}
+		for key, value := range row.Metadata {
+			metadata[key] = value
+		}
+		result = append(result, models.PortfolioRebalanceItem{
+			Ticker:          strings.TrimSpace(row.Ticker),
+			InstrumentID:    strings.TrimSpace(row.InstrumentID),
+			Side:            strings.TrimSpace(row.Side),
+			CurrentQuantity: row.CurrentQuantity,
+			TargetQuantity:  row.TargetQuantity,
+			DeltaQuantity:   row.DeltaQuantity,
+			CurrentWeight:   row.CurrentWeight,
+			TargetWeight:    row.TargetWeight,
+			ReferencePrice:  cloneFloatPtr(row.ReferencePrice),
+			PlannedAmount:   cloneFloatPtr(row.PlannedAmount),
+			Status:          strings.TrimSpace(row.Status),
+			MetadataJSON:    metadata,
+		})
+	}
+	return result
 }

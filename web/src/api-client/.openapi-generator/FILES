@@ -40,6 +40,10 @@ docs/PortfolioProviderAction.md
 docs/PortfolioRebalanceBenchmarkConstituent.md
 docs/PortfolioRebalanceCreateRequest.md
 docs/PortfolioRebalanceDetailResponse.md
+docs/PortfolioRebalanceExecutionItem.md
+docs/PortfolioRebalanceExecutionLink.md
+docs/PortfolioRebalanceExecutionProgress.md
+docs/PortfolioRebalanceExecutionStatusResponse.md
 docs/PortfolioRebalanceHolding.md
 docs/PortfolioRebalanceInput.md
 docs/PortfolioRebalanceInstrumentInfo.md

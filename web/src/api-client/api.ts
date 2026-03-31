@@ -246,6 +246,51 @@ export interface PortfolioRebalanceDetailResponse {
     'summary'?: PortfolioRebalanceSummary;
     'transactions'?: Array<PortfolioRebalanceTransaction>;
 }
+export interface PortfolioRebalanceExecutionItem {
+    'current_quantity'?: number;
+    'delta_quantity'?: number;
+    'id'?: number;
+    'instrument_id'?: string;
+    'last_action_id'?: string;
+    'last_error'?: string;
+    'last_event_at'?: string;
+    'planned_amount'?: number;
+    'provider_operation_id'?: string;
+    'reference_price'?: number;
+    'side'?: string;
+    'status'?: string;
+    'target_quantity'?: number;
+    'ticker'?: string;
+    'updated_at'?: string;
+}
+export interface PortfolioRebalanceExecutionLink {
+    'created_at'?: string;
+    'id'?: number;
+    'metadata'?: { [key: string]: any; };
+    'provider_operation_cursor'?: string;
+    'provider_operation_id'?: string;
+    'rebalance_item_id'?: number;
+    'status'?: string;
+    'updated_at'?: string;
+}
+export interface PortfolioRebalanceExecutionProgress {
+    'actionable_items'?: number;
+    'completed_items'?: number;
+    'completion_percent'?: number;
+    'executing_items'?: number;
+    'failed_items'?: number;
+    'is_terminal'?: boolean;
+    'last_event_at'?: string;
+    'pending_items'?: number;
+    'total_items'?: number;
+    'unresolved_items'?: number;
+}
+export interface PortfolioRebalanceExecutionStatusResponse {
+    'items'?: Array<PortfolioRebalanceExecutionItem>;
+    'links'?: Array<PortfolioRebalanceExecutionLink>;
+    'progress'?: PortfolioRebalanceExecutionProgress;
+    'run'?: PortfolioRebalanceRun;
+}
 export interface PortfolioRebalanceHolding {
     'current_quantity'?: number;
     'instrument_id'?: string;
@@ -2132,6 +2177,82 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
+         * Starts Temporal workflow to execute planned rebalance transactions
+         * @summary Execute rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdExecutePost: async (id: number, rebalanceId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdExecutePost', 'id', id)
+            // verify required parameter 'rebalanceId' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdExecutePost', 'rebalanceId', rebalanceId)
+            const localVarPath = `/me/portfolios/{id}/rebalances/{rebalanceId}/execute`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"rebalanceId"}}`, encodeURIComponent(String(rebalanceId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = '*/*';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns pollable execution state with live item statuses and execution links
+         * @summary Get rebalance execution status
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdExecutionGet: async (id: number, rebalanceId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdExecutionGet', 'id', id)
+            // verify required parameter 'rebalanceId' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdExecutionGet', 'rebalanceId', rebalanceId)
+            const localVarPath = `/me/portfolios/{id}/rebalances/{rebalanceId}/execution`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"rebalanceId"}}`, encodeURIComponent(String(rebalanceId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns run metadata and persisted planning payload (input, output, summary)
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
@@ -2482,6 +2603,34 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Starts Temporal workflow to execute planned rebalance transactions
+         * @summary Execute rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesRebalanceIdExecutePost(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceRun>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesRebalanceIdExecutePost(id, rebalanceId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesRebalanceIdExecutePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns pollable execution state with live item statuses and execution links
+         * @summary Get rebalance execution status
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesRebalanceIdExecutionGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceExecutionStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesRebalanceIdExecutionGet(id, rebalanceId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesRebalanceIdExecutionGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns run metadata and persisted planning payload (input, output, summary)
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
@@ -2686,6 +2835,28 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdRebalancesRebalanceIdDelete(id, rebalanceId, options).then((request) => request(axios, basePath));
         },
         /**
+         * Starts Temporal workflow to execute planned rebalance transactions
+         * @summary Execute rebalance draft
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdExecutePost(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceRun> {
+            return localVarFp.mePortfoliosIdRebalancesRebalanceIdExecutePost(id, rebalanceId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns pollable execution state with live item statuses and execution links
+         * @summary Get rebalance execution status
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdExecutionGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceExecutionStatusResponse> {
+            return localVarFp.mePortfoliosIdRebalancesRebalanceIdExecutionGet(id, rebalanceId, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns run metadata and persisted planning payload (input, output, summary)
          * @summary Get rebalance draft detail
          * @param {number} id Portfolio profile id
@@ -2881,6 +3052,30 @@ export class PortfolioApi extends BaseAPI {
      */
     public mePortfoliosIdRebalancesRebalanceIdDelete(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
         return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdDelete(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Starts Temporal workflow to execute planned rebalance transactions
+     * @summary Execute rebalance draft
+     * @param {number} id Portfolio profile id
+     * @param {number} rebalanceId Rebalance run id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesRebalanceIdExecutePost(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdExecutePost(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns pollable execution state with live item statuses and execution links
+     * @summary Get rebalance execution status
+     * @param {number} id Portfolio profile id
+     * @param {number} rebalanceId Rebalance run id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesRebalanceIdExecutionGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdExecutionGet(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

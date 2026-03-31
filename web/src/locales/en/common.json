@@ -417,6 +417,20 @@
         "summaryActionable": "Actionable items",
         "summaryUnresolved": "Unresolved items",
         "summaryTurnover": "Estimated turnover",
+        "executionTitle": "Execution",
+        "executionRefreshing": "Refreshing live status...",
+        "executionRefreshIdle": "Live status ready",
+        "executionCompletion": "Completion",
+        "executionLastEventAt": "Last event",
+        "executionCountersTitle": "Execution counters",
+        "executionCounters": {
+          "total": "Total items",
+          "actionable": "Actionable items",
+          "pending": "Pending",
+          "executing": "Executing",
+          "completed": "Completed",
+          "failed": "Failed"
+        },
         "tabs": {
           "summary": "Summary",
           "outputItems": "Output: Items",
@@ -425,7 +439,9 @@
           "inputHoldings": "Input: Holdings",
           "inputBenchmark": "Input: Benchmark",
           "inputInstruments": "Input: Instruments",
-          "inputMoney": "Input: Money"
+          "inputMoney": "Input: Money",
+          "executionItems": "Execution: Items",
+          "executionEvents": "Execution: Events"
         },
         "itemsColumns": {
           "sequence": "Seq",
@@ -456,6 +472,26 @@
         "emptyInputHoldings": "No input holdings.",
         "emptyInputBenchmark": "No input benchmark rows.",
         "emptyInputInstruments": "No input instruments.",
+        "emptyExecutionItems": "No execution items.",
+        "emptyExecutionEvents": "No execution events.",
+        "executionItemsColumns": {
+          "ticker": "Ticker",
+          "instrumentId": "Instrument ID",
+          "side": "Side",
+          "deltaQty": "Delta qty",
+          "status": "Status",
+          "lastError": "Last error",
+          "operationId": "Operation ID",
+          "lastEventAt": "Last event"
+        },
+        "executionLinksColumns": {
+          "id": "Event ID",
+          "itemId": "Item ID",
+          "status": "Status",
+          "operationId": "Operation ID",
+          "metadata": "Metadata",
+          "createdAt": "Created"
+        },
         "executionModeLabel": "Execution mode",
         "executionModeOptions": {
           "manual": "Manual",
@@ -470,6 +506,9 @@
         "listTitle": "Draft history",
         "loadingList": "Loading rebalance drafts...",
         "emptyList": "No rebalance drafts yet.",
+        "executeDraftButton": "Execute",
+        "executeDraftRunning": "Running",
+        "executeDraftDone": "Executed",
         "viewDraftButton": "View draft",
         "deleteDraftButton": "Delete draft",
         "deleteDraftWorking": "Deleting...",
@@ -486,7 +525,9 @@
       "errors": {
         "loadRebalances": "Failed to load rebalance drafts.",
         "loadRebalanceDetail": "Failed to load rebalance draft detail.",
+        "loadExecutionStatus": "Failed to load execution status.",
         "createDraft": "Failed to create rebalance draft.",
+        "executeDraft": "Failed to execute rebalance draft.",
         "deleteDraft": "Failed to delete rebalance draft.",
         "modeParamsObject": "Mode params must be a JSON object.",
         "modeParamsJson": "Mode params must be valid JSON.",

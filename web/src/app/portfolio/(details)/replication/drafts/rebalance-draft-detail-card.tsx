@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import type {
   PortfolioRebalanceDetailResponse,
+  PortfolioRebalanceExecutionStatusResponse,
   PortfolioRebalanceInput,
   PortfolioRebalanceOutput,
   PortfolioRebalanceSummary,
@@ -12,9 +13,12 @@ import type {
 } from '@/api-client';
 import { SortableDataTable } from '@/app/portfolio/components/sortable-data-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   buildBenchmarkColumns,
+  buildExecutionItemsColumns,
+  buildExecutionLinksColumns,
   buildHoldingsColumns,
   buildInstrumentsColumns,
   buildItemColumns,
@@ -25,11 +29,15 @@ import { formatDateTime, formatNumber } from './rebalance-draft-detail-helpers';
 
 type RebalanceDraftDetailCardProps = {
   detail: PortfolioRebalanceDetailResponse;
+  executionStatus: PortfolioRebalanceExecutionStatusResponse | null;
+  executionLoading: boolean;
   language: string;
 };
 
 export function RebalanceDraftDetailCard({
   detail,
+  executionStatus,
+  executionLoading,
   language,
 }: RebalanceDraftDetailCardProps) {
   const { t } = useTranslation();
@@ -52,8 +60,20 @@ export function RebalanceDraftDetailCard({
   const summaryUnresolvedItems: number | undefined = summary?.unresolved_items;
   const summaryEstimatedTurnover: number | undefined =
     summary?.estimated_turnover_abs;
+  const executionProgress = executionStatus?.progress;
+  const executionItems = executionStatus?.items ?? [];
+  const executionLinks = executionStatus?.links ?? [];
+  const completionPercent = executionProgress?.completion_percent ?? 0;
 
   const itemColumns = useMemo(() => buildItemColumns(t), [t]);
+  const executionItemsColumns = useMemo(
+    () => buildExecutionItemsColumns(t, language),
+    [language, t],
+  );
+  const executionLinksColumns = useMemo(
+    () => buildExecutionLinksColumns(t, language),
+    [language, t],
+  );
   const holdingsColumns = useMemo(() => buildHoldingsColumns(t), [t]);
   const benchmarkColumns = useMemo(() => buildBenchmarkColumns(t), [t]);
   const instrumentsColumns = useMemo(
@@ -143,6 +163,60 @@ export function RebalanceDraftDetailCard({
         </div>
       </div>
 
+      <div className='grid gap-3 text-xs text-muted-foreground md:grid-cols-2'>
+        <div className='grid gap-2 rounded border p-3'>
+          <div className='flex items-center justify-between gap-2'>
+            <p className='font-medium text-foreground'>
+              {t('portfolio.replication.rebalances.executionTitle')}
+            </p>
+            <p className='text-[11px]'>
+              {executionLoading
+                ? t('portfolio.replication.rebalances.executionRefreshing')
+                : t('portfolio.replication.rebalances.executionRefreshIdle')}
+            </p>
+          </div>
+          <Progress value={completionPercent} />
+          <p>
+            {t('portfolio.replication.rebalances.executionCompletion')}:{' '}
+            {formatNumber(completionPercent, 2)}%
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionLastEventAt')}:{' '}
+            {formatDateTime(executionProgress?.last_event_at, language)}
+          </p>
+        </div>
+
+        <div className='grid gap-1 rounded border p-3'>
+          <p className='font-medium text-foreground'>
+            {t('portfolio.replication.rebalances.executionCountersTitle')}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionCounters.total')}:{' '}
+            {formatNumber(executionProgress?.total_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionCounters.actionable')}:{' '}
+            {formatNumber(executionProgress?.actionable_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionCounters.pending')}:{' '}
+            {formatNumber(executionProgress?.pending_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionCounters.executing')}:{' '}
+            {formatNumber(executionProgress?.executing_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionCounters.completed')}:{' '}
+            {formatNumber(executionProgress?.completed_items, 0)}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.executionCounters.failed')}:{' '}
+            {formatNumber(executionProgress?.failed_items, 0)}
+          </p>
+        </div>
+      </div>
+
       <Tabs defaultValue='input-holdings' className='grow min-w-0 gap-3 h-full flex flex-col'>
         <TabsList className='h-auto w-full justify-start overflow-x-auto'>
           <TabsTrigger value='input-holdings'>
@@ -165,6 +239,12 @@ export function RebalanceDraftDetailCard({
           </TabsTrigger>
           <TabsTrigger value='transactions'>
             {t('portfolio.replication.rebalances.tabs.transactions')}
+          </TabsTrigger>
+          <TabsTrigger value='execution-items'>
+            {t('portfolio.replication.rebalances.tabs.executionItems')}
+          </TabsTrigger>
+          <TabsTrigger value='execution-events'>
+            {t('portfolio.replication.rebalances.tabs.executionEvents')}
           </TabsTrigger>
         </TabsList>
 
@@ -239,6 +319,28 @@ export function RebalanceDraftDetailCard({
                 emptyLabel={t('portfolio.replication.rebalances.emptyTransactions')}
                 getRowKey={(row, index) =>
                   `${index}-${row.instrument_id ?? ''}-${row.side ?? ''}-${row.sequence ?? 0}`
+                }
+              />
+            </TabsContent>
+
+            <TabsContent value='execution-items'>
+              <SortableDataTable
+                data={executionItems}
+                columns={executionItemsColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyExecutionItems')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.id ?? 0}-${row.instrument_id ?? ''}-${row.side ?? ''}`
+                }
+              />
+            </TabsContent>
+
+            <TabsContent value='execution-events'>
+              <SortableDataTable
+                data={executionLinks}
+                columns={executionLinksColumns}
+                emptyLabel={t('portfolio.replication.rebalances.emptyExecutionEvents')}
+                getRowKey={(row, index) =>
+                  `${index}-${row.id ?? 0}-${row.rebalance_item_id ?? 0}`
                 }
               />
             </TabsContent>

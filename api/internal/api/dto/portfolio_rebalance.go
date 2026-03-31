@@ -122,3 +122,52 @@ type PortfolioRebalanceDetailResponse struct {
 	Summary      PortfolioRebalanceSummary       `json:"summary"`
 	Transactions []PortfolioRebalanceTransaction `json:"transactions"`
 } //@name PortfolioRebalanceDetailResponse
+
+type PortfolioRebalanceExecutionProgress struct {
+	TotalItems        int        `json:"total_items"`
+	ActionableItems   int        `json:"actionable_items"`
+	UnresolvedItems   int        `json:"unresolved_items"`
+	PendingItems      int        `json:"pending_items"`
+	ExecutingItems    int        `json:"executing_items"`
+	CompletedItems    int        `json:"completed_items"`
+	FailedItems       int        `json:"failed_items"`
+	CompletionPercent float64    `json:"completion_percent"`
+	IsTerminal        bool       `json:"is_terminal"`
+	LastEventAt       *time.Time `json:"last_event_at"`
+} //@name PortfolioRebalanceExecutionProgress
+
+type PortfolioRebalanceExecutionItem struct {
+	ID                  int        `json:"id"`
+	Ticker              string     `json:"ticker"`
+	InstrumentID        string     `json:"instrument_id"`
+	Side                string     `json:"side"`
+	CurrentQuantity     float64    `json:"current_quantity"`
+	TargetQuantity      float64    `json:"target_quantity"`
+	DeltaQuantity       float64    `json:"delta_quantity"`
+	ReferencePrice      *float64   `json:"reference_price"`
+	PlannedAmount       *float64   `json:"planned_amount"`
+	Status              string     `json:"status"`
+	LastError           *string    `json:"last_error"`
+	LastActionID        *string    `json:"last_action_id"`
+	ProviderOperationID *string    `json:"provider_operation_id"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+	LastEventAt         *time.Time `json:"last_event_at"`
+} //@name PortfolioRebalanceExecutionItem
+
+type PortfolioRebalanceExecutionLink struct {
+	ID                      int                    `json:"id"`
+	RebalanceItemID         *int                   `json:"rebalance_item_id"`
+	Status                  string                 `json:"status"`
+	ProviderOperationID     *string                `json:"provider_operation_id"`
+	ProviderOperationCursor *string                `json:"provider_operation_cursor"`
+	Metadata                map[string]interface{} `json:"metadata"`
+	CreatedAt               time.Time              `json:"created_at"`
+	UpdatedAt               time.Time              `json:"updated_at"`
+} //@name PortfolioRebalanceExecutionLink
+
+type PortfolioRebalanceExecutionStatusResponse struct {
+	Run      PortfolioRebalanceRun               `json:"run"`
+	Progress PortfolioRebalanceExecutionProgress `json:"progress"`
+	Items    []PortfolioRebalanceExecutionItem   `json:"items"`
+	Links    []PortfolioRebalanceExecutionLink   `json:"links"`
+} //@name PortfolioRebalanceExecutionStatusResponse

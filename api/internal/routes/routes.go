@@ -133,6 +133,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		rebalanceSnapshotLoader,
 		rebalancePlanner,
 		auditService,
+		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
 	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(rebalanceService)
 
@@ -160,7 +161,9 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.POST("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.CreateRebalanceDraft)
 		a.GET("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.ListRebalances)
 		a.GET("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceDetail)
+		a.GET("/me/portfolios/:id/rebalances/:rebalanceId/execution", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceExecutionStatus)
 		a.DELETE("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.DeleteRebalanceDraft)
+		a.POST("/me/portfolios/:id/rebalances/:rebalanceId/execute", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.ExecuteRebalance)
 		a.GET("/me/portfolios/:id/summary", m.RPM(cs, config.SelfView), portfolioHandler.GetSummary)
 		a.GET("/me/portfolios/:id/history", m.RPM(cs, config.SelfView), portfolioHandler.GetHistory)
 		a.GET("/me/portfolios/:id/composition", m.RPM(cs, config.SelfView), portfolioHandler.GetComposition)

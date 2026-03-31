@@ -3,6 +3,8 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 import type {
   PortfolioRebalanceBenchmarkConstituent,
+  PortfolioRebalanceExecutionItem,
+  PortfolioRebalanceExecutionLink,
   PortfolioRebalanceHolding,
   PortfolioRebalanceInstrumentInfo,
   PortfolioRebalanceItem,
@@ -490,6 +492,196 @@ export function buildTransactionsColumns(
         />
       ),
       cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.lot_size, 0)}</div>,
+    },
+  ];
+}
+
+function metadataSummary(value: Record<string, unknown> | undefined): string {
+  if (!value || typeof value !== 'object') {
+    return '-';
+  }
+  const keys = Object.keys(value);
+  if (keys.length === 0) {
+    return '-';
+  }
+  return keys.join(', ');
+}
+
+export function buildExecutionItemsColumns(
+  t: TFunction,
+  language: string,
+): ColumnDef<PortfolioRebalanceExecutionItem>[] {
+  return [
+    {
+      accessorFn: row => row.ticker || row.instrument_id || '',
+      id: 'ticker',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.ticker')}
+        />
+      ),
+      cell: ({ row }) => renderTickerWithLogo(row.original.ticker, row.original.instrument_id),
+    },
+    {
+      accessorFn: row => row.instrument_id || '',
+      id: 'instrument_id',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.instrumentId')}
+        />
+      ),
+      cell: ({ row }) => row.original.instrument_id || '-',
+    },
+    {
+      accessorFn: row => row.side || '',
+      id: 'side',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.side')}
+        />
+      ),
+      cell: ({ row }) => row.original.side || '-',
+    },
+    {
+      accessorFn: row => row.delta_quantity ?? 0,
+      id: 'delta_quantity',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.deltaQty')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => (
+        <div className='text-right'>{formatNumber(row.original.delta_quantity)}</div>
+      ),
+    },
+    {
+      accessorFn: row => row.status || '',
+      id: 'status',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.status')}
+        />
+      ),
+      cell: ({ row }) => <Badge variant='outline'>{row.original.status || '-'}</Badge>,
+    },
+    {
+      accessorFn: row => row.last_error || '',
+      id: 'last_error',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.lastError')}
+        />
+      ),
+      cell: ({ row }) => row.original.last_error || '-',
+    },
+    {
+      accessorFn: row => row.provider_operation_id || '',
+      id: 'provider_operation_id',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.operationId')}
+        />
+      ),
+      cell: ({ row }) => row.original.provider_operation_id || '-',
+    },
+    {
+      accessorFn: row => row.last_event_at || row.updated_at || '',
+      id: 'last_event_at',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionItemsColumns.lastEventAt')}
+        />
+      ),
+      cell: ({ row }) =>
+        formatDateTime(row.original.last_event_at || row.original.updated_at, language),
+    },
+  ];
+}
+
+export function buildExecutionLinksColumns(
+  t: TFunction,
+  language: string,
+): ColumnDef<PortfolioRebalanceExecutionLink>[] {
+  return [
+    {
+      accessorFn: row => row.id ?? 0,
+      id: 'id',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionLinksColumns.id')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => <div className='text-right'>{formatNumber(row.original.id, 0)}</div>,
+    },
+    {
+      accessorFn: row => row.rebalance_item_id ?? 0,
+      id: 'rebalance_item_id',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionLinksColumns.itemId')}
+          alignRight
+        />
+      ),
+      cell: ({ row }) => (
+        <div className='text-right'>{formatNumber(row.original.rebalance_item_id, 0)}</div>
+      ),
+    },
+    {
+      accessorFn: row => row.status || '',
+      id: 'status',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionLinksColumns.status')}
+        />
+      ),
+      cell: ({ row }) => <Badge variant='outline'>{row.original.status || '-'}</Badge>,
+    },
+    {
+      accessorFn: row => row.provider_operation_id || '',
+      id: 'provider_operation_id',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionLinksColumns.operationId')}
+        />
+      ),
+      cell: ({ row }) => row.original.provider_operation_id || '-',
+    },
+    {
+      accessorFn: row => metadataSummary(row.metadata as Record<string, unknown> | undefined),
+      id: 'metadata',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionLinksColumns.metadata')}
+        />
+      ),
+      cell: ({ row }) =>
+        metadataSummary(row.original.metadata as Record<string, unknown> | undefined),
+    },
+    {
+      accessorFn: row => row.created_at || '',
+      id: 'created_at',
+      header: ({ column }) => (
+        <SortHeader
+          column={column}
+          label={t('portfolio.replication.rebalances.executionLinksColumns.createdAt')}
+        />
+      ),
+      cell: ({ row }) => formatDateTime(row.original.created_at, language),
     },
   ];
 }
