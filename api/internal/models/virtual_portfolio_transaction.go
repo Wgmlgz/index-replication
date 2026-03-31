@@ -6,6 +6,7 @@ type VirtualPortfolioTransaction struct {
 	ID                 int       `gorm:"primaryKey;autoIncrement"`
 	UserID             int       `gorm:"index;not null"`
 	PortfolioProfileID int       `gorm:"index;not null"`
+	ActionID           *string   `gorm:"column:action_id;size:36;index:idx_virtual_portfolio_transactions_action_id,unique"`
 	OperationType      string    `gorm:"size:64;not null"`
 	Ticker             string    `gorm:"size:64"`
 	InstrumentID       string    `gorm:"size:128"`

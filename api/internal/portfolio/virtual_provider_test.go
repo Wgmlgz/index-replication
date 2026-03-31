@@ -19,6 +19,7 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	profile := &Profile{ID: 501, UserID: 77, Provider: "virtual", Name: "Virtual A"}
 
 	_, err := provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
+		"action_id":   "11111111-1111-1111-1111-111111111111",
 		"amount":      10000,
 		"currency":    "rub",
 		"executed_at": "2026-01-01",
@@ -28,6 +29,7 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	}
 
 	_, err = provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
+		"action_id":   "11111111-1111-1111-1111-111111111112",
 		"ticker":      "sber",
 		"quantity":    10,
 		"price":       100,
@@ -39,6 +41,7 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	}
 
 	_, err = provider.RunAction(context.Background(), profile, "sell", map[string]interface{}{
+		"action_id":   "11111111-1111-1111-1111-111111111113",
 		"ticker":      "SBER",
 		"quantity":    4,
 		"price":       120,
@@ -136,41 +139,46 @@ func TestVirtualProvider_RejectsInvalidActions(t *testing.T) {
 	profile := &Profile{ID: 601, UserID: 88, Provider: "virtual", Name: "Virtual B"}
 
 	_, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
-		"ticker":   "GAZP",
-		"quantity": 10,
-		"price":    100,
+		"action_id": "22222222-2222-2222-2222-222222222221",
+		"ticker":    "GAZP",
+		"quantity":  10,
+		"price":     100,
 	})
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Fatalf("expected insufficient cash to return ErrInvalidRequest, got %v", err)
 	}
 
 	_, err = provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
-		"amount": 5000,
+		"action_id": "22222222-2222-2222-2222-222222222222",
+		"amount":    5000,
 	})
 	if err != nil {
 		t.Fatalf("deposit failed: %v", err)
 	}
 
 	_, err = provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
-		"amount": -300,
+		"action_id": "22222222-2222-2222-2222-222222222223",
+		"amount":    -300,
 	})
 	if err != nil {
 		t.Fatalf("negative deposit failed: %v", err)
 	}
 
 	_, err = provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
-		"ticker":   "GAZP",
-		"quantity": 10,
-		"price":    100,
+		"action_id": "22222222-2222-2222-2222-222222222224",
+		"ticker":    "GAZP",
+		"quantity":  10,
+		"price":     100,
 	})
 	if err != nil {
 		t.Fatalf("buy failed: %v", err)
 	}
 
 	_, err = provider.RunAction(context.Background(), profile, "sell", map[string]interface{}{
-		"ticker":   "GAZP",
-		"quantity": 11,
-		"price":    100,
+		"action_id": "22222222-2222-2222-2222-222222222225",
+		"ticker":    "GAZP",
+		"quantity":  11,
+		"price":     100,
 	})
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Fatalf("expected oversell to return ErrInvalidRequest, got %v", err)
@@ -182,6 +190,56 @@ func TestVirtualProvider_RejectsInvalidActions(t *testing.T) {
 	}
 	if len(summary.Money) != 1 || summary.Money[0].Available != 3700 {
 		t.Fatalf("expected RUB cash 3700 after negative deposit and buy, got %+v", summary.Money)
+	}
+}
+
+func TestVirtualProvider_ActionIDIsIdempotent(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	txnRepo := repository.NewVirtualPortfolioTransactionsRepository(db)
+	provider := NewVirtualProvider(txnRepo, nil)
+	profile := &Profile{ID: 602, UserID: 89, Provider: "virtual", Name: "Virtual C"}
+
+	if _, err := provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
+		"action_id": "44444444-4444-4444-4444-444444444441",
+		"amount":    5000,
+	}); err != nil {
+		t.Fatalf("deposit failed: %v", err)
+	}
+
+	first, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
+		"action_id": "44444444-4444-4444-4444-444444444442",
+		"ticker":    "GAZP",
+		"quantity":  10,
+		"price":     100,
+	})
+	if err != nil {
+		t.Fatalf("first buy failed: %v", err)
+	}
+	second, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
+		"action_id": "44444444-4444-4444-4444-444444444442",
+		"ticker":    "GAZP",
+		"quantity":  10,
+		"price":     100,
+	})
+	if err != nil {
+		t.Fatalf("second buy failed: %v", err)
+	}
+
+	if first["operation_id"] != second["operation_id"] {
+		t.Fatalf("expected same operation id for duplicate action id, got first=%v second=%v", first["operation_id"], second["operation_id"])
+	}
+	if second["idempotent"] != true {
+		t.Fatalf("expected second call to be idempotent replay, got %v", second["idempotent"])
+	}
+
+	count, err := txnRepo.CountByProfile(profile.UserID, profile.ID)
+	if err != nil {
+		t.Fatalf("count transactions failed: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("expected only 2 stored txns (deposit+buy), got %d", count)
 	}
 }
 

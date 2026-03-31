@@ -229,6 +229,10 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `GET /api/me/portfolios/:id/operations`
 - `POST /api/me/portfolios/:id/actions/:action`
 
+Action payload requirement:
+- `POST /api/me/portfolios/:id/actions/:action` now requires `payload.action_id` (UUID string).
+- The same `action_id` can be reused by callers (for example Temporal retries) to keep provider-side execution idempotent.
+
 Provider model:
 
 - `portfolio_profiles` table stores per-user provider profiles (`provider`, `name`, default flag, config JSON, secret JSON).

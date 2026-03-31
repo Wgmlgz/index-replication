@@ -288,6 +288,14 @@ func (p *TBankProvider) RunAction(
 	action string,
 	payload map[string]interface{},
 ) (map[string]interface{}, error) {
+	actionID := ""
+	if payload != nil {
+		actionID = strings.TrimSpace(stringValue(payload["action_id"]))
+	}
+	if actionID == "" {
+		return nil, ErrInvalidRequest
+	}
+
 	switch action {
 	case "sandbox_pay_in":
 		req := &tbank.SandboxPayInRequest{
@@ -316,12 +324,14 @@ func (p *TBankProvider) RunAction(
 			"currency":    req.Currency,
 			"units":       req.Units,
 			"environment": resp.Environment,
+			"action_id":   actionID,
 		}, nil
 	case "test_buy":
 		req := &tbank.TestBuyRequest{
 			AccountID:    profileAccountID(profile),
 			InstrumentID: "",
 			Quantity:     1,
+			ActionID:     actionID,
 		}
 		if payload != nil {
 			if accountID := stringValue(payload["account_id"]); accountID != "" {
@@ -350,6 +360,7 @@ func (p *TBankProvider) RunAction(
 			"order_id":                resp.OrderID,
 			"execution_report_status": resp.ExecutionReportStatus,
 			"response":                resp.Response,
+			"action_id":               actionID,
 		}, nil
 	default:
 		return nil, ErrInvalidAction

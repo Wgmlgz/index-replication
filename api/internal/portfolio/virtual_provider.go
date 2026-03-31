@@ -2,6 +2,7 @@ package portfolio
 
 import (
 	"context"
+	"errors"
 	"math"
 	"sort"
 	"strconv"
@@ -11,6 +12,9 @@ import (
 	"server/internal/api/dto"
 	"server/internal/marketprice"
 	"server/internal/models"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 const (
@@ -23,6 +27,7 @@ const (
 
 type VirtualTransactionsRepository interface {
 	Create(txn *models.VirtualPortfolioTransaction) error
+	GetByActionID(userID int, profileID int, actionID string) (*models.VirtualPortfolioTransaction, error)
 	ListByProfile(userID int, profileID int) ([]models.VirtualPortfolioTransaction, error)
 	CountByProfile(userID int, profileID int) (int64, error)
 	ListByProfilePaged(userID int, profileID int, offset int, limit int) ([]models.VirtualPortfolioTransaction, error)
@@ -322,6 +327,21 @@ func (p *VirtualProvider) RunAction(
 	if payload == nil {
 		payload = map[string]interface{}{}
 	}
+	actionID, err := parseVirtualActionIDPayload(payload)
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
+
+	existingTxn, err := p.repo.GetByActionID(profile.UserID, profile.ID, actionID)
+	if err == nil {
+		if existingTxn.OperationType != normalizedAction {
+			return nil, ErrInvalidRequest
+		}
+		return virtualTxnActionResult(existingTxn, true), nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
 
 	transactions, err := p.repo.ListByProfile(profile.UserID, profile.ID)
 	if err != nil {
@@ -344,20 +364,22 @@ func (p *VirtualProvider) RunAction(
 		txn := &models.VirtualPortfolioTransaction{
 			UserID:             profile.UserID,
 			PortfolioProfileID: profile.ID,
+			ActionID:           &actionID,
 			OperationType:      normalizedAction,
 			Amount:             roundFloat(amount, 2),
 			Currency:           currency,
 			ExecutedAt:         executedAt,
 		}
 		if err := p.repo.Create(txn); err != nil {
+			if isVirtualActionIDConflict(err) {
+				conflictTxn, loadErr := p.repo.GetByActionID(profile.UserID, profile.ID, actionID)
+				if loadErr == nil {
+					return virtualTxnActionResult(conflictTxn, true), nil
+				}
+			}
 			return nil, err
 		}
-		return map[string]interface{}{
-			"status":       "ok",
-			"operation_id": txn.ID,
-			"currency":     currency,
-			"amount":       txn.Amount,
-		}, nil
+		return virtualTxnActionResult(txn, false), nil
 
 	case "buy":
 		ticker := strings.ToUpper(strings.TrimSpace(stringValue(payload["ticker"])))
@@ -400,6 +422,7 @@ func (p *VirtualProvider) RunAction(
 		txn := &models.VirtualPortfolioTransaction{
 			UserID:             profile.UserID,
 			PortfolioProfileID: profile.ID,
+			ActionID:           &actionID,
 			OperationType:      normalizedAction,
 			Ticker:             ticker,
 			InstrumentID:       instrumentID,
@@ -411,22 +434,19 @@ func (p *VirtualProvider) RunAction(
 			ExecutedAt:         executedAt,
 		}
 		if err := p.repo.Create(txn); err != nil {
+			if isVirtualActionIDConflict(err) {
+				conflictTxn, loadErr := p.repo.GetByActionID(profile.UserID, profile.ID, actionID)
+				if loadErr == nil {
+					return virtualTxnActionResult(conflictTxn, true), nil
+				}
+			}
 			return nil, err
 		}
-		return map[string]interface{}{
-			"status":              "ok",
-			"operation_id":        txn.ID,
-			"ticker":              ticker,
-			"instrument_id":       instrumentID,
-			"quantity":            txn.Quantity,
-			"price":               txn.Price,
-			"amount":              txn.Amount,
-			"commission":          txn.Commission,
-			"currency":            currency,
-			"cash_before":         roundFloat(availableCash, 2),
-			"cash_required":       roundFloat(requiredCash, 2),
-			"cash_after_estimate": roundFloat(availableCash-requiredCash, 2),
-		}, nil
+		result := virtualTxnActionResult(txn, false)
+		result["cash_before"] = roundFloat(availableCash, 2)
+		result["cash_required"] = roundFloat(requiredCash, 2)
+		result["cash_after_estimate"] = roundFloat(availableCash-requiredCash, 2)
+		return result, nil
 
 	case "sell":
 		ticker := strings.ToUpper(strings.TrimSpace(stringValue(payload["ticker"])))
@@ -474,6 +494,7 @@ func (p *VirtualProvider) RunAction(
 		txn := &models.VirtualPortfolioTransaction{
 			UserID:             profile.UserID,
 			PortfolioProfileID: profile.ID,
+			ActionID:           &actionID,
 			OperationType:      normalizedAction,
 			Ticker:             ticker,
 			InstrumentID:       instrumentID,
@@ -485,21 +506,18 @@ func (p *VirtualProvider) RunAction(
 			ExecutedAt:         executedAt,
 		}
 		if err := p.repo.Create(txn); err != nil {
+			if isVirtualActionIDConflict(err) {
+				conflictTxn, loadErr := p.repo.GetByActionID(profile.UserID, profile.ID, actionID)
+				if loadErr == nil {
+					return virtualTxnActionResult(conflictTxn, true), nil
+				}
+			}
 			return nil, err
 		}
-		return map[string]interface{}{
-			"status":                  "ok",
-			"operation_id":            txn.ID,
-			"ticker":                  ticker,
-			"instrument_id":           instrumentID,
-			"quantity":                txn.Quantity,
-			"price":                   txn.Price,
-			"amount":                  txn.Amount,
-			"commission":              txn.Commission,
-			"currency":                currency,
-			"position_before":         roundFloat(position.Quantity, 8),
-			"position_after_estimate": roundFloat(position.Quantity-quantity, 8),
-		}, nil
+		result := virtualTxnActionResult(txn, false)
+		result["position_before"] = roundFloat(position.Quantity, 8)
+		result["position_after_estimate"] = roundFloat(position.Quantity-quantity, 8)
+		return result, nil
 
 	default:
 		return nil, ErrInvalidAction
@@ -991,6 +1009,71 @@ func hasPayloadTimeValue(payload map[string]interface{}, key string) bool {
 		return false
 	}
 	return strings.TrimSpace(stringValue(raw)) != ""
+}
+
+func parseVirtualActionIDPayload(payload map[string]interface{}) (string, error) {
+	if payload == nil {
+		return "", ErrInvalidRequest
+	}
+	rawActionID, ok := payload["action_id"]
+	if !ok {
+		return "", ErrInvalidRequest
+	}
+	actionID := strings.TrimSpace(stringValue(rawActionID))
+	if actionID == "" {
+		return "", ErrInvalidRequest
+	}
+	if _, err := uuid.Parse(actionID); err != nil {
+		return "", ErrInvalidRequest
+	}
+	return actionID, nil
+}
+
+func isVirtualActionIDConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+	value := strings.ToLower(strings.TrimSpace(err.Error()))
+	if strings.Contains(value, "idx_virtual_portfolio_transactions_action_id") {
+		return true
+	}
+	if strings.Contains(value, "unique constraint failed") && strings.Contains(value, "virtual_portfolio_transactions") && strings.Contains(value, "action_id") {
+		return true
+	}
+	if strings.Contains(value, "duplicate key value violates unique constraint") && strings.Contains(value, "idx_virtual_portfolio_transactions_action_id") {
+		return true
+	}
+	return false
+}
+
+func virtualTxnActionResult(txn *models.VirtualPortfolioTransaction, idempotent bool) map[string]interface{} {
+	if txn == nil {
+		return map[string]interface{}{
+			"status": "ok",
+		}
+	}
+	result := map[string]interface{}{
+		"status":        "ok",
+		"operation_id":  txn.ID,
+		"action_id":     strings.TrimSpace(stringPtrValue(txn.ActionID)),
+		"idempotent":    idempotent,
+		"ticker":        strings.ToUpper(strings.TrimSpace(txn.Ticker)),
+		"instrument_id": strings.ToUpper(strings.TrimSpace(txn.InstrumentID)),
+		"quantity":      txn.Quantity,
+		"price":         txn.Price,
+		"amount":        txn.Amount,
+		"commission":    txn.Commission,
+		"currency":      normalizeCurrency(txn.Currency),
+		"executed_at":   txn.ExecutedAt.UTC().Format(time.RFC3339),
+	}
+	return result
+}
+
+func stringPtrValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func virtualPositionKey(ticker string, instrumentID string) string {

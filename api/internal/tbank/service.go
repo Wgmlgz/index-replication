@@ -9,7 +9,6 @@ import (
 	"server/internal/marketprice"
 	"server/internal/models"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	pb "opensource.tbank.ru/invest/invest-go/proto"
 )
@@ -212,6 +211,10 @@ func (s *Service) CreateTestBuyOrder(
 	if instrumentID == "" {
 		return nil, errors.New("instrument_id is required")
 	}
+	actionID := strings.TrimSpace(req.ActionID)
+	if actionID == "" {
+		return nil, errors.New("action_id is required")
+	}
 
 	settings, err := s.settingsStore.GetSettings(userID)
 	if err != nil {
@@ -260,14 +263,27 @@ func (s *Service) CreateTestBuyOrder(
 		Direction:    pb.OrderDirection_ORDER_DIRECTION_BUY,
 		AccountId:    accountID,
 		OrderType:    pb.OrderType_ORDER_TYPE_MARKET,
-		OrderId:      uuid.NewString(),
+		OrderId:      actionID,
 	}
 
 	orderResp, err := s.postMarketBuyOrder(ctx, environment, token, orderReq)
 	if err != nil && environment == dto.TBankEnvironmentSandbox && isTBankErrorCode(err, "30034") {
 		if payInErr := s.sandboxPayIn(ctx, token, accountID, sandboxAutoPayInCurrency, sandboxAutoPayInUnits); payInErr == nil {
-			orderReq.OrderId = uuid.NewString()
 			orderResp, err = s.postMarketBuyOrder(ctx, environment, token, orderReq)
+		}
+	}
+	if err != nil {
+		existingOrder, orderErr := s.getOrderState(ctx, environment, token, accountID, actionID)
+		if orderErr == nil && existingOrder != nil && strings.TrimSpace(existingOrder.GetOrderId()) != "" {
+			return &TestBuyResponse{
+				Environment:           environment,
+				AccountID:             accountID,
+				InstrumentID:          instrumentID,
+				Quantity:              req.Quantity,
+				OrderID:               existingOrder.GetOrderId(),
+				ExecutionReportStatus: existingOrder.GetExecutionReportStatus().String(),
+				Response:              protoToMap(existingOrder),
+			}, nil
 		}
 	}
 	if err != nil {
@@ -392,6 +408,31 @@ func (s *Service) postMarketBuyOrder(
 		return nil, err
 	}
 	return orderResp, nil
+}
+
+func (s *Service) getOrderState(
+	ctx context.Context,
+	environment string,
+	token string,
+	accountID string,
+	orderID string,
+) (*pb.OrderState, error) {
+	var orderState *pb.OrderState
+	if err := s.withConnection(ctx, environment, token, func(callCtx context.Context, conn *grpc.ClientConn) error {
+		client := pb.NewOrdersServiceClient(conn)
+		resp, callErr := client.GetOrderState(callCtx, &pb.GetOrderStateRequest{
+			AccountId: accountID,
+			OrderId:   orderID,
+		})
+		if callErr != nil {
+			return callErr
+		}
+		orderState = resp
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return orderState, nil
 }
 
 func isTBankErrorCode(err error, code string) bool {

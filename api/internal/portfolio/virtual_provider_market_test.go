@@ -66,6 +66,7 @@ func TestVirtualProvider_HistoryChangesOnNoTradeDayWithMarketPrice(t *testing.T)
 	profile := &Profile{ID: 801, UserID: 91, Provider: "virtual", Name: "Virtual M2M"}
 
 	if _, err := provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
+		"action_id":   "33333333-3333-3333-3333-333333333331",
 		"amount":      10000,
 		"currency":    "RUB",
 		"executed_at": "2026-01-01",
@@ -73,6 +74,7 @@ func TestVirtualProvider_HistoryChangesOnNoTradeDayWithMarketPrice(t *testing.T)
 		t.Fatalf("deposit action: %v", err)
 	}
 	if _, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
+		"action_id":   "33333333-3333-3333-3333-333333333332",
 		"ticker":      "SBER",
 		"quantity":    10,
 		"price":       100,
@@ -116,6 +118,7 @@ func TestVirtualProvider_IntervalSamplingKeepsExactEndDate(t *testing.T) {
 	profile := &Profile{ID: 802, UserID: 92, Provider: "virtual", Name: "Virtual Sampling"}
 
 	if _, err := provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
+		"action_id":   "33333333-3333-3333-3333-333333333341",
 		"amount":      10000,
 		"currency":    "RUB",
 		"executed_at": "2026-01-01",
@@ -123,6 +126,7 @@ func TestVirtualProvider_IntervalSamplingKeepsExactEndDate(t *testing.T) {
 		t.Fatalf("deposit action: %v", err)
 	}
 	if _, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
+		"action_id":   "33333333-3333-3333-3333-333333333342",
 		"ticker":      "SBER",
 		"quantity":    10,
 		"price":       100,
@@ -158,6 +162,7 @@ func TestVirtualProvider_FallsBackToLegacyPriceWhenQuoteMissing(t *testing.T) {
 	profile := &Profile{ID: 803, UserID: 93, Provider: "virtual", Name: "Virtual Fallback"}
 
 	if _, err := provider.RunAction(context.Background(), profile, "deposit_cash", map[string]interface{}{
+		"action_id":   "33333333-3333-3333-3333-333333333351",
 		"amount":      10000,
 		"currency":    "RUB",
 		"executed_at": "2026-01-01",
@@ -165,6 +170,7 @@ func TestVirtualProvider_FallsBackToLegacyPriceWhenQuoteMissing(t *testing.T) {
 		t.Fatalf("deposit action: %v", err)
 	}
 	if _, err := provider.RunAction(context.Background(), profile, "buy", map[string]interface{}{
+		"action_id":   "33333333-3333-3333-3333-333333333352",
 		"ticker":      "SBER",
 		"quantity":    10,
 		"price":       100,

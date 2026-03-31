@@ -443,14 +443,19 @@ func TestPortfolioRoutes(t *testing.T) {
 	t.Run("RunAction", func(t *testing.T) {
 		resp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/actions/refresh", map[string]interface{}{
 			"payload": map[string]interface{}{
-				"note": "from-test",
+				"note":      "from-test",
+				"action_id": "66666666-6666-6666-6666-666666666601",
 			},
 		}, adminToken)
 		if resp.Code != http.StatusOK {
 			t.Fatalf("action status = %d, body = %s", resp.Code, resp.Body.String())
 		}
 
-		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/actions/not-available", map[string]interface{}{}, adminToken)
+		errResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(baseProfile.ID)+"/actions/not-available", map[string]interface{}{
+			"payload": map[string]interface{}{
+				"action_id": "66666666-6666-6666-6666-666666666602",
+			},
+		}, adminToken)
 		if errResp.Code != http.StatusBadRequest {
 			t.Fatalf("expected bad request for invalid action, got %d", errResp.Code)
 		}
@@ -461,6 +466,7 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		depositResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
 			"payload": map[string]interface{}{
+				"action_id":   "66666666-6666-6666-6666-666666666611",
 				"amount":      10000,
 				"currency":    "RUB",
 				"executed_at": "2026-01-01",
@@ -482,11 +488,12 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		buyResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/buy", map[string]interface{}{
 			"payload": map[string]interface{}{
-				"ticker":   "SBER",
-				"quantity": 10,
-				"price":    100,
-				"currency": "RUB",
-				"date":     "2026-01-02",
+				"action_id": "66666666-6666-6666-6666-666666666612",
+				"ticker":    "SBER",
+				"quantity":  10,
+				"price":     100,
+				"currency":  "RUB",
+				"date":      "2026-01-02",
 			},
 		}, adminToken)
 		if buyResp.Code != http.StatusOK {
@@ -508,6 +515,7 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		oversellResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/sell", map[string]interface{}{
 			"payload": map[string]interface{}{
+				"action_id":   "66666666-6666-6666-6666-666666666613",
 				"ticker":      "SBER",
 				"quantity":    11,
 				"price":       120,
@@ -521,6 +529,7 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		sellResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/sell", map[string]interface{}{
 			"payload": map[string]interface{}{
+				"action_id":   "66666666-6666-6666-6666-666666666614",
 				"ticker":      "SBER",
 				"quantity":    4,
 				"price":       120,
@@ -547,9 +556,10 @@ func TestPortfolioRoutes(t *testing.T) {
 
 		negativeDepositResp := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
 			"payload": map[string]interface{}{
-				"amount":   -100,
-				"currency": "RUB",
-				"date":     "2026-01-04",
+				"action_id": "66666666-6666-6666-6666-666666666615",
+				"amount":    -100,
+				"currency":  "RUB",
+				"date":      "2026-01-04",
 			},
 		}, adminToken)
 		if negativeDepositResp.Code != http.StatusOK {

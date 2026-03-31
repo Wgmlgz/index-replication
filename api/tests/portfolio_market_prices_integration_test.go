@@ -43,6 +43,7 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 
 		deposit := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/deposit_cash", map[string]interface{}{
 			"payload": map[string]interface{}{
+				"action_id":   "77777777-7777-7777-7777-777777777701",
 				"amount":      10000,
 				"currency":    "RUB",
 				"executed_at": "2026-01-01",
@@ -53,6 +54,7 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		}
 		buy := doRequest(t, ts.router, http.MethodPost, "/api/me/portfolios/"+itoa(profile.ID)+"/actions/buy", map[string]interface{}{
 			"payload": map[string]interface{}{
+				"action_id":   "77777777-7777-7777-7777-777777777702",
 				"ticker":      "SBER",
 				"quantity":    10,
 				"price":       100,

@@ -218,6 +218,45 @@ func (p *fakeProvider) RunAction(_ context.Context, _ *Profile, _ string, _ map[
 	return nil, ErrInvalidAction
 }
 
+type fakeActionProvider struct {
+	receivedPayload map[string]interface{}
+}
+
+func (p *fakeActionProvider) Name() string {
+	return "mock"
+}
+
+func (p *fakeActionProvider) Capabilities(_ context.Context, _ *Profile) dto.PortfolioCapabilities {
+	return dto.PortfolioCapabilities{}
+}
+
+func (p *fakeActionProvider) GetSummary(_ context.Context, _ *Profile) (*dto.PortfolioSummaryResponse, error) {
+	return &dto.PortfolioSummaryResponse{}, nil
+}
+
+func (p *fakeActionProvider) GetHistory(_ context.Context, _ *Profile, _ string, _ string, _ int) ([]dto.PortfolioHistoryPoint, error) {
+	return []dto.PortfolioHistoryPoint{}, nil
+}
+
+func (p *fakeActionProvider) GetComposition(_ context.Context, _ *Profile, _ string) ([]dto.PortfolioCompositionEntry, error) {
+	return []dto.PortfolioCompositionEntry{}, nil
+}
+
+func (p *fakeActionProvider) GetCompositionSeries(_ context.Context, _ *Profile, _ []string, _ int, _ string, _ string, _ string, _ string, _ int) (map[string][]dto.PortfolioCompositionSeriesPoint, error) {
+	return map[string][]dto.PortfolioCompositionSeriesPoint{}, nil
+}
+
+func (p *fakeActionProvider) GetOperations(_ context.Context, _ *Profile, _ string, _ int32) (*dto.PortfolioOperationsHistoryResponse, error) {
+	return &dto.PortfolioOperationsHistoryResponse{}, nil
+}
+
+func (p *fakeActionProvider) RunAction(_ context.Context, _ *Profile, _ string, payload map[string]interface{}) (map[string]interface{}, error) {
+	p.receivedPayload = payload
+	return map[string]interface{}{
+		"status": "ok",
+	}, nil
+}
+
 func TestService_RoutesToProvider(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()
@@ -260,5 +299,65 @@ func TestService_ProviderSelectionErrors(t *testing.T) {
 	_, err = service.GetSummary(context.Background(), 9, 99)
 	if !errors.Is(err, ErrProfileNotFound) {
 		t.Fatalf("expected ErrProfileNotFound, got %v", err)
+	}
+}
+
+func TestService_RunActionRequiresActionID(t *testing.T) {
+	repo := newFakeRepo()
+	replicationRepo := newFakeReplicationRepo()
+	provider := &fakeActionProvider{}
+	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+
+	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
+		Provider: "mock",
+		Name:     "My Mock",
+	})
+	if err != nil {
+		t.Fatalf("create profile: %v", err)
+	}
+
+	_, err = service.RunAction(context.Background(), 9, created.ID, "refresh", map[string]interface{}{})
+	if !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("expected ErrInvalidRequest for missing action_id, got %v", err)
+	}
+
+	_, err = service.RunAction(context.Background(), 9, created.ID, "refresh", map[string]interface{}{
+		"action_id": "not-a-uuid",
+	})
+	if !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("expected ErrInvalidRequest for invalid action_id, got %v", err)
+	}
+}
+
+func TestService_RunActionPassesActionIDToProvider(t *testing.T) {
+	repo := newFakeRepo()
+	replicationRepo := newFakeReplicationRepo()
+	provider := &fakeActionProvider{}
+	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+
+	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
+		Provider: "mock",
+		Name:     "My Mock",
+	})
+	if err != nil {
+		t.Fatalf("create profile: %v", err)
+	}
+
+	actionID := "55555555-5555-5555-5555-555555555555"
+	resp, err := service.RunAction(context.Background(), 9, created.ID, "refresh", map[string]interface{}{
+		"action_id": actionID,
+	})
+	if err != nil {
+		t.Fatalf("run action: %v", err)
+	}
+
+	if provider.receivedPayload == nil {
+		t.Fatalf("expected provider payload")
+	}
+	if provider.receivedPayload["action_id"] != actionID {
+		t.Fatalf("expected provider action_id=%s, got %v", actionID, provider.receivedPayload["action_id"])
+	}
+	if resp.Result == nil || resp.Result["action_id"] != actionID {
+		t.Fatalf("expected response action_id=%s, got %+v", actionID, resp.Result)
 	}
 }

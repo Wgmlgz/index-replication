@@ -18,6 +18,17 @@ func (r *VirtualPortfolioTransactionsRepository) Create(txn *models.VirtualPortf
 	return r.db.Create(txn).Error
 }
 
+func (r *VirtualPortfolioTransactionsRepository) GetByActionID(userID int, profileID int, actionID string) (*models.VirtualPortfolioTransaction, error) {
+	var row models.VirtualPortfolioTransaction
+	err := r.db.
+		Where("user_id = ? AND portfolio_profile_id = ? AND action_id = ?", userID, profileID, actionID).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
 func (r *VirtualPortfolioTransactionsRepository) ListByProfile(userID int, profileID int) ([]models.VirtualPortfolioTransaction, error) {
 	var rows []models.VirtualPortfolioTransaction
 	err := r.db.

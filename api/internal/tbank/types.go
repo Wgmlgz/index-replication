@@ -6,6 +6,7 @@ type TestBuyRequest struct {
 	AccountID    string
 	InstrumentID string
 	Quantity     int64
+	ActionID     string
 }
 
 type TestBuyResponse struct {

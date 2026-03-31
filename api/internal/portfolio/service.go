@@ -11,6 +11,7 @@ import (
 	"server/internal/models"
 	"server/internal/repository"
 
+	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -448,6 +449,15 @@ func (s *Service) RunAction(ctx context.Context, userID int, id int, action stri
 	if action == "" {
 		return nil, ErrInvalidAction
 	}
+	if payload == nil {
+		payload = map[string]interface{}{}
+	}
+
+	actionID, err := parseActionIDPayload(payload)
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
+	payload["action_id"] = actionID
 
 	result, err := provider.RunAction(ctx, profile, action, payload)
 	if err != nil {
@@ -461,12 +471,40 @@ func (s *Service) RunAction(ctx context.Context, userID int, id int, action stri
 		"profile_id": profile.ID,
 		"provider":   profile.Provider,
 		"action":     action,
+		"action_id":  actionID,
 	})
+
+	if result == nil {
+		result = map[string]interface{}{}
+	}
+	result["action_id"] = actionID
 
 	return &dto.PortfolioActionResponse{
 		Action: action,
 		Result: result,
 	}, nil
+}
+
+func parseActionIDPayload(payload map[string]interface{}) (string, error) {
+	if payload == nil {
+		return "", ErrInvalidRequest
+	}
+	rawID, ok := payload["action_id"]
+	if !ok {
+		return "", ErrInvalidRequest
+	}
+	rawString, ok := rawID.(string)
+	if !ok {
+		return "", ErrInvalidRequest
+	}
+	actionID := strings.TrimSpace(rawString)
+	if actionID == "" {
+		return "", ErrInvalidRequest
+	}
+	if _, err := uuid.Parse(actionID); err != nil {
+		return "", ErrInvalidRequest
+	}
+	return actionID, nil
 }
 
 func (s *Service) resolveProviderProfile(userID int, id int) (Provider, *Profile, error) {

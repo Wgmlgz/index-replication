@@ -59,9 +59,13 @@ export default function PortfolioActionsPage() {
       setError("");
       setWorking(true);
       try {
+        const actionIDValue = crypto.randomUUID();
         const response = (
           await portfolioApi.mePortfoliosIdActionsActionPost(selectedPortfolioID, actionID, {
-            payload: payload ?? {},
+            payload: {
+              ...(payload ?? {}),
+              action_id: actionIDValue,
+            },
           })
         ).data;
         setActionResult(response);
