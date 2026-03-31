@@ -367,9 +367,53 @@ func (p *TBankProvider) RunAction(
 		return p.runTradeAction(ctx, profile, actionID, payload, false)
 	case "sell":
 		return p.runTradeAction(ctx, profile, actionID, payload, true)
+	case "resolve_instrument":
+		return p.runResolveInstrumentAction(ctx, profile, actionID, payload)
 	default:
 		return nil, ErrInvalidAction
 	}
+}
+
+func (p *TBankProvider) runResolveInstrumentAction(
+	ctx context.Context,
+	profile *Profile,
+	actionID string,
+	payload map[string]interface{},
+) (map[string]interface{}, error) {
+	req := &tbank.ResolveOrderInstrumentRequest{
+		AccountID: profileAccountID(profile),
+	}
+	if payload != nil {
+		if accountID := stringValue(payload["account_id"]); accountID != "" {
+			req.AccountID = accountID
+		}
+		if ticker := strings.ToUpper(stringValue(payload["ticker"])); ticker != "" {
+			req.Ticker = ticker
+		}
+		if instrumentID := stringValue(payload["instrument_id"]); instrumentID != "" {
+			req.InstrumentID = instrumentID
+		}
+		if side := strings.ToLower(stringValue(payload["side"])); side != "" {
+			req.Side = side
+		}
+	}
+	if req.Ticker == "" {
+		return nil, ErrInvalidRequest
+	}
+
+	resp, err := p.service.ResolveOrderInstrument(ctx, profile.UserID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"environment":       resp.Environment,
+		"account_id":        resp.AccountID,
+		"ticker":            resp.Ticker,
+		"instrument_id":     resp.InstrumentID,
+		"resolution_source": resp.Source,
+		"action_id":         actionID,
+	}, nil
 }
 
 func (p *TBankProvider) runTradeAction(
@@ -389,7 +433,7 @@ func (p *TBankProvider) runTradeAction(
 		if accountID := stringValue(payload["account_id"]); accountID != "" {
 			req.AccountID = accountID
 		}
-		if instrumentID := strings.ToUpper(stringValue(payload["instrument_id"])); instrumentID != "" {
+		if instrumentID := stringValue(payload["instrument_id"]); instrumentID != "" {
 			req.InstrumentID = instrumentID
 		}
 		if quantity := int64Value(payload["quantity"]); quantity > 0 {

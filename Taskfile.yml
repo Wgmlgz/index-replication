@@ -12,10 +12,15 @@ tasks:
       - task --list
     silent: true
 
-  docker:
+  up:
     desc: Reboots docker  
     cmds:
       - docker compose up --build --force-recreate
+
+  down:
+    desc: Stops docker
+    cmds:
+      - docker compose down
 
   upx:
     desc: Compose up infra services (without web/api/moex-worker)

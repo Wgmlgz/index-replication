@@ -279,17 +279,14 @@ func transactionSideWeight(side string) int {
 
 func transactionInstrumentKey(ticker string, instrumentID string) string {
 	normalizedTicker := strings.ToUpper(strings.TrimSpace(ticker))
-	normalizedInstrumentID := strings.ToUpper(strings.TrimSpace(instrumentID))
-	if normalizedInstrumentID == "" {
-		normalizedInstrumentID = normalizedTicker
-	}
-	if normalizedTicker == "" {
-		normalizedTicker = normalizedInstrumentID
+	normalizedInstrumentID := strings.TrimSpace(instrumentID)
+	if normalizedTicker != "" {
+		return normalizedTicker
 	}
 	if normalizedInstrumentID == "" {
 		return ""
 	}
-	return normalizedTicker + "::" + normalizedInstrumentID
+	return normalizedInstrumentID
 }
 
 func toJSONMap(value interface{}) (datatypes.JSONMap, error) {

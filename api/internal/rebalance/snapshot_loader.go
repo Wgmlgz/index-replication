@@ -264,14 +264,11 @@ func toPlannerHoldings(rows []dto.PortfolioCompositionEntry) []planner.Holding {
 	holdings := make([]planner.Holding, 0, len(rows))
 	for _, row := range rows {
 		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.ToUpper(strings.TrimSpace(row.InstrumentID))
-		if instrumentID == "" {
-			instrumentID = ticker
-		}
+		instrumentID := strings.TrimSpace(row.InstrumentID)
 		if ticker == "" {
 			ticker = instrumentID
 		}
-		if instrumentID == "" {
+		if ticker == "" {
 			continue
 		}
 
@@ -288,14 +285,7 @@ func toPlannerTargets(rows []moexdomain.IndexCompositionEntry) []planner.Benchma
 	targets := make([]planner.BenchmarkConstituent, 0, len(rows))
 	for _, row := range rows {
 		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.ToUpper(strings.TrimSpace(row.SecID))
-		if instrumentID == "" {
-			instrumentID = ticker
-		}
 		if ticker == "" {
-			ticker = instrumentID
-		}
-		if instrumentID == "" {
 			continue
 		}
 
@@ -306,7 +296,7 @@ func toPlannerTargets(rows []moexdomain.IndexCompositionEntry) []planner.Benchma
 
 		targets = append(targets, planner.BenchmarkConstituent{
 			Ticker:       ticker,
-			InstrumentID: instrumentID,
+			InstrumentID: "",
 			TargetWeight: targetWeight,
 		})
 	}
@@ -374,7 +364,7 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 				Provider:      strings.ToLower(strings.TrimSpace(provider)),
 				InstrumentKey: candidate.InstrumentID,
 				Ticker:        candidate.Ticker,
-				Secid:         candidate.InstrumentID,
+				Secid:         candidate.Ticker,
 				From:          asOfAt,
 				To:            asOfAt,
 			})
@@ -412,27 +402,23 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 
 func normalizePlannerSymbol(tickerRaw string, instrumentIDRaw string) (string, string, bool) {
 	ticker := strings.ToUpper(strings.TrimSpace(tickerRaw))
-	instrumentID := strings.ToUpper(strings.TrimSpace(instrumentIDRaw))
-	if instrumentID == "" {
-		instrumentID = ticker
-	}
+	instrumentID := strings.TrimSpace(instrumentIDRaw)
 	if ticker == "" {
 		ticker = instrumentID
 	}
-	if instrumentID == "" {
+	if ticker == "" {
 		return "", "", false
 	}
 	return ticker, instrumentID, true
 }
 
 func snapshotInstrumentKey(ticker string, instrumentID string) string {
-	if instrumentID == "" {
-		instrumentID = ticker
+	ticker = strings.ToUpper(strings.TrimSpace(ticker))
+	instrumentID = strings.TrimSpace(instrumentID)
+	if ticker != "" {
+		return ticker
 	}
-	if ticker == "" {
-		ticker = instrumentID
-	}
-	return ticker + "::" + instrumentID
+	return instrumentID
 }
 
 func resolvePortfolioTotalValue(

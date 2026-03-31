@@ -91,7 +91,7 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 		}
 		targetWeight := round(target.TargetWeight, 6)
 
-		instrumentID := chooseNonEmpty(target.InstrumentID, holding.InstrumentID)
+		instrumentID := chooseNonEmpty(holding.InstrumentID, target.InstrumentID)
 		ticker := chooseNonEmpty(target.Ticker, holding.Ticker)
 		if ticker == "" {
 			ticker = instrumentID
@@ -295,14 +295,11 @@ func normalizeHoldings(rows []Holding) map[string]normalizedHolding {
 	result := make(map[string]normalizedHolding, len(rows))
 	for _, row := range rows {
 		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.ToUpper(strings.TrimSpace(row.InstrumentID))
-		if instrumentID == "" {
-			instrumentID = ticker
-		}
+		instrumentID := strings.TrimSpace(row.InstrumentID)
 		if ticker == "" {
 			ticker = instrumentID
 		}
-		if instrumentID == "" {
+		if ticker == "" {
 			continue
 		}
 
@@ -334,21 +331,18 @@ func normalizeTargets(rows []BenchmarkConstituent) map[string]normalizedTarget {
 	sorted := make([]BenchmarkConstituent, 0, len(rows))
 	sorted = append(sorted, rows...)
 	sort.Slice(sorted, func(i, j int) bool {
-		ki := instrumentKey(strings.ToUpper(strings.TrimSpace(sorted[i].Ticker)), strings.ToUpper(strings.TrimSpace(sorted[i].InstrumentID)))
-		kj := instrumentKey(strings.ToUpper(strings.TrimSpace(sorted[j].Ticker)), strings.ToUpper(strings.TrimSpace(sorted[j].InstrumentID)))
+		ki := instrumentKey(strings.ToUpper(strings.TrimSpace(sorted[i].Ticker)), strings.TrimSpace(sorted[i].InstrumentID))
+		kj := instrumentKey(strings.ToUpper(strings.TrimSpace(sorted[j].Ticker)), strings.TrimSpace(sorted[j].InstrumentID))
 		return ki < kj
 	})
 
 	for _, row := range sorted {
 		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.ToUpper(strings.TrimSpace(row.InstrumentID))
-		if instrumentID == "" {
-			instrumentID = ticker
-		}
+		instrumentID := strings.TrimSpace(row.InstrumentID)
 		if ticker == "" {
 			ticker = instrumentID
 		}
-		if instrumentID == "" {
+		if ticker == "" {
 			continue
 		}
 
@@ -378,14 +372,11 @@ func normalizeInstruments(rows []InstrumentInfo) map[string]normalizedPrice {
 	result := make(map[string]normalizedPrice, len(rows))
 	for _, row := range rows {
 		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.ToUpper(strings.TrimSpace(row.InstrumentID))
-		if instrumentID == "" {
-			instrumentID = ticker
-		}
+		instrumentID := strings.TrimSpace(row.InstrumentID)
 		if ticker == "" {
 			ticker = instrumentID
 		}
-		if instrumentID == "" || row.Price <= 0 {
+		if ticker == "" || row.Price <= 0 {
 			continue
 		}
 
@@ -637,13 +628,12 @@ func unionInstrumentKeys(holdings map[string]normalizedHolding, targets map[stri
 }
 
 func instrumentKey(ticker, instrumentID string) string {
-	if instrumentID == "" {
-		instrumentID = ticker
+	ticker = strings.ToUpper(strings.TrimSpace(ticker))
+	instrumentID = strings.TrimSpace(instrumentID)
+	if ticker != "" {
+		return ticker
 	}
-	if ticker == "" {
-		ticker = instrumentID
-	}
-	return ticker + "::" + instrumentID
+	return instrumentID
 }
 
 func chooseSide(delta, currentWeight, targetWeight float64) string {

@@ -101,6 +101,39 @@ func TestPlanner_FullModeBasicScenario(t *testing.T) {
 	}
 }
 
+func TestPlanner_PrefersHoldingInstrumentIDWhenTargetUsesTickerIdentity(t *testing.T) {
+	svc := newPlannerService()
+
+	output, err := svc.Plan(Input{
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 1000,
+		Params:            PlanningParams{QuantityPrecision: 6},
+		Holdings: []Holding{
+			{Ticker: "SBER", InstrumentID: "UID-SBER", CurrentQuantity: 1},
+		},
+		Benchmark: []BenchmarkConstituent{
+			{Ticker: "SBER", InstrumentID: "SBER", TargetWeight: 100},
+		},
+		Instruments: []InstrumentInfo{
+			{Ticker: "SBER", InstrumentID: "UID-SBER", Price: 100},
+		},
+	})
+	if err != nil {
+		t.Fatalf("plan instrument identity scenario: %v", err)
+	}
+
+	if len(output.Items) != 1 {
+		t.Fatalf("expected 1 merged item for SBER, got %d", len(output.Items))
+	}
+	if output.Items[0].Ticker != "SBER" {
+		t.Fatalf("expected SBER item, got %+v", output.Items[0])
+	}
+	if output.Items[0].InstrumentID != "UID-SBER" {
+		t.Fatalf("expected holding instrument id UID-SBER, got %q", output.Items[0].InstrumentID)
+	}
+}
+
 func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 	svc := newPlannerService()
 

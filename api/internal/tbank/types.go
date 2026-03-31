@@ -19,6 +19,21 @@ type MarketOrderResponse struct {
 	Response              map[string]interface{}
 }
 
+type ResolveOrderInstrumentRequest struct {
+	AccountID    string
+	Ticker       string
+	InstrumentID string
+	Side         string
+}
+
+type ResolveOrderInstrumentResponse struct {
+	Environment  string
+	AccountID    string
+	Ticker       string
+	InstrumentID string
+	Source       string
+}
+
 type SandboxPayInRequest struct {
 	AccountID string
 	Currency  string

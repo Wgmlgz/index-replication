@@ -3,6 +3,7 @@ package tbank
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -401,6 +402,182 @@ func (s *Service) FindInstrumentByTicker(
 		ClassCode:   normalizedClassCode,
 		Instruments: filtered,
 	}, nil
+}
+
+func (s *Service) ResolveOrderInstrument(
+	ctx context.Context,
+	userID int,
+	req *ResolveOrderInstrumentRequest,
+) (*ResolveOrderInstrumentResponse, error) {
+	if req == nil {
+		return nil, errors.New("request is required")
+	}
+
+	ticker := strings.ToUpper(strings.TrimSpace(req.Ticker))
+	if ticker == "" {
+		return nil, errors.New("ticker is required")
+	}
+	requestedInstrumentID := strings.TrimSpace(req.InstrumentID)
+	side := strings.ToLower(strings.TrimSpace(req.Side))
+
+	conn, err := s.getConnectedTBankConnection(userID)
+	if err != nil {
+		return nil, err
+	}
+	accountID, err := s.resolveAccountID(ctx, conn, req.AccountID, true, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	portfolio, err := s.getAccountPortfolioRaw(ctx, conn, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	positionCandidates := make([]string, 0)
+	addPositionCandidate := func(instrumentID string) {
+		candidate := strings.TrimSpace(instrumentID)
+		if candidate == "" {
+			return
+		}
+		for _, existing := range positionCandidates {
+			if existing == candidate || strings.EqualFold(existing, candidate) {
+				return
+			}
+		}
+		positionCandidates = append(positionCandidates, candidate)
+	}
+	findMatchingPositionCandidate := func(requested string) string {
+		value := strings.TrimSpace(requested)
+		if value == "" {
+			return ""
+		}
+		for _, candidate := range positionCandidates {
+			if candidate == value || strings.EqualFold(candidate, value) {
+				return candidate
+			}
+		}
+		return ""
+	}
+	for _, row := range portfolio.Positions {
+		if strings.ToUpper(strings.TrimSpace(row.Ticker)) != ticker {
+			continue
+		}
+		addPositionCandidate(row.InstrumentID)
+	}
+
+	resolveFromPositions := func() (string, bool) {
+		if requestedInstrumentID != "" {
+			if matched := findMatchingPositionCandidate(requestedInstrumentID); matched != "" {
+				return matched, true
+			}
+		}
+		if len(positionCandidates) == 1 {
+			return positionCandidates[0], true
+		}
+		return "", false
+	}
+
+	if side == "sell" {
+		if instrumentID, ok := resolveFromPositions(); ok {
+			return &ResolveOrderInstrumentResponse{
+				Environment:  conn.environment,
+				AccountID:    accountID,
+				Ticker:       ticker,
+				InstrumentID: instrumentID,
+				Source:       "portfolio_position",
+			}, nil
+		}
+		if len(positionCandidates) > 1 {
+			return nil, fmt.Errorf("%w: ticker=%s side=sell", ErrTBankInstrumentAmbiguous, ticker)
+		}
+		return nil, fmt.Errorf("%w: ticker=%s side=sell", ErrTBankInstrumentNotFound, ticker)
+	}
+
+	lookupResp, err := s.FindInstrumentByTicker(ctx, userID, ticker, "")
+	if err != nil {
+		return nil, err
+	}
+
+	lookupCandidates := make([]string, 0)
+	addLookupCandidate := func(instrumentID string) {
+		candidate := strings.TrimSpace(instrumentID)
+		if candidate == "" {
+			return
+		}
+		for _, existing := range lookupCandidates {
+			if existing == candidate || strings.EqualFold(existing, candidate) {
+				return
+			}
+		}
+		lookupCandidates = append(lookupCandidates, candidate)
+	}
+	findMatchingLookupCandidate := func(requested string) string {
+		value := strings.TrimSpace(requested)
+		if value == "" {
+			return ""
+		}
+		for _, candidate := range lookupCandidates {
+			if candidate == value || strings.EqualFold(candidate, value) {
+				return candidate
+			}
+		}
+		return ""
+	}
+	if lookupResp != nil {
+		for _, item := range lookupResp.Instruments {
+			if strings.ToUpper(strings.TrimSpace(item.Ticker)) != ticker {
+				continue
+			}
+			addLookupCandidate(item.InstrumentID)
+		}
+	}
+
+	if requestedInstrumentID != "" {
+		if matched := findMatchingLookupCandidate(requestedInstrumentID); matched != "" {
+			return &ResolveOrderInstrumentResponse{
+				Environment:  conn.environment,
+				AccountID:    accountID,
+				Ticker:       ticker,
+				InstrumentID: matched,
+				Source:       "find_instrument_requested",
+			}, nil
+		}
+		if matched := findMatchingPositionCandidate(requestedInstrumentID); matched != "" {
+			return &ResolveOrderInstrumentResponse{
+				Environment:  conn.environment,
+				AccountID:    accountID,
+				Ticker:       ticker,
+				InstrumentID: matched,
+				Source:       "portfolio_position_requested",
+			}, nil
+		}
+	}
+
+	if instrumentID, ok := resolveFromPositions(); ok {
+		return &ResolveOrderInstrumentResponse{
+			Environment:  conn.environment,
+			AccountID:    accountID,
+			Ticker:       ticker,
+			InstrumentID: instrumentID,
+			Source:       "portfolio_position",
+		}, nil
+	}
+
+	if len(lookupCandidates) == 1 {
+		return &ResolveOrderInstrumentResponse{
+			Environment:  conn.environment,
+			AccountID:    accountID,
+			Ticker:       ticker,
+			InstrumentID: lookupCandidates[0],
+			Source:       "find_instrument",
+		}, nil
+	}
+	if len(lookupCandidates) > 1 {
+		return nil, fmt.Errorf("%w: ticker=%s side=%s", ErrTBankInstrumentAmbiguous, ticker, side)
+	}
+
+	return nil, fmt.Errorf("%w: ticker=%s side=%s", ErrTBankInstrumentNotFound, ticker, side)
 }
 
 func (s *Service) getConnectedTBankConnection(userID int) (*tbankConnection, error) {

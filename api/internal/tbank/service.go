@@ -24,10 +24,12 @@ const (
 )
 
 var (
-	ErrTBankNotConnected   = errors.New("tbank account is not connected")
-	ErrTBankInvalidEnv     = errors.New("invalid tbank environment")
-	ErrTBankNoAccountFound = errors.New("no account selected for test order")
-	ErrTBankAuthFailed     = errors.New("tbank authentication failed")
+	ErrTBankNotConnected        = errors.New("tbank account is not connected")
+	ErrTBankInvalidEnv          = errors.New("invalid tbank environment")
+	ErrTBankNoAccountFound      = errors.New("no account selected for test order")
+	ErrTBankAuthFailed          = errors.New("tbank authentication failed")
+	ErrTBankInstrumentNotFound  = errors.New("unable to resolve tradable instrument_id")
+	ErrTBankInstrumentAmbiguous = errors.New("multiple tradable instruments match ticker")
 )
 
 type Config struct {
