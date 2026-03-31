@@ -3,14 +3,14 @@ x-temporal-admin-tools-build: &temporal_admin_tools_build
     context: .
     dockerfile: scripts/temporal/admin-tools.Dockerfile
     args:
-      TEMPORAL_VERSION: ${TEMPORAL_VERSION:-1.30.1}
+      TEMPORAL_VERSION: 1.30.1
 
 x-temporal-server-build: &temporal_server_build
   build:
     context: .
     dockerfile: scripts/temporal/server.Dockerfile
     args:
-      TEMPORAL_VERSION: ${TEMPORAL_VERSION:-1.30.1}
+      TEMPORAL_VERSION: 1.30.1
 
 x-keycloak-terraform-env: &keycloak_terraform_env
   TF_CLI_CONFIG_FILE: /opt/terraform/terraformrc
@@ -40,9 +40,9 @@ x-keycloak-terraform-build: &keycloak_terraform_build
     context: ./infra/terraform/keycloak
     dockerfile: Dockerfile
     args:
-      TERRAFORM_VERSION: ${TERRAFORM_VERSION:-1.7.5}
-      POSTGRESQL_PROVIDER_VERSION: ${POSTGRESQL_PROVIDER_VERSION:-1.26.0}
-      KEYCLOAK_PROVIDER_VERSION: ${KEYCLOAK_PROVIDER_VERSION:-5.3.0}
+      TERRAFORM_VERSION: 1.7.5
+      POSTGRESQL_PROVIDER_VERSION: 1.26.0
+      KEYCLOAK_PROVIDER_VERSION: 5.3.0
 
 services:
   temporal-admin-tools:
@@ -84,7 +84,7 @@ services:
       retries: 60
 
   temporal-ui:
-    image: temporalio/ui:${TEMPORAL_UI_VERSION:-2.47.2}
+    image: temporalio/ui:2.47.2
     depends_on:
       temporal:
         condition: service_healthy
@@ -163,9 +163,9 @@ services:
       context: .
       dockerfile: scripts/keycloak/Dockerfile
       args:
-        KEYCLOAK_VERSION: ${KEYCLOAK_VERSION:-26.1}
+        KEYCLOAK_VERSION: 26.1
         KEYCLOAK_THEME_NAME: ${KEYCLOAK_THEME_NAME:-index-replication}
-    image: index-replication-keycloak:${KEYCLOAK_VERSION:-26.1}
+    image: index-replication-keycloak:26.1
     command: ["start-dev"]
     depends_on:
       keycloak-terraform-db:
