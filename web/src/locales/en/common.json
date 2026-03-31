@@ -561,10 +561,10 @@
       "readonlyHint": "Values are read-only here. Use Edit mode settings to change and save.",
       "editModeButton": "Edit mode settings",
       "updatedAtLabel": "Last updated",
-      "clearButton": "Clear config",
-      "clearConfigConfirmTitle": "Clear replication config?",
-      "clearConfigConfirmDescription": "This will remove current replication settings for this profile.",
-      "clearConfigConfirmAction": "Clear config"
+      "clearButton": "Disable replication",
+      "clearConfigConfirmTitle": "Disable replication?",
+      "clearConfigConfirmDescription": "Replication mode will be disabled for this profile.",
+      "clearConfigConfirmAction": "Disable replication"
     },
     "errors": {
       "createProfile": "Failed to create portfolio profile.",

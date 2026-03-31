@@ -69,41 +69,31 @@ function createSandboxPayInConfig(t: TFunction): PortfolioActionFormConfig {
   };
 }
 
-function createTestBuyConfig(t: TFunction): PortfolioActionFormConfig {
+function createSandboxPayOutConfig(t: TFunction): PortfolioActionFormConfig {
   return {
     schema: {
       type: "object",
       additionalProperties: false,
-      required: ["instrument_id", "quantity"],
+      required: ["currency", "units"],
       properties: {
-        instrument_id: {
+        currency: {
           type: "string",
-          title: t("portfolio.card.tbankTestBuyInstrumentID"),
+          title: t("portfolio.card.sandboxCurrency"),
           minLength: 1,
+          default: "RUB",
         },
-        account_id: {
-          type: "string",
-          title: t("portfolio.card.tbankTestBuyAccountID"),
-        },
-        quantity: {
+        units: {
           type: "integer",
-          title: t("portfolio.card.tbankTestBuyQuantity"),
+          title: t("portfolio.card.sandboxUnits"),
           minimum: 1,
-          default: 1,
+          default: DEFAULT_SANDBOX_TOP_UP_UNITS,
         },
       },
     },
-    buildPayload: (formData) => {
-      const instrumentID = readString(formData.instrument_id);
-      const accountID = readString(formData.account_id);
-
-      return {
-        instrument_id: instrumentID || undefined,
-        account_id: accountID || undefined,
-        quantity: readNumberWithFallback(formData.quantity, 1, 1),
-      };
-    },
-    isSubmitDisabled: (formData) => readString(formData.instrument_id).length === 0,
+    buildPayload: (formData) => ({
+      currency: readString(formData.currency).toUpperCase() || "RUB",
+      units: readNumberWithFallback(formData.units, DEFAULT_SANDBOX_TOP_UP_UNITS, 1),
+    }),
   };
 }
 
@@ -225,8 +215,8 @@ export function getPortfolioActionFormConfig(
   switch (actionID) {
     case "sandbox_pay_in":
       return createSandboxPayInConfig(t);
-    case "test_buy":
-      return createTestBuyConfig(t);
+    case "sandbox_pay_out":
+      return createSandboxPayOutConfig(t);
     case "deposit_cash":
       return createDepositCashConfig(t);
     case "buy":
