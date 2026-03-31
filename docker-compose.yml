@@ -18,17 +18,17 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_postgres_user: ${POSTGRES_USER}
   TF_VAR_postgres_password: ${POSTGRES_PASSWORD}
   TF_VAR_keycloak_url: ${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
-  TF_VAR_keycloak_login_theme: ${KEYCLOAK_THEME_NAME:-index-replication}
-  TF_VAR_keycloak_db_schema: ${KEYCLOAK_DB_SCHEMA:-keycloak}
+  TF_VAR_keycloak_login_theme: index-replication
+  TF_VAR_keycloak_db_schema: keycloak
   TF_VAR_keycloak_admin_user: ${KEYCLOAK_ADMIN_USER:-admin}
   TF_VAR_keycloak_admin_password: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-  TF_VAR_keycloak_realm: ${KEYCLOAK_REALM:-index-replication}
-  TF_VAR_keycloak_realm_display_name: "${KEYCLOAK_REALM_DISPLAY_NAME:-Index Replication}"
-  TF_VAR_keycloak_admin_realm: ${KEYCLOAK_ADMIN_REALM:-index-replication-admin}
-  TF_VAR_keycloak_admin_realm_display_name: "${KEYCLOAK_ADMIN_REALM_DISPLAY_NAME:-Index Replication Admin}"
+  TF_VAR_keycloak_realm: index-replication
+  TF_VAR_keycloak_realm_display_name: "Index Replication"
+  TF_VAR_keycloak_admin_realm: index-replication-admin
+  TF_VAR_keycloak_admin_realm_display_name: "Index Replication Admin"
   TF_VAR_keycloak_web_redirect_uris: ${KEYCLOAK_WEB_REDIRECT_URIS:-http://localhost:3000/login*,http://localhost:30000/login*,http://localhost:3000/auth/silent-callback,http://localhost:30000/auth/silent-callback}
   TF_VAR_keycloak_web_origins: ${KEYCLOAK_WEB_ORIGINS:-http://localhost:3000,http://localhost:30000}
-  TF_VAR_keycloak_admin_proxy_client_id: ${KEYCLOAK_ADMIN_PROXY_CLIENT_ID:-admin-proxy}
+  TF_VAR_keycloak_admin_proxy_client_id: admin-proxy
   TF_VAR_keycloak_admin_proxy_client_secret: ${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
   TF_VAR_keycloak_admin_proxy_redirect_uris: ${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback}
   TF_VAR_keycloak_bootstrap_user: "${KEYCLOAK_BOOTSTRAP_USER:-}"
@@ -164,7 +164,7 @@ services:
       dockerfile: scripts/keycloak/Dockerfile
       args:
         KEYCLOAK_VERSION: 26.1
-        KEYCLOAK_THEME_NAME: ${KEYCLOAK_THEME_NAME:-index-replication}
+        KEYCLOAK_THEME_NAME: index-replication
     image: index-replication-keycloak:26.1
     command: ["start-dev"]
     depends_on:
@@ -175,7 +175,7 @@ services:
       - KC_DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       - KC_DB_USERNAME=${POSTGRES_USER}
       - KC_DB_PASSWORD=${POSTGRES_PASSWORD}
-      - KC_DB_SCHEMA=${KEYCLOAK_DB_SCHEMA:-keycloak}
+      - KC_DB_SCHEMA=keycloak
       - KC_HTTP_ENABLED=true
       - KC_HTTP_PORT=8080
       - KC_HTTP_RELATIVE_PATH=/auth
@@ -226,8 +226,8 @@ services:
     restart: on-failure
     environment:
       - OAUTH2_PROXY_PROVIDER=keycloak-oidc
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}/realms/${KEYCLOAK_ADMIN_REALM:-index-replication-admin}
-      - OAUTH2_PROXY_CLIENT_ID=${KEYCLOAK_ADMIN_PROXY_CLIENT_ID:-admin-proxy}
+      - OAUTH2_PROXY_OIDC_ISSUER_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}/realms/index-replication-admin
+      - OAUTH2_PROXY_CLIENT_ID=admin-proxy
       - OAUTH2_PROXY_CLIENT_SECRET=${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
       - OAUTH2_PROXY_COOKIE_SECRET=${ADMIN_AUTH_COOKIE_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
       - OAUTH2_PROXY_REDIRECT_URL=${OAUTH2_PROXY_REDIRECT_URL:-http://${WEB_HOST}:${TRAEFIK_PORT}/oauth2/callback}
@@ -261,11 +261,11 @@ services:
       - CORS_ORIGINS=http://${WEB_HOST}
       - RUN_MIGRATIONS=true
       - KEYCLOAK_BASE_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
-      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-index-replication}
+      - KEYCLOAK_REALM=index-replication
       - KEYCLOAK_ISSUER_URL=${KEYCLOAK_ISSUER_URL:-}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-}
-      - KEYCLOAK_SKIP_ISSUER_CHECK=${KEYCLOAK_SKIP_ISSUER_CHECK:-true}
-      - KEYCLOAK_SKIP_CLIENT_ID_CHECK=${KEYCLOAK_SKIP_CLIENT_ID_CHECK:-true}
+      - KEYCLOAK_CLIENT_ID=
+      - KEYCLOAK_SKIP_ISSUER_CHECK=true
+      - KEYCLOAK_SKIP_CLIENT_ID_CHECK=true
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME}
       - TELEGRAM_POLL_TIMEOUT_SEC=${TELEGRAM_POLL_TIMEOUT_SEC:-30}

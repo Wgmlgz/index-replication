@@ -100,9 +100,8 @@ Environment variables live in `.env`. Key settings:
 - `KEYCLOAK_BASE_URL` (default `http://localhost:18081/auth`, used to build issuer URL; docker-compose sets internal default `http://keycloak:8080/auth`)
 - `KEYCLOAK_REALM` (default `index-replication`)
 - `KEYCLOAK_ISSUER_URL` (optional explicit issuer/discovery URL override)
-- `KEYCLOAK_CLIENT_ID` (optional audience/client check target)
-- `KEYCLOAK_SKIP_ISSUER_CHECK` (default `true`)
-- `KEYCLOAK_SKIP_CLIENT_ID_CHECK` (default `true`)
+- `KEYCLOAK_CLIENT_ID` / `KEYCLOAK_SKIP_ISSUER_CHECK` / `KEYCLOAK_SKIP_CLIENT_ID_CHECK` are available overrides,
+  but docker-compose now hardcodes `KEYCLOAK_CLIENT_ID=` and both skip flags to `true`.
 - `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
 - `TELEGRAM_BOT_TOKEN` (optional; enables Telegram login verification transport)
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)

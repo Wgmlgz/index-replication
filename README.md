@@ -56,7 +56,7 @@ Authenticated admin access via Traefik + Keycloak:
 - Temporal UI: `http://${WEB_HOST}:${TRAEFIK_PORT}/temporal`
 - Requests to `http://localhost:${TRAEFIK_PORT}/adminer` and `http://localhost:${TRAEFIK_PORT}/temporal` bypass auth.
 - Direct localhost ports also remain open with no auth: `http://localhost:8081`, `http://localhost:8233`.
-- These admin routes authenticate against `${KEYCLOAK_ADMIN_REALM}` (default `index-replication-admin`), not the app realm.
+- These admin routes authenticate against fixed admin realm `index-replication-admin`, not the app realm.
 - If you expose a different hostname/port, update `KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS` accordingly.
   Use a comma-separated list such as `http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback`.
 - Behind a TLS-terminating proxy, set `OAUTH2_PROXY_REDIRECT_URL` to the public HTTPS callback URL
@@ -99,8 +99,8 @@ Docker compose includes Keycloak with no manual UI setup:
 - Single Terraform codebase in `infra/terraform/keycloak` is applied in two phases:
   - `keycloak-terraform-db` creates/ensures a dedicated Keycloak schema in existing Postgres.
   - `keycloak-terraform` applies Keycloak realm/client/user resources after Keycloak is healthy.
-- Terraform also provisions a confidential OIDC client for `oauth2-proxy` (`KEYCLOAK_ADMIN_PROXY_CLIENT_ID` /
-  `KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET`) in the admin realm (`KEYCLOAK_ADMIN_REALM`) used to protect
+- Terraform also provisions a confidential OIDC client for `oauth2-proxy` (fixed client ID `admin-proxy` +
+  configurable secret `KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET`) in fixed admin realm `index-replication-admin` used to protect
   Adminer/Temporal routes in Traefik.
 - Realm user profile is managed by Terraform so end-user profile fields (`email`, `firstName`, `lastName`) are not required or editable by users.
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
@@ -110,18 +110,17 @@ Docker compose includes Keycloak with no manual UI setup:
 - For TLS-terminating external proxies, set `KEYCLOAK_HOSTNAME` to the public HTTPS base URL
   (for example `https://replicant.amogos.pro/auth`) so Keycloak generates HTTPS absolute URLs.
 - Keycloak image build includes a custom login theme jar from `auth-theme/` (Keycloakify).
-- Realm login theme is configured by Terraform via `${KEYCLOAK_THEME_NAME}` (default `index-replication`),
-  and the same variable is passed to the Keycloak image build for Keycloakify theme naming.
+- Realm login theme is fixed to `index-replication` in compose (Terraform + Keycloak image build).
 - `keycloak` is also reachable directly on `127.0.0.1:${KEYCLOAK_PORT}` for local debugging.
 
 DB reuse behavior:
 
 - Keycloak reuses the existing `postgres` service and the same `${POSTGRES_DB}` database.
-- Keycloak tables are isolated in `${KEYCLOAK_DB_SCHEMA}` (default `keycloak`).
+- Keycloak tables are isolated in fixed schema `keycloak`.
 
-Useful env vars are documented in `.env.example` (`KEYCLOAK_*`).
-Compose now passes only changing/sensitive Terraform inputs; static values (like
-`postgres` host and internal Keycloak URL) are defaulted in `infra/terraform/keycloak/variables.tf`.
+Useful env vars are documented in `.env.example` (runtime/sensitive `KEYCLOAK_*` only).
+Compose now hardcodes static Keycloak values (realm names, theme, schema, oauth2-proxy client ID)
+and passes only changing/sensitive inputs via env.
 
 Useful commands:
 
