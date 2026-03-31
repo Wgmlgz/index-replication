@@ -6,7 +6,6 @@ import { useMutation } from '@tanstack/react-query';
 import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
-  BarChart3,
   Pencil,
   PlayCircle,
   SlidersHorizontal,
@@ -34,7 +33,7 @@ import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
 
-type PortfolioDetailsSection = 'overview' | 'actions' | 'analytics' | 'replication';
+type PortfolioDetailsSection = 'overview' | 'actions' | 'replication';
 
 type PortfolioDetailsLayoutProps = {
   children: ReactNode;
@@ -43,7 +42,6 @@ type PortfolioDetailsLayoutProps = {
 const SECTION_ROUTES: Record<PortfolioDetailsSection, string> = {
   overview: PORTFOLIO_V2_ROUTES.overview,
   actions: PORTFOLIO_V2_ROUTES.actions,
-  analytics: PORTFOLIO_V2_ROUTES.analytics,
   replication: PORTFOLIO_V2_ROUTES.replication,
 };
 
@@ -53,9 +51,6 @@ function resolveLegacyRoute(
 ): string | null {
   if (tab === 'actions') {
     return PORTFOLIO_V2_ROUTES.actions;
-  }
-  if (tab === 'analytics') {
-    return PORTFOLIO_V2_ROUTES.analytics;
   }
   if (tab === 'replication') {
     return PORTFOLIO_V2_ROUTES.replication;
@@ -87,9 +82,6 @@ function resolveLegacyRoute(
 function resolveActiveSection(pathname: string): PortfolioDetailsSection {
   if (pathname === PORTFOLIO_V2_ROUTES.actions) {
     return 'actions';
-  }
-  if (pathname === PORTFOLIO_V2_ROUTES.analytics) {
-    return 'analytics';
   }
   if (
     pathname === PORTFOLIO_V2_ROUTES.replication
@@ -187,9 +179,7 @@ export default function PortfolioDetailsRouteLayout({
       const nextSection: PortfolioDetailsSection =
         nextSectionRaw === 'actions'
           ? 'actions'
-          : nextSectionRaw === 'analytics'
-            ? 'analytics'
-            : nextSectionRaw === 'replication'
+          : nextSectionRaw === 'replication'
               ? 'replication'
               : 'overview';
       const nextPath = SECTION_ROUTES[nextSection];
@@ -281,7 +271,7 @@ export default function PortfolioDetailsRouteLayout({
                 </Button>
               </div>
 
-              <TabsList className='grid h-auto w-full grid-cols-2 lg:w-auto lg:grid-cols-4'>
+              <TabsList className='grid h-auto w-full grid-cols-3 lg:w-auto'>
                 <TabsTrigger value='overview'>
                   <Wallet className='size-4' />
                   {t('portfolio.subpages.overview')}
@@ -289,10 +279,6 @@ export default function PortfolioDetailsRouteLayout({
                 <TabsTrigger value='actions'>
                   <PlayCircle className='size-4' />
                   {t('portfolio.subpages.actions')}
-                </TabsTrigger>
-                <TabsTrigger value='analytics'>
-                  <BarChart3 className='size-4' />
-                  {t('portfolio.subpages.analytics')}
                 </TabsTrigger>
                 <TabsTrigger value='replication'>
                   <SlidersHorizontal className='size-4' />

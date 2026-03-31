@@ -686,7 +686,8 @@
       "tabs": {
         "summary": "Summary",
         "operations": "Operations",
-        "compare": "Compare"
+        "compare": "Compare",
+        "analytics": "Analytics"
       }
     },
     "analytics": {

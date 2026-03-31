@@ -2,13 +2,13 @@
 
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, ClipboardList, Wallet } from 'lucide-react';
+import { BarChart3, ClipboardList, LineChart, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
 
-type OverviewTab = 'summary' | 'operations' | 'compare';
+type OverviewTab = 'summary' | 'operations' | 'compare' | 'analytics';
 
 type PortfolioOverviewLayoutProps = {
   children: ReactNode;
@@ -21,6 +21,9 @@ function resolveOverviewTab(pathname: string): OverviewTab {
   if (pathname === PORTFOLIO_V2_ROUTES.overviewCompare) {
     return 'compare';
   }
+  if (pathname === PORTFOLIO_V2_ROUTES.overviewAnalytics) {
+    return 'analytics';
+  }
   return 'summary';
 }
 
@@ -28,6 +31,7 @@ const OVERVIEW_TAB_ROUTES: Record<OverviewTab, string> = {
   summary: PORTFOLIO_V2_ROUTES.overview,
   operations: PORTFOLIO_V2_ROUTES.overviewOperations,
   compare: PORTFOLIO_V2_ROUTES.overviewCompare,
+  analytics: PORTFOLIO_V2_ROUTES.overviewAnalytics,
 };
 
 export default function PortfolioOverviewLayout({
@@ -50,7 +54,9 @@ export default function PortfolioOverviewLayout({
           ? 'operations'
           : nextTabRaw === 'compare'
             ? 'compare'
-            : 'summary';
+            : nextTabRaw === 'analytics'
+              ? 'analytics'
+              : 'summary';
       const nextPath = OVERVIEW_TAB_ROUTES[nextTab];
       const nextParams = new URLSearchParams(searchParams.toString());
       nextParams.delete('overview_tab');
@@ -95,7 +101,7 @@ export default function PortfolioOverviewLayout({
       onValueChange={handleTabChange}
       className='h-full w-full'
     >
-      <TabsList className='grid h-auto w-full grid-cols-3 md:w-auto'>
+      <TabsList className='grid h-auto w-full grid-cols-2 md:w-auto md:grid-cols-4'>
         <TabsTrigger value='summary'>
           <Wallet className='size-4' />
           {t('portfolio.overview.tabs.summary')}
@@ -107,6 +113,10 @@ export default function PortfolioOverviewLayout({
         <TabsTrigger value='compare'>
           <BarChart3 className='size-4' />
           {t('portfolio.overview.tabs.compare')}
+        </TabsTrigger>
+        <TabsTrigger value='analytics'>
+          <LineChart className='size-4' />
+          {t('portfolio.overview.tabs.analytics')}
         </TabsTrigger>
       </TabsList>
 

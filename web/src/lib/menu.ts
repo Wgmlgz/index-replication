@@ -137,8 +137,8 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
   {
     kind: "item",
     titleKey: 'navigation.portfolio.analytics',
-    href: PORTFOLIO_V2_ROUTES.analytics,
-    activePathname: PORTFOLIO_V2_ROUTES.analytics,
+    href: PORTFOLIO_V2_ROUTES.overviewAnalytics,
+    activePathname: PORTFOLIO_V2_ROUTES.overviewAnalytics,
     permission: null,
   },
   {
