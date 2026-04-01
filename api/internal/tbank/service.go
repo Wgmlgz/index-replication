@@ -290,14 +290,6 @@ func (s *Service) createMarketOrder(
 	}
 
 	orderResp, err := s.postMarketOrder(ctx, environment, token, orderReq)
-	if err != nil &&
-		direction == pb.OrderDirection_ORDER_DIRECTION_BUY &&
-		environment == dto.TBankEnvironmentSandbox &&
-		isTBankErrorCode(err, "30034") {
-		if payInErr := s.sandboxPayIn(ctx, token, accountID, sandboxAutoPayInCurrency, sandboxAutoPayInUnits); payInErr == nil {
-			orderResp, err = s.postMarketOrder(ctx, environment, token, orderReq)
-		}
-	}
 	if err != nil {
 		existingOrder, orderErr := s.getOrderState(ctx, environment, token, accountID, actionID)
 		if orderErr == nil && existingOrder != nil && strings.TrimSpace(existingOrder.GetOrderId()) != "" {

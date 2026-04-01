@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { PortfolioOperationHistoryItem } from '@/api-client';
@@ -45,7 +50,9 @@ const DEFAULT_OPERATIONS_PAGE_SIZE = 50;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
 const TICKER_LIKE_PATTERN = /^[A-Z0-9._-]{1,12}$/;
 
-function resolveOperationTicker(operation: PortfolioOperationHistoryItem): string | null {
+function resolveOperationTicker(
+  operation: PortfolioOperationHistoryItem,
+): string | null {
   const candidate = (operation.instrument_id ?? '').trim().toUpperCase();
   if (!candidate || !TICKER_LIKE_PATTERN.test(candidate)) {
     return null;
@@ -57,7 +64,9 @@ export default function PortfolioOverviewOperationsPage() {
   const { t } = useTranslation();
   const { selectedPortfolioID } = usePortfolioDetailsContext();
   const portfolioID = selectedPortfolioID;
-  const [operations, setOperations] = useState<PortfolioOperationHistoryItem[]>([]);
+  const [operations, setOperations] = useState<PortfolioOperationHistoryItem[]>(
+    [],
+  );
   const [pageSize, setPageSize] = useState(DEFAULT_OPERATIONS_PAGE_SIZE);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pageCursors, setPageCursors] = useState<string[]>(['']);
@@ -76,12 +85,14 @@ export default function PortfolioOverviewOperationsPage() {
       {
         id: 'type',
         header: () => t('portfolio.card.operationType'),
-        cell: ({ row }) => formatEnumLabel(row.original.type, 'OPERATION_TYPE_'),
+        cell: ({ row }) =>
+          formatEnumLabel(row.original.type, 'OPERATION_TYPE_'),
       },
       {
         id: 'state',
         header: () => t('portfolio.card.operationState'),
-        cell: ({ row }) => formatEnumLabel(row.original.state, 'OPERATION_STATE_'),
+        cell: ({ row }) =>
+          formatEnumLabel(row.original.state, 'OPERATION_STATE_'),
       },
       {
         id: 'instrument',
@@ -90,14 +101,18 @@ export default function PortfolioOverviewOperationsPage() {
           const operation = row.original;
           const ticker = resolveOperationTicker(operation);
           if (!ticker) {
-            return operation.name || operation.instrument_id || operation.figi || '-';
+            return (
+              operation.name || operation.instrument_id || operation.figi || '-'
+            );
           }
 
           return (
             <div className='space-y-0.5'>
               <TickerWithLogo ticker={ticker} textClassName='font-medium' />
               {operation.name && operation.name !== ticker && (
-                <div className='text-xs text-muted-foreground'>{operation.name}</div>
+                <div className='text-xs text-muted-foreground'>
+                  {operation.name}
+                </div>
               )}
             </div>
           );
@@ -107,7 +122,9 @@ export default function PortfolioOverviewOperationsPage() {
         id: 'quantity',
         header: () => t('portfolio.card.operationQuantity'),
         cell: ({ row }) =>
-          formatNumber(row.original.quantity_done || row.original.quantity || 0),
+          formatNumber(
+            row.original.quantity_done || row.original.quantity || 0,
+          ),
       },
       {
         id: 'price',
@@ -140,7 +157,8 @@ export default function PortfolioOverviewOperationsPage() {
     data: operations,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row, index) => `${row.id || 'op'}:${row.cursor || index}:${row.date || '-'}`,
+    getRowId: (row, index) =>
+      `${row.id || 'op'}:${row.cursor || index}:${row.date || '-'}`,
   });
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
@@ -188,7 +206,9 @@ export default function PortfolioOverviewOperationsPage() {
           return next;
         });
       } catch (err) {
-        setOperationsError(parseErrorMessage(err, t('portfolio.errors.operations')));
+        setOperationsError(
+          parseErrorMessage(err, t('portfolio.errors.operations')),
+        );
         setOperations([]);
         setCurrentHasNextPage(false);
         setCurrentNextCursor('');
@@ -255,7 +275,9 @@ export default function PortfolioOverviewOperationsPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('portfolio.operations.title')}</CardTitle>
-          <CardDescription>{t('portfolio.operations.description')}</CardDescription>
+          <CardDescription>
+            {t('portfolio.operations.description')}
+          </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-muted-foreground'>
           {t('portfolio.card.selectPrompt')}
@@ -268,7 +290,9 @@ export default function PortfolioOverviewOperationsPage() {
     <Card className='h-full min-h-0 min-w-0 flex-1 overflow-hidden'>
       <CardHeader>
         <CardTitle>{t('portfolio.operations.title')}</CardTitle>
-        <CardDescription>{t('portfolio.operations.description')}</CardDescription>
+        <CardDescription>
+          {t('portfolio.operations.description')}
+        </CardDescription>
       </CardHeader>
       <CardContent className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden text-sm'>
         {operationsError ? (
@@ -279,47 +303,57 @@ export default function PortfolioOverviewOperationsPage() {
         ) : null}
 
         {loadingOperations ? (
-          <div className='text-muted-foreground'>{t('portfolio.card.operationsLoading')}</div>
+          <div className='text-muted-foreground'>
+            {t('portfolio.card.operationsLoading')}
+          </div>
         ) : (
           <div className='min-h-0 min-w-0 flex-1 overflow-hidden rounded-md border'>
-            <div className='h-full w-full overflow-auto'>
-              <Table>
-                <TableHeader className='bg-muted/50'>
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.length > 0 ? (
-                    table.getRowModel().rows.map(row => (
-                      <TableRow key={row.id}>
-                        {row.getVisibleCells().map(cell => (
-                          <TableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
+            <div className='h-full w-full overflow-auto relative'>
+              <div className='absolute inset-0'>
+                <Table>
+                  <TableHeader className='bg-muted/50'>
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map(header => (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                          </TableHead>
                         ))}
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell className='text-muted-foreground' colSpan={columns.length}>
-                        {t('portfolio.card.operationsEmpty')}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows.length > 0 ? (
+                      table.getRowModel().rows.map(row => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map(cell => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          className='text-muted-foreground'
+                          colSpan={columns.length}
+                        >
+                          {t('portfolio.card.operationsEmpty')}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         )}
