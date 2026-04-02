@@ -6,6 +6,7 @@ This repo contains a Go REST API and a Next.js web app. New contributors should 
 - `api/README.md` (backend)
 - `web/README.md` (frontend)
 - `docs/TELEGRAM-VERIFICATION.md` (Telegram two-step login setup and flow)
+- `docs/rebalancing/planning/README.md` (pure rebalance planning algorithm contract)
 
 ## Tech Overview
 
@@ -164,6 +165,7 @@ If a docker context has multiple compose projects, pass `--source-project` / `--
 ## Docs Maintenance
 
 If you change code or behavior in a way that makes any README inaccurate or incomplete, update the docs in the same change. The expectation is that docs stay correct and actionable for the next developer (human or AI).
+If you change rebalance planning input/output contracts used by algorithms, also update `docs/rebalancing/planning/README.md` in the same change.
 See `docs/GUIDELINES.md` for documentation and code organization guidelines, including keeping files short.
 
 ## MOEX Docs Cache
