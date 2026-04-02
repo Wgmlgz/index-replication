@@ -132,7 +132,7 @@ func TestPortfolioReplicationConfigsRepository_UpsertAndDelete(t *testing.T) {
 		PortfolioProfileID: profileID,
 		IsEnabled:          false,
 		BenchmarkSecid:     strPtr("IMOEX"),
-		ModeKey:            "sampled",
+		ModeKey:            "full",
 		ModeParams:         map[string]interface{}{"target_count": 10.0},
 	})
 	if err != nil {
@@ -141,7 +141,7 @@ func TestPortfolioReplicationConfigsRepository_UpsertAndDelete(t *testing.T) {
 	if updated.ID != created.ID {
 		t.Fatalf("expected same id after upsert update, got %d and %d", created.ID, updated.ID)
 	}
-	if updated.ModeKey != "sampled" {
+	if updated.ModeKey != "full" {
 		t.Fatalf("expected updated mode_key, got %q", updated.ModeKey)
 	}
 

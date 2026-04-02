@@ -16,7 +16,7 @@ export const EMPTY_FORM_STATE: ReplicationFormState = {
   updatedAt: '',
 };
 
-export const REPLICATION_MODE_OPTIONS = ['full', 'sampled'] as const;
+export const REPLICATION_MODE_OPTIONS = ['full'] as const;
 
 export function toFormState(config: PortfolioReplicationConfig | null): ReplicationFormState {
   if (!config) {

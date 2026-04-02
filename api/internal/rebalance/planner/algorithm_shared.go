@@ -285,9 +285,6 @@ func normalizePlanningParams(input PlanningParams) PlanningParams {
 	if result.QuantityPrecision > 8 {
 		result.QuantityPrecision = 8
 	}
-	if result.MinDeltaQuantity <= 0 {
-		result.MinDeltaQuantity = 1e-6
-	}
 	return result
 }
 

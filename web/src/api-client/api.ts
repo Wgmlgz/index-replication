@@ -342,7 +342,6 @@ export interface PortfolioRebalanceOutput {
     'warnings'?: Array<string>;
 }
 export interface PortfolioRebalancePlanningParams {
-    'min_delta_quantity'?: number;
     'quantity_precision'?: number;
 }
 export interface PortfolioRebalanceRun {
@@ -4567,6 +4566,5 @@ export class VerificationApi extends BaseAPI {
         return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
-
 
 

@@ -3,7 +3,6 @@ package rebalance
 import (
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 
 	"server/internal/models"
@@ -34,13 +33,11 @@ func normalizeExecutionMode(raw string) (string, error) {
 func normalizePlanningParams(raw map[string]interface{}) (planner.PlanningParams, map[string]interface{}) {
 	params := planner.PlanningParams{
 		QuantityPrecision: 6,
-		MinDeltaQuantity:  1e-6,
 	}
 
 	if len(raw) == 0 {
 		return params, map[string]interface{}{
 			"quantity_precision": float64(params.QuantityPrecision),
-			"min_delta_quantity": params.MinDeltaQuantity,
 		}
 	}
 
@@ -56,16 +53,8 @@ func normalizePlanningParams(raw map[string]interface{}) (planner.PlanningParams
 			params.QuantityPrecision = precision
 		}
 	}
-	if value, ok := raw["min_delta_quantity"]; ok {
-		minDelta, ok := asFloat(value)
-		if ok && minDelta > 0 {
-			params.MinDeltaQuantity = minDelta
-		}
-	}
-
 	snapshot := map[string]interface{}{
 		"quantity_precision": float64(params.QuantityPrecision),
-		"min_delta_quantity": params.MinDeltaQuantity,
 	}
 	return params, snapshot
 }
@@ -97,40 +86,6 @@ func asInt(value interface{}) (int, bool) {
 		var parsed int
 		_, err := fmt.Sscanf(trimmed, "%d", &parsed)
 		if err != nil {
-			return 0, false
-		}
-		return parsed, true
-	default:
-		return 0, false
-	}
-}
-
-func asFloat(value interface{}) (float64, bool) {
-	switch typed := value.(type) {
-	case float64:
-		if math.IsNaN(typed) || math.IsInf(typed, 0) {
-			return 0, false
-		}
-		return typed, true
-	case float32:
-		parsed := float64(typed)
-		if math.IsNaN(parsed) || math.IsInf(parsed, 0) {
-			return 0, false
-		}
-		return parsed, true
-	case int:
-		return float64(typed), true
-	case int64:
-		return float64(typed), true
-	case int32:
-		return float64(typed), true
-	case string:
-		trimmed := strings.TrimSpace(typed)
-		if trimmed == "" {
-			return 0, false
-		}
-		parsed, err := strconv.ParseFloat(trimmed, 64)
-		if err != nil || math.IsNaN(parsed) || math.IsInf(parsed, 0) {
 			return 0, false
 		}
 		return parsed, true

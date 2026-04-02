@@ -28,8 +28,7 @@ type PortfolioRebalanceRun struct {
 } //@name PortfolioRebalanceRun
 
 type PortfolioRebalancePlanningParams struct {
-	QuantityPrecision int     `json:"quantity_precision"`
-	MinDeltaQuantity  float64 `json:"min_delta_quantity"`
+	QuantityPrecision int `json:"quantity_precision"`
 } //@name PortfolioRebalancePlanningParams
 
 type PortfolioRebalanceHolding struct {

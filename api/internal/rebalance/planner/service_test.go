@@ -8,7 +8,6 @@ import (
 func newPlannerService() *Service {
 	registry := NewRegistry(
 		NewFullAlgorithm(),
-		NewSampledAlgorithm(),
 	)
 	return NewService(registry)
 }
@@ -134,10 +133,10 @@ func TestPlanner_PrefersHoldingInstrumentIDWhenTargetUsesTickerIdentity(t *testi
 	}
 }
 
-func TestPlanner_SampledModeBasicScenario(t *testing.T) {
+func TestPlanner_UnsupportedModeReturnsError(t *testing.T) {
 	svc := newPlannerService()
 
-	output, err := svc.Plan(Input{
+	_, err := svc.Plan(Input{
 		ModeKey: "sampled",
 		ModeParams: map[string]interface{}{
 			"target_count": 2,
@@ -160,40 +159,8 @@ func TestPlanner_SampledModeBasicScenario(t *testing.T) {
 			{Ticker: "CCC", InstrumentID: "CCC", Price: 100},
 		},
 	})
-	if err != nil {
-		t.Fatalf("plan sampled mode: %v", err)
-	}
-
-	if len(output.Items) != 3 {
-		t.Fatalf("expected 3 items (AAA, BBB, CCC sell), got %d", len(output.Items))
-	}
-
-	var aaa, bbb, ccc Item
-	for _, item := range output.Items {
-		switch item.Ticker {
-		case "AAA":
-			aaa = item
-		case "BBB":
-			bbb = item
-		case "CCC":
-			ccc = item
-		}
-	}
-
-	if aaa.TargetWeight != 60 {
-		t.Fatalf("expected AAA target weight 60, got %v", aaa.TargetWeight)
-	}
-	if aaa.IdealWeight != 62.5 {
-		t.Fatalf("expected AAA ideal weight 62.5, got %v", aaa.IdealWeight)
-	}
-	if bbb.TargetWeight != 40 {
-		t.Fatalf("expected BBB target weight 40, got %v", bbb.TargetWeight)
-	}
-	if bbb.IdealWeight != 37.5 {
-		t.Fatalf("expected BBB ideal weight 37.5, got %v", bbb.IdealWeight)
-	}
-	if ccc.TargetWeight != 0 || ccc.IdealWeight != 0 || ccc.Side != ItemSideSell {
-		t.Fatalf("expected CCC to be sell to zero, got %+v", ccc)
+	if err == nil {
+		t.Fatalf("expected sampled mode to fail after removal")
 	}
 }
 

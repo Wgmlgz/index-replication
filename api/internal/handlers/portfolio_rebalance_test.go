@@ -312,7 +312,6 @@ func setupRebalanceTestRouterWithStarter(t *testing.T, withReplication bool, sta
 	plannerService := rebalanceplanner.NewService(
 		rebalanceplanner.NewRegistry(
 			rebalanceplanner.NewFullAlgorithm(),
-			rebalanceplanner.NewSampledAlgorithm(),
 		),
 	)
 

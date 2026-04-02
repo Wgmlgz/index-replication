@@ -7,7 +7,6 @@ import (
 
 type PlanningParams struct {
 	QuantityPrecision int
-	MinDeltaQuantity  float64
 }
 
 type Holding struct {

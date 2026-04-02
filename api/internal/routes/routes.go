@@ -115,7 +115,6 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	rebalancePlanner := rebalanceplanner.NewService(
 		rebalanceplanner.NewRegistry(
 			rebalanceplanner.NewFullAlgorithm(),
-			rebalanceplanner.NewSampledAlgorithm(),
 		),
 	)
 	rebalanceSnapshotLoader := rebalance.NewSnapshotLoader(

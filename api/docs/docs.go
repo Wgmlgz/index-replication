@@ -3398,9 +3398,6 @@ const docTemplate = `{
         "PortfolioRebalancePlanningParams": {
             "type": "object",
             "properties": {
-                "min_delta_quantity": {
-                    "type": "number"
-                },
                 "quantity_precision": {
                     "type": "integer"
                 }

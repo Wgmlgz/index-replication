@@ -5,7 +5,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**min_delta_quantity** | **number** |  | [optional] [default to undefined]
 **quantity_precision** | **number** |  | [optional] [default to undefined]
 
 ## Example
@@ -14,7 +13,6 @@ Name | Type | Description | Notes
 import { PortfolioRebalancePlanningParams } from './api';
 
 const instance: PortfolioRebalancePlanningParams = {
-    min_delta_quantity,
     quantity_precision,
 };
 ```

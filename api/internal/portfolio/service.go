@@ -309,9 +309,9 @@ func (s *Service) UpsertReplicationConfig(
 
 	benchmarkSecid := normalizeOptionalString(req.BenchmarkSecid)
 
-	modeKey := strings.TrimSpace(req.ModeKey)
-	if modeKey == "" {
-		modeKey = "full"
+	modeKey, err := normalizeReplicationModeKey(req.ModeKey)
+	if err != nil {
+		return nil, err
 	}
 
 	modeParams := req.ModeParams
@@ -617,6 +617,17 @@ func normalizeOptionalString(value *string) *string {
 		return nil
 	}
 	return &trimmed
+}
+
+func normalizeReplicationModeKey(raw string) (string, error) {
+	modeKey := strings.ToLower(strings.TrimSpace(raw))
+	if modeKey == "" {
+		return "full", nil
+	}
+	if modeKey != "full" {
+		return "", ErrInvalidRequest
+	}
+	return modeKey, nil
 }
 
 func encodeJSONMap(payload map[string]interface{}) (string, error) {

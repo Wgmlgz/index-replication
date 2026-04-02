@@ -71,7 +71,6 @@ func toPlanInputDTO(input planner.Input) dto.PortfolioRebalanceInput {
 		Money:             money,
 		Params: dto.PortfolioRebalancePlanningParams{
 			QuantityPrecision: input.Params.QuantityPrecision,
-			MinDeltaQuantity:  input.Params.MinDeltaQuantity,
 		},
 	}
 }

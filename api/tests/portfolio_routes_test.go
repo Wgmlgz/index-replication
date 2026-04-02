@@ -243,8 +243,8 @@ func TestPortfolioRoutes(t *testing.T) {
 		updatePayload := map[string]interface{}{
 			"is_enabled":      false,
 			"benchmark_secid": "IMOEX",
-			"mode_key":        "sampled",
-			"mode_params":     map[string]interface{}{"top_n": 10},
+			"mode_key":        "full",
+			"mode_params":     map[string]interface{}{"lot_size": 10},
 		}
 		updateResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminToken)
 		if updateResp.Code != http.StatusOK {
@@ -252,8 +252,18 @@ func TestPortfolioRoutes(t *testing.T) {
 		}
 		var updatedConfig portfolioReplicationConfigResponse
 		decodeJSON(t, updateResp, &updatedConfig)
-		if updatedConfig.ModeKey != "sampled" || updatedConfig.IsEnabled {
+		if updatedConfig.ModeKey != "full" || updatedConfig.IsEnabled {
 			t.Fatalf("unexpected updated config: %+v", updatedConfig)
+		}
+
+		unsupportedModeResp := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", map[string]interface{}{
+			"is_enabled":      false,
+			"benchmark_secid": "IMOEX",
+			"mode_key":        "sampled",
+			"mode_params":     map[string]interface{}{"top_n": 10},
+		}, adminToken)
+		if unsupportedModeResp.Code != http.StatusBadRequest {
+			t.Fatalf("expected unsupported mode to be rejected, got %d body=%s", unsupportedModeResp.Code, unsupportedModeResp.Body.String())
 		}
 
 		idempotentResp1 := doRequest(t, ts.router, http.MethodPut, "/api/me/portfolios/"+itoa(profile.ID)+"/replication", updatePayload, adminToken)
@@ -287,7 +297,7 @@ func TestPortfolioRoutes(t *testing.T) {
 			if item.Replication == nil {
 				t.Fatalf("expected replication config to be populated in profiles list")
 			}
-			if item.Replication.ModeKey != "sampled" {
+			if item.Replication.ModeKey != "full" {
 				t.Fatalf("unexpected list replication payload: %+v", item.Replication)
 			}
 			break
@@ -305,7 +315,7 @@ func TestPortfolioRoutes(t *testing.T) {
 		if summaryPopulated.Replication == nil {
 			t.Fatalf("expected summary replication config to be populated")
 		}
-		if summaryPopulated.Replication.ModeKey != "sampled" {
+		if summaryPopulated.Replication.ModeKey != "full" {
 			t.Fatalf("unexpected summary replication payload: %+v", summaryPopulated.Replication)
 		}
 

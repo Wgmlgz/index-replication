@@ -379,8 +379,7 @@
     },
     "replication": {
       "modeOptions": {
-        "full": "Full replication",
-        "sampled": "Sampled replication"
+        "full": "Full replication"
       },
       "selector": {
         "title": "Select MOEX benchmark index",
