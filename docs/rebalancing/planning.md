@@ -11,14 +11,6 @@ It intentionally excludes orchestration/snapshot fields such as:
 ## Pure Function Shape
 
 ```ts
-type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 type PlanPure = (input: {
   investableCapital: number;
 
@@ -63,7 +55,6 @@ type PlanPure = (input: {
     referencePrice: number | null;
     plannedAmount: number | null;
     status: "planned" | "unresolved";
-    metadata: { [k: string]: JsonValue };
   }[];
 
   warnings: string[];

@@ -16,6 +16,7 @@ This document describes the end-to-end rebalance flow in general phases, from us
 
 2. Snapshot assembly
 - Load portfolio holdings, cash balances, replication config, benchmark composition, and instrument prices.
+- Resolve/fill instrument IDs at snapshot build time (provider-aware).
 - Build normalized planner input.
 
 3. Pure planning
@@ -38,7 +39,7 @@ This document describes the end-to-end rebalance flow in general phases, from us
 7. Item execution loop
 - For each actionable item:
   - Resolve side and quantity.
-  - Optionally resolve provider instrument (`tbank` path).
+  - Validate `instrument_id` is present.
   - Execute provider action (`buy` / `sell`) via portfolio provider abstraction.
   - Record success/failure link and heartbeat progress.
 
@@ -65,6 +66,7 @@ draft -> queued -> executing -> (completed | partially_completed | failed)
 ```text
 planned -> executing -> (completed | failed)
 unresolved (non-actionable from planning)
+planned with missing instrument_id -> failed
 ```
 
 ## High-Level Flow Diagram
@@ -79,10 +81,9 @@ flowchart TD
     F --> G["Activity ExecuteRun (status=executing)"]
     G --> H{For each item}
     H --> I["Resolve side and quantity"]
-    I --> J{Provider needs resolution?}
-    J -->|Yes| K["Resolve instrument"]
-    J -->|No| L["Run buy/sell action"]
-    K --> L
+    I --> J{"instrument_id present?"}
+    J -->|No| O["Item failed + link"]
+    J -->|Yes| L["Run buy/sell action"]
     L --> M{Action result}
     M -->|Success| N["Item completed + link"]
     M -->|Failure| O["Item failed + link"]
@@ -123,6 +124,7 @@ sequenceDiagram
     TMP->>ACT: ExecuteRun(params)
     ACT->>DB: Mark started_at
     loop each planned item
+        ACT->>ACT: Validate instrument_id
         ACT->>PRV: RunAction(buy/sell, action_id)
         PRV-->>ACT: success/failure
         ACT->>TMP: Heartbeat(progress/items/links)
@@ -141,3 +143,4 @@ sequenceDiagram
 - Automatic execution is currently supported for `virtual` and `tbank`.
 - Provider execution is called through the unified portfolio provider action interface.
 - Execution uses deterministic `action_id` generation for retry/idempotency behavior.
+- Execution does not perform runtime instrument resolution; missing `instrument_id` is treated as an item execution error.

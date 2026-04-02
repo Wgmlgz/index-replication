@@ -174,51 +174,23 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		recordExecutionHeartbeat(ctx, &result)
 
 		resolvedInstrumentID := strings.TrimSpace(item.InstrumentID)
-		if requiresExecutionInstrumentResolution(run.Provider) {
-			resolveActionID := makeRebalanceActionID(params.RunID, item.ID, "resolve_instrument")
-			resolvePayload := map[string]interface{}{
-				"action_id":     resolveActionID,
-				"ticker":        strings.TrimSpace(item.Ticker),
-				"instrument_id": resolvedInstrumentID,
-				"side":          side,
-			}
-			resolveResp, resolveErr := a.portfolioService.RunAction(
-				ctx,
-				params.UserID,
-				params.PortfolioID,
-				"resolve_instrument",
-				resolvePayload,
+		if resolvedInstrumentID == "" {
+			link, linkErr := a.failItem(
+				item,
+				"",
+				"missing instrument_id in planned item",
+				map[string]interface{}{
+					"item_id": item.ID,
+					"ticker":  strings.TrimSpace(item.Ticker),
+					"side":    side,
+				},
 			)
-			if resolveErr != nil {
-				link, linkErr := a.failItem(item, resolveActionID, resolveErr.Error(), map[string]interface{}{
-					"resolve_payload": resolvePayload,
-				})
-				if linkErr != nil {
-					return result, linkErr
-				}
-				applyFailedItemResult(&result, snapshotIndex, resolveActionID, link)
-				recordExecutionHeartbeat(ctx, &result)
-				continue
+			if linkErr != nil {
+				return result, linkErr
 			}
-			resolvedInstrumentID = actionResultString(resolveResp, "instrument_id")
-			if resolvedInstrumentID == "" {
-				link, linkErr := a.failItem(
-					item,
-					resolveActionID,
-					"instrument resolution returned empty instrument_id",
-					map[string]interface{}{
-						"resolve_payload": resolvePayload,
-						"resolve_result":  actionResultMap(resolveResp),
-					},
-				)
-				if linkErr != nil {
-					return result, linkErr
-				}
-				applyFailedItemResult(&result, snapshotIndex, resolveActionID, link)
-				recordExecutionHeartbeat(ctx, &result)
-				continue
-			}
-			result.Items[snapshotIndex].InstrumentID = resolvedInstrumentID
+			applyFailedItemResult(&result, snapshotIndex, "", link)
+			recordExecutionHeartbeat(ctx, &result)
+			continue
 		}
 
 		actionID := makeRebalanceActionID(params.RunID, item.ID, side)
@@ -522,10 +494,6 @@ func requiresBuyReferencePrice(provider string) bool {
 	return strings.EqualFold(strings.TrimSpace(provider), "virtual")
 }
 
-func requiresExecutionInstrumentResolution(provider string) bool {
-	return strings.EqualFold(strings.TrimSpace(provider), "tbank")
-}
-
 func resolveItemCurrency(item workflows.RebalanceExecutionItem, currencyByInstrument map[string]string) string {
 	key := strings.ToUpper(strings.TrimSpace(item.InstrumentID))
 	if key == "" {
@@ -641,22 +609,6 @@ func actionResultMap(resp *dto.PortfolioActionResponse) map[string]interface{} {
 		result[key] = value
 	}
 	return result
-}
-
-func actionResultString(resp *dto.PortfolioActionResponse, key string) string {
-	if resp == nil || resp.Result == nil {
-		return ""
-	}
-	raw, ok := resp.Result[key]
-	if !ok || raw == nil {
-		return ""
-	}
-	switch typed := raw.(type) {
-	case string:
-		return strings.TrimSpace(typed)
-	default:
-		return ""
-	}
 }
 
 func metadataString(metadata map[string]interface{}, key string) string {

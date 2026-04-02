@@ -170,6 +170,7 @@ func (l *SnapshotLoader) Load(
 	typedPlanningParams, planningParamsSnapshot := normalizePlanningParams(planningParams)
 	holdings := toPlannerHoldings(portfolioComposition)
 	targets := toPlannerTargets(benchmarkComposition)
+	l.resolvePlannerInstrumentIDs(ctx, provider, providerProfile, holdings, targets)
 	instruments := l.resolvePlannerInstruments(ctx, providerProfile.Provider, resolvedAsOfAt, portfolioComposition, targets)
 	money := toPlannerMoney(summary)
 	totalValue := resolvePortfolioTotalValue(summary, portfolioComposition)
@@ -206,6 +207,141 @@ func (l *SnapshotLoader) Load(
 		BenchmarkCount: len(targets),
 	}
 	return snapshot, nil
+}
+
+func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
+	ctx context.Context,
+	provider portfolio.Provider,
+	profile *portfolio.Profile,
+	holdings []planner.Holding,
+	targets []planner.BenchmarkConstituent,
+) {
+	if provider == nil || profile == nil {
+		return
+	}
+
+	providerName := strings.ToLower(strings.TrimSpace(provider.Name()))
+	knownByTicker := map[string]string{}
+
+	addKnown := func(tickerRaw string, instrumentIDRaw string) {
+		ticker := strings.ToUpper(strings.TrimSpace(tickerRaw))
+		instrumentID := strings.TrimSpace(instrumentIDRaw)
+		if ticker == "" || instrumentID == "" {
+			return
+		}
+		if _, exists := knownByTicker[ticker]; exists {
+			return
+		}
+		knownByTicker[ticker] = instrumentID
+	}
+
+	applyKnown := func() {
+		for i := range holdings {
+			ticker := strings.ToUpper(strings.TrimSpace(holdings[i].Ticker))
+			if strings.TrimSpace(holdings[i].InstrumentID) != "" || ticker == "" {
+				continue
+			}
+			if resolved := strings.TrimSpace(knownByTicker[ticker]); resolved != "" {
+				holdings[i].InstrumentID = resolved
+			}
+		}
+		for i := range targets {
+			ticker := strings.ToUpper(strings.TrimSpace(targets[i].Ticker))
+			if strings.TrimSpace(targets[i].InstrumentID) != "" || ticker == "" {
+				continue
+			}
+			if resolved := strings.TrimSpace(knownByTicker[ticker]); resolved != "" {
+				targets[i].InstrumentID = resolved
+			}
+		}
+	}
+
+	for i := range holdings {
+		addKnown(holdings[i].Ticker, holdings[i].InstrumentID)
+	}
+	for i := range targets {
+		addKnown(targets[i].Ticker, targets[i].InstrumentID)
+	}
+	applyKnown()
+
+	unresolvedTickers := map[string]struct{}{}
+	for i := range holdings {
+		ticker := strings.ToUpper(strings.TrimSpace(holdings[i].Ticker))
+		if ticker == "" || strings.TrimSpace(holdings[i].InstrumentID) != "" {
+			continue
+		}
+		unresolvedTickers[ticker] = struct{}{}
+	}
+	for i := range targets {
+		ticker := strings.ToUpper(strings.TrimSpace(targets[i].Ticker))
+		if ticker == "" || strings.TrimSpace(targets[i].InstrumentID) != "" {
+			continue
+		}
+		unresolvedTickers[ticker] = struct{}{}
+	}
+
+	if providerName == "tbank" && len(unresolvedTickers) > 0 {
+		tickers := make([]string, 0, len(unresolvedTickers))
+		for ticker := range unresolvedTickers {
+			tickers = append(tickers, ticker)
+		}
+		sort.Strings(tickers)
+
+		for _, ticker := range tickers {
+			result, err := provider.RunAction(ctx, profile, "resolve_instrument", map[string]interface{}{
+				"action_id": "snapshot-resolve-" + ticker,
+				"ticker":    ticker,
+				"side":      "buy",
+			})
+			if err != nil {
+				continue
+			}
+			resolved := strings.TrimSpace(actionResultString(result, "instrument_id"))
+			if resolved == "" {
+				continue
+			}
+			knownByTicker[ticker] = resolved
+		}
+		applyKnown()
+	}
+
+	if providerName != "tbank" {
+		for i := range holdings {
+			if strings.TrimSpace(holdings[i].InstrumentID) != "" {
+				continue
+			}
+			ticker := strings.ToUpper(strings.TrimSpace(holdings[i].Ticker))
+			if ticker == "" {
+				continue
+			}
+			holdings[i].InstrumentID = ticker
+		}
+		for i := range targets {
+			if strings.TrimSpace(targets[i].InstrumentID) != "" {
+				continue
+			}
+			ticker := strings.ToUpper(strings.TrimSpace(targets[i].Ticker))
+			if ticker == "" {
+				continue
+			}
+			targets[i].InstrumentID = ticker
+		}
+	}
+}
+
+func actionResultString(result map[string]interface{}, key string) string {
+	if len(result) == 0 {
+		return ""
+	}
+	raw, ok := result[key]
+	if !ok || raw == nil {
+		return ""
+	}
+	value, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(value)
 }
 
 func parseProviderProfile(model *models.PortfolioProfile) (*portfolio.Profile, error) {
