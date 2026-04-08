@@ -31,7 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
-import { PORTFOLIO_V2_ROUTES } from '@/lib/portfolio';
+import { PORTFOLIO_V2_ROUTES, writeLastSelectedPortfolio } from '@/lib/portfolio';
 
 type PortfolioDetailsSection = 'overview' | 'actions' | 'replication';
 
@@ -222,6 +222,17 @@ export default function PortfolioDetailsRouteLayout({
       router.replace(href, { scroll: false });
     }
   }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!selectedPortfolioID) {
+      return;
+    }
+
+    writeLastSelectedPortfolio({
+      id: selectedPortfolioID,
+      name: selectedProfile?.name || '',
+    });
+  }, [selectedPortfolioID, selectedProfile?.name]);
 
   return (
     <PortfolioDetailsProvider

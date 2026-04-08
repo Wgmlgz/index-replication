@@ -17,6 +17,7 @@ export type SidebarSubItem = {
   titleKey: string;
   href: string;
   activePathname?: string;
+  matchSubpaths?: boolean;
   permission: PermissionStr | null;
 }
 
@@ -107,24 +108,35 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     titleKey: "navigation.portfolio.details",
   },
   {
+    kind: "label",
+    titleKey: "navigation.portfolio.overview",
+  },
+  {
     kind: "item",
-    titleKey: 'navigation.portfolio.overview',
+    titleKey: "portfolio.overview.tabs.summary",
     href: PORTFOLIO_V2_ROUTES.overview,
     activePathname: PORTFOLIO_V2_ROUTES.overview,
     permission: null,
   },
   {
     kind: "item",
-    titleKey: 'navigation.portfolio.operations',
+    titleKey: "portfolio.overview.tabs.operations",
     href: PORTFOLIO_V2_ROUTES.overviewOperations,
     activePathname: PORTFOLIO_V2_ROUTES.overviewOperations,
     permission: null,
   },
   {
     kind: "item",
-    titleKey: 'navigation.portfolio.compare',
+    titleKey: "portfolio.overview.tabs.compare",
     href: PORTFOLIO_V2_ROUTES.overviewCompare,
     activePathname: PORTFOLIO_V2_ROUTES.overviewCompare,
+    permission: null,
+  },
+  {
+    kind: "item",
+    titleKey: "portfolio.overview.tabs.analytics",
+    href: PORTFOLIO_V2_ROUTES.overviewAnalytics,
+    activePathname: PORTFOLIO_V2_ROUTES.overviewAnalytics,
     permission: null,
   },
   {
@@ -135,16 +147,20 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     permission: null,
   },
   {
+    kind: "label",
+    titleKey: "navigation.portfolio.replication",
+  },
+  {
     kind: "item",
-    titleKey: 'navigation.portfolio.analytics',
-    href: PORTFOLIO_V2_ROUTES.overviewAnalytics,
-    activePathname: PORTFOLIO_V2_ROUTES.overviewAnalytics,
+    titleKey: "portfolio.replication.tabs.drafts",
+    href: PORTFOLIO_V2_ROUTES.replicationDrafts,
+    activePathname: PORTFOLIO_V2_ROUTES.replicationDrafts,
     permission: null,
   },
   {
     kind: "item",
-    titleKey: 'navigation.portfolio.replication',
-    href: PORTFOLIO_V2_ROUTES.replicationDrafts,
+    titleKey: "portfolio.replication.tabs.settings",
+    href: PORTFOLIO_V2_ROUTES.replication,
     activePathname: PORTFOLIO_V2_ROUTES.replication,
     permission: null,
   },

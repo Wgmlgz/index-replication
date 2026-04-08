@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { LogIn, LogOut, Package, PanelLeftIcon, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,10 +13,14 @@ import {
   type SidebarSubItem,
 } from '@/lib/menu';
 import {
+  LAST_SELECTED_PORTFOLIO_EVENT,
+  LAST_SELECTED_PORTFOLIO_STORAGE_KEY,
+  type LastSelectedPortfolio,
   buildPortfolioHref,
   parsePortfolioID,
   PORTFOLIO_ID_QUERY_KEY,
   PORTFOLIO_V2_ROUTES,
+  readLastSelectedPortfolio,
 } from '@/lib/portfolio';
 import {
   Sidebar,
@@ -41,11 +46,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, hasPermission, logoutUser } = useUser();
   const { state, toggleSidebar } = useSidebar();
   const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
+  const [lastSelectedPortfolio, setLastSelectedPortfolio] = useState<LastSelectedPortfolio | null>(null);
+  const resolvedPortfolioID = selectedPortfolioID ?? lastSelectedPortfolio?.id ?? null;
   const isPortfolioSectionActive = pathname.startsWith('/portfolio');
+  const detailsLabelText = useMemo(() => {
+    const detailsLabel = t('navigation.portfolio.details');
+    const portfolioName = lastSelectedPortfolio?.name.trim();
+    return portfolioName ? `${detailsLabel}: ${portfolioName}` : detailsLabel;
+  }, [lastSelectedPortfolio?.name, t]);
 
   const handleLogout = async () => {
     await logoutUser();
   };
+
+  useEffect(() => {
+    const syncLastSelectedPortfolio = () => {
+      setLastSelectedPortfolio(readLastSelectedPortfolio());
+    };
+
+    syncLastSelectedPortfolio();
+
+    const onStorage = (event: StorageEvent) => {
+      if (!event.key || event.key === LAST_SELECTED_PORTFOLIO_STORAGE_KEY) {
+        syncLastSelectedPortfolio();
+      }
+    };
+    const onLastSelectedPortfolioUpdated = () => {
+      syncLastSelectedPortfolio();
+    };
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(LAST_SELECTED_PORTFOLIO_EVENT, onLastSelectedPortfolioUpdated);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(LAST_SELECTED_PORTFOLIO_EVENT, onLastSelectedPortfolioUpdated);
+    };
+  }, []);
 
   const isPortfolioSubItemActive = (item: SidebarSubItem): boolean => {
     const itemPathname = item.activePathname ?? item.href.split('?')[0];
@@ -53,10 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       return true;
     }
 
-    if (
-      itemPathname === PORTFOLIO_V2_ROUTES.replication
-      && pathname.startsWith(`${PORTFOLIO_V2_ROUTES.replication}/`)
-    ) {
+    if (item.matchSubpaths && pathname.startsWith(`${itemPathname}/`)) {
       return true;
     }
 
@@ -123,7 +156,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   isActive={isPortfolioSectionActive}
                   tooltip={t('navigation.cards.portfolio.title')}
                 >
-                  <Link href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.profiles, selectedPortfolioID)}>
+                  <Link href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.profiles, resolvedPortfolioID)}>
                     <Wallet className='size-4' />
                     <span>{t('navigation.cards.portfolio.title')}</span>
                   </Link>
@@ -131,10 +164,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuSub>
                   {PortfolioSidebarSubItems.map(item => {
                     if (item.kind === 'label') {
+                      const isDetailsLabel = item.titleKey === 'navigation.portfolio.details';
                       return (
                         <SidebarMenuSubItem key={item.titleKey}>
-                          <div className='px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
-                            {t(item.titleKey)}
+                          <div className={isDetailsLabel
+                            ? 'px-2 pt-2 text-[11px] font-medium text-muted-foreground'
+                            : 'px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'}
+                          >
+                            {isDetailsLabel ? detailsLabelText : t(item.titleKey)}
                           </div>
                         </SidebarMenuSubItem>
                       );
@@ -149,7 +186,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           asChild
                           isActive={isPortfolioSubItemActive(item)}
                         >
-                          <Link href={buildPortfolioHref(item.href, selectedPortfolioID)}>
+                          <Link href={buildPortfolioHref(item.href, resolvedPortfolioID)}>
                             <span>{t(item.titleKey)}</span>
                           </Link>
                         </SidebarMenuSubButton>

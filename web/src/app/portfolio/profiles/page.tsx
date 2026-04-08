@@ -3,7 +3,16 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CircleHelp,
+  FlaskConical,
+  Landmark,
+  Monitor,
+  Plus,
+  Star,
+  Trash2,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
@@ -103,6 +112,24 @@ export default function PortfolioProfilesPage() {
           typeof profile.provider === 'string',
       ),
     [profilesQuery.data],
+  );
+
+  const providerDetails = useMemo(
+    () => ({
+      virtual: {
+        label: t('portfolio.profiles.providerVirtual'),
+        icon: Monitor,
+      },
+      mock: {
+        label: t('portfolio.profiles.providerMock'),
+        icon: FlaskConical,
+      },
+      tbank: {
+        label: t('portfolio.profiles.providerTbank'),
+        icon: Landmark,
+      },
+    }),
+    [t],
   );
 
   const resetCreateForm = useCallback(() => {
@@ -359,64 +386,70 @@ export default function PortfolioProfilesPage() {
 
           {profiles.length > 0 ? (
             <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
-              {profiles.map(profile => (
-                <div
-                  key={profile.id}
-                  className='flex min-h-40 flex-col justify-between gap-4 rounded-lg border p-4'
-                >
-                  <div className='space-y-3'>
-                    <div className='space-y-1'>
+              {profiles.map(profile => {
+                const providerKey = profile.provider.toLowerCase() as keyof typeof providerDetails;
+                const providerConfig = providerDetails[providerKey];
+                const ProviderIcon = providerConfig?.icon ?? CircleHelp;
+                const providerName = providerConfig?.label ?? profile.provider;
+                const actionsCount = profile.capabilities?.actions?.length ?? 0;
+
+                return (
+                  <div
+                    key={profile.id}
+                    className='flex min-h-40 flex-col gap-4 rounded-lg border p-4'
+                  >
+                    <div className='flex items-start justify-between gap-2'>
                       <p className='font-medium'>{profile.name}</p>
-                      <p className='text-xs text-muted-foreground'>ID: {profile.id}</p>
+                      {profile.is_default ? (
+                        <span className='inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>
+                          <Star className='size-3' />
+                          {t('portfolio.profiles.defaultLabelShort')}
+                        </span>
+                      ) : null}
                     </div>
+
                     <div className='space-y-1 text-sm text-muted-foreground'>
-                      <p>
-                        {t('portfolio.profiles.providerLabel')}: {profile.provider}
+                      <p className='inline-flex items-center gap-2'>
+                        <ProviderIcon className='size-4' />
+                        <span>{t('portfolio.profiles.providerSummary', { provider: providerName })}</span>
                       </p>
-                      <p>
-                        {t('portfolio.profiles.defaultLabelShort')}:{' '}
-                        {profile.is_default
-                          ? t('portfolio.profiles.defaultYes')
-                          : t('portfolio.profiles.defaultNo')}
-                      </p>
-                      <p>
-                        {t('portfolio.profiles.actionsLabel')}:{' '}
-                        {profile.capabilities?.actions?.length ?? 0}
-                      </p>
-                      <p>
+                      <p>{t('portfolio.profiles.actionsSummary', { count: actionsCount })}</p>
+                    </div>
+
+                    <div className='mt-auto flex items-end justify-between gap-3'>
+                      <p className='text-xs text-muted-foreground'>
                         {t('portfolio.profiles.updatedLabel')}: {formatDateTime(profile.updated_at)}
                       </p>
+                      <div className='flex shrink-0 items-center gap-2'>
+                        <Button asChild size='default' variant='outline'>
+                          <Link
+                            href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.overview, profile.id)}
+                            aria-label={t('portfolio.profiles.openAriaLabel', {
+                              name: profile.name,
+                            })}
+                            className='inline-flex items-center gap-1'
+                          >
+                            {t('portfolio.profiles.overviewButton')}
+                            <ArrowUpRight className='size-4' />
+                          </Link>
+                        </Button>
+                        <Button
+                          type='button'
+                          size='icon'
+                          variant='outline'
+                          onClick={() => setDeleteTarget(profile)}
+                          aria-label={t('portfolio.profiles.deleteAriaLabel', {
+                            name: profile.name,
+                          })}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className='size-4' />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className='flex justify-end gap-2'>
-                    <Button asChild size='sm' variant='outline'>
-                      <Link
-                        href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.overview, profile.id)}
-                        aria-label={t('portfolio.profiles.openAriaLabel', {
-                          name: profile.name,
-                        })}
-                        className='inline-flex items-center gap-1'
-                      >
-                        {t('portfolio.profiles.overviewButton')}
-                        <ArrowUpRight className='size-4' />
-                      </Link>
-                    </Button>
-                    <Button
-                      type='button'
-                      size='icon'
-                      variant='outline'
-                      onClick={() => setDeleteTarget(profile)}
-                      aria-label={t('portfolio.profiles.deleteAriaLabel', {
-                        name: profile.name,
-                      })}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className='size-4' />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : null}
         </CardContent>

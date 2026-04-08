@@ -261,7 +261,7 @@ export default function PortfolioOverviewSummaryPage() {
     [summary?.money],
   );
   const positionsData = useMemo(
-    () => (summary?.positions ?? []).slice(0, 10),
+    () => summary?.positions ?? [],
     [summary?.positions],
   );
 
@@ -444,7 +444,7 @@ export default function PortfolioOverviewSummaryPage() {
             <div className="space-y-2">
               <div className="font-medium">
                 {t("portfolio.card.positionsTitle", {
-                  count: Math.min((summary.positions ?? []).length, 10),
+                  count: (summary.positions ?? []).length,
                 })}
               </div>
               <div className="overflow-auto rounded-md border">
