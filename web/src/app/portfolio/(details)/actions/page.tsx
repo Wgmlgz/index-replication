@@ -15,7 +15,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function PortfolioActionsPage() {
   const { t } = useTranslation();
   const { selectedPortfolioID, selectedProfile } = usePortfolioDetailsContext();
-  const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const [actionResult, setActionResult] = useState<PortfolioActionResponse | null>(null);
@@ -38,13 +37,10 @@ export default function PortfolioActionsPage() {
   const refreshData = useCallback(
     async (targetPortfolioID: number) => {
       setError("");
-      setLoadingRefresh(true);
       try {
         await portfolioApi.mePortfoliosIdSummaryGet(targetPortfolioID);
       } catch (err) {
         setError(parseErrorMessage(err, t("portfolio.errors.summary")));
-      } finally {
-        setLoadingRefresh(false);
       }
     },
     [parseErrorMessage, t],
@@ -116,9 +112,7 @@ export default function PortfolioActionsPage() {
         <PortfolioSummaryActions
           profile={selectedProfile}
           actions={actions}
-          loadingSummary={loadingRefresh}
           working={working}
-          onRefresh={() => void refreshData(selectedPortfolioID)}
           onRunAction={runAction}
         />
       </CardContent>

@@ -47,6 +47,7 @@ type DailyAsOfSeries struct {
 type securityHistoryFetcher interface {
 	GetShareSecurityHistory(ctx context.Context, secid, board, from, till string) ([]moexdomain.IndexHistoryPoint, error)
 	GetShareSecurityCurrency(ctx context.Context, secid, board string) (string, error)
+	GetShareSecurityLotSize(ctx context.Context, secid, board string) (int64, error)
 }
 
 type Service struct {
@@ -125,6 +126,25 @@ func (s *Service) GetDailyAsOfPrices(ctx context.Context, req InstrumentRangeReq
 		Currency:      mappingCurrencyValue(mapping),
 		Prices:        alignAsOfDaily(rows, fromDate, toDate),
 	}, nil
+}
+
+func (s *Service) GetInstrumentLotSize(ctx context.Context, req InstrumentRangeRequest) (int64, error) {
+	mapping, err := s.resolveMapping(ctx, req)
+	if err != nil {
+		return 0, err
+	}
+	if mapping == nil || s.fetcher == nil {
+		return 0, nil
+	}
+
+	lotSize, err := s.fetcher.GetShareSecurityLotSize(ctx, mapping.Secid, mapping.Board)
+	if err != nil {
+		return 0, err
+	}
+	if lotSize <= 0 {
+		return 0, nil
+	}
+	return lotSize, nil
 }
 
 func (s *Service) ensureCoverageCached(ctx context.Context, secid, board string, fromDate, toDate time.Time) error {

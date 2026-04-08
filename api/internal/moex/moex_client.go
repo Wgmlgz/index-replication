@@ -467,6 +467,35 @@ func (c *moexISSClient) FetchShareSecurityCurrency(ctx context.Context, secid, b
 	return "", nil
 }
 
+func (c *moexISSClient) FetchShareSecurityLotSize(ctx context.Context, secid, board string) (int64, error) {
+	params := url.Values{}
+	params.Set("iss.meta", "off")
+	params.Set("securities.columns", "SECID,LOTSIZE")
+
+	var payload moexSecuritiesPayload
+	if err := c.get(
+		ctx,
+		fmt.Sprintf(
+			"engines/stock/markets/shares/boards/%s/securities/%s.json",
+			url.PathEscape(board),
+			url.PathEscape(secid),
+		),
+		params,
+		&payload,
+	); err != nil {
+		return 0, err
+	}
+
+	rows := tableToObjects(payload.Securities)
+	for _, row := range rows {
+		lotSize := asIntPtr(getValue(row, "LOTSIZE", "lotsize"))
+		if lotSize != nil && *lotSize > 0 {
+			return int64(*lotSize), nil
+		}
+	}
+	return 0, nil
+}
+
 func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	start := 0
 	iterations := 0

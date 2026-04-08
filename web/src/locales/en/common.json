@@ -502,6 +502,7 @@
         "title": "Rebalance runs",
         "description": "Create deterministic planning drafts and inspect run details across planning and execution.",
         "openCreateDialogButton": "Create draft",
+        "createDraftDisabledReason": "Enable replication in Settings to create a draft.",
         "loadingList": "Loading rebalance runs...",
         "emptyList": "No rebalance runs yet.",
         "executeDraftButton": "Execute",

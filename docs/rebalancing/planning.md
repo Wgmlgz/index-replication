@@ -87,3 +87,4 @@ The current `full` planner uses a lot-aware integer allocation heuristic per cur
 Notes:
 - Zero-delta rows are kept in output for deterministic auditability.
 - Money output is updated from planned (not unresolved) trade cash flow.
+- Snapshot instrument `lotSize` is sourced from MOEX shares security metadata (board-level lot size); when unavailable, it falls back to `1`.

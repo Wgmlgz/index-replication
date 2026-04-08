@@ -61,19 +61,17 @@ export function PortfolioActionRJSFForm({
   };
 
   return (
-    <div className="rounded-md border p-3">
-      <Form
-        schema={config.schema}
-        uiSchema={uiSchema}
-        formData={formData}
-        onChange={handleChange}
-        onSubmit={handleSubmit}
-        customValidate={config.customValidate}
-        showErrorList={false}
-        disabled={working}
-        noHtml5Validate
-        validator={validator}
-      />
-    </div>
+    <Form
+      schema={config.schema}
+      uiSchema={uiSchema}
+      formData={formData}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+      customValidate={config.customValidate}
+      showErrorList={false}
+      disabled={working}
+      noHtml5Validate
+      validator={validator}
+    />
   );
 }

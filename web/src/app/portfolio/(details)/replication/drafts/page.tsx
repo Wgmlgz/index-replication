@@ -91,8 +91,12 @@ function executeButtonLabel(status: string | undefined, t: TFunction): string {
 
 export default function PortfolioReplicationDraftsPage() {
   const { t, i18n } = useTranslation();
-  const { selectedPortfolioID } = usePortfolioDetailsContext();
+  const { selectedPortfolioID, selectedProfile } = usePortfolioDetailsContext();
   const portfolioID = selectedPortfolioID;
+  const isReplicationEnabled = selectedProfile?.replication?.is_enabled === true;
+  const createDraftDisabledReason = t(
+    'portfolio.replication.rebalances.createDraftDisabledReason',
+  );
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -249,7 +253,10 @@ export default function PortfolioReplicationDraftsPage() {
   }, [parseErrorMessage, portfolioID, selectedRebalanceID, t]);
 
   const onCreateDraft = useCallback(async () => {
-    if (!portfolioID) {
+    if (!portfolioID || !isReplicationEnabled) {
+      if (!isReplicationEnabled) {
+        setRebalanceError(createDraftDisabledReason);
+      }
       return false;
     }
 
@@ -288,6 +295,8 @@ export default function PortfolioReplicationDraftsPage() {
   }, [
     draftForm.asOfDate,
     applyRunUpdate,
+    createDraftDisabledReason,
+    isReplicationEnabled,
     parseErrorMessage,
     portfolioID,
     setSelectedRebalanceInQuery,
@@ -310,11 +319,15 @@ export default function PortfolioReplicationDraftsPage() {
   );
 
   const onSubmitCreateDraft = useCallback(async () => {
+    if (!isReplicationEnabled) {
+      setRebalanceError(createDraftDisabledReason);
+      return;
+    }
     const created = await onCreateDraft();
     if (created) {
       setCreateDialogOpen(false);
     }
-  }, [onCreateDraft]);
+  }, [createDraftDisabledReason, isReplicationEnabled, onCreateDraft]);
 
   const onExecuteDraft = useCallback(
     async (runID: number) => {
@@ -420,14 +433,21 @@ export default function PortfolioReplicationDraftsPage() {
             {t('portfolio.replication.rebalances.description')}
           </CardDescription>
           <CardAction>
-            <Button
-              type='button'
-              onClick={() => setCreateDialogOpen(true)}
-              disabled={rebalanceWorking}
-            >
-              <Plus className='size-4' />
-              {t('portfolio.replication.rebalances.openCreateDialogButton')}
-            </Button>
+            <div className='grid justify-items-end gap-1'>
+              <Button
+                type='button'
+                onClick={() => setCreateDialogOpen(true)}
+                disabled={rebalanceWorking || !isReplicationEnabled}
+              >
+                <Plus className='size-4' />
+                {t('portfolio.replication.rebalances.openCreateDialogButton')}
+              </Button>
+              {!isReplicationEnabled ? (
+                <p className='text-xs text-muted-foreground'>
+                  {createDraftDisabledReason}
+                </p>
+              ) : null}
+            </div>
           </CardAction>
         </CardHeader>
 
@@ -548,6 +568,8 @@ export default function PortfolioReplicationDraftsPage() {
           <RebalanceDraftCreateForm
             asOfDate={draftForm.asOfDate}
             working={rebalanceWorking}
+            canCreateDraft={isReplicationEnabled}
+            disabledReasonText={createDraftDisabledReason}
             onAsOfDateChange={value =>
               setDraftForm(prev => ({
                 ...prev,

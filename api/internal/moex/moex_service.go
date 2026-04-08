@@ -75,6 +75,10 @@ func (s *MoexService) GetShareSecurityCurrency(ctx context.Context, secid, board
 	return s.client.FetchShareSecurityCurrency(ctx, secid, board)
 }
 
+func (s *MoexService) GetShareSecurityLotSize(ctx context.Context, secid, board string) (int64, error) {
+	return s.client.FetchShareSecurityLotSize(ctx, secid, board)
+}
+
 func (s *MoexService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "en"

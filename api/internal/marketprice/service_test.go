@@ -16,6 +16,7 @@ type fakeSecurityHistoryFetcher struct {
 	calls    []fetchCall
 	points   []moexdomain.IndexHistoryPoint
 	currency string
+	lotSize  int64
 }
 
 type fetchCall struct {
@@ -69,6 +70,19 @@ func (f *fakeSecurityHistoryFetcher) GetShareSecurityCurrency(
 		return f.currency, nil
 	}
 	return "RUB", nil
+}
+
+func (f *fakeSecurityHistoryFetcher) GetShareSecurityLotSize(
+	_ context.Context,
+	_ string,
+	_ string,
+) (int64, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.lotSize > 0 {
+		return f.lotSize, nil
+	}
+	return 1, nil
 }
 
 func (f *fakeSecurityHistoryFetcher) callCount() int {

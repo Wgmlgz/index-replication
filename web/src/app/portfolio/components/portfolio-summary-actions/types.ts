@@ -9,9 +9,7 @@ export type RunActionFn = (
 export type PortfolioSummaryActionsProps = {
   profile: NormalizedPortfolioProfile | null;
   actions: PortfolioProviderAction[];
-  loadingSummary: boolean;
   working: boolean;
-  onRefresh: () => void;
   onRunAction: RunActionFn;
 };
 

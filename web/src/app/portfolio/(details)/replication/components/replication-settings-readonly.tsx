@@ -29,11 +29,13 @@ import {
 type ReplicationSettingsReadonlyProps = {
   portfolioID: number;
   onErrorChange: (error: string) => void;
+  showEnableAction?: boolean;
 };
 
 export function ReplicationSettingsReadonly({
   portfolioID,
   onErrorChange,
+  showEnableAction = true,
 }: ReplicationSettingsReadonlyProps) {
   const { t, i18n } = useTranslation();
   const { selectedProfile, refreshProfiles } = usePortfolioDetailsContext();
@@ -161,19 +163,23 @@ export function ReplicationSettingsReadonly({
     <>
       <div className='grid gap-4'>
         {!form.isEnabled ? (
-          <ConfirmActionDialog
-            trigger={(
-              <Button type='button' disabled={working}>
-                {t('portfolio.replication.isEnabledLabel')}
-              </Button>
-            )}
-            title={t('portfolio.replication.toggleConfirmTitle')}
-            description={t('portfolio.replication.toggleConfirmEnableDescription')}
-            cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
-            actionLabel={t('portfolio.replication.toggleConfirmEnableAction')}
-            disabled={working}
-            onAction={() => saveConfig({ isEnabled: true })}
-          />
+          showEnableAction ? (
+            <div className='flex justify-end'>
+              <ConfirmActionDialog
+                trigger={(
+                  <Button type='button' disabled={working}>
+                    {t('portfolio.replication.isEnabledLabel')}
+                  </Button>
+                )}
+                title={t('portfolio.replication.toggleConfirmTitle')}
+                description={t('portfolio.replication.toggleConfirmEnableDescription')}
+                cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
+                actionLabel={t('portfolio.replication.toggleConfirmEnableAction')}
+                disabled={working}
+                onAction={() => saveConfig({ isEnabled: true })}
+              />
+            </div>
+          ) : null
         ) : (
           <>
             <div className='grid gap-1 text-sm'>

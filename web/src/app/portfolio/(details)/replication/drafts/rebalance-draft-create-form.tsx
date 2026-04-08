@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 type RebalanceDraftCreateFormProps = {
   asOfDate: string;
   working: boolean;
+  canCreateDraft: boolean;
+  disabledReasonText?: string;
   onAsOfDateChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -16,10 +18,13 @@ type RebalanceDraftCreateFormProps = {
 export function RebalanceDraftCreateForm({
   asOfDate,
   working,
+  canCreateDraft,
+  disabledReasonText,
   onAsOfDateChange,
   onSubmit,
 }: RebalanceDraftCreateFormProps) {
   const { t } = useTranslation();
+  const createDisabled = working || !canCreateDraft;
 
   return (
     <div className='grid gap-3 md:grid-cols-[220px_auto] md:items-end'>
@@ -32,15 +37,20 @@ export function RebalanceDraftCreateForm({
           type='date'
           value={asOfDate}
           onChange={event => onAsOfDateChange(event.target.value)}
-          disabled={working}
+          disabled={createDisabled}
         />
       </div>
 
-      <Button type='button' onClick={() => onSubmit()} disabled={working}>
-        {working
-          ? t('portfolio.replication.rebalances.createDraftWorking')
-          : t('portfolio.replication.rebalances.createDraftButton')}
-      </Button>
+      <div className='grid gap-1'>
+        <Button type='button' onClick={() => onSubmit()} disabled={createDisabled}>
+          {working
+            ? t('portfolio.replication.rebalances.createDraftWorking')
+            : t('portfolio.replication.rebalances.createDraftButton')}
+        </Button>
+        {!canCreateDraft && disabledReasonText ? (
+          <p className='text-xs text-muted-foreground'>{disabledReasonText}</p>
+        ) : null}
+      </div>
     </div>
   );
 }

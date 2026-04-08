@@ -36,6 +36,7 @@ type benchmarkReadService interface {
 
 type marketPriceService interface {
 	GetDailyAsOfPrices(ctx context.Context, req marketprice.InstrumentRangeRequest) (*marketprice.DailyAsOfSeries, error)
+	GetInstrumentLotSize(ctx context.Context, req marketprice.InstrumentRangeRequest) (int64, error)
 }
 
 type PlanningSnapshot struct {
@@ -539,6 +540,7 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 	composition []dto.PortfolioCompositionEntry,
 	targets []planner.BenchmarkConstituent,
 ) []planner.InstrumentInfo {
+	normalizedProvider := strings.ToLower(strings.TrimSpace(provider))
 	instrumentsByKey := map[string]planner.InstrumentInfo{}
 	candidatesByKey := map[string]plannerPriceCandidate{}
 
@@ -592,8 +594,8 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 		for _, key := range candidateKeys {
 			candidate := candidatesByKey[key]
 			series, err := l.marketPrices.GetDailyAsOfPrices(ctx, marketprice.InstrumentRangeRequest{
-				Provider:      strings.ToLower(strings.TrimSpace(provider)),
-				InstrumentKey: candidate.InstrumentID,
+				Provider:      normalizedProvider,
+				InstrumentKey: instrumentRequestKey(candidate),
 				Ticker:        candidate.Ticker,
 				Secid:         candidate.Ticker,
 				Currency:      candidate.Currency,
@@ -616,6 +618,35 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 				Source:       "market_asof",
 				LotSize:      1,
 			}
+		}
+	}
+
+	if l.marketPrices != nil {
+		keys := make([]string, 0, len(instrumentsByKey))
+		for key := range instrumentsByKey {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			candidate, ok := candidatesByKey[key]
+			if !ok {
+				continue
+			}
+			lotSize, err := l.marketPrices.GetInstrumentLotSize(ctx, marketprice.InstrumentRangeRequest{
+				Provider:      normalizedProvider,
+				InstrumentKey: instrumentRequestKey(candidate),
+				Ticker:        candidate.Ticker,
+				Secid:         candidate.Ticker,
+				Currency:      candidate.Currency,
+			})
+			if err != nil || lotSize <= 0 {
+				continue
+			}
+
+			info := instrumentsByKey[key]
+			info.LotSize = lotSize
+			instrumentsByKey[key] = info
 		}
 	}
 
@@ -651,6 +682,13 @@ func snapshotInstrumentKey(ticker string, instrumentID string) string {
 		return ticker
 	}
 	return instrumentID
+}
+
+func instrumentRequestKey(candidate plannerPriceCandidate) string {
+	if instrumentID := strings.TrimSpace(candidate.InstrumentID); instrumentID != "" {
+		return instrumentID
+	}
+	return strings.ToUpper(strings.TrimSpace(candidate.Ticker))
 }
 
 func resolvePortfolioTotalValue(
