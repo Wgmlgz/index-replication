@@ -416,7 +416,7 @@ func (s *Service) loadTBankPriceBooks(
 	}
 
 	for instrumentID, holding := range holdings {
-		if holding == nil || strings.TrimSpace(instrumentID) == "" {
+		if holding == nil || instrumentID == "" {
 			continue
 		}
 		series, err := s.marketPrices.GetDailyAsOfPrices(ctx, marketprice.InstrumentRangeRequest{
@@ -847,7 +847,7 @@ func normalizeTickers(values []string) []string {
 	result := make([]string, 0, len(values))
 	seen := make(map[string]struct{}, len(values))
 	for _, value := range values {
-		ticker := strings.ToUpper(strings.TrimSpace(value))
+		ticker := value
 		if ticker == "" {
 			continue
 		}
@@ -872,9 +872,9 @@ func normalizeInstrumentKey(instrumentID, figi, ticker string) string {
 }
 
 func normalizeTicker(ticker, fallback string) string {
-	value := strings.ToUpper(strings.TrimSpace(ticker))
+	value := ticker
 	if value != "" {
 		return value
 	}
-	return strings.ToUpper(strings.TrimSpace(fallback))
+	return fallback
 }

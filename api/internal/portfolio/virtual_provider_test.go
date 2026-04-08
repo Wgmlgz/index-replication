@@ -62,8 +62,8 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	if len(summary.Positions) != 1 {
 		t.Fatalf("expected 1 position, got %d", len(summary.Positions))
 	}
-	if summary.Positions[0].Ticker != "SBER" {
-		t.Fatalf("expected ticker SBER, got %q", summary.Positions[0].Ticker)
+	if summary.Positions[0].Ticker != "sber" {
+		t.Fatalf("expected ticker sber, got %q", summary.Positions[0].Ticker)
 	}
 	if summary.Positions[0].Quantity != 6 {
 		t.Fatalf("expected quantity 6, got %.4f", summary.Positions[0].Quantity)
@@ -87,7 +87,7 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("composition failed: %v", err)
 	}
-	if len(composition) != 1 || composition[0].Ticker != "SBER" {
+	if len(composition) != 1 || composition[0].Ticker != "sber" {
 		t.Fatalf("unexpected composition: %+v", composition)
 	}
 
@@ -105,8 +105,8 @@ func TestVirtualProvider_StateTransitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("composition series failed: %v", err)
 	}
-	if len(series["SBER"]) != 3 {
-		t.Fatalf("expected 3 series points for SBER, got %d", len(series["SBER"]))
+	if len(series["sber"]) != 3 {
+		t.Fatalf("expected 3 series points for sber, got %d", len(series["sber"]))
 	}
 
 	operations, err := provider.GetOperations(context.Background(), profile, "", 50)

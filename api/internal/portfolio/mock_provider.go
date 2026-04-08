@@ -132,7 +132,7 @@ func (p *MockProvider) GetCompositionSeries(
 			normalizedTickers = append(normalizedTickers, mockTickers[:topCount]...)
 		} else {
 			for _, item := range items[:limit] {
-				normalizedTickers = append(normalizedTickers, strings.ToUpper(item.Ticker))
+				normalizedTickers = append(normalizedTickers, item.Ticker)
 			}
 		}
 	}
@@ -289,7 +289,6 @@ func mockWeights(profile *Profile, at time.Time) []float64 {
 }
 
 func mockTickerWeight(profile *Profile, ticker string, at time.Time, idx int) float64 {
-	ticker = strings.ToUpper(strings.TrimSpace(ticker))
 	baseWeights := mockWeights(profile, at)
 	for i, currentTicker := range mockTickers {
 		if currentTicker == ticker {

@@ -123,11 +123,10 @@ func DailySyncWorkflow(ctx workflow.Context, params DailySyncParams) error {
 
 	indexes := make([]string, 0, len(secids))
 	for _, secid := range secids {
-		trimmed := strings.TrimSpace(secid)
-		if trimmed == "" {
+		if secid == "" {
 			continue
 		}
-		indexes = append(indexes, trimmed)
+		indexes = append(indexes, secid)
 	}
 	indexes = resolveRetryIndexes(indexes, params.RetrySecids)
 
@@ -430,11 +429,10 @@ func resolveRetryIndexes(allIndexes, retrySecids []string) []string {
 
 	retrySet := make(map[string]struct{}, len(retrySecids))
 	for _, secid := range retrySecids {
-		trimmed := strings.TrimSpace(secid)
-		if trimmed == "" {
+		if secid == "" {
 			continue
 		}
-		retrySet[trimmed] = struct{}{}
+		retrySet[secid] = struct{}{}
 	}
 	if len(retrySet) == 0 {
 		return []string{}
@@ -504,8 +502,8 @@ func upsertMoexSearchAttributes(ctx workflow.Context, dataset, secid, mode strin
 	if strings.TrimSpace(dataset) != "" {
 		attrs["MoexDataset"] = strings.TrimSpace(dataset)
 	}
-	if strings.TrimSpace(secid) != "" {
-		attrs["MoexSecid"] = strings.TrimSpace(secid)
+	if secid != "" {
+		attrs["MoexSecid"] = secid
 	}
 	if strings.TrimSpace(mode) != "" {
 		attrs["MoexMode"] = strings.TrimSpace(mode)
@@ -523,8 +521,8 @@ func upsertMoexProgressSearchAttributes(ctx workflow.Context, processed, total i
 	attrs["MoexProcessed"] = int64(processed)
 	attrs["MoexTotal"] = int64(total)
 	attrs["MoexProgress"] = strings.TrimSpace(state)
-	if strings.TrimSpace(secid) != "" {
-		attrs["MoexSecid"] = strings.TrimSpace(secid)
+	if secid != "" {
+		attrs["MoexSecid"] = secid
 	}
 	if err := workflow.UpsertSearchAttributes(ctx, attrs); err != nil {
 		workflow.GetLogger(ctx).Warn("failed to upsert MOEX progress search attributes", "error", err)

@@ -247,7 +247,7 @@ func (s *Service) createMarketOrder(
 		return nil, errors.New("request is required")
 	}
 
-	instrumentID := strings.TrimSpace(req.InstrumentID)
+	instrumentID := req.InstrumentID
 	if instrumentID == "" {
 		return nil, errors.New("instrument_id is required")
 	}

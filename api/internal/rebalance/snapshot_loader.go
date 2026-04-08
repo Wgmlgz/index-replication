@@ -147,7 +147,7 @@ func (l *SnapshotLoader) Load(
 
 	benchmarkSecid := ""
 	if replicationConfig.BenchmarkSecid != nil {
-		benchmarkSecid = strings.ToUpper(strings.TrimSpace(*replicationConfig.BenchmarkSecid))
+		benchmarkSecid = *replicationConfig.BenchmarkSecid
 	}
 	if benchmarkSecid == "" {
 		return nil, ErrBenchmarkNotConfigured
@@ -235,8 +235,8 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 	warnings := []string{}
 
 	addKnown := func(tickerRaw string, instrumentIDRaw string) {
-		ticker := strings.ToUpper(strings.TrimSpace(tickerRaw))
-		instrumentID := strings.TrimSpace(instrumentIDRaw)
+		ticker := tickerRaw
+		instrumentID := instrumentIDRaw
 		if ticker == "" || instrumentID == "" {
 			return
 		}
@@ -248,20 +248,20 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 
 	applyKnown := func() {
 		for i := range holdings {
-			ticker := strings.ToUpper(strings.TrimSpace(holdings[i].Ticker))
-			if strings.TrimSpace(holdings[i].InstrumentID) != "" || ticker == "" {
+			ticker := holdings[i].Ticker
+			if holdings[i].InstrumentID != "" || ticker == "" {
 				continue
 			}
-			if resolved := strings.TrimSpace(knownByTicker[ticker]); resolved != "" {
+			if resolved := knownByTicker[ticker]; resolved != "" {
 				holdings[i].InstrumentID = resolved
 			}
 		}
 		for i := range targets {
-			ticker := strings.ToUpper(strings.TrimSpace(targets[i].Ticker))
-			if strings.TrimSpace(targets[i].InstrumentID) != "" || ticker == "" {
+			ticker := targets[i].Ticker
+			if targets[i].InstrumentID != "" || ticker == "" {
 				continue
 			}
-			if resolved := strings.TrimSpace(knownByTicker[ticker]); resolved != "" {
+			if resolved := knownByTicker[ticker]; resolved != "" {
 				targets[i].InstrumentID = resolved
 			}
 		}
@@ -277,15 +277,15 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 
 	unresolvedTickers := map[string]struct{}{}
 	for i := range holdings {
-		ticker := strings.ToUpper(strings.TrimSpace(holdings[i].Ticker))
-		if ticker == "" || strings.TrimSpace(holdings[i].InstrumentID) != "" {
+		ticker := holdings[i].Ticker
+		if ticker == "" || holdings[i].InstrumentID != "" {
 			continue
 		}
 		unresolvedTickers[ticker] = struct{}{}
 	}
 	for i := range targets {
-		ticker := strings.ToUpper(strings.TrimSpace(targets[i].Ticker))
-		if ticker == "" || strings.TrimSpace(targets[i].InstrumentID) != "" {
+		ticker := targets[i].Ticker
+		if ticker == "" || targets[i].InstrumentID != "" {
 			continue
 		}
 		unresolvedTickers[ticker] = struct{}{}
@@ -318,20 +318,20 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 
 	if providerName != "tbank" {
 		for i := range holdings {
-			if strings.TrimSpace(holdings[i].InstrumentID) != "" {
+			if holdings[i].InstrumentID != "" {
 				continue
 			}
-			ticker := strings.ToUpper(strings.TrimSpace(holdings[i].Ticker))
+			ticker := holdings[i].Ticker
 			if ticker == "" {
 				continue
 			}
 			holdings[i].InstrumentID = ticker
 		}
 		for i := range targets {
-			if strings.TrimSpace(targets[i].InstrumentID) != "" {
+			if targets[i].InstrumentID != "" {
 				continue
 			}
-			ticker := strings.ToUpper(strings.TrimSpace(targets[i].Ticker))
+			ticker := targets[i].Ticker
 			if ticker == "" {
 				continue
 			}
@@ -363,7 +363,7 @@ func (l *SnapshotLoader) resolveTBankInstrumentIDByTicker(
 		})
 		cancelAttempt()
 		if err == nil {
-			return strings.TrimSpace(actionResultString(result, "instrument_id")), nil
+			return actionResultString(result, "instrument_id"), nil
 		}
 
 		lastErr = err
@@ -429,7 +429,7 @@ func actionResultString(result map[string]interface{}, key string) string {
 	if !ok {
 		return ""
 	}
-	return strings.TrimSpace(value)
+	return value
 }
 
 func parseProviderProfile(model *models.PortfolioProfile) (*portfolio.Profile, error) {
@@ -487,8 +487,8 @@ func resolveAsOfDate(value string) (time.Time, error) {
 func toPlannerHoldings(rows []dto.PortfolioCompositionEntry) []planner.Holding {
 	holdings := make([]planner.Holding, 0, len(rows))
 	for _, row := range rows {
-		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.TrimSpace(row.InstrumentID)
+		ticker := row.Ticker
+		instrumentID := row.InstrumentID
 		if ticker == "" {
 			ticker = instrumentID
 		}
@@ -508,7 +508,7 @@ func toPlannerHoldings(rows []dto.PortfolioCompositionEntry) []planner.Holding {
 func toPlannerTargets(rows []moexdomain.IndexCompositionEntry) []planner.BenchmarkConstituent {
 	targets := make([]planner.BenchmarkConstituent, 0, len(rows))
 	for _, row := range rows {
-		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
+		ticker := row.Ticker
 		if ticker == "" {
 			continue
 		}
@@ -664,8 +664,8 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 }
 
 func normalizePlannerSymbol(tickerRaw string, instrumentIDRaw string) (string, string, bool) {
-	ticker := strings.ToUpper(strings.TrimSpace(tickerRaw))
-	instrumentID := strings.TrimSpace(instrumentIDRaw)
+	ticker := tickerRaw
+	instrumentID := instrumentIDRaw
 	if ticker == "" {
 		ticker = instrumentID
 	}
@@ -676,8 +676,6 @@ func normalizePlannerSymbol(tickerRaw string, instrumentIDRaw string) (string, s
 }
 
 func snapshotInstrumentKey(ticker string, instrumentID string) string {
-	ticker = strings.ToUpper(strings.TrimSpace(ticker))
-	instrumentID = strings.TrimSpace(instrumentID)
 	if ticker != "" {
 		return ticker
 	}
@@ -685,10 +683,10 @@ func snapshotInstrumentKey(ticker string, instrumentID string) string {
 }
 
 func instrumentRequestKey(candidate plannerPriceCandidate) string {
-	if instrumentID := strings.TrimSpace(candidate.InstrumentID); instrumentID != "" {
+	if instrumentID := candidate.InstrumentID; instrumentID != "" {
 		return instrumentID
 	}
-	return strings.ToUpper(strings.TrimSpace(candidate.Ticker))
+	return candidate.Ticker
 }
 
 func resolvePortfolioTotalValue(

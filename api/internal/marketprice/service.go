@@ -22,7 +22,7 @@ const (
 	asOfSeedBackfillDays           = 370
 )
 
-var secidCandidatePattern = regexp.MustCompile(`^[A-Z0-9._-]{1,24}$`)
+var secidCandidatePattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,24}$`)
 
 type InstrumentRangeRequest struct {
 	Provider      string
@@ -86,7 +86,7 @@ func (s *Service) GetDailyAsOfPrices(ctx context.Context, req InstrumentRangeReq
 	if mapping == nil {
 		return &DailyAsOfSeries{
 			Provider:      strings.ToLower(strings.TrimSpace(req.Provider)),
-			InstrumentKey: strings.ToUpper(strings.TrimSpace(req.InstrumentKey)),
+			InstrumentKey: req.InstrumentKey,
 			Currency:      normalizeMarketCurrency(req.Currency),
 			Prices:        map[string]float64{},
 		}, nil
@@ -167,7 +167,7 @@ func (s *Service) ensureCoverageCached(ctx context.Context, secid, board string,
 }
 
 func (s *Service) fetchAndStoreGap(ctx context.Context, secid, board string, fromDate, toDate time.Time) error {
-	key := fmt.Sprintf("%s|%s|%s|%s", strings.ToUpper(secid), strings.ToUpper(board), fromDate.Format("2006-01-02"), toDate.Format("2006-01-02"))
+	key := fmt.Sprintf("%s|%s|%s|%s", secid, board, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02"))
 	_, err, _ := s.singleflight.Do(key, func() (interface{}, error) {
 		entityKey := securityCoverageEntityKey(secid, board)
 		hasCoverage, err := s.coverageWriter.HasCompleteCoverage(ctx, coverageDatasetSecurityHistory, entityKey, fromDate, toDate)
@@ -201,8 +201,8 @@ func (s *Service) fetchAndStoreGap(ctx context.Context, secid, board string, fro
 
 func (s *Service) resolveMapping(ctx context.Context, req InstrumentRangeRequest) (*models.PortfolioInstrumentMappingDB, error) {
 	provider := strings.ToLower(strings.TrimSpace(req.Provider))
-	instrumentKey := strings.ToUpper(strings.TrimSpace(req.InstrumentKey))
-	ticker := strings.ToUpper(strings.TrimSpace(req.Ticker))
+	instrumentKey := req.InstrumentKey
+	ticker := req.Ticker
 	if instrumentKey == "" {
 		instrumentKey = ticker
 	}
@@ -221,7 +221,7 @@ func (s *Service) resolveMapping(ctx context.Context, req InstrumentRangeRequest
 		return existing, nil
 	}
 
-	secid := strings.ToUpper(strings.TrimSpace(req.Secid))
+	secid := req.Secid
 	if secid == "" && ticker != "" {
 		secid = ticker
 	}
@@ -362,7 +362,7 @@ func alignAsOfDaily(rows []models.MoexSecurityHistoryPointRow, fromDate, toDate 
 }
 
 func securityCoverageEntityKey(secid, board string) string {
-	return fmt.Sprintf("%s:%s", strings.ToUpper(strings.TrimSpace(board)), strings.ToUpper(strings.TrimSpace(secid)))
+	return fmt.Sprintf("%s:%s", board, secid)
 }
 
 func normalizeDate(value time.Time) time.Time {

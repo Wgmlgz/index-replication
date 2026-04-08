@@ -323,7 +323,7 @@ func (s *Service) FindInstrumentByTicker(
 		return nil, err
 	}
 
-	normalizedTicker := strings.ToUpper(strings.TrimSpace(ticker))
+	normalizedTicker := ticker
 	if normalizedTicker == "" {
 		return nil, errors.New("ticker is required")
 	}
@@ -351,7 +351,7 @@ func (s *Service) FindInstrumentByTicker(
 		if item == nil {
 			continue
 		}
-		itemTicker := strings.ToUpper(strings.TrimSpace(item.GetTicker()))
+		itemTicker := item.GetTicker()
 		itemClassCode := strings.ToUpper(strings.TrimSpace(item.GetClassCode()))
 		if itemTicker == "" {
 			continue
@@ -363,9 +363,9 @@ func (s *Service) FindInstrumentByTicker(
 			continue
 		}
 
-		instrumentID := strings.TrimSpace(item.GetUid())
+		instrumentID := item.GetUid()
 		if instrumentID == "" {
-			instrumentID = strings.TrimSpace(item.GetFigi())
+			instrumentID = item.GetFigi()
 		}
 		if instrumentID == "" {
 			continue
@@ -413,11 +413,11 @@ func (s *Service) ResolveOrderInstrument(
 		return nil, errors.New("request is required")
 	}
 
-	ticker := strings.ToUpper(strings.TrimSpace(req.Ticker))
+	ticker := req.Ticker
 	if ticker == "" {
 		return nil, errors.New("ticker is required")
 	}
-	requestedInstrumentID := strings.TrimSpace(req.InstrumentID)
+	requestedInstrumentID := req.InstrumentID
 	side := strings.ToLower(strings.TrimSpace(req.Side))
 
 	conn, err := s.getConnectedTBankConnection(userID)
@@ -436,7 +436,7 @@ func (s *Service) ResolveOrderInstrument(
 
 	positionCandidates := make([]string, 0)
 	addPositionCandidate := func(instrumentID string) {
-		candidate := strings.TrimSpace(instrumentID)
+		candidate := instrumentID
 		if candidate == "" {
 			return
 		}
@@ -448,7 +448,7 @@ func (s *Service) ResolveOrderInstrument(
 		positionCandidates = append(positionCandidates, candidate)
 	}
 	findMatchingPositionCandidate := func(requested string) string {
-		value := strings.TrimSpace(requested)
+		value := requested
 		if value == "" {
 			return ""
 		}
@@ -460,7 +460,7 @@ func (s *Service) ResolveOrderInstrument(
 		return ""
 	}
 	for _, row := range portfolio.Positions {
-		if strings.ToUpper(strings.TrimSpace(row.Ticker)) != ticker {
+		if row.Ticker != ticker {
 			continue
 		}
 		addPositionCandidate(row.InstrumentID)
@@ -501,7 +501,7 @@ func (s *Service) ResolveOrderInstrument(
 
 	lookupCandidates := make([]string, 0)
 	addLookupCandidate := func(instrumentID string) {
-		candidate := strings.TrimSpace(instrumentID)
+		candidate := instrumentID
 		if candidate == "" {
 			return
 		}
@@ -513,7 +513,7 @@ func (s *Service) ResolveOrderInstrument(
 		lookupCandidates = append(lookupCandidates, candidate)
 	}
 	findMatchingLookupCandidate := func(requested string) string {
-		value := strings.TrimSpace(requested)
+		value := requested
 		if value == "" {
 			return ""
 		}
@@ -526,7 +526,7 @@ func (s *Service) ResolveOrderInstrument(
 	}
 	if lookupResp != nil {
 		for _, item := range lookupResp.Instruments {
-			if strings.ToUpper(strings.TrimSpace(item.Ticker)) != ticker {
+			if item.Ticker != ticker {
 				continue
 			}
 			addLookupCandidate(item.InstrumentID)
@@ -577,13 +577,13 @@ func (s *Service) ResolveOrderInstrument(
 		if lookupResp != nil {
 			preferredClassCandidates := make([]string, 0, len(lookupCandidates))
 			for _, item := range lookupResp.Instruments {
-				if strings.ToUpper(strings.TrimSpace(item.Ticker)) != ticker {
+				if item.Ticker != ticker {
 					continue
 				}
 				if strings.ToUpper(strings.TrimSpace(item.ClassCode)) != "TQBR" {
 					continue
 				}
-				instrumentID := strings.TrimSpace(item.InstrumentID)
+				instrumentID := item.InstrumentID
 				if instrumentID == "" {
 					continue
 				}
@@ -736,15 +736,15 @@ func mapPortfolioPositions(positions []*pb.PortfolioPosition) []PortfolioPositio
 		quantity := quotationToFloat(position.GetQuantity())
 		currentValue := currentPrice * quantity
 
-		instrumentID := strings.TrimSpace(position.GetInstrumentUid())
+		instrumentID := position.GetInstrumentUid()
 		if instrumentID == "" {
-			instrumentID = strings.TrimSpace(position.GetFigi())
+			instrumentID = position.GetFigi()
 		}
 
 		result = append(result, PortfolioPosition{
-			Ticker:         strings.TrimSpace(position.GetTicker()),
+			Ticker:         position.GetTicker(),
 			InstrumentID:   instrumentID,
-			Figi:           strings.TrimSpace(position.GetFigi()),
+			Figi:           position.GetFigi(),
 			InstrumentType: strings.TrimSpace(position.GetInstrumentType()),
 			Quantity:       quantity,
 			CurrentPrice:   currentPrice,
@@ -768,9 +768,9 @@ func mapOperationsHistoryItems(items []*pb.OperationItem) []OperationHistoryItem
 			continue
 		}
 
-		instrumentID := strings.TrimSpace(item.GetInstrumentUid())
+		instrumentID := item.GetInstrumentUid()
 		if instrumentID == "" {
-			instrumentID = strings.TrimSpace(item.GetFigi())
+			instrumentID = item.GetFigi()
 		}
 
 		result = append(result, OperationHistoryItem{
@@ -783,7 +783,7 @@ func mapOperationsHistoryItems(items []*pb.OperationItem) []OperationHistoryItem
 			Name:               strings.TrimSpace(item.GetName()),
 			Description:        strings.TrimSpace(item.GetDescription()),
 			InstrumentID:       instrumentID,
-			Figi:               strings.TrimSpace(item.GetFigi()),
+			Figi:               item.GetFigi(),
 			InstrumentType:     strings.TrimSpace(item.GetInstrumentType()),
 			Quantity:           item.GetQuantity(),
 			QuantityDone:       item.GetQuantityDone(),

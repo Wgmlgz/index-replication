@@ -86,13 +86,12 @@ func (r *PortfolioReplicationConfigsRepository) DeleteByPortfolioProfileID(profi
 }
 
 func (r *PortfolioReplicationConfigsRepository) BenchmarkExists(secid string) (bool, error) {
-	normalized := strings.TrimSpace(secid)
-	if normalized == "" {
+	if secid == "" {
 		return false, nil
 	}
 
 	var count int64
-	if err := r.db.Table("moex_indexes").Where("secid = ?", normalized).Count(&count).Error; err != nil {
+	if err := r.db.Table("moex_indexes").Where("secid = ?", secid).Count(&count).Error; err != nil {
 		return false, err
 	}
 	return count > 0, nil

@@ -313,7 +313,7 @@ func (c *moexISSClient) FetchCollectionMemberships(ctx context.Context, lang str
 
 		rows := tableToObjects(payload.Securities)
 		for _, row := range rows {
-			secid := strings.ToUpper(asString(getValue(row, "SECID", "secid")))
+			secid := asString(getValue(row, "SECID", "secid"))
 			if secid == "" {
 				continue
 			}
@@ -570,7 +570,7 @@ func (c *moexISSClient) FetchIndexTickerWindows(ctx context.Context, indexID, da
 	rows := tableToObjects(payload.Tickers)
 	result := make([]MoexIndexTickerWindow, 0, len(rows))
 	for _, row := range rows {
-		ticker := strings.TrimSpace(asString(getValue(row, "TICKER", "ticker")))
+		ticker := asString(getValue(row, "TICKER", "ticker"))
 		if ticker == "" {
 			continue
 		}

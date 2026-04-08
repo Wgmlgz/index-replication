@@ -192,8 +192,8 @@ function createTradeConfig(t: TFunction): PortfolioActionFormConfig {
       executed_at: currentTimestampISO(),
     }),
     buildPayload: (formData) => {
-      const ticker = readString(formData.ticker).toUpperCase();
-      const instrumentID = readString(formData.instrument_id).toUpperCase();
+      const ticker = readString(formData.ticker);
+      const instrumentID = readString(formData.instrument_id);
 
       return {
         ticker: ticker || undefined,

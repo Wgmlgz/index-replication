@@ -23,7 +23,7 @@ func NewMarketPriceRepository(db *gorm.DB) *MarketPriceRepository {
 
 func (r *MarketPriceRepository) GetInstrumentMapping(ctx context.Context, provider, instrumentKey string) (*models.PortfolioInstrumentMappingDB, error) {
 	normalizedProvider := strings.ToLower(strings.TrimSpace(provider))
-	normalizedKey := strings.ToUpper(strings.TrimSpace(instrumentKey))
+	normalizedKey := instrumentKey
 	if normalizedProvider == "" || normalizedKey == "" {
 		return nil, nil
 	}
@@ -46,14 +46,12 @@ func (r *MarketPriceRepository) UpsertInstrumentMapping(ctx context.Context, row
 		return nil
 	}
 	row.Provider = strings.ToLower(strings.TrimSpace(row.Provider))
-	row.InstrumentKey = strings.ToUpper(strings.TrimSpace(row.InstrumentKey))
-	row.Secid = strings.ToUpper(strings.TrimSpace(row.Secid))
 	row.Board = strings.ToUpper(strings.TrimSpace(row.Board))
 	if row.Provider == "" || row.InstrumentKey == "" || row.Secid == "" || row.Board == "" {
 		return fmt.Errorf("incomplete instrument mapping")
 	}
 	if row.Ticker != nil {
-		ticker := strings.ToUpper(strings.TrimSpace(*row.Ticker))
+		ticker := *row.Ticker
 		if ticker == "" {
 			row.Ticker = nil
 		} else {
@@ -88,7 +86,7 @@ func (r *MarketPriceRepository) ListSecurityHistory(
 	secid, board string,
 	fromDate, toDate *time.Time,
 ) ([]models.MoexSecurityHistoryPointRow, error) {
-	normalizedSecid := strings.ToUpper(strings.TrimSpace(secid))
+	normalizedSecid := secid
 	normalizedBoard := strings.ToUpper(strings.TrimSpace(board))
 	if normalizedSecid == "" || normalizedBoard == "" {
 		return []models.MoexSecurityHistoryPointRow{}, nil
@@ -118,7 +116,7 @@ func (r *MarketPriceRepository) GetLatestSecurityCloseOnOrBefore(
 	secid, board string,
 	date time.Time,
 ) (*models.MoexSecurityLatestCloseRow, error) {
-	normalizedSecid := strings.ToUpper(strings.TrimSpace(secid))
+	normalizedSecid := secid
 	normalizedBoard := strings.ToUpper(strings.TrimSpace(board))
 	if normalizedSecid == "" || normalizedBoard == "" {
 		return nil, nil
@@ -146,7 +144,7 @@ func (r *MarketPriceRepository) UpsertSecurityHistory(
 	secid, board string,
 	points []moexdomain.IndexHistoryPoint,
 ) (int, error) {
-	normalizedSecid := strings.ToUpper(strings.TrimSpace(secid))
+	normalizedSecid := secid
 	normalizedBoard := strings.ToUpper(strings.TrimSpace(board))
 	if normalizedSecid == "" || normalizedBoard == "" {
 		return 0, fmt.Errorf("empty secid/board")

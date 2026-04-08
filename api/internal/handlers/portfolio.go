@@ -317,10 +317,10 @@ func (h *PortfolioHandler) GetCompositionSeries(c *gin.Context) {
 		return
 	}
 
-	tickersParam := strings.TrimSpace(c.Query("tickers"))
+	tickersParam := c.Query("tickers")
 	tickers := make([]string, 0)
 	for _, item := range strings.Split(tickersParam, ",") {
-		ticker := strings.TrimSpace(item)
+		ticker := item
 		if ticker == "" {
 			continue
 		}

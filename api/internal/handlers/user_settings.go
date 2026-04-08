@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -107,16 +106,14 @@ func normalizeFavorites(favorites []string) []string {
 	seen := make(map[string]struct{}, len(favorites))
 	result := make([]string, 0, len(favorites))
 	for _, secid := range favorites {
-		trimmed := strings.TrimSpace(secid)
-		if trimmed == "" {
+		if secid == "" {
 			continue
 		}
-		upper := strings.ToUpper(trimmed)
-		if _, exists := seen[upper]; exists {
+		if _, exists := seen[secid]; exists {
 			continue
 		}
-		seen[upper] = struct{}{}
-		result = append(result, upper)
+		seen[secid] = struct{}{}
+		result = append(result, secid)
 	}
 	return result
 }

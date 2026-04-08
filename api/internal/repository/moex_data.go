@@ -112,7 +112,7 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (moexdomain.Indexe
 func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string, fromDate, toDate *time.Time) ([]moexdomain.IndexHistoryPoint, error) {
 	q := r.db.WithContext(ctx).Table("moex_index_history_daily").
 		Select("trade_date", "open", "high", "low", "close").
-		Where("secid = ?", strings.TrimSpace(secid)).
+		Where("secid = ?", secid).
 		Order("trade_date ASC")
 	if fromDate != nil {
 		q = q.Where("trade_date >= ?", dateOnlyUTCDay(*fromDate))
@@ -198,7 +198,6 @@ func (r *MoexDataRepository) ListCompositionByDate(ctx context.Context, indexID 
 func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, indexID string, tickers []string, fromDate, toDate *time.Time) ([]models.MoexCompositionSeriesRow, error) {
 	normalizedTickers := make([]string, 0, len(tickers))
 	for _, ticker := range tickers {
-		ticker = strings.TrimSpace(ticker)
 		if ticker == "" {
 			continue
 		}
@@ -210,7 +209,7 @@ func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, inde
 
 	q := r.db.WithContext(ctx).Table("moex_index_composition_daily").
 		Select("ticker", "trade_date", "weight").
-		Where("index_id = ? AND ticker IN ?", strings.TrimSpace(indexID), normalizedTickers).
+		Where("index_id = ? AND ticker IN ?", indexID, normalizedTickers).
 		Order("ticker ASC, trade_date ASC")
 	if fromDate != nil {
 		q = q.Where("trade_date >= ?", dateOnlyUTCDay(*fromDate))

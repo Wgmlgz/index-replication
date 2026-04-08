@@ -67,7 +67,7 @@ export const resolveNormalizationStart = (
 };
 
 export function resolveSnapshotKey(item: CompositionSnapshotItem): string {
-  const ticker = item.ticker.trim();
+  const ticker = item.ticker;
   if (ticker.length > 0) return ticker;
-  return item.secId.trim();
+  return item.secId;
 }

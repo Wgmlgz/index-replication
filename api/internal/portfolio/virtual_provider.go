@@ -284,8 +284,8 @@ func (p *VirtualProvider) GetOperations(
 			State:              "OPERATION_STATE_EXECUTED",
 			Name:               virtualOperationName(row),
 			Description:        virtualOperationDescription(row),
-			InstrumentID:       strings.TrimSpace(row.InstrumentID),
-			Figi:               strings.TrimSpace(row.InstrumentID),
+			InstrumentID:       row.InstrumentID,
+			Figi:               row.InstrumentID,
 			InstrumentType:     "share",
 			Quantity:           int64(math.Round(row.Quantity)),
 			QuantityDone:       int64(math.Round(row.Quantity)),
@@ -382,8 +382,8 @@ func (p *VirtualProvider) RunAction(
 		return virtualTxnActionResult(txn, false), nil
 
 	case "buy":
-		ticker := strings.ToUpper(strings.TrimSpace(stringValue(payload["ticker"])))
-		instrumentID := strings.ToUpper(strings.TrimSpace(stringValue(payload["instrument_id"])))
+		ticker := rawStringValue(payload["ticker"])
+		instrumentID := rawStringValue(payload["instrument_id"])
 		if ticker == "" && instrumentID == "" {
 			return nil, ErrInvalidRequest
 		}
@@ -449,8 +449,8 @@ func (p *VirtualProvider) RunAction(
 		return result, nil
 
 	case "sell":
-		ticker := strings.ToUpper(strings.TrimSpace(stringValue(payload["ticker"])))
-		instrumentID := strings.ToUpper(strings.TrimSpace(stringValue(payload["instrument_id"])))
+		ticker := rawStringValue(payload["ticker"])
+		instrumentID := rawStringValue(payload["instrument_id"])
 		if ticker == "" && instrumentID == "" {
 			return nil, ErrInvalidRequest
 		}
@@ -484,10 +484,10 @@ func (p *VirtualProvider) RunAction(
 		if ticker == "" {
 			ticker = position.Ticker
 		}
-		if strings.TrimSpace(instrumentID) == "" {
+		if instrumentID == "" {
 			instrumentID = positionKey
 		}
-		if strings.TrimSpace(ticker) == "" {
+		if ticker == "" {
 			ticker = positionKey
 		}
 
@@ -654,8 +654,8 @@ func applyVirtualTransaction(state *virtualState, txn *models.VirtualPortfolioTr
 		position, exists := state.Positions[key]
 		if !exists {
 			position = &virtualPosition{
-				Ticker:       strings.ToUpper(strings.TrimSpace(txn.Ticker)),
-				InstrumentID: strings.ToUpper(strings.TrimSpace(txn.InstrumentID)),
+				Ticker:       txn.Ticker,
+				InstrumentID: txn.InstrumentID,
 				Name:         resolveVirtualPositionName(txn.Ticker, txn.InstrumentID),
 				Currency:     currency,
 			}
@@ -674,10 +674,10 @@ func applyVirtualTransaction(state *virtualState, txn *models.VirtualPortfolioTr
 			position.Currency = currency
 		}
 		if position.Ticker == "" {
-			position.Ticker = strings.ToUpper(strings.TrimSpace(txn.Ticker))
+			position.Ticker = txn.Ticker
 		}
 		if position.InstrumentID == "" {
-			position.InstrumentID = strings.ToUpper(strings.TrimSpace(txn.InstrumentID))
+			position.InstrumentID = txn.InstrumentID
 		}
 		if position.Name == "" {
 			position.Name = resolveVirtualPositionName(position.Ticker, position.InstrumentID)
@@ -744,8 +744,8 @@ func buildSummaryPositionsFromState(
 		currentValue := position.Quantity * lastPrice
 		expectedYield := (lastPrice - position.AvgCost) * position.Quantity
 		positions = append(positions, dto.PortfolioSummaryPosition{
-			Ticker:         strings.ToUpper(strings.TrimSpace(position.Ticker)),
-			InstrumentID:   strings.ToUpper(strings.TrimSpace(position.InstrumentID)),
+			Ticker:         position.Ticker,
+			InstrumentID:   position.InstrumentID,
 			Name:           position.Name,
 			InstrumentType: "share",
 			Quantity:       roundFloat(position.Quantity, 8),
@@ -806,9 +806,9 @@ func buildTickerWeightSnapshot(
 	entries := buildCompositionFromState(state, tradeDate, priceBooks)
 	snapshot := make(map[string]float64, len(entries))
 	for _, entry := range entries {
-		ticker := strings.ToUpper(strings.TrimSpace(entry.Ticker))
+		ticker := entry.Ticker
 		if ticker == "" {
-			ticker = strings.ToUpper(strings.TrimSpace(entry.InstrumentID))
+			ticker = entry.InstrumentID
 		}
 		if ticker == "" {
 			continue
@@ -1057,8 +1057,8 @@ func virtualTxnActionResult(txn *models.VirtualPortfolioTransaction, idempotent 
 		"operation_id":  txn.ID,
 		"action_id":     strings.TrimSpace(stringPtrValue(txn.ActionID)),
 		"idempotent":    idempotent,
-		"ticker":        strings.ToUpper(strings.TrimSpace(txn.Ticker)),
-		"instrument_id": strings.ToUpper(strings.TrimSpace(txn.InstrumentID)),
+		"ticker":        txn.Ticker,
+		"instrument_id": txn.InstrumentID,
 		"quantity":      txn.Quantity,
 		"price":         txn.Price,
 		"amount":        txn.Amount,
@@ -1076,17 +1076,23 @@ func stringPtrValue(value *string) string {
 	return *value
 }
 
+func rawStringValue(value interface{}) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	default:
+		return ""
+	}
+}
+
 func virtualPositionKey(ticker string, instrumentID string) string {
-	instrumentID = strings.ToUpper(strings.TrimSpace(instrumentID))
 	if instrumentID != "" {
 		return instrumentID
 	}
-	return strings.ToUpper(strings.TrimSpace(ticker))
+	return ticker
 }
 
 func resolveVirtualPositionName(ticker string, instrumentID string) string {
-	ticker = strings.ToUpper(strings.TrimSpace(ticker))
-	instrumentID = strings.ToUpper(strings.TrimSpace(instrumentID))
 	if ticker != "" {
 		return ticker
 	}
@@ -1100,8 +1106,6 @@ func findVirtualPosition(state *virtualState, ticker string, instrumentID string
 	if state == nil {
 		return "", nil
 	}
-	ticker = strings.ToUpper(strings.TrimSpace(ticker))
-	instrumentID = strings.ToUpper(strings.TrimSpace(instrumentID))
 	if instrumentID != "" {
 		if position, exists := state.Positions[instrumentID]; exists {
 			return instrumentID, position
@@ -1197,7 +1201,7 @@ func (p *VirtualProvider) loadVirtualPriceBooks(
 		if key == "" {
 			continue
 		}
-		ticker := strings.ToUpper(strings.TrimSpace(txn.Ticker))
+		ticker := txn.Ticker
 		existing, hasExisting := refs[key]
 		if !hasExisting {
 			refs[key] = instrumentRef{
@@ -1283,10 +1287,10 @@ func virtualOperationName(row models.VirtualPortfolioTransaction) string {
 	case "deposit_cash":
 		return "Cash deposit"
 	default:
-		if ticker := strings.ToUpper(strings.TrimSpace(row.Ticker)); ticker != "" {
+		if ticker := row.Ticker; ticker != "" {
 			return ticker
 		}
-		if instrumentID := strings.ToUpper(strings.TrimSpace(row.InstrumentID)); instrumentID != "" {
+		if instrumentID := row.InstrumentID; instrumentID != "" {
 			return instrumentID
 		}
 		return "Virtual trade"

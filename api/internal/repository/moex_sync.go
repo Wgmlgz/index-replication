@@ -67,8 +67,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moexd
 
 	membershipRows := make([]models.MoexIndexCollectionMembershipDB, 0)
 	for secid, collections := range overview.Memberships {
-		normalizedSecid := strings.TrimSpace(secid)
-		if normalizedSecid == "" {
+		if secid == "" {
 			continue
 		}
 		for _, collection := range collections {
@@ -77,7 +76,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moexd
 				continue
 			}
 			membershipRows = append(membershipRows, models.MoexIndexCollectionMembershipDB{
-				Secid:          normalizedSecid,
+				Secid:          secid,
 				CollectionName: normalizedCollection,
 				UpdatedAt:      time.Now().UTC(),
 			})
@@ -151,8 +150,7 @@ func (r *MoexSyncRepository) GetSyncState(ctx context.Context, dataset, entityKe
 }
 
 func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid string, points []moexdomain.IndexHistoryPoint) (int, error) {
-	trimmedSecid := strings.TrimSpace(secid)
-	if trimmedSecid == "" {
+	if secid == "" {
 		return 0, fmt.Errorf("empty secid")
 	}
 
@@ -168,7 +166,7 @@ func (r *MoexSyncRepository) UpsertHistoryPoints(ctx context.Context, secid stri
 		}
 		tradeDate = dateOnlyUTC(tradeDate)
 		rows = append(rows, models.MoexIndexHistoryDailyDB{
-			Secid:      trimmedSecid,
+			Secid:      secid,
 			TradeDate:  tradeDate,
 			Open:       point.Open,
 			High:       point.High,
@@ -202,7 +200,7 @@ func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, index
 	rows := make([]models.MoexIndexCompositionDailyDB, 0, len(entries))
 	ingestedAt := time.Now().UTC()
 	for _, entry := range entries {
-		if entry.TradeDate == "" || strings.TrimSpace(entry.Ticker) == "" {
+		if entry.TradeDate == "" || entry.Ticker == "" {
 			continue
 		}
 		tradeDate, err := time.Parse("2006-01-02", entry.TradeDate)
@@ -218,9 +216,9 @@ func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, index
 		}
 
 		var secID *string
-		trimmedSecID := strings.TrimSpace(entry.SecID)
-		if trimmedSecID != "" {
-			secID = &trimmedSecID
+		secIDValue := entry.SecID
+		if secIDValue != "" {
+			secID = &secIDValue
 		}
 		var shortName *string
 		trimmedShortName := strings.TrimSpace(entry.ShortName)
@@ -231,7 +229,7 @@ func (r *MoexSyncRepository) UpsertCompositionEntries(ctx context.Context, index
 		rows = append(rows, models.MoexIndexCompositionDailyDB{
 			IndexID:          trimmedIndexID,
 			TradeDate:        dateOnlyUTC(tradeDate),
-			Ticker:           strings.TrimSpace(entry.Ticker),
+			Ticker:           entry.Ticker,
 			SecID:            secID,
 			ShortName:        shortName,
 			Weight:           entry.Weight,

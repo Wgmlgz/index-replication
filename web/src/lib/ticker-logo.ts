@@ -6,10 +6,10 @@ type TickerLogoResolveResponse = {
 
 export const TICKER_LOGO_CACHE_MS = 24 * 60 * 60 * 1000;
 const TICKER_LOGO_RESOLVE_PATH = '/tickers/logo';
-const ALLOWED_TICKER_PATTERN = /^[A-Z0-9._-]{1,24}$/;
+const ALLOWED_TICKER_PATTERN = /^[A-Za-z0-9._-]{1,24}$/;
 
 export function normalizeTicker(rawTicker: string): string {
-  return rawTicker.trim().toUpperCase();
+  return rawTicker;
 }
 
 export function tickerLogoQueryKey(rawTicker: string): readonly ['ticker-logo', string] {

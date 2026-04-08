@@ -115,6 +115,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 	}
 
 	currencyByInstrument := parseCurrencyMap(run.InputJSON)
+	lotSizeByInstrument := parseLotSizeMap(run.InputJSON)
 	itemIndexByID := mapItemIndexByID(result.Items)
 
 	for idx := range result.Items {
@@ -173,7 +174,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		recomputeExecutionProgress(&result)
 		recordExecutionHeartbeat(ctx, &result)
 
-		resolvedInstrumentID := strings.TrimSpace(item.InstrumentID)
+		resolvedInstrumentID := item.InstrumentID
 		if resolvedInstrumentID == "" {
 			link, linkErr := a.failItem(
 				item,
@@ -181,7 +182,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 				"missing instrument_id in planned item",
 				map[string]interface{}{
 					"item_id": item.ID,
-					"ticker":  strings.TrimSpace(item.Ticker),
+					"ticker":  item.Ticker,
 					"side":    side,
 				},
 			)
@@ -194,12 +195,39 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		}
 
 		actionID := makeRebalanceActionID(params.RunID, item.ID, side)
+		quantityPayload := interface{}(quantity)
+		if requiresTBankLots(run.Provider) {
+			lotSize := resolveItemLotSize(item, lotSizeByInstrument)
+			lots, conversionErr := convertShareQuantityToLots(quantity, lotSize)
+			if conversionErr != nil {
+				link, linkErr := a.failItem(
+					item,
+					actionID,
+					conversionErr.Error(),
+					map[string]interface{}{
+						"quantity_shares": quantity,
+						"lot_size":        lotSize,
+					},
+				)
+				if linkErr != nil {
+					return result, linkErr
+				}
+				applyFailedItemResult(&result, snapshotIndex, actionID, link)
+				recordExecutionHeartbeat(ctx, &result)
+				continue
+			}
+			quantityPayload = lots
+		}
 		payload := map[string]interface{}{
 			"action_id":     actionID,
-			"ticker":        strings.TrimSpace(item.Ticker),
+			"ticker":        item.Ticker,
 			"instrument_id": resolvedInstrumentID,
-			"quantity":      quantity,
+			"quantity":      quantityPayload,
 			"executed_at":   run.AsOfDate.UTC().Format("2006-01-02"),
+		}
+		if requiresTBankLots(run.Provider) {
+			payload["quantity_shares"] = quantity
+			payload["lot_size"] = resolveItemLotSize(item, lotSizeByInstrument)
 		}
 		if item.ReferencePrice != nil && *item.ReferencePrice > 0 {
 			payload["price"] = *item.ReferencePrice
@@ -495,11 +523,78 @@ func requiresBuyReferencePrice(provider string) bool {
 }
 
 func resolveItemCurrency(item workflows.RebalanceExecutionItem, currencyByInstrument map[string]string) string {
-	key := strings.ToUpper(strings.TrimSpace(item.InstrumentID))
+	key := item.InstrumentID
 	if key == "" {
-		key = strings.ToUpper(strings.TrimSpace(item.Ticker))
+		key = item.Ticker
 	}
-	return strings.TrimSpace(currencyByInstrument[key])
+	return currencyByInstrument[key]
+}
+
+func resolveItemLotSize(item workflows.RebalanceExecutionItem, lotSizeByInstrument map[string]int64) int64 {
+	key := item.InstrumentID
+	if key == "" {
+		key = item.Ticker
+	}
+	if lotSize := lotSizeByInstrument[key]; lotSize > 0 {
+		return lotSize
+	}
+	return 1
+}
+
+func parseLotSizeMap(inputJSON map[string]interface{}) map[string]int64 {
+	result := map[string]int64{}
+	if len(inputJSON) == 0 {
+		return result
+	}
+	encoded, err := json.Marshal(inputJSON)
+	if err != nil {
+		return result
+	}
+	var input dto.PortfolioRebalanceInput
+	if err := json.Unmarshal(encoded, &input); err != nil {
+		return result
+	}
+	for _, row := range input.Instruments {
+		key := row.InstrumentID
+		if key == "" {
+			key = row.Ticker
+		}
+		if key == "" {
+			continue
+		}
+		if row.LotSize > 0 {
+			result[key] = row.LotSize
+		}
+	}
+	return result
+}
+
+func requiresTBankLots(provider string) bool {
+	return strings.EqualFold(strings.TrimSpace(provider), "tbank")
+}
+
+func convertShareQuantityToLots(shareQuantity float64, lotSize int64) (int64, error) {
+	if shareQuantity <= 0 {
+		return 0, fmt.Errorf("invalid rebalance quantity %.8f", shareQuantity)
+	}
+	if lotSize <= 0 {
+		lotSize = 1
+	}
+	lotSizeFloat := float64(lotSize)
+	lotsFloat := shareQuantity / lotSizeFloat
+	lotsRounded := math.Round(lotsFloat)
+	if math.Abs(lotsFloat-lotsRounded) > 1e-6 {
+		return 0, fmt.Errorf(
+			"rebalance quantity %.8f is not divisible by lot size %d",
+			shareQuantity,
+			lotSize,
+		)
+	}
+	lots := int64(lotsRounded)
+	if lots <= 0 {
+		return 0, fmt.Errorf("invalid lots quantity %.8f for lot size %d", shareQuantity, lotSize)
+	}
+	return lots, nil
 }
 
 func parseCurrencyMap(inputJSON map[string]interface{}) map[string]string {
@@ -516,9 +611,9 @@ func parseCurrencyMap(inputJSON map[string]interface{}) map[string]string {
 		return result
 	}
 	for _, row := range input.Instruments {
-		key := strings.ToUpper(strings.TrimSpace(row.InstrumentID))
+		key := row.InstrumentID
 		if key == "" {
-			key = strings.ToUpper(strings.TrimSpace(row.Ticker))
+			key = row.Ticker
 		}
 		if key == "" {
 			continue
@@ -554,8 +649,8 @@ func loadExecutionItemsFromRunOutput(
 		}
 		result = append(result, workflows.RebalanceExecutionItem{
 			ID:              i + 1,
-			Ticker:          strings.TrimSpace(row.Ticker),
-			InstrumentID:    strings.TrimSpace(row.InstrumentID),
+			Ticker:          row.Ticker,
+			InstrumentID:    row.InstrumentID,
 			Side:            strings.TrimSpace(row.Side),
 			CurrentQuantity: row.CurrentQuantity,
 			TargetQuantity:  row.TargetQuantity,

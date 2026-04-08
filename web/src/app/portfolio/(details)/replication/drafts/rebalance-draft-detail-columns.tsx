@@ -21,11 +21,11 @@ import {
 } from './rebalance-draft-detail-helpers';
 
 function renderTickerWithLogo(ticker?: string | null, fallback?: string | null) {
-  const normalizedTicker = ticker?.trim();
+  const normalizedTicker = ticker;
   if (normalizedTicker) {
     return <TickerWithLogo ticker={normalizedTicker} textClassName='font-medium' />;
   }
-  return fallback?.trim() || '-';
+  return fallback || '-';
 }
 
 export function buildItemColumns(t: TFunction): ColumnDef<PortfolioRebalanceItem>[] {

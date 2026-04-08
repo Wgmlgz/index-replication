@@ -55,6 +55,14 @@ func (f *fakeVirtualFetcher) GetShareSecurityCurrency(
 	return "RUB", nil
 }
 
+func (f *fakeVirtualFetcher) GetShareSecurityLotSize(
+	_ context.Context,
+	_ string,
+	_ string,
+) (int64, error) {
+	return 0, nil
+}
+
 func TestVirtualProvider_HistoryChangesOnNoTradeDayWithMarketPrice(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()

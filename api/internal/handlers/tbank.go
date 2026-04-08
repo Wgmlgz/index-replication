@@ -135,7 +135,7 @@ func (h *TBankHandler) SetDefaultAccount(c *gin.Context) {
 //	@Router			/me/tbank/instruments/lookup [get]
 func (h *TBankHandler) FindInstrumentByTicker(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
-	ticker := strings.TrimSpace(c.Query("ticker"))
+	ticker := c.Query("ticker")
 	classCode := strings.TrimSpace(c.Query("class_code"))
 
 	resp, err := h.tbankService.FindInstrumentByTicker(c.Request.Context(), userID, ticker, classCode)

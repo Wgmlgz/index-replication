@@ -54,6 +54,14 @@ func (f *fakeFetcher) GetShareSecurityCurrency(
 	return "RUB", nil
 }
 
+func (f *fakeFetcher) GetShareSecurityLotSize(
+	_ context.Context,
+	_ string,
+	_ string,
+) (int64, error) {
+	return 0, nil
+}
+
 func TestBuildCompositionSnapshotsByDate_ChangesOnNoTradeDayWithMarketPrice(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()

@@ -74,7 +74,7 @@ export function TBankInstrumentLookupCard() {
             id="tbank-lookup-ticker"
             type="text"
             value={lookupTicker}
-            onChange={event => setLookupTicker(event.target.value.toUpperCase())}
+            onChange={event => setLookupTicker(event.target.value)}
             placeholder={t("tbankTest.lookup.tickerPlaceholder")}
           />
         </div>

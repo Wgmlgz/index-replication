@@ -48,12 +48,12 @@ import {
 
 const DEFAULT_OPERATIONS_PAGE_SIZE = 50;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
-const TICKER_LIKE_PATTERN = /^[A-Z0-9._-]{1,12}$/;
+const TICKER_LIKE_PATTERN = /^[A-Za-z0-9._-]{1,12}$/;
 
 function resolveOperationTicker(
   operation: PortfolioOperationHistoryItem,
 ): string | null {
-  const candidate = (operation.instrument_id ?? '').trim().toUpperCase();
+  const candidate = operation.instrument_id ?? '';
   if (!candidate || !TICKER_LIKE_PATTERN.test(candidate)) {
     return null;
   }

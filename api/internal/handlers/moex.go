@@ -55,7 +55,7 @@ func (h *MoexHandler) GetMoexOverview(c *gin.Context) {
 //	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/history [get]
 func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
-	secid := strings.TrimSpace(c.Param("secid"))
+	secid := c.Param("secid")
 	if secid == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Missing secid"})
 		return
@@ -96,7 +96,7 @@ func (h *MoexHandler) GetMoexIndexHistory(c *gin.Context) {
 //	@Failure		500		{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition [get]
 func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
-	secid := strings.TrimSpace(c.Param("secid"))
+	secid := c.Param("secid")
 	if secid == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Missing secid"})
 		return
@@ -138,17 +138,17 @@ func (h *MoexHandler) GetMoexIndexComposition(c *gin.Context) {
 //	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/moex/indexes/{secid}/composition/series [get]
 func (h *MoexHandler) GetMoexIndexCompositionSeries(c *gin.Context) {
-	secid := strings.TrimSpace(c.Param("secid"))
+	secid := c.Param("secid")
 	if secid == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Missing secid"})
 		return
 	}
 
-	tickersParam := strings.TrimSpace(c.Query("tickers"))
+	tickersParam := c.Query("tickers")
 	tickerParts := strings.Split(tickersParam, ",")
 	tickers := make([]string, 0, len(tickerParts))
 	for _, item := range tickerParts {
-		ticker := strings.TrimSpace(item)
+		ticker := item
 		if ticker == "" {
 			continue
 		}

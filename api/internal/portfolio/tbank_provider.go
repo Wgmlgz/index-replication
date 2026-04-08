@@ -421,10 +421,10 @@ func (p *TBankProvider) runResolveInstrumentAction(
 		if accountID := stringValue(payload["account_id"]); accountID != "" {
 			req.AccountID = accountID
 		}
-		if ticker := strings.ToUpper(stringValue(payload["ticker"])); ticker != "" {
+		if ticker := rawStringValue(payload["ticker"]); ticker != "" {
 			req.Ticker = ticker
 		}
-		if instrumentID := stringValue(payload["instrument_id"]); instrumentID != "" {
+		if instrumentID := rawStringValue(payload["instrument_id"]); instrumentID != "" {
 			req.InstrumentID = instrumentID
 		}
 		if side := strings.ToLower(stringValue(payload["side"])); side != "" {
@@ -467,7 +467,7 @@ func (p *TBankProvider) runTradeAction(
 		if accountID := stringValue(payload["account_id"]); accountID != "" {
 			req.AccountID = accountID
 		}
-		if instrumentID := stringValue(payload["instrument_id"]); instrumentID != "" {
+		if instrumentID := rawStringValue(payload["instrument_id"]); instrumentID != "" {
 			req.InstrumentID = instrumentID
 		}
 		if quantity := int64Value(payload["quantity"]); quantity > 0 {

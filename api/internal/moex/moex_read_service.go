@@ -175,7 +175,7 @@ func (s *MoexReadService) GetIndexCompositionSeries(ctx context.Context, indexID
 	if len(resolvedTickers) == 0 {
 		seen := make(map[string]struct{}, len(rows))
 		for _, row := range rows {
-			ticker := strings.TrimSpace(row.Ticker)
+			ticker := row.Ticker
 			if ticker == "" {
 				continue
 			}
@@ -382,7 +382,7 @@ func (s *MoexReadService) resolveSeriesTickers(ctx context.Context, indexID stri
 	autoTickers := make([]string, 0, len(rows))
 	seen := make(map[string]struct{}, len(rows))
 	for _, row := range rows {
-		ticker := strings.TrimSpace(row.Ticker)
+		ticker := row.Ticker
 		if ticker == "" {
 			continue
 		}
@@ -399,7 +399,7 @@ func normalizeTickers(tickers []string) []string {
 	normalized := make([]string, 0, len(tickers))
 	seen := make(map[string]struct{}, len(tickers))
 	for _, ticker := range tickers {
-		value := strings.TrimSpace(ticker)
+		value := ticker
 		if value == "" {
 			continue
 		}

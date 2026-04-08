@@ -1,12 +1,10 @@
 package portfolio
 
-import "strings"
-
 func normalizeTickers(input []string) []string {
 	seen := make(map[string]struct{}, len(input))
 	result := make([]string, 0, len(input))
 	for _, raw := range input {
-		ticker := strings.ToUpper(strings.TrimSpace(raw))
+		ticker := raw
 		if ticker == "" {
 			continue
 		}

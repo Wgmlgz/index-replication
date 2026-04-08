@@ -119,7 +119,7 @@ func (a *MoexSyncActivities) DailySync(ctx context.Context, params workflows.Dai
 	}
 	synced := 0
 	for _, index := range indexes {
-		secid := strings.TrimSpace(index)
+		secid := index
 		if secid == "" {
 			continue
 		}
@@ -136,7 +136,7 @@ func (a *MoexSyncActivities) DailySync(ctx context.Context, params workflows.Dai
 }
 
 func (a *MoexSyncActivities) SyncIndex(ctx context.Context, params workflows.SyncIndexParams) (workflows.IndexSyncResult, error) {
-	secid := strings.TrimSpace(params.Secid)
+	secid := params.Secid
 	mode := normalizeMode(params.Mode)
 	from := strings.TrimSpace(params.From)
 	till := strings.TrimSpace(params.Till)
@@ -218,7 +218,6 @@ func (a *MoexSyncActivities) syncDatasetRange(
 	defaultWindowDays, overlapDays int,
 	syncWindow moexDatasetWindowSyncFn,
 ) (int, int, error) {
-	secid = strings.TrimSpace(secid)
 	if secid == "" {
 		return 0, 0, fmt.Errorf("empty secid for %s sync", dataset)
 	}
@@ -465,7 +464,7 @@ func (a *MoexSyncActivities) syncCompositionWindowByTicker(ctx context.Context, 
 	upsertedRows := 0
 
 	for _, tickerWindow := range tickers {
-		ticker := strings.TrimSpace(tickerWindow.Ticker)
+		ticker := tickerWindow.Ticker
 		if ticker == "" {
 			continue
 		}
@@ -652,5 +651,5 @@ func splitRangeByYear(fromDate, toDate time.Time) []moexDateWindow {
 }
 
 func buildTickerCoverageEntityKey(secid, ticker string) string {
-	return strings.ToUpper(strings.TrimSpace(secid)) + "|" + strings.ToUpper(strings.TrimSpace(ticker))
+	return secid + "|" + ticker
 }
