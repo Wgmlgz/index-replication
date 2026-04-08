@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strings"
 )
 
 const unknownCurrencyBucket = "__unknown_currency__"
@@ -33,7 +32,7 @@ func splitInputByCurrency(input Input) []currencyScopedInput {
 			return bucket
 		}
 		bucket = &currencyInputBucket{
-			currency: normalizeCurrency(currency),
+			currency: currency,
 			input: Input{
 				AsOfAt:      input.AsOfAt,
 				ModeKey:     input.ModeKey,
@@ -50,11 +49,11 @@ func splitInputByCurrency(input Input) []currencyScopedInput {
 	}
 
 	for _, instrument := range input.Instruments {
-		currency := normalizeCurrency(instrument.Currency)
+		currency := instrument.Currency
 		bucket := getBucket(currency)
 		bucket.input.Instruments = append(bucket.input.Instruments, instrument)
 
-		instrumentIDKey := normalizeIdentity(instrument.InstrumentID)
+		instrumentIDKey := instrument.InstrumentID
 		if instrumentIDKey != "" && currency != "" {
 			if _, exists := currencyByInstrumentID[instrumentIDKey]; !exists {
 				currencyByInstrumentID[instrumentIDKey] = currency
@@ -64,7 +63,7 @@ func splitInputByCurrency(input Input) []currencyScopedInput {
 			}
 		}
 
-		tickerKey := normalizeIdentity(instrument.Ticker)
+		tickerKey := instrument.Ticker
 		if tickerKey != "" && currency != "" {
 			if _, exists := currencyByTicker[tickerKey]; !exists {
 				currencyByTicker[tickerKey] = currency
@@ -76,7 +75,7 @@ func splitInputByCurrency(input Input) []currencyScopedInput {
 	}
 
 	for _, row := range input.Money {
-		currency := normalizeCurrency(row.Currency)
+		currency := row.Currency
 		bucket := getBucket(currency)
 		bucket.input.Money = append(bucket.input.Money, row)
 	}
@@ -206,7 +205,7 @@ func assignInvestableCapital(
 			if cashValue <= 0 {
 				continue
 			}
-			key := currencyBucketKey(normalizeCurrency(row.Currency))
+			key := currencyBucketKey(row.Currency)
 			weightByBucket[key] += cashValue
 			totalWeight += cashValue
 		}
@@ -234,13 +233,13 @@ func resolveCurrencyForIdentity(
 	currencyByInstrumentID map[string]string,
 	currencyByTicker map[string]string,
 ) string {
-	instrumentIDKey := normalizeIdentity(instrumentID)
+	instrumentIDKey := instrumentID
 	if instrumentIDKey != "" {
 		if currency, ok := currencyByInstrumentID[instrumentIDKey]; ok {
 			return currency
 		}
 	}
-	tickerKey := normalizeIdentity(ticker)
+	tickerKey := ticker
 	if tickerKey != "" {
 		if currency, ok := currencyByTicker[tickerKey]; ok {
 			return currency
@@ -255,13 +254,13 @@ func resolvePriceForIdentity(
 	priceByInstrumentID map[string]float64,
 	priceByTicker map[string]float64,
 ) float64 {
-	instrumentIDKey := normalizeIdentity(instrumentID)
+	instrumentIDKey := instrumentID
 	if instrumentIDKey != "" {
 		if price, ok := priceByInstrumentID[instrumentIDKey]; ok {
 			return price
 		}
 	}
-	tickerKey := normalizeIdentity(ticker)
+	tickerKey := ticker
 	if tickerKey != "" {
 		if price, ok := priceByTicker[tickerKey]; ok {
 			return price
@@ -271,19 +270,10 @@ func resolvePriceForIdentity(
 }
 
 func currencyBucketKey(currency string) string {
-	normalized := normalizeCurrency(currency)
-	if normalized == "" {
+	if currency == "" {
 		return unknownCurrencyBucket
 	}
-	return normalized
-}
-
-func normalizeIdentity(value string) string {
-	return strings.ToUpper(strings.TrimSpace(value))
-}
-
-func normalizeCurrency(value string) string {
-	return strings.ToUpper(strings.TrimSpace(value))
+	return currency
 }
 
 func cloneModeParams(value map[string]interface{}) map[string]interface{} {

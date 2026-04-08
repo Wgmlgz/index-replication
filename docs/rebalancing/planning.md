@@ -71,3 +71,19 @@ type PlanPure = (input: {
 
 When adding a new planning algorithm, keep this signature stable and vary only the calculation strategy.
 
+## Current `full` Strategy
+
+The current `full` planner uses a lot-aware integer allocation heuristic per currency bucket:
+
+- Build the symbol universe from `holdings + benchmark` and merge identities by ticker (holding identity wins).
+- Convert target weights to target dollars from `investableCapital`.
+- Initial target quantity is floor-to-lot (`lotSize`) for each symbol.
+- Refine by greedily adding one lot at a time to the symbol that best improves L1 dollar error.
+- Convert target quantities to rebalance deltas and classify items:
+  - `planned`: price is known and required buy is affordable from `cash + planned sells`.
+  - `unresolved` with `reason=missing_reference_price`: benchmark target exists but no price.
+  - `unresolved` with `reason=insufficient_cash`: buy delta exists but not affordable in that currency bucket.
+
+Notes:
+- Zero-delta rows are kept in output for deterministic auditability.
+- Money output is updated from planned (not unresolved) trade cash flow.

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Play, Plus, Trash2 } from 'lucide-react';
 
@@ -80,14 +81,17 @@ function formatDateTime(value: string | undefined, language: string): string {
   }).format(date);
 }
 
-function executeButtonLabelKey(status: string | undefined): string {
+function executeButtonLabel(status: string | undefined, t: TFunction): string {
+  if (status === 'failed') {
+    return t('portfolio.replication.rebalances.executeDraftRetry');
+  }
   if (isRunExecutionInProgress(status)) {
-    return 'portfolio.replication.rebalances.executeDraftRunning';
+    return t('portfolio.replication.rebalances.executeDraftRunning');
   }
   if (!canExecuteRunStatus(status)) {
-    return 'portfolio.replication.rebalances.executeDraftDone';
+    return t('portfolio.replication.rebalances.executeDraftDone');
   }
-  return 'portfolio.replication.rebalances.executeDraftButton';
+  return t('portfolio.replication.rebalances.executeDraftButton');
 }
 
 export default function PortfolioReplicationDraftsPage() {
@@ -297,6 +301,11 @@ export default function PortfolioReplicationDraftsPage() {
   ]);
 
   const selectedRun = executionStatus?.run ?? rebalanceDetail?.run;
+  const selectedEntityLabel = selectedRun
+    ? selectedRun.status === 'draft'
+      ? t('portfolio.replication.rebalances.entity.draft')
+      : t('portfolio.replication.rebalances.entity.run')
+    : '';
 
   const onOpenDraftDetail = useCallback(
     (runID: number | null) => {
@@ -456,6 +465,13 @@ export default function PortfolioReplicationDraftsPage() {
 
             {rebalanceRuns.map(run => {
               const runID = typeof run.id === 'number' ? run.id : 0;
+              const isDraftRun = run.status === 'draft';
+              const entityLabel = isDraftRun
+                ? t('portfolio.replication.rebalances.entity.draft')
+                : t('portfolio.replication.rebalances.entity.run');
+              const deleteDescriptionKey = isDraftRun
+                ? 'portfolio.replication.rebalances.deleteConfirmDescriptionDraft'
+                : 'portfolio.replication.rebalances.deleteConfirmDescriptionRun';
               return (
                 <div
                   key={runID || `${run.created_at}-${run.status}`}
@@ -483,7 +499,7 @@ export default function PortfolioReplicationDraftsPage() {
                       disabled={!runID || rebalanceWorking || !canExecuteRunStatus(run.status)}
                     >
                       <Play className='size-4' />
-                      {t(executeButtonLabelKey(run.status))}
+                      {executeButtonLabel(run.status, t)}
                     </Button>
                     <Button
                       type='button'
@@ -492,7 +508,9 @@ export default function PortfolioReplicationDraftsPage() {
                       onClick={() => onOpenDraftDetail(runID || null)}
                       disabled={!runID || rebalanceWorking}
                     >
-                      {t('portfolio.replication.rebalances.viewDraftButton')}
+                      {t('portfolio.replication.rebalances.viewButton', {
+                        entity: entityLabel,
+                      })}
                     </Button>
                     <ConfirmActionDialog
                       trigger={(
@@ -503,19 +521,22 @@ export default function PortfolioReplicationDraftsPage() {
                           disabled={!runID || rebalanceWorking}
                         >
                           <Trash2 className='size-4' />
-                          {t('portfolio.replication.rebalances.deleteDraftButton')}
+                          {t('portfolio.replication.rebalances.deleteButton', {
+                            entity: entityLabel,
+                          })}
                         </Button>
                       )}
                       title={t('portfolio.replication.rebalances.deleteConfirmTitle', {
+                        entity: entityLabel,
                         id: runID || '-',
                       })}
-                      description={t(
-                        'portfolio.replication.rebalances.deleteConfirmDescription',
-                      )}
+                      description={t(deleteDescriptionKey)}
                       cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
                       actionLabel={rebalanceWorking
                         ? t('portfolio.replication.rebalances.deleteDraftWorking')
-                        : t('portfolio.replication.rebalances.deleteConfirmAction')}
+                        : t('portfolio.replication.rebalances.deleteConfirmAction', {
+                          entity: entityLabel,
+                        })}
                       disabled={!runID || rebalanceWorking}
                       onAction={() => onDeleteDraft(runID)}
                     />
@@ -576,6 +597,7 @@ export default function PortfolioReplicationDraftsPage() {
             <DialogTitle className='font-semibold'>
               <div className='flex flex-wrap items-center gap-2'>
                 {t('portfolio.replication.rebalances.detailTitle', {
+                  entity: selectedEntityLabel,
                   id: selectedRun.id ?? '-',
                 })}
                 <Badge>{selectedRun.status || '-'}</Badge>
@@ -624,7 +646,7 @@ export default function PortfolioReplicationDraftsPage() {
                 }
               >
                 <Play className='size-4' />
-                {t(executeButtonLabelKey(selectedRun.status))}
+                {executeButtonLabel(selectedRun.status, t)}
               </Button>
               <Button
                 type='button'
@@ -640,4 +662,3 @@ export default function PortfolioReplicationDraftsPage() {
     </>
   );
 }
-
