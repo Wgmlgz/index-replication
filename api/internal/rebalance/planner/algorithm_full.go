@@ -11,5 +11,5 @@ func (a *FullAlgorithm) Key() string {
 }
 
 func (a *FullAlgorithm) Plan(input Input) (Output, error) {
-	return buildOutput(input, input.Benchmark, nil)
+	// TODO
 }
