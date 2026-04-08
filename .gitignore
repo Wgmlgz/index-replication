@@ -10,3 +10,4 @@ api/.env
 *.tfstate.*
 *.tfplan
 infra/terraform/**/.terraform.lock.hcl
+/.obsidian

@@ -66,33 +66,74 @@ type buyDemand struct {
 	remainder     float64
 }
 
+type buildContext struct {
+	input             Input
+	holdings          map[string]normalizedHolding
+	targets           map[string]normalizedTarget
+	instruments       map[string]normalizedPrice
+	keys              []string
+	currentValues     map[string]float64
+	currentTotalValue float64
+	money             *moneyState
+	warnings          []string
+}
+
 func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []string) (Output, error) {
-	params := normalizePlanningParams(input.Params)
+	ctx := newBuildContext(input, targets, initialWarnings)
+	states, buyDemands := prepareStatesAndDemands(&ctx)
+	allocateBuyLots(ctx.money, states, buyDemands)
+	items := buildItems(&ctx, states)
+
+	return Output{
+		Items:    items,
+		Warnings: ctx.warnings,
+		Money:    ctx.money.toOutput(),
+	}, nil
+}
+
+func newBuildContext(input Input, targets []BenchmarkConstituent, initialWarnings []string) buildContext {
 	holdings := normalizeHoldings(input.Holdings)
 	normalizedTargets := normalizeTargets(targets)
 	instruments := normalizeInstruments(input.Instruments)
-
-	keys := unionInstrumentKeys(holdings, normalizedTargets)
-	warnings := append([]string{}, initialWarnings...)
 	currentValues, currentTotalValue := resolveCurrentValues(holdings, instruments)
-	money := newMoneyState(input.Money, input.InvestableCapital)
-	states := make([]planState, 0, len(keys))
-	buyDemands := make([]buyDemand, 0, len(keys))
 
-	for _, key := range keys {
-		holding := holdings[key]
-		target := normalizedTargets[key]
-		instrument := instruments[key]
+	return buildContext{
+		input:             input,
+		holdings:          holdings,
+		targets:           normalizedTargets,
+		instruments:       instruments,
+		keys:              unionInstrumentKeys(holdings, normalizedTargets),
+		currentValues:     currentValues,
+		currentTotalValue: currentTotalValue,
+		money:             newMoneyState(input.Money, input.InvestableCapital),
+		warnings:          append([]string{}, initialWarnings...),
+	}
+}
 
-		currentQuantity := round(holding.CurrentQuantity, params.QuantityPrecision)
+func prepareStatesAndDemands(ctx *buildContext) ([]planState, []buyDemand) {
+	states := make([]planState, 0, len(ctx.keys))
+	buyDemands := make([]buyDemand, 0, len(ctx.keys))
+
+	for _, key := range ctx.keys {
+		holding := ctx.holdings[key]
+		target := ctx.targets[key]
+		instrument := ctx.instruments[key]
+
+		currentQuantity := holding.CurrentQuantity
 		currentWeight := 0.0
-		if currentTotalValue > 0 {
-			currentWeight = round((currentValues[key]/currentTotalValue)*100, 6)
+		if ctx.currentTotalValue > 0 {
+			currentWeight = (ctx.currentValues[key] / ctx.currentTotalValue) * 100
 		}
-		targetWeight := round(target.TargetWeight, 6)
+		targetWeight := target.TargetWeight
 
-		instrumentID := chooseNonEmpty(holding.InstrumentID, target.InstrumentID)
-		ticker := chooseNonEmpty(target.Ticker, holding.Ticker)
+		instrumentID := holding.InstrumentID
+		if instrumentID == "" {
+			instrumentID = target.InstrumentID
+		}
+		ticker := target.Ticker
+		if ticker == "" {
+			ticker = holding.Ticker
+		}
 		if ticker == "" {
 			ticker = instrumentID
 		}
@@ -109,7 +150,7 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			currentWeight:   currentWeight,
 			targetWeight:    targetWeight,
 			price:           instrument.Price,
-			currency:        strings.ToUpper(strings.TrimSpace(instrument.Currency)),
+			currency:        instrument.Currency,
 			lotSize:         lotSize,
 		}
 		if state.price > 0 {
@@ -118,7 +159,7 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 		}
 
 		switch {
-		case targetWeight > 0 && input.InvestableCapital <= 0:
+		case targetWeight > 0 && ctx.input.InvestableCapital <= 0:
 			state.resolvedReason = "invalid_total_value"
 		case (targetWeight > 0 || currentQuantity > 0) && (state.referencePrice == nil || *state.referencePrice <= 0):
 			state.resolvedReason = "missing_reference_price"
@@ -129,11 +170,11 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 				tradableLots = 0
 			}
 			state.currentLots = tradableLots
-			state.remainderQuantity = round(currentQuantity-(float64(tradableLots)*lotQty), params.QuantityPrecision)
+			state.remainderQuantity = currentQuantity - (float64(tradableLots) * lotQty)
 
 			continuousLots := 0.0
 			if targetWeight > 0 && state.price > 0 {
-				targetValue := input.InvestableCapital * targetWeight / 100
+				targetValue := ctx.input.InvestableCapital * targetWeight / 100
 				continuousQuantity := targetValue / state.price
 				continuousLots = continuousQuantity / lotQty
 			}
@@ -148,21 +189,21 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 
 			switch {
 			case state.executedDeltaLots < 0:
-				currencyKey, ok := money.ensureCurrency(state.currency)
+				currencyKey, ok := ctx.money.ensureCurrency(state.currency)
 				if !ok {
 					state.resolvedReason = "missing_money_balance"
 				} else {
 					state.currencyKey = currencyKey
 				}
 			case state.executedDeltaLots > 0:
-				currencyKey, ok := money.resolveCurrency(state.currency)
+				currencyKey, ok := ctx.money.resolveCurrency(state.currency)
 				if !ok {
 					state.resolvedReason = "missing_money_balance"
 				} else {
 					state.currencyKey = currencyKey
 				}
 			default:
-				currencyKey, ok := money.resolveCurrency(state.currency)
+				currencyKey, ok := ctx.money.resolveCurrency(state.currency)
 				if ok {
 					state.currencyKey = currencyKey
 				}
@@ -170,7 +211,7 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 		}
 
 		if state.resolvedReason != "" {
-			warnings = appendUniqueWarning(warnings, state.resolvedReason)
+			ctx.warnings = appendUniqueWarning(ctx.warnings, state.resolvedReason)
 			state.resolvedAsUnplanned = true
 			states = append(states, state)
 			continue
@@ -179,8 +220,10 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 		if state.executedDeltaLots < 0 {
 			// Sells first: increase available money in instrument currency.
 			sellLots := -state.executedDeltaLots
-			sellAmount := round(float64(sellLots*state.lotSize)*state.price, 2)
-			money.addAvailable(state.currencyKey, sellAmount)
+			sellAmount := float64(sellLots*state.lotSize) * state.price
+			if sellAmount != 0 {
+				ctx.money.available[state.currencyKey] = ctx.money.available[state.currencyKey] + sellAmount
+			}
 		}
 		if state.executedDeltaLots > 0 {
 			buyDemands = append(buyDemands, buyDemand{
@@ -188,7 +231,7 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 				currencyKey:   state.currencyKey,
 				desiredLots:   state.executedDeltaLots,
 				allocatedLots: 0,
-				lotCost:       round(float64(state.lotSize)*state.price, 8),
+				lotCost:       float64(state.lotSize) * state.price,
 				targetWeight:  state.targetWeight,
 				remainder:     state.desiredRemainder,
 			})
@@ -196,10 +239,17 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 		states = append(states, state)
 	}
 
-	allocateBuyLots(money, states, buyDemands)
+	return states, buyDemands
+}
 
+func buildItems(ctx *buildContext, states []planState) []Item {
 	items := make([]Item, 0, len(states))
 	for _, state := range states {
+		var referencePrice *float64
+		if state.referencePrice != nil {
+			ref := *state.referencePrice
+			referencePrice = &ref
+		}
 		item := Item{
 			Ticker:          state.ticker,
 			InstrumentID:    state.instrumentID,
@@ -207,10 +257,9 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			CurrentWeight:   state.currentWeight,
 			TargetWeight:    state.targetWeight,
 			IdealWeight:     state.targetWeight,
-			ReferencePrice:  clonePtr(state.referencePrice),
-			Metadata:        map[string]interface{}{},
+			ReferencePrice:  referencePrice,
+			Metadata:        map[string]interface{}{"lot_size": float64(state.lotSize)},
 		}
-		item.Metadata["lot_size"] = float64(state.lotSize)
 
 		if state.resolvedAsUnplanned {
 			item.Status = ItemStatusUnresolved
@@ -219,80 +268,70 @@ func buildOutput(input Input, targets []BenchmarkConstituent, initialWarnings []
 			item.TargetWeight = resolveTargetWeightFromQuantity(
 				item.TargetQuantity,
 				state.referencePrice,
-				input.InvestableCapital,
+				ctx.input.InvestableCapital,
 				state.targetWeight,
 			)
-			item.Side = chooseSideByWeight(state.currentWeight, state.targetWeight, item.CurrentQuantity, item.TargetQuantity)
-			item.Metadata["reason"] = state.resolvedReason
-			warnings = appendUniqueWarning(warnings, state.resolvedReason)
+			switch {
+			case state.targetWeight < state.currentWeight:
+				item.Side = ItemSideSell
+			case state.targetWeight > state.currentWeight:
+				item.Side = ItemSideBuy
+			case item.TargetQuantity < item.CurrentQuantity:
+				item.Side = ItemSideSell
+			default:
+				item.Side = ItemSideBuy
+			}
+			if state.resolvedReason != "" {
+				item.Metadata["reason"] = state.resolvedReason
+				ctx.warnings = appendUniqueWarning(ctx.warnings, state.resolvedReason)
+			}
 			items = append(items, item)
 			continue
 		}
 
 		targetQuantity := state.remainderQuantity + float64(state.finalTargetLots*state.lotSize)
-		targetQuantity = round(targetQuantity, params.QuantityPrecision)
-		deltaQuantity := round(targetQuantity-state.currentQuantity, params.QuantityPrecision)
+		deltaQuantity := targetQuantity - state.currentQuantity
 
 		item.TargetQuantity = targetQuantity
 		item.DeltaQuantity = deltaQuantity
 		item.TargetWeight = resolveTargetWeightFromQuantity(
 			item.TargetQuantity,
 			state.referencePrice,
-			input.InvestableCapital,
+			ctx.input.InvestableCapital,
 			state.targetWeight,
 		)
-		item.Side = chooseSide(deltaQuantity, state.currentWeight, state.targetWeight)
+		switch {
+		case deltaQuantity < 0:
+			item.Side = ItemSideSell
+		case deltaQuantity > 0:
+			item.Side = ItemSideBuy
+		case state.targetWeight < state.currentWeight:
+			item.Side = ItemSideSell
+		default:
+			item.Side = ItemSideBuy
+		}
 		item.Status = ItemStatusPlanned
 
 		if state.referencePrice != nil && *state.referencePrice > 0 {
-			executedAmount := round(float64(state.executedDeltaLots*state.lotSize)**state.referencePrice, 2)
+			executedAmount := float64(state.executedDeltaLots*state.lotSize) * *state.referencePrice
 			item.PlannedAmount = &executedAmount
-		}
-		if state.resolvedReason != "" {
-			item.Metadata["reason"] = state.resolvedReason
-			item.Status = ItemStatusUnresolved
-			item.TargetQuantity = state.currentQuantity
-			item.DeltaQuantity = 0
-			item.TargetWeight = resolveTargetWeightFromQuantity(
-				item.TargetQuantity,
-				state.referencePrice,
-				input.InvestableCapital,
-				state.targetWeight,
-			)
-			item.Side = chooseSideByWeight(state.currentWeight, state.targetWeight, item.CurrentQuantity, item.TargetQuantity)
 		}
 		if state.desiredTargetLots > state.finalTargetLots {
 			item.Metadata["cash_limited"] = true
-			item.Metadata["desired_target_quantity"] = round(state.remainderQuantity+float64(state.desiredTargetLots*state.lotSize), params.QuantityPrecision)
-			warnings = appendUniqueWarning(warnings, "insufficient_cash")
+			item.Metadata["desired_target_quantity"] = state.remainderQuantity + float64(state.desiredTargetLots*state.lotSize)
+			ctx.warnings = appendUniqueWarning(ctx.warnings, "insufficient_cash")
 		}
 
 		items = append(items, item)
 	}
-
-	return Output{
-		Items:    items,
-		Warnings: warnings,
-		Money:    money.toOutput(),
-	}, nil
-}
-
-func normalizePlanningParams(input PlanningParams) PlanningParams {
-	result := input
-	if result.QuantityPrecision <= 0 {
-		result.QuantityPrecision = 6
-	}
-	if result.QuantityPrecision > 8 {
-		result.QuantityPrecision = 8
-	}
-	return result
+	return items
 }
 
 func normalizeHoldings(rows []Holding) map[string]normalizedHolding {
 	result := make(map[string]normalizedHolding, len(rows))
 	for _, row := range rows {
-		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.TrimSpace(row.InstrumentID)
+		ticker := row.Ticker
+		instrumentID := row.InstrumentID
 		if ticker == "" {
 			ticker = instrumentID
 		}
@@ -314,11 +353,6 @@ func normalizeHoldings(rows []Holding) map[string]normalizedHolding {
 		existing.CurrentQuantity += row.CurrentQuantity
 		result[key] = existing
 	}
-
-	for key, row := range result {
-		row.CurrentQuantity = round(row.CurrentQuantity, 8)
-		result[key] = row
-	}
 	return result
 }
 
@@ -328,14 +362,14 @@ func normalizeTargets(rows []BenchmarkConstituent) map[string]normalizedTarget {
 	sorted := make([]BenchmarkConstituent, 0, len(rows))
 	sorted = append(sorted, rows...)
 	sort.Slice(sorted, func(i, j int) bool {
-		ki := instrumentKey(strings.ToUpper(strings.TrimSpace(sorted[i].Ticker)), strings.TrimSpace(sorted[i].InstrumentID))
-		kj := instrumentKey(strings.ToUpper(strings.TrimSpace(sorted[j].Ticker)), strings.TrimSpace(sorted[j].InstrumentID))
+		ki := instrumentKey(sorted[i].Ticker, sorted[i].InstrumentID)
+		kj := instrumentKey(sorted[j].Ticker, sorted[j].InstrumentID)
 		return ki < kj
 	})
 
 	for _, row := range sorted {
-		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.TrimSpace(row.InstrumentID)
+		ticker := row.Ticker
+		instrumentID := row.InstrumentID
 		if ticker == "" {
 			ticker = instrumentID
 		}
@@ -357,19 +391,14 @@ func normalizeTargets(rows []BenchmarkConstituent) map[string]normalizedTarget {
 		existing.TargetWeight += row.TargetWeight
 		result[key] = existing
 	}
-
-	for key, row := range result {
-		row.TargetWeight = round(row.TargetWeight, 6)
-		result[key] = row
-	}
 	return result
 }
 
 func normalizeInstruments(rows []InstrumentInfo) map[string]normalizedPrice {
 	result := make(map[string]normalizedPrice, len(rows))
 	for _, row := range rows {
-		ticker := strings.ToUpper(strings.TrimSpace(row.Ticker))
-		instrumentID := strings.TrimSpace(row.InstrumentID)
+		ticker := row.Ticker
+		instrumentID := row.InstrumentID
 		if ticker == "" {
 			ticker = instrumentID
 		}
@@ -389,7 +418,7 @@ func normalizeInstruments(rows []InstrumentInfo) map[string]normalizedPrice {
 			Ticker:       ticker,
 			InstrumentID: instrumentID,
 			Price:        row.Price,
-			Currency:     strings.ToUpper(strings.TrimSpace(row.Currency)),
+			Currency:     row.Currency,
 			LotSize:      lotSize,
 		}
 	}
@@ -407,14 +436,14 @@ func resolveCurrentValues(
 		if !ok || price.Price <= 0 {
 			continue
 		}
-		value := round(holding.CurrentQuantity*price.Price, 8)
+		value := holding.CurrentQuantity * price.Price
 		if value <= 0 {
 			continue
 		}
 		values[key] = value
 		total += value
 	}
-	return values, round(total, 8)
+	return values, total
 }
 
 func allocateBuyLots(money *moneyState, states []planState, demands []buyDemand) {
@@ -456,15 +485,16 @@ func allocateBuyLots(money *moneyState, states []planState, demands []buyDemand)
 
 		const maxIterations = 2000000
 		iterations := 0
-		for money.availableAmount(currency) >= minLotCost {
+		for money.available[currency] >= minLotCost {
 			progressed := false
 			for _, demand := range group {
 				if demand.allocatedLots >= demand.desiredLots {
 					continue
 				}
-				if !money.spendAvailable(currency, demand.lotCost) {
+				if money.available[currency]+1e-9 < demand.lotCost {
 					continue
 				}
+				money.available[currency] = money.available[currency] - demand.lotCost
 				demand.allocatedLots++
 				progressed = true
 			}
@@ -500,7 +530,7 @@ func newMoneyState(input []Money, fallbackCapital float64) *moneyState {
 	}
 	seen := map[string]struct{}{}
 	for _, row := range input {
-		currency := strings.ToUpper(strings.TrimSpace(row.Currency))
+		currency := row.Currency
 		if currency == "" {
 			continue
 		}
@@ -523,7 +553,7 @@ func newMoneyState(input []Money, fallbackCapital float64) *moneyState {
 }
 
 func (m *moneyState) resolveCurrency(raw string) (string, bool) {
-	currency := strings.ToUpper(strings.TrimSpace(raw))
+	currency := raw
 	if currency != "" {
 		if _, ok := m.available[currency]; ok {
 			return currency, true
@@ -545,7 +575,7 @@ func (m *moneyState) resolveCurrency(raw string) (string, bool) {
 }
 
 func (m *moneyState) ensureCurrency(raw string) (string, bool) {
-	currency := strings.ToUpper(strings.TrimSpace(raw))
+	currency := raw
 	if currency == "" {
 		return m.resolveCurrency("")
 	}
@@ -561,42 +591,19 @@ func (m *moneyState) ensureCurrency(raw string) (string, bool) {
 	return currency, true
 }
 
-func (m *moneyState) availableAmount(currency string) float64 {
-	return m.available[currency]
-}
-
-func (m *moneyState) spendAvailable(currency string, amount float64) bool {
-	if amount <= 0 {
-		return true
-	}
-	available := m.available[currency]
-	if available+1e-9 < amount {
-		return false
-	}
-	m.available[currency] = round(available-amount, 8)
-	return true
-}
-
-func (m *moneyState) addAvailable(currency string, amount float64) {
-	if amount == 0 {
-		return
-	}
-	m.available[currency] = round(m.available[currency]+amount, 8)
-}
-
 func (m *moneyState) toOutput() []Money {
 	if m.synthetic {
 		return []Money{}
 	}
 	result := make([]Money, 0, len(m.order))
 	for _, currency := range m.order {
-		if strings.TrimSpace(currency) == "" {
+		if currency == "" {
 			continue
 		}
 		result = append(result, Money{
 			Currency:  currency,
-			Available: round(m.available[currency], 8),
-			Blocked:   round(m.blocked[currency], 8),
+			Available: m.available[currency],
+			Blocked:   m.blocked[currency],
 		})
 	}
 	return result
@@ -625,25 +632,10 @@ func unionInstrumentKeys(holdings map[string]normalizedHolding, targets map[stri
 }
 
 func instrumentKey(ticker, instrumentID string) string {
-	ticker = strings.ToUpper(strings.TrimSpace(ticker))
-	instrumentID = strings.TrimSpace(instrumentID)
 	if ticker != "" {
 		return ticker
 	}
 	return instrumentID
-}
-
-func chooseSide(delta, currentWeight, targetWeight float64) string {
-	if delta < 0 {
-		return ItemSideSell
-	}
-	if delta > 0 {
-		return ItemSideBuy
-	}
-	if targetWeight < currentWeight {
-		return ItemSideSell
-	}
-	return ItemSideBuy
 }
 
 func resolveTargetWeightFromQuantity(
@@ -653,36 +645,13 @@ func resolveTargetWeightFromQuantity(
 	fallback float64,
 ) float64 {
 	if investableCapital <= 0 || referencePrice == nil || *referencePrice <= 0 {
-		return round(fallback, 6)
+		return fallback
 	}
 	targetValue := targetQuantity * *referencePrice
 	if targetValue <= 0 {
 		return 0
 	}
-	return round((targetValue/investableCapital)*100, 6)
-}
-
-func chooseSideByWeight(currentWeight, targetWeight, currentQuantity, targetQuantity float64) string {
-	if targetWeight < currentWeight {
-		return ItemSideSell
-	}
-	if targetWeight > currentWeight {
-		return ItemSideBuy
-	}
-	if targetQuantity < currentQuantity {
-		return ItemSideSell
-	}
-	return ItemSideBuy
-}
-
-func chooseNonEmpty(values ...string) string {
-	for _, value := range values {
-		trimmed := strings.TrimSpace(value)
-		if trimmed != "" {
-			return trimmed
-		}
-	}
-	return ""
+	return (targetValue / investableCapital) * 100
 }
 
 func appendUniqueWarning(warnings []string, warning string) []string {
@@ -704,21 +673,4 @@ func round(value float64, precision int) float64 {
 	}
 	factor := math.Pow10(precision)
 	return math.Round(value*factor) / factor
-}
-
-func clonePtr(value *float64) *float64 {
-	if value == nil {
-		return nil
-	}
-	copy := *value
-	return &copy
-}
-
-func cloneMoney(rows []Money) []Money {
-	if len(rows) == 0 {
-		return []Money{}
-	}
-	out := make([]Money, len(rows))
-	copy(out, rows)
-	return out
 }
