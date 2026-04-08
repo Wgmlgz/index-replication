@@ -2,6 +2,7 @@
 
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Clock3, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -81,11 +82,13 @@ export default function PortfolioReplicationLayout({
       className='min-h-0 min-w-0 flex-1 gap-4 overflow-hidden'
     >
       <TabsList className='grid h-auto w-full grid-cols-2 md:w-auto'>
-        <TabsTrigger value='settings'>
-          {t('portfolio.replication.tabs.settings')}
-        </TabsTrigger>
-        <TabsTrigger value='drafts'>
+        <TabsTrigger value='drafts' className='gap-1.5'>
+          <Clock3 className='size-4' />
           {t('portfolio.replication.tabs.drafts')}
+        </TabsTrigger>
+        <TabsTrigger value='settings' className='gap-1.5'>
+          <Settings className='size-4' />
+          {t('portfolio.replication.tabs.settings')}
         </TabsTrigger>
       </TabsList>
 

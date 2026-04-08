@@ -54,6 +54,7 @@ export default function PortfolioProfilesPage() {
   const [createName, setCreateName] = useState('');
   const [createProvider, setCreateProvider] = useState<'virtual' | 'mock' | 'tbank'>('virtual');
   const [createIsDefault, setCreateIsDefault] = useState(false);
+  const [createTbankSandboxAccount, setCreateTbankSandboxAccount] = useState(true);
   const [createAccountID, setCreateAccountID] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<NormalizedPortfolioProfile | null>(null);
 
@@ -108,6 +109,7 @@ export default function PortfolioProfilesPage() {
     setCreateName('');
     setCreateProvider('virtual');
     setCreateIsDefault(false);
+    setCreateTbankSandboxAccount(true);
     setCreateAccountID('');
   }, []);
 
@@ -136,8 +138,17 @@ export default function PortfolioProfilesPage() {
         is_default: createIsDefault,
         config: {},
       };
-      if (createProvider === 'tbank' && createAccountID.trim()) {
-        payload.config = { account_id: createAccountID.trim() };
+      if (createProvider === 'tbank') {
+        if (createTbankSandboxAccount) {
+          payload.config = { create_sandbox_account: true };
+        } else {
+          const trimmedAccountID = createAccountID.trim();
+          if (!trimmedAccountID) {
+            setError(t('portfolio.errors.profileAccountIDRequired'));
+            return;
+          }
+          payload.config = { account_id: trimmedAccountID };
+        }
       }
 
       try {
@@ -154,6 +165,7 @@ export default function PortfolioProfilesPage() {
       createMutation,
       createName,
       createProvider,
+      createTbankSandboxAccount,
       onCreateOpenChange,
       parseErrorMessage,
       t,
@@ -237,9 +249,14 @@ export default function PortfolioProfilesPage() {
                   id='portfolio-create-provider'
                   className='border-input bg-background h-9 rounded-md border px-3 text-sm'
                   value={createProvider}
-                  onChange={event =>
-                    setCreateProvider(event.target.value as 'virtual' | 'mock' | 'tbank')
-                  }
+                  onChange={event => {
+                    const nextProvider = event.target.value as 'virtual' | 'mock' | 'tbank';
+                    setCreateProvider(nextProvider);
+                    if (nextProvider !== 'tbank') {
+                      setCreateTbankSandboxAccount(true);
+                      setCreateAccountID('');
+                    }
+                  }}
                   disabled={createMutation.isPending}
                 >
                   <option value='virtual'>{t('portfolio.profiles.providerVirtual')}</option>
@@ -249,17 +266,43 @@ export default function PortfolioProfilesPage() {
               </div>
 
               {createProvider === 'tbank' ? (
-                <div className='grid gap-2'>
-                  <Label htmlFor='portfolio-create-account-id'>
-                    {t('portfolio.profiles.createAccountIDLabel')}
-                  </Label>
-                  <Input
-                    id='portfolio-create-account-id'
-                    value={createAccountID}
-                    onChange={event => setCreateAccountID(event.target.value)}
-                    placeholder={t('portfolio.profiles.createAccountIDPlaceholder')}
-                    disabled={createMutation.isPending}
-                  />
+                <div className='grid gap-3'>
+                  <Label>{t('portfolio.profiles.createAccountModeLabel')}</Label>
+                  <label className='flex items-center gap-2 text-sm'>
+                    <input
+                      type='radio'
+                      name='portfolio-create-account-mode'
+                      checked={createTbankSandboxAccount}
+                      onChange={() => setCreateTbankSandboxAccount(true)}
+                      disabled={createMutation.isPending}
+                    />
+                    <span>{t('portfolio.profiles.createSandboxAccountOption')}</span>
+                  </label>
+                  <label className='flex items-center gap-2 text-sm'>
+                    <input
+                      type='radio'
+                      name='portfolio-create-account-mode'
+                      checked={!createTbankSandboxAccount}
+                      onChange={() => setCreateTbankSandboxAccount(false)}
+                      disabled={createMutation.isPending}
+                    />
+                    <span>{t('portfolio.profiles.createExistingAccountOption')}</span>
+                  </label>
+
+                  {!createTbankSandboxAccount ? (
+                    <div className='grid gap-2'>
+                      <Label htmlFor='portfolio-create-account-id'>
+                        {t('portfolio.profiles.createAccountIDLabel')}
+                      </Label>
+                      <Input
+                        id='portfolio-create-account-id'
+                        value={createAccountID}
+                        onChange={event => setCreateAccountID(event.target.value)}
+                        placeholder={t('portfolio.profiles.createAccountIDPlaceholder')}
+                        disabled={createMutation.isPending}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

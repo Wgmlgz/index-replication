@@ -218,6 +218,28 @@ func (p *fakeProvider) RunAction(_ context.Context, _ *Profile, _ string, _ map[
 	return nil, ErrInvalidAction
 }
 
+type fakeCreatePreparerProvider struct {
+	*fakeProvider
+	called      bool
+	returnedErr error
+}
+
+func (p *fakeCreatePreparerProvider) PrepareCreateProfile(
+	_ context.Context,
+	_ int,
+	req *dto.PortfolioProfileCreateRequest,
+) error {
+	p.called = true
+	if p.returnedErr != nil {
+		return p.returnedErr
+	}
+	if req.Config == nil {
+		req.Config = map[string]interface{}{}
+	}
+	req.Config["prepared"] = "yes"
+	return nil
+}
+
 type fakeActionProvider struct {
 	receivedPayload map[string]interface{}
 }
@@ -299,6 +321,29 @@ func TestService_ProviderSelectionErrors(t *testing.T) {
 	_, err = service.GetSummary(context.Background(), 9, 99)
 	if !errors.Is(err, ErrProfileNotFound) {
 		t.Fatalf("expected ErrProfileNotFound, got %v", err)
+	}
+}
+
+func TestService_CreateProfileCallsProviderPreparer(t *testing.T) {
+	repo := newFakeRepo()
+	replicationRepo := newFakeReplicationRepo()
+	provider := &fakeCreatePreparerProvider{
+		fakeProvider: &fakeProvider{},
+	}
+	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+
+	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
+		Provider: "mock",
+		Name:     "My Mock",
+	})
+	if err != nil {
+		t.Fatalf("create profile: %v", err)
+	}
+	if !provider.called {
+		t.Fatalf("expected provider preparer to be called")
+	}
+	if created.Config["prepared"] != "yes" {
+		t.Fatalf("expected prepared config flag, got %+v", created.Config)
 	}
 }
 

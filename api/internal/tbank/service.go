@@ -200,6 +200,26 @@ func (s *Service) Disconnect(userID int) error {
 	return nil
 }
 
+func (s *Service) OpenSandboxAccountForUser(ctx context.Context, userID int) (string, error) {
+	conn, err := s.getConnectedTBankConnection(userID)
+	if err != nil {
+		return "", err
+	}
+	if conn.environment != dto.TBankEnvironmentSandbox {
+		return "", ErrTBankSandboxOnly
+	}
+
+	accountID, err := s.openSandboxAccount(ctx, conn.token)
+	if err != nil {
+		return "", err
+	}
+	accountID = strings.TrimSpace(accountID)
+	if accountID == "" {
+		return "", ErrTBankNoAccountFound
+	}
+	return accountID, nil
+}
+
 func (s *Service) CreateMarketBuyOrder(
 	ctx context.Context,
 	userID int,

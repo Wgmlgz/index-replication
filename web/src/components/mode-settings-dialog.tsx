@@ -1,6 +1,10 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
+import type { IChangeEvent } from '@rjsf/core';
+import Form from '@rjsf/shadcn';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import validator from '@rjsf/validator-ajv8';
+import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -16,7 +20,11 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  getReplicationModeParamsSchema,
+  normalizeReplicationModeParams,
+  validateReplicationModeParamsShape,
+} from '@/lib/replication-mode-params';
 
 export type ModeSettingsDialogOption = {
   value: string;
@@ -59,19 +67,65 @@ export function ModeSettingsDialog({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [modeDraftKey, setModeDraftKey] = useState<string>('full');
-  const [modeDraftParamsRaw, setModeDraftParamsRaw] = useState<string>('{}');
+  const [modeDraftParams, setModeDraftParams] = useState<Record<string, unknown>>({});
   const [modeDraftError, setModeDraftError] = useState('');
+  const modeParamsSchema = useMemo<RJSFSchema>(() => getReplicationModeParamsSchema(
+    modeDraftKey,
+    {
+      lotSize: t('portfolio.replication.modeParamsFields.lotSizeLabel'),
+    },
+  ), [modeDraftKey, t]);
+  const modeParamsUiSchema = useMemo<UiSchema<Record<string, unknown>, RJSFSchema>>(() => ({
+    'ui:submitButtonOptions': {
+      norender: true,
+    },
+  }), []);
 
-  const onSaveRequest = async () => {
-    let parsed: unknown;
+  const parseModeParamsRaw = (raw: string, modeKey: string): {
+    params: Record<string, unknown>;
+    error: string;
+  } => {
     try {
-      parsed = JSON.parse(modeDraftParamsRaw || '{}');
+      const parsed = JSON.parse(raw || '{}') as unknown;
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        return {
+          params: {},
+          error: modeParamsObjectError,
+        };
+      }
+      const parsedObject = parsed as Record<string, unknown>;
+      const normalized = normalizeReplicationModeParams(modeKey, parsedObject);
+      return {
+        params: normalized,
+        error: validateReplicationModeParamsShape(modeKey, parsedObject) ? '' : modeParamsObjectError,
+      };
     } catch {
-      setModeDraftError(modeParamsJsonError);
+      return {
+        params: {},
+        error: modeParamsJsonError,
+      };
+    }
+  };
+
+  const handleModeParamsChange = ({ formData }: IChangeEvent<Record<string, unknown>>) => {
+    if (!formData || Array.isArray(formData) || typeof formData !== 'object') {
+      setModeDraftParams({});
+      setModeDraftError(modeParamsObjectError);
       return;
     }
+    const normalized = normalizeReplicationModeParams(modeDraftKey, formData);
+    setModeDraftParams(normalized);
+    if (modeDraftError) {
+      setModeDraftError('');
+    }
+  };
 
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+  const onSaveRequest = async () => {
+    if (!modeDraftParams || Array.isArray(modeDraftParams) || typeof modeDraftParams !== 'object') {
+      setModeDraftError(modeParamsObjectError);
+      return;
+    }
+    if (!validateReplicationModeParamsShape(modeDraftKey, modeDraftParams)) {
       setModeDraftError(modeParamsObjectError);
       return;
     }
@@ -79,7 +133,7 @@ export function ModeSettingsDialog({
     setModeDraftError('');
     const saved = await onSave({
       modeKey: modeDraftKey,
-      modeParamsRaw: modeDraftParamsRaw,
+      modeParamsRaw: JSON.stringify(modeDraftParams, null, 2),
     });
     if (saved) {
       setOpen(false);
@@ -92,9 +146,11 @@ export function ModeSettingsDialog({
       onOpenChange={nextOpen => {
         setOpen(nextOpen);
         if (nextOpen) {
-          setModeDraftKey(initialModeKey || 'full');
-          setModeDraftParamsRaw(initialModeParamsRaw || '{}');
-          setModeDraftError('');
+          const nextModeKey = initialModeKey || 'full';
+          setModeDraftKey(nextModeKey);
+          const parsed = parseModeParamsRaw(initialModeParamsRaw || '{}', nextModeKey);
+          setModeDraftParams(parsed.params);
+          setModeDraftError(parsed.error);
         } else {
           setModeDraftError('');
         }
@@ -116,7 +172,11 @@ export function ModeSettingsDialog({
             </Label>
             <Select
               value={modeDraftKey || 'full'}
-              onValueChange={setModeDraftKey}
+              onValueChange={nextModeKey => {
+                setModeDraftKey(nextModeKey);
+                setModeDraftParams(prev => normalizeReplicationModeParams(nextModeKey, prev));
+                setModeDraftError('');
+              }}
               disabled={working}
             >
               <SelectTrigger id='mode-settings-dialog-mode'>
@@ -136,13 +196,16 @@ export function ModeSettingsDialog({
             <Label htmlFor='mode-settings-dialog-params'>
               {modeParamsLabel}
             </Label>
-            <Textarea
+            <Form
               id='mode-settings-dialog-params'
-              value={modeDraftParamsRaw}
-              onChange={event => setModeDraftParamsRaw(event.target.value)}
-              placeholder='{}'
-              rows={8}
+              schema={modeParamsSchema}
+              uiSchema={modeParamsUiSchema}
+              formData={modeDraftParams}
+              onChange={handleModeParamsChange}
+              showErrorList={false}
               disabled={working}
+              noHtml5Validate
+              validator={validator}
             />
           </div>
 

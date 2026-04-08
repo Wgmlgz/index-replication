@@ -117,6 +117,12 @@ func (s *Service) CreateProfile(ctx context.Context, userID int, req *dto.Portfo
 		return nil, ErrInvalidRequest
 	}
 
+	if preparer, ok := provider.(CreateProfilePreparer); ok {
+		if err := preparer.PrepareCreateProfile(ctx, userID, req); err != nil {
+			return nil, err
+		}
+	}
+
 	configJSON, err := encodeJSONMap(req.Config)
 	if err != nil {
 		return nil, ErrInvalidRequest

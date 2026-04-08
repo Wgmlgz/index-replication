@@ -23,6 +23,40 @@ func (p *TBankProvider) Name() string {
 	return "tbank"
 }
 
+func (p *TBankProvider) PrepareCreateProfile(
+	ctx context.Context,
+	userID int,
+	req *dto.PortfolioProfileCreateRequest,
+) error {
+	if req == nil {
+		return ErrInvalidRequest
+	}
+
+	config := req.Config
+	if config == nil {
+		config = map[string]interface{}{}
+	}
+
+	if boolValue(config["create_sandbox_account"]) {
+		accountID, err := p.service.OpenSandboxAccountForUser(ctx, userID)
+		if err != nil {
+			return err
+		}
+		config["account_id"] = accountID
+	} else {
+		if accountID := stringValue(config["account_id"]); accountID != "" {
+			config["account_id"] = accountID
+		} else {
+			delete(config, "account_id")
+		}
+	}
+
+	delete(config, "create_sandbox_account")
+	req.Config = config
+
+	return nil
+}
+
 func (p *TBankProvider) Capabilities(_ context.Context, _ *Profile) dto.PortfolioCapabilities {
 	return dto.PortfolioCapabilities{
 		Actions: []dto.PortfolioProviderAction{
@@ -515,5 +549,27 @@ func int64Value(value interface{}) int64 {
 		return 0
 	default:
 		return 0
+	}
+}
+
+func boolValue(value interface{}) bool {
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case int:
+		return typed != 0
+	case int32:
+		return typed != 0
+	case int64:
+		return typed != 0
+	case float32:
+		return typed != 0
+	case float64:
+		return typed != 0
+	case string:
+		normalized := strings.ToLower(strings.TrimSpace(typed))
+		return normalized == "true" || normalized == "1" || normalized == "yes"
+	default:
+		return false
 	}
 }

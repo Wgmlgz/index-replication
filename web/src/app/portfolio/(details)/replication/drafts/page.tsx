@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  CardAction,
   Card,
   CardContent,
   CardDescription,
@@ -425,6 +426,16 @@ export default function PortfolioReplicationDraftsPage() {
           <CardDescription>
             {t('portfolio.replication.rebalances.description')}
           </CardDescription>
+          <CardAction>
+            <Button
+              type='button'
+              onClick={() => setCreateDialogOpen(true)}
+              disabled={rebalanceWorking}
+            >
+              <Plus className='size-4' />
+              {t('portfolio.replication.rebalances.openCreateDialogButton')}
+            </Button>
+          </CardAction>
         </CardHeader>
 
         <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
@@ -435,22 +446,7 @@ export default function PortfolioReplicationDraftsPage() {
             </Alert>
           ) : null}
 
-          <div className='flex justify-end'>
-            <Button
-              type='button'
-              onClick={() => setCreateDialogOpen(true)}
-              disabled={rebalanceWorking}
-            >
-              <Plus className='size-4' />
-              {t('portfolio.replication.rebalances.openCreateDialogButton')}
-            </Button>
-          </div>
-
           <div className='grid gap-2'>
-            <p className='px-2 text-xs font-medium text-muted-foreground'>
-              {t('portfolio.replication.rebalances.listTitle')}
-            </p>
-
             {rebalanceListLoading ? (
               <p className='px-2 text-xs text-muted-foreground'>
                 {t('portfolio.replication.rebalances.loadingList')}

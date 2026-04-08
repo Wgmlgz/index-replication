@@ -35,3 +35,7 @@ type Provider interface {
 	GetOperations(ctx context.Context, profile *Profile, cursor string, limit int32) (*dto.PortfolioOperationsHistoryResponse, error)
 	RunAction(ctx context.Context, profile *Profile, action string, payload map[string]interface{}) (map[string]interface{}, error)
 }
+
+type CreateProfilePreparer interface {
+	PrepareCreateProfile(ctx context.Context, userID int, req *dto.PortfolioProfileCreateRequest) error
+}

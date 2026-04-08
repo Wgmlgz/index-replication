@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
-import { PowerOff } from 'lucide-react';
+import { Pencil, PowerOff, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { MoexIndex } from '@/api-client';
@@ -12,9 +13,12 @@ import { ConfirmActionDialog } from '@/components/confirm-action-dialog';
 import { ModeSettingsDialog } from '@/components/mode-settings-dialog';
 import { MoexIndexSelectorDialog } from '@/components/moex-indexes/list/moex-index-selector-dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
+import {
+  formatReplicationModeParams,
+  normalizeReplicationModeParams,
+} from '@/lib/replication-mode-params';
 import {
   EMPTY_FORM_STATE,
   REPLICATION_MODE_OPTIONS,
@@ -76,6 +80,33 @@ export function ReplicationSettingsReadonly({
     }
     return modeKey;
   }, [form.modeKey, t]);
+  const modeParamsDisplay = useMemo(() => {
+    const raw = form.modeParamsRaw || '{}';
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        return t('portfolio.replication.modeParamsInvalidValue');
+      }
+      const normalized = normalizeReplicationModeParams(
+        form.modeKey || 'full',
+        parsed as Record<string, unknown>,
+      );
+      return formatReplicationModeParams(
+        form.modeKey || 'full',
+        normalized,
+        {
+          lotSize: t('portfolio.replication.modeParamsFields.lotSizeLabel'),
+        },
+        t('portfolio.replication.modeParamsEmptyValue'),
+      );
+    } catch {
+      return t('portfolio.replication.modeParamsInvalidValue');
+    }
+  }, [form.modeKey, form.modeParamsRaw, t]);
+  const benchmarkDisplay = form.benchmarkSecid || t('portfolio.replication.benchmarkEmptyValue');
+  const benchmarkHref = form.benchmarkSecid
+    ? `/moex-indexes?i=${encodeURIComponent(form.benchmarkSecid)}`
+    : null;
 
   const saveConfig = useCallback(async (nextValues: Partial<ReplicationFormState>) => {
     const nextForm = {
@@ -145,88 +176,99 @@ export function ReplicationSettingsReadonly({
           />
         ) : (
           <>
-            <div className='grid gap-2'>
-              <Label>
-                {t('portfolio.replication.benchmarkLabel')}
-              </Label>
-              <div className='flex flex-wrap items-center gap-2'>
+            <div className='grid gap-1 text-sm'>
+              <div className='flex flex-wrap items-center gap-1.5'>
+                <span className='font-medium'>{t('portfolio.replication.benchmarkLabel')}:</span>
+                {benchmarkHref ? (
+                  <Link
+                    href={benchmarkHref}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='underline underline-offset-2 hover:text-primary'
+                    title={t('portfolio.replication.openBenchmarkInNewTab')}
+                  >
+                    {benchmarkDisplay}
+                  </Link>
+                ) : (
+                  <span>{benchmarkDisplay}</span>
+                )}
                 <Button
                   type='button'
-                  variant='outline'
+                  variant='ghost'
+                  size='icon'
+                  className='size-7'
                   onClick={() => setSelectorOpen(true)}
                   disabled={working}
-                >
-                  {form.benchmarkSecid
+                  title={form.benchmarkSecid
                     ? t('portfolio.replication.changeBenchmarkButton')
                     : t('portfolio.replication.selectBenchmarkButton')}
+                  aria-label={form.benchmarkSecid
+                    ? t('portfolio.replication.changeBenchmarkButton')
+                    : t('portfolio.replication.selectBenchmarkButton')}
+                >
+                  {form.benchmarkSecid ? <Pencil className='size-3.5' /> : <Search className='size-3.5' />}
                 </Button>
-                <ConfirmActionDialog
-                  trigger={(
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      disabled={working || !form.benchmarkSecid}
-                    >
-                      {t('portfolio.replication.clearBenchmarkButton')}
-                    </Button>
-                  )}
-                  title={t('portfolio.replication.clearBenchmarkConfirmTitle')}
-                  description={t('portfolio.replication.clearBenchmarkConfirmDescription')}
-                  cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
-                  actionLabel={t('portfolio.replication.clearBenchmarkConfirmAction')}
-                  disabled={working}
-                  onAction={() => saveConfig({ benchmarkSecid: '' })}
-                />
+                {form.benchmarkSecid ? (
+                  <ConfirmActionDialog
+                    trigger={(
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        className='size-7'
+                        disabled={working}
+                        title={t('portfolio.replication.clearBenchmarkButton')}
+                        aria-label={t('portfolio.replication.clearBenchmarkButton')}
+                      >
+                        <X className='size-3.5' />
+                      </Button>
+                    )}
+                    title={t('portfolio.replication.clearBenchmarkConfirmTitle')}
+                    description={t('portfolio.replication.clearBenchmarkConfirmDescription')}
+                    cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
+                    actionLabel={t('portfolio.replication.clearBenchmarkConfirmAction')}
+                    disabled={working}
+                    onAction={() => saveConfig({ benchmarkSecid: '' })}
+                  />
+                ) : null}
               </div>
-              <div className='text-xs text-muted-foreground'>
-                {form.benchmarkSecid
-                  ? t('portfolio.replication.selectedBenchmarkValue', {
-                      secid: form.benchmarkSecid,
-                    })
-                  : t('portfolio.replication.selectedBenchmarkEmpty')}
-              </div>
-            </div>
-
-            <div className='grid gap-2'>
-              <Label>{t('portfolio.replication.modeKeyLabel')}</Label>
-              <div className='rounded-md border bg-muted/35 px-3 py-2 text-sm'>
+              <p>
+                <span className='font-medium'>{t('portfolio.replication.modeKeyLabel')}:</span>{' '}
                 {modeLabel}
-              </div>
+              </p>
+              <p className='leading-6'>
+                <span className='font-medium'>{t('portfolio.replication.modeParamsLabel')}:</span>{' '}
+                <span className='font-mono text-xs break-all'>
+                  {modeParamsDisplay}
+                </span>
+              </p>
             </div>
 
-            <div className='grid gap-2'>
-              <Label>{t('portfolio.replication.modeParamsLabel')}</Label>
-              <pre className='max-h-44 overflow-auto rounded-md border bg-muted/35 p-3 text-xs leading-5'>
-                {form.modeParamsRaw || '{}'}
-              </pre>
-              <p className='text-xs text-muted-foreground'>
-                {t('portfolio.replication.readonlyHint')}
-              </p>
-              <div>
-                <ModeSettingsDialog
-                  trigger={(
-                    <Button type='button' variant='outline' disabled={working}>
-                      {t('portfolio.replication.editModeButton')}
-                    </Button>
-                  )}
-                  working={working}
-                  initialModeKey={form.modeKey}
-                  initialModeParamsRaw={form.modeParamsRaw}
-                  modeOptions={REPLICATION_MODE_OPTIONS.map(mode => ({
-                    value: mode,
-                    label: t(`portfolio.replication.modeOptions.${mode}`),
-                  }))}
-                  title={t('portfolio.replication.modeDialog.title')}
-                  description={t('portfolio.replication.modeDialog.description')}
-                  modeKeyLabel={t('portfolio.replication.modeKeyLabel')}
-                  modeParamsLabel={t('portfolio.replication.modeParamsLabel')}
-                  cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
-                  saveLabel={t('portfolio.replication.modeDialog.saveButton')}
-                  modeParamsJsonError={t('portfolio.replication.errors.modeParamsJson')}
-                  modeParamsObjectError={t('portfolio.replication.errors.modeParamsObject')}
-                  onSave={saveConfig}
-                />
-              </div>
+            <div className='flex flex-wrap items-center gap-2'>
+              <ModeSettingsDialog
+                trigger={(
+                  <Button type='button' variant='outline' disabled={working}>
+                    <SlidersHorizontal className='size-4' />
+                    {t('portfolio.replication.editModeButton')}
+                  </Button>
+                )}
+                working={working}
+                initialModeKey={form.modeKey}
+                initialModeParamsRaw={form.modeParamsRaw}
+                modeOptions={REPLICATION_MODE_OPTIONS.map(mode => ({
+                  value: mode,
+                  label: t(`portfolio.replication.modeOptions.${mode}`),
+                }))}
+                title={t('portfolio.replication.modeDialog.title')}
+                description={t('portfolio.replication.modeDialog.description')}
+                modeKeyLabel={t('portfolio.replication.modeKeyLabel')}
+                modeParamsLabel={t('portfolio.replication.modeParamsLabel')}
+                cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
+                saveLabel={t('portfolio.replication.modeDialog.saveButton')}
+                modeParamsJsonError={t('portfolio.replication.errors.modeParamsJson')}
+                modeParamsObjectError={t('portfolio.replication.errors.modeParamsObject')}
+                onSave={saveConfig}
+              />
             </div>
 
             <div className='text-xs text-muted-foreground'>

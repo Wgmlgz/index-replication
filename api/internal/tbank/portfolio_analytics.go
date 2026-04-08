@@ -863,7 +863,7 @@ func normalizeTickers(values []string) []string {
 func normalizeInstrumentKey(instrumentID, figi, ticker string) string {
 	candidates := []string{instrumentID, figi, ticker}
 	for _, candidate := range candidates {
-		value := strings.ToUpper(strings.TrimSpace(candidate))
+		value := strings.TrimSpace(candidate)
 		if value != "" {
 			return value
 		}
