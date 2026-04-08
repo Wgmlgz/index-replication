@@ -133,6 +133,37 @@ func TestPlanner_PrefersHoldingInstrumentIDWhenTargetUsesTickerIdentity(t *testi
 	}
 }
 
+func TestPlanner_LeavesInstrumentIDEmptyWhenUnresolved(t *testing.T) {
+	svc := newPlannerService()
+
+	output, err := svc.Plan(Input{
+		ModeKey:           "full",
+		ModeParams:        map[string]interface{}{},
+		InvestableCapital: 1000,
+		Params:            PlanningParams{QuantityPrecision: 6},
+		Holdings:          []Holding{},
+		Benchmark: []BenchmarkConstituent{
+			{Ticker: "SBER", InstrumentID: "", TargetWeight: 100},
+		},
+		Instruments: []InstrumentInfo{
+			{Ticker: "SBER", InstrumentID: "", Price: 100},
+		},
+	})
+	if err != nil {
+		t.Fatalf("plan unresolved instrument id scenario: %v", err)
+	}
+
+	if len(output.Items) != 1 {
+		t.Fatalf("expected one item, got %d", len(output.Items))
+	}
+	if output.Items[0].Ticker != "SBER" {
+		t.Fatalf("expected SBER item, got %+v", output.Items[0])
+	}
+	if output.Items[0].InstrumentID != "" {
+		t.Fatalf("expected empty instrument id, got %q", output.Items[0].InstrumentID)
+	}
+}
+
 func TestPlanner_UnsupportedModeReturnsError(t *testing.T) {
 	svc := newPlannerService()
 

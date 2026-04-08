@@ -209,7 +209,7 @@ func (a *FullAlgorithm) planSingleCurrency(currency string, input Input) (Output
 
 		items = append(items, Item{
 			Ticker:          asset.ticker,
-			InstrumentID:    resolveAssetInstrumentID(asset),
+			InstrumentID:    trimmedOrEmpty(asset.instrumentID),
 			Side:            side,
 			CurrentQuantity: round(asset.currentQuantity, precision),
 			TargetQuantity:  targetQuantity,

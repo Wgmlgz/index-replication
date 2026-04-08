@@ -110,16 +110,6 @@ func normalizedTicker(ticker string, instrumentID string) string {
 	return instrumentID
 }
 
-func resolveAssetInstrumentID(asset *assetState) string {
-	if asset == nil {
-		return ""
-	}
-	if trimmed := trimmedOrEmpty(asset.instrumentID); trimmed != "" {
-		return trimmed
-	}
-	return asset.ticker
-}
-
 func trimmedOrEmpty(value string) string {
 	return value
 }

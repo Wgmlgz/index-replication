@@ -2,6 +2,7 @@ package rebalance
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -100,6 +101,9 @@ func (s *Service) CreateDraft(
 		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
 		return nil, fmt.Errorf("%w: %v", ErrPlanningFailed, err)
 	}
+	if len(snapshot.Warnings) > 0 {
+		planOutput.Warnings = append(planOutput.Warnings, snapshot.Warnings...)
+	}
 	endedAt := time.Now().UTC()
 	planSummary := planner.BuildSummary(planOutput.Items, snapshot.PlannerInput.InvestableCapital)
 	planInputDTO := toPlanInputDTO(snapshot.PlannerInput)
@@ -126,6 +130,15 @@ func (s *Service) CreateDraft(
 		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
 		return nil, fmt.Errorf("%w: encode plan summary: %v", ErrPlanningFailed, err)
 	}
+	warnings := planOutput.Warnings
+	if warnings == nil {
+		warnings = []string{}
+	}
+	warningsJSON, err := json.Marshal(warnings)
+	if err != nil {
+		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
+		return nil, fmt.Errorf("%w: encode plan warnings: %v", ErrPlanningFailed, err)
+	}
 
 	runModel := &models.PortfolioRebalanceRun{
 		UserID:                        userID,
@@ -142,6 +155,7 @@ func (s *Service) CreateDraft(
 		InputJSON:                     inputJSON,
 		OutputJSON:                    outputJSON,
 		SummaryJSON:                   summaryJSON,
+		WarningsJSON:                  datatypes.JSON(warningsJSON),
 		StartedAt:                     &startedAt,
 		EndedAt:                       &endedAt,
 	}

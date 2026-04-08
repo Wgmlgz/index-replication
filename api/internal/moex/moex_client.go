@@ -434,6 +434,39 @@ func (c *moexISSClient) FetchShareSecurityHistory(ctx context.Context, secid, bo
 	return results, nil
 }
 
+func (c *moexISSClient) FetchShareSecurityCurrency(ctx context.Context, secid, board string) (string, error) {
+	params := url.Values{}
+	params.Set("iss.meta", "off")
+	params.Set("securities.columns", "SECID,CURRENCYID,FACEUNIT")
+
+	var payload moexSecuritiesPayload
+	if err := c.get(
+		ctx,
+		fmt.Sprintf(
+			"engines/stock/markets/shares/boards/%s/securities/%s.json",
+			url.PathEscape(board),
+			url.PathEscape(secid),
+		),
+		params,
+		&payload,
+	); err != nil {
+		return "", err
+	}
+
+	rows := tableToObjects(payload.Securities)
+	for _, row := range rows {
+		currency := strings.ToUpper(strings.TrimSpace(asString(getValue(row, "CURRENCYID", "currencyid"))))
+		if currency != "" {
+			return currency, nil
+		}
+		currency = strings.ToUpper(strings.TrimSpace(asString(getValue(row, "FACEUNIT", "faceunit"))))
+		if currency != "" {
+			return currency, nil
+		}
+	}
+	return "", nil
+}
+
 func (c *moexISSClient) FetchComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	start := 0
 	iterations := 0

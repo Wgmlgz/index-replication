@@ -520,7 +520,6 @@
         "deleteConfirmDescriptionRun": "This will remove the run and all related records.",
         "deleteConfirmAction": "Delete {{entity}}",
         "createDialogTitle": "Create rebalance draft",
-        "createDialogDescription": "Set execution mode and optional as-of date, then create draft.",
         "detailTitle": "{{entity}} #{{id}}",
         "selectPrompt": "Select a run to see details.",
         "loadingDetail": "Loading run details...",

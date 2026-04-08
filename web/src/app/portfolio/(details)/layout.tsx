@@ -42,7 +42,7 @@ type PortfolioDetailsLayoutProps = {
 const SECTION_ROUTES: Record<PortfolioDetailsSection, string> = {
   overview: PORTFOLIO_V2_ROUTES.overview,
   actions: PORTFOLIO_V2_ROUTES.actions,
-  replication: PORTFOLIO_V2_ROUTES.replication,
+  replication: PORTFOLIO_V2_ROUTES.replicationDrafts,
 };
 
 function resolveLegacyRoute(
@@ -53,7 +53,7 @@ function resolveLegacyRoute(
     return PORTFOLIO_V2_ROUTES.actions;
   }
   if (tab === 'replication') {
-    return PORTFOLIO_V2_ROUTES.replication;
+    return PORTFOLIO_V2_ROUTES.replicationDrafts;
   }
   if (tab === 'operations') {
     return PORTFOLIO_V2_ROUTES.overviewOperations;

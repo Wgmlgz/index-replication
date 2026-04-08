@@ -574,6 +574,40 @@ func (s *Service) ResolveOrderInstrument(
 		}, nil
 	}
 	if len(lookupCandidates) > 1 {
+		if lookupResp != nil {
+			preferredClassCandidates := make([]string, 0, len(lookupCandidates))
+			for _, item := range lookupResp.Instruments {
+				if strings.ToUpper(strings.TrimSpace(item.Ticker)) != ticker {
+					continue
+				}
+				if strings.ToUpper(strings.TrimSpace(item.ClassCode)) != "TQBR" {
+					continue
+				}
+				instrumentID := strings.TrimSpace(item.InstrumentID)
+				if instrumentID == "" {
+					continue
+				}
+				alreadyAdded := false
+				for _, existing := range preferredClassCandidates {
+					if existing == instrumentID || strings.EqualFold(existing, instrumentID) {
+						alreadyAdded = true
+						break
+					}
+				}
+				if !alreadyAdded {
+					preferredClassCandidates = append(preferredClassCandidates, instrumentID)
+				}
+			}
+			if len(preferredClassCandidates) == 1 {
+				return &ResolveOrderInstrumentResponse{
+					Environment:  conn.environment,
+					AccountID:    accountID,
+					Ticker:       ticker,
+					InstrumentID: preferredClassCandidates[0],
+					Source:       "find_instrument_temporary_preferred_class_fallback",
+				}, nil
+			}
+		}
 		return nil, fmt.Errorf("%w: ticker=%s side=%s", ErrTBankInstrumentAmbiguous, ticker, side)
 	}
 

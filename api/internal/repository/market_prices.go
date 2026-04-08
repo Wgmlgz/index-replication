@@ -60,12 +60,21 @@ func (r *MarketPriceRepository) UpsertInstrumentMapping(ctx context.Context, row
 			row.Ticker = &ticker
 		}
 	}
+	if row.Currency != nil {
+		currency := strings.ToUpper(strings.TrimSpace(*row.Currency))
+		if currency == "" {
+			row.Currency = nil
+		} else {
+			row.Currency = &currency
+		}
+	}
 
 	return r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns: []clause.Column{{Name: "provider"}, {Name: "instrument_key"}},
 			DoUpdates: clause.Assignments(map[string]interface{}{
 				"ticker":     row.Ticker,
+				"currency":   row.Currency,
 				"secid":      row.Secid,
 				"board":      row.Board,
 				"updated_at": time.Now().UTC(),

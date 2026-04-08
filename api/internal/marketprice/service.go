@@ -30,6 +30,7 @@ type InstrumentRangeRequest struct {
 	Ticker        string
 	Secid         string
 	Board         string
+	Currency      string
 	From          time.Time
 	To            time.Time
 }
@@ -39,11 +40,13 @@ type DailyAsOfSeries struct {
 	InstrumentKey string
 	Secid         string
 	Board         string
+	Currency      string
 	Prices        map[string]float64
 }
 
 type securityHistoryFetcher interface {
 	GetShareSecurityHistory(ctx context.Context, secid, board, from, till string) ([]moexdomain.IndexHistoryPoint, error)
+	GetShareSecurityCurrency(ctx context.Context, secid, board string) (string, error)
 }
 
 type Service struct {
@@ -83,6 +86,7 @@ func (s *Service) GetDailyAsOfPrices(ctx context.Context, req InstrumentRangeReq
 		return &DailyAsOfSeries{
 			Provider:      strings.ToLower(strings.TrimSpace(req.Provider)),
 			InstrumentKey: strings.ToUpper(strings.TrimSpace(req.InstrumentKey)),
+			Currency:      normalizeMarketCurrency(req.Currency),
 			Prices:        map[string]float64{},
 		}, nil
 	}
@@ -118,6 +122,7 @@ func (s *Service) GetDailyAsOfPrices(ctx context.Context, req InstrumentRangeReq
 		InstrumentKey: mapping.InstrumentKey,
 		Secid:         mapping.Secid,
 		Board:         mapping.Board,
+		Currency:      mappingCurrencyValue(mapping),
 		Prices:        alignAsOfDaily(rows, fromDate, toDate),
 	}, nil
 }
@@ -190,6 +195,9 @@ func (s *Service) resolveMapping(ctx context.Context, req InstrumentRangeRequest
 		return nil, err
 	}
 	if existing != nil {
+		if err := s.hydrateMappingCurrency(ctx, existing, req); err != nil {
+			return nil, err
+		}
 		return existing, nil
 	}
 
@@ -212,17 +220,89 @@ func (s *Service) resolveMapping(ctx context.Context, req InstrumentRangeRequest
 	row := &models.PortfolioInstrumentMappingDB{
 		Provider:      provider,
 		InstrumentKey: instrumentKey,
+		Currency:      normalizedCurrencyPointer(req.Currency),
 		Secid:         secid,
 		Board:         board,
 	}
 	if ticker != "" {
 		row.Ticker = &ticker
 	}
+	if err := s.hydrateMappingCurrency(ctx, row, req); err != nil {
+		return nil, err
+	}
 
 	if err := s.repo.UpsertInstrumentMapping(ctx, row); err != nil {
 		return nil, err
 	}
 	return row, nil
+}
+
+func (s *Service) hydrateMappingCurrency(
+	ctx context.Context,
+	mapping *models.PortfolioInstrumentMappingDB,
+	req InstrumentRangeRequest,
+) error {
+	if mapping == nil {
+		return nil
+	}
+
+	if currency := normalizeMarketCurrency(req.Currency); currency != "" {
+		if mapping.Currency == nil || strings.TrimSpace(*mapping.Currency) != currency {
+			mapping.Currency = &currency
+			return s.repo.UpsertInstrumentMapping(ctx, mapping)
+		}
+		return nil
+	}
+
+	currentCurrency := mappingCurrencyValue(mapping)
+	if currentCurrency != "" {
+		if mapping.Currency == nil || strings.TrimSpace(*mapping.Currency) != currentCurrency {
+			mapping.Currency = &currentCurrency
+			return s.repo.UpsertInstrumentMapping(ctx, mapping)
+		}
+		return nil
+	}
+
+	if s.fetcher == nil {
+		return nil
+	}
+	resolved, err := s.fetcher.GetShareSecurityCurrency(ctx, mapping.Secid, mapping.Board)
+	if err != nil {
+		return nil
+	}
+	resolved = normalizeMarketCurrency(resolved)
+	if resolved == "" {
+		return nil
+	}
+	mapping.Currency = &resolved
+	return s.repo.UpsertInstrumentMapping(ctx, mapping)
+}
+
+func mappingCurrencyValue(mapping *models.PortfolioInstrumentMappingDB) string {
+	if mapping == nil || mapping.Currency == nil {
+		return ""
+	}
+	return normalizeMarketCurrency(*mapping.Currency)
+}
+
+func normalizedCurrencyPointer(value string) *string {
+	currency := normalizeMarketCurrency(value)
+	if currency == "" {
+		return nil
+	}
+	return &currency
+}
+
+func normalizeMarketCurrency(value string) string {
+	currency := strings.ToUpper(strings.TrimSpace(value))
+	switch currency {
+	case "":
+		return ""
+	case "SUR", "RUR":
+		return "RUB"
+	default:
+		return currency
+	}
 }
 
 func alignAsOfDaily(rows []models.MoexSecurityHistoryPointRow, fromDate, toDate time.Time) map[string]float64 {

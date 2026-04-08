@@ -209,6 +209,10 @@ Trading/top-up operations are exposed through unified portfolio profile actions:
 - `POST /api/me/portfolios/:id/actions/buy`
 - `POST /api/me/portfolios/:id/actions/sell`
 
+Temporary resolver fallback (for rebalances and `resolve_instrument`):
+- When a ticker is ambiguous across multiple trading classes, backend now prefers `class_code = TQBR`.
+- This is an intentional temporary hardcoded preferred-class rule to reduce unresolved benchmark items.
+
 ## Unified Portfolio Endpoints
 
 Authenticated user endpoints for provider-agnostic portfolio profiles and data:

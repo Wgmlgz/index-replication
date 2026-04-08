@@ -12,9 +12,10 @@ import (
 )
 
 type fakeSecurityHistoryFetcher struct {
-	mu     sync.Mutex
-	calls  []fetchCall
-	points []moexdomain.IndexHistoryPoint
+	mu       sync.Mutex
+	calls    []fetchCall
+	points   []moexdomain.IndexHistoryPoint
+	currency string
 }
 
 type fetchCall struct {
@@ -55,6 +56,19 @@ func (f *fakeSecurityHistoryFetcher) GetShareSecurityHistory(
 		result = append(result, point)
 	}
 	return result, nil
+}
+
+func (f *fakeSecurityHistoryFetcher) GetShareSecurityCurrency(
+	_ context.Context,
+	_ string,
+	_ string,
+) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.currency != "" {
+		return f.currency, nil
+	}
+	return "RUB", nil
 }
 
 func (f *fakeSecurityHistoryFetcher) callCount() int {
@@ -259,6 +273,44 @@ func TestMarketPriceService_AsOfFallbackWeekend(t *testing.T) {
 	}
 	if got := series.Prices["2026-01-04"]; got != 100 {
 		t.Fatalf("expected Sunday as-of 100, got %.2f", got)
+	}
+}
+
+func TestMarketPriceService_ReturnsNormalizedCurrencyFromMapping(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewMarketPriceRepository(db)
+	coverageReader := repository.NewMoexDataRepository(db)
+	coverageWriter := repository.NewMoexSyncRepository(db)
+	fetcher := &fakeSecurityHistoryFetcher{
+		currency: "SUR",
+		points: []moexdomain.IndexHistoryPoint{
+			{TradeDate: "2026-01-03", Close: floatPtr(100)},
+		},
+	}
+	svc := NewService(repo, coverageReader, coverageWriter, fetcher)
+
+	series, err := svc.GetDailyAsOfPrices(context.Background(), InstrumentRangeRequest{
+		Provider:      "virtual",
+		InstrumentKey: "SBER",
+		Ticker:        "SBER",
+		From:          mustDate("2026-01-03"),
+		To:            mustDate("2026-01-03"),
+	})
+	if err != nil {
+		t.Fatalf("GetDailyAsOfPrices: %v", err)
+	}
+	if series.Currency != "RUB" {
+		t.Fatalf("expected normalized currency RUB, got %q", series.Currency)
+	}
+
+	mapping, err := repo.GetInstrumentMapping(context.Background(), "virtual", "SBER")
+	if err != nil {
+		t.Fatalf("read instrument mapping: %v", err)
+	}
+	if mapping == nil || mapping.Currency == nil || *mapping.Currency != "RUB" {
+		t.Fatalf("expected persisted mapping currency RUB, got %+v", mapping)
 	}
 }
 

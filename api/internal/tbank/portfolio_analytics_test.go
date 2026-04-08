@@ -46,6 +46,14 @@ func (f *fakeFetcher) GetShareSecurityHistory(
 	return result, nil
 }
 
+func (f *fakeFetcher) GetShareSecurityCurrency(
+	_ context.Context,
+	_ string,
+	_ string,
+) (string, error) {
+	return "RUB", nil
+}
+
 func TestBuildCompositionSnapshotsByDate_ChangesOnNoTradeDayWithMarketPrice(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()

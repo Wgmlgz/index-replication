@@ -28,17 +28,13 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
-import {
-  RebalanceDraftCreateForm,
-  type RebalanceDraftExecutionMode,
-} from './rebalance-draft-create-form';
+import { RebalanceDraftCreateForm } from './rebalance-draft-create-form';
 import { RebalanceDraftDetailCard } from './rebalance-draft-detail-card';
 import {
   canExecuteRunStatus,
@@ -48,12 +44,10 @@ import {
 import { useRebalanceExecutionStatus } from './use-rebalance-execution-status';
 
 type RebalanceDraftFormState = {
-  executionMode: RebalanceDraftExecutionMode;
   asOfDate: string;
 };
 
 const EMPTY_DRAFT_FORM: RebalanceDraftFormState = {
-  executionMode: 'manual',
   asOfDate: '',
 };
 
@@ -260,7 +254,7 @@ export default function PortfolioReplicationDraftsPage() {
     }
 
     const payload: PortfolioRebalanceCreateRequest = {
-      execution_mode: draftForm.executionMode,
+      execution_mode: 'automatic',
       as_of_date: draftForm.asOfDate.trim() || undefined,
       planning_params: {},
     };
@@ -293,7 +287,6 @@ export default function PortfolioReplicationDraftsPage() {
     }
   }, [
     draftForm.asOfDate,
-    draftForm.executionMode,
     applyRunUpdate,
     parseErrorMessage,
     portfolioID,
@@ -550,21 +543,11 @@ export default function PortfolioReplicationDraftsPage() {
             <DialogTitle>
               {t('portfolio.replication.rebalances.createDialogTitle')}
             </DialogTitle>
-            <DialogDescription>
-              {t('portfolio.replication.rebalances.createDialogDescription')}
-            </DialogDescription>
           </DialogHeader>
 
           <RebalanceDraftCreateForm
-            executionMode={draftForm.executionMode}
             asOfDate={draftForm.asOfDate}
             working={rebalanceWorking}
-            onExecutionModeChange={mode =>
-              setDraftForm(prev => ({
-                ...prev,
-                executionMode: mode,
-              }))
-            }
             onAsOfDateChange={value =>
               setDraftForm(prev => ({
                 ...prev,

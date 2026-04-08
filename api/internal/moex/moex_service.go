@@ -71,6 +71,10 @@ func (s *MoexService) GetShareSecurityHistory(ctx context.Context, secid, board,
 	return s.client.FetchShareSecurityHistory(ctx, secid, board, from, till)
 }
 
+func (s *MoexService) GetShareSecurityCurrency(ctx context.Context, secid, board string) (string, error) {
+	return s.client.FetchShareSecurityCurrency(ctx, secid, board)
+}
+
 func (s *MoexService) GetIndexComposition(ctx context.Context, indexID, date, lang string) ([]moexdomain.IndexCompositionEntry, error) {
 	if strings.TrimSpace(lang) == "" {
 		lang = "en"

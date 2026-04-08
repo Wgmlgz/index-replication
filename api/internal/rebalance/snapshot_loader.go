@@ -52,7 +52,15 @@ type PlanningSnapshot struct {
 	CashAvailable          float64
 	HoldingsCount          int
 	BenchmarkCount         int
+	Warnings               []string
 }
+
+const (
+	snapshotResolveBatchTimeout   = 3 * time.Minute
+	snapshotResolvePerCallTimeout = 20 * time.Second
+	snapshotResolveMaxAttempts    = 3
+	snapshotResolveRetryBackoff   = 250 * time.Millisecond
+)
 
 type SnapshotLoader struct {
 	profilesRepo    profileRepository
@@ -170,7 +178,7 @@ func (l *SnapshotLoader) Load(
 	typedPlanningParams, planningParamsSnapshot := normalizePlanningParams(planningParams)
 	holdings := toPlannerHoldings(portfolioComposition)
 	targets := toPlannerTargets(benchmarkComposition)
-	l.resolvePlannerInstrumentIDs(ctx, provider, providerProfile, holdings, targets)
+	resolutionWarnings := l.resolvePlannerInstrumentIDs(ctx, provider, providerProfile, holdings, targets)
 	instruments := l.resolvePlannerInstruments(ctx, providerProfile.Provider, resolvedAsOfAt, portfolioComposition, targets)
 	money := toPlannerMoney(summary)
 	totalValue := resolvePortfolioTotalValue(summary, portfolioComposition)
@@ -205,6 +213,7 @@ func (l *SnapshotLoader) Load(
 		CashAvailable:  cashAvailable,
 		HoldingsCount:  len(holdings),
 		BenchmarkCount: len(targets),
+		Warnings:       resolutionWarnings,
 	}
 	return snapshot, nil
 }
@@ -215,13 +224,14 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 	profile *portfolio.Profile,
 	holdings []planner.Holding,
 	targets []planner.BenchmarkConstituent,
-) {
+) []string {
 	if provider == nil || profile == nil {
-		return
+		return nil
 	}
 
 	providerName := strings.ToLower(strings.TrimSpace(provider.Name()))
 	knownByTicker := map[string]string{}
+	warnings := []string{}
 
 	addKnown := func(tickerRaw string, instrumentIDRaw string) {
 		ticker := strings.ToUpper(strings.TrimSpace(tickerRaw))
@@ -287,17 +297,17 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 		}
 		sort.Strings(tickers)
 
+		resolveBatchCtx, cancelResolveBatch := context.WithTimeout(context.WithoutCancel(ctx), snapshotResolveBatchTimeout)
+		defer cancelResolveBatch()
+
 		for _, ticker := range tickers {
-			result, err := provider.RunAction(ctx, profile, "resolve_instrument", map[string]interface{}{
-				"action_id": "snapshot-resolve-" + ticker,
-				"ticker":    ticker,
-				"side":      "buy",
-			})
+			resolved, err := l.resolveTBankInstrumentIDByTicker(resolveBatchCtx, provider, profile, ticker)
 			if err != nil {
+				warnings = append(warnings, fmt.Sprintf("instrument resolution failed for ticker %s: %v", ticker, err))
 				continue
 			}
-			resolved := strings.TrimSpace(actionResultString(result, "instrument_id"))
 			if resolved == "" {
+				warnings = append(warnings, fmt.Sprintf("instrument resolution returned empty instrument_id for ticker %s", ticker))
 				continue
 			}
 			knownByTicker[ticker] = resolved
@@ -327,6 +337,83 @@ func (l *SnapshotLoader) resolvePlannerInstrumentIDs(
 			targets[i].InstrumentID = ticker
 		}
 	}
+
+	return warnings
+}
+
+func (l *SnapshotLoader) resolveTBankInstrumentIDByTicker(
+	ctx context.Context,
+	provider portfolio.Provider,
+	profile *portfolio.Profile,
+	ticker string,
+) (string, error) {
+	var lastErr error
+
+	for attempt := 1; attempt <= snapshotResolveMaxAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+
+		attemptCtx, cancelAttempt := context.WithTimeout(ctx, snapshotResolvePerCallTimeout)
+		result, err := provider.RunAction(attemptCtx, profile, "resolve_instrument", map[string]interface{}{
+			"action_id": fmt.Sprintf("snapshot-resolve-%s-%d", ticker, attempt),
+			"ticker":    ticker,
+			"side":      "buy",
+		})
+		cancelAttempt()
+		if err == nil {
+			return strings.TrimSpace(actionResultString(result, "instrument_id")), nil
+		}
+
+		lastErr = err
+		if attempt >= snapshotResolveMaxAttempts || !isSnapshotResolveTransientError(err) {
+			return "", err
+		}
+
+		backoff := time.Duration(attempt) * snapshotResolveRetryBackoff
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case <-time.After(backoff):
+		}
+	}
+
+	if lastErr == nil {
+		lastErr = errors.New("instrument resolution failed")
+	}
+	return "", lastErr
+}
+
+func isSnapshotResolveTransientError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return true
+	}
+
+	message := strings.ToLower(strings.TrimSpace(err.Error()))
+	if message == "" {
+		return false
+	}
+
+	transientPatterns := []string{
+		"deadline exceeded",
+		"temporarily unavailable",
+		"connection refused",
+		"connection reset",
+		"resource exhausted",
+		"too many requests",
+		"unavailable",
+		"timeout",
+		"eof",
+	}
+	for _, pattern := range transientPatterns {
+		if strings.Contains(message, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func actionResultString(result map[string]interface{}, key string) string {
@@ -442,6 +529,7 @@ func toPlannerTargets(rows []moexdomain.IndexCompositionEntry) []planner.Benchma
 type plannerPriceCandidate struct {
 	Ticker       string
 	InstrumentID string
+	Currency     string
 }
 
 func (l *SnapshotLoader) resolvePlannerInstruments(
@@ -460,7 +548,11 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 			continue
 		}
 		key := snapshotInstrumentKey(ticker, instrumentID)
-		candidatesByKey[key] = plannerPriceCandidate{Ticker: ticker, InstrumentID: instrumentID}
+		candidatesByKey[key] = plannerPriceCandidate{
+			Ticker:       ticker,
+			InstrumentID: instrumentID,
+			Currency:     strings.ToUpper(strings.TrimSpace(row.Currency)),
+		}
 		if row.CurrentPrice > 0 {
 			instrumentsByKey[key] = planner.InstrumentInfo{
 				Ticker:       ticker,
@@ -480,7 +572,10 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 			continue
 		}
 		key := snapshotInstrumentKey(ticker, instrumentID)
-		candidatesByKey[key] = plannerPriceCandidate{Ticker: ticker, InstrumentID: instrumentID}
+		candidate := candidatesByKey[key]
+		candidate.Ticker = ticker
+		candidate.InstrumentID = instrumentID
+		candidatesByKey[key] = candidate
 	}
 
 	if l.marketPrices != nil {
@@ -501,6 +596,7 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 				InstrumentKey: candidate.InstrumentID,
 				Ticker:        candidate.Ticker,
 				Secid:         candidate.Ticker,
+				Currency:      candidate.Currency,
 				From:          asOfAt,
 				To:            asOfAt,
 			})
@@ -515,7 +611,7 @@ func (l *SnapshotLoader) resolvePlannerInstruments(
 				Ticker:       candidate.Ticker,
 				InstrumentID: candidate.InstrumentID,
 				Price:        price,
-				Currency:     "",
+				Currency:     strings.ToUpper(strings.TrimSpace(series.Currency)),
 				AsOfAt:       asOfAt,
 				Source:       "market_asof",
 				LotSize:      1,

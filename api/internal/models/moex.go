@@ -76,6 +76,7 @@ type PortfolioInstrumentMappingDB struct {
 	Provider      string    `gorm:"column:provider;primaryKey"`
 	InstrumentKey string    `gorm:"column:instrument_key;primaryKey"`
 	Ticker        *string   `gorm:"column:ticker"`
+	Currency      *string   `gorm:"column:currency"`
 	Secid         string    `gorm:"column:secid;not null"`
 	Board         string    `gorm:"column:board;not null"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;autoUpdateTime"`

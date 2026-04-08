@@ -144,7 +144,7 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
   {
     kind: "item",
     titleKey: 'navigation.portfolio.replication',
-    href: PORTFOLIO_V2_ROUTES.replication,
+    href: PORTFOLIO_V2_ROUTES.replicationDrafts,
     activePathname: PORTFOLIO_V2_ROUTES.replication,
     permission: null,
   },
