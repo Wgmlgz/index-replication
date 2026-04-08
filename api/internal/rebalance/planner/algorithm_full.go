@@ -11,5 +11,14 @@ func (a *FullAlgorithm) Key() string {
 }
 
 func (a *FullAlgorithm) Plan(input Input) (Output, error) {
-	// TODO
+	return planPerCurrency(input, a.planSingleCurrency)
+}
+
+func (a *FullAlgorithm) planSingleCurrency(_ string, input Input) (Output, error) {
+	// TODO: implement one-currency planning math.
+	return Output{
+		Items:    []Item{},
+		Warnings: []string{},
+		Money:    append([]Money(nil), input.Money...),
+	}, nil
 }
