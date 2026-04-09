@@ -414,6 +414,32 @@ export default function PortfolioReplicationDraftsPage() {
       setRebalanceWorking(true);
       setRebalanceError('');
       try {
+        let latestRunStatus: string | undefined;
+        try {
+          const detailResponse =
+            await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
+              portfolioID,
+              runID,
+            );
+          const latestDetail = detailResponse.data ?? null;
+          const latestRun = latestDetail?.run;
+          if (latestRun) {
+            latestRunStatus = latestRun.status;
+            applyRunUpdate(latestRun);
+            if (selectedRebalanceID === runID && detailDialogOpen) {
+              setRebalanceDetail(latestDetail);
+              syncedDetailRunStatusRef.current = latestRun.status || '';
+            }
+          }
+        } catch {
+          // Do not block execute on preflight refresh failure.
+        }
+
+        if (latestRunStatus && !canExecuteRunStatus(latestRunStatus)) {
+          setRebalanceError(t('portfolio.replication.errors.executeDraftNotExecutable'));
+          return;
+        }
+
         const response =
           await portfolioApi.mePortfoliosIdRebalancesRebalanceIdExecutePost(
             portfolioID,
@@ -427,8 +453,33 @@ export default function PortfolioReplicationDraftsPage() {
           await refreshStatus();
         }
       } catch (err) {
+        const message = parseErrorMessage(
+          err,
+          t('portfolio.replication.errors.executeDraft'),
+        );
+        if (message.toLowerCase().includes('not executable')) {
+          try {
+            const detailResponse =
+              await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
+                portfolioID,
+                runID,
+              );
+            const latestRun = detailResponse.data?.run;
+            if (latestRun) {
+              applyRunUpdate(latestRun);
+              if (selectedRebalanceID === runID && detailDialogOpen) {
+                setRebalanceDetail(detailResponse.data ?? null);
+                syncedDetailRunStatusRef.current = latestRun.status || '';
+              }
+            }
+          } catch {
+            // Keep original error if refresh after failure also fails.
+          }
+          setRebalanceError(t('portfolio.replication.errors.executeDraftNotExecutable'));
+          return;
+        }
         setRebalanceError(
-          parseErrorMessage(err, t('portfolio.replication.errors.executeDraft')),
+          message,
         );
       } finally {
         setRebalanceWorking(false);

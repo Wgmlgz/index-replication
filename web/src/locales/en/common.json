@@ -571,6 +571,7 @@
         "loadStatus": "Failed to load rebalance status.",
         "createDraft": "Failed to create rebalance draft.",
         "executeDraft": "Failed to execute rebalance draft.",
+        "executeDraftNotExecutable": "This run is no longer executable. Status was refreshed.",
         "deleteDraft": "Failed to delete rebalance run.",
         "modeParamsObject": "Params must be an object.",
         "modeParamsJson": "Params must be valid JSON.",
