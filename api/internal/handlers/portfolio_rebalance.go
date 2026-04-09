@@ -191,20 +191,20 @@ func (h *PortfolioRebalanceHandler) ExecuteRebalance(c *gin.Context) {
 	c.JSON(http.StatusAccepted, resp)
 }
 
-// GetRebalanceExecutionStatus godoc
+// GetRebalanceStatus godoc
 //
-//	@Summary		Get rebalance execution status
-//	@Description	Returns pollable execution state with live item statuses and execution links
+//	@Summary		Get rebalance status
+//	@Description	Returns pollable run status with live progress, item statuses, and links
 //	@Tags			portfolio
 //	@Produce		json
 //	@Param			id			path		int	true	"Portfolio profile id"
 //	@Param			rebalanceId	path		int	true	"Rebalance run id"
-//	@Success		200			{object}	dto.PortfolioRebalanceExecutionStatusResponse
+//	@Success		200			{object}	dto.PortfolioRebalanceStatusResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
-//	@Router			/me/portfolios/{id}/rebalances/{rebalanceId}/execution [get]
-func (h *PortfolioRebalanceHandler) GetRebalanceExecutionStatus(c *gin.Context) {
+//	@Router			/me/portfolios/{id}/rebalances/{rebalanceId}/status [get]
+func (h *PortfolioRebalanceHandler) GetRebalanceStatus(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 	portfolioID, ok := parsePortfolioID(c)
 	if !ok {
@@ -216,7 +216,7 @@ func (h *PortfolioRebalanceHandler) GetRebalanceExecutionStatus(c *gin.Context) 
 		return
 	}
 
-	resp, err := h.service.GetRunExecutionStatus(c.Request.Context(), userID, portfolioID, runID)
+	resp, err := h.service.GetRunStatus(c.Request.Context(), userID, portfolioID, runID)
 	if err != nil {
 		writePortfolioRebalanceError(c, err)
 		return

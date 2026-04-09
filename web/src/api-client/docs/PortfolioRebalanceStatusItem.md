@@ -1,4 +1,4 @@
-# PortfolioRebalanceExecutionItem
+# PortfolioRebalanceStatusItem
 
 
 ## Properties
@@ -24,9 +24,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { PortfolioRebalanceExecutionItem } from './api';
+import { PortfolioRebalanceStatusItem } from './api';
 
-const instance: PortfolioRebalanceExecutionItem = {
+const instance: PortfolioRebalanceStatusItem = {
     current_quantity,
     delta_quantity,
     id,

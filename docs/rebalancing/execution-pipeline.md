@@ -52,8 +52,8 @@ This document describes the end-to-end rebalance flow in general phases, from us
   - `failed`
 - Mark run execution finished in DB with terminal status and `ended_at`.
 
-9. Pollable execution status
-- UI polls `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution`.
+9. Pollable run status
+- UI polls `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status`.
 - While workflow is running, status is served from Temporal heartbeat.
 - After workflow completion, status is served from workflow result.
 
@@ -96,7 +96,7 @@ flowchart TD
     P --> J
     J --> Q["Finalize run status"]
     Q --> R["Mark ended_at in DB"]
-    R --> S["UI polls execution status"]
+    R --> S["UI polls run status"]
 ```
 
 ## Sequence Diagram
@@ -143,7 +143,7 @@ sequenceDiagram
     ACT->>DB: Mark terminal status + ended_at
     ACT-->>TMP: Final result
 
-    U->>API: GET rebalance execution status
+    U->>API: GET rebalance status
     API->>TMP: Read heartbeat/result
     TMP-->>API: Execution state
     API-->>U: Progress + items + links

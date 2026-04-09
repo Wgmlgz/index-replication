@@ -122,7 +122,7 @@ type PortfolioRebalanceDetailResponse struct {
 	Transactions []PortfolioRebalanceTransaction `json:"transactions"`
 } //@name PortfolioRebalanceDetailResponse
 
-type PortfolioRebalanceExecutionProgress struct {
+type PortfolioRebalanceStatusProgress struct {
 	TotalItems        int        `json:"total_items"`
 	ActionableItems   int        `json:"actionable_items"`
 	UnresolvedItems   int        `json:"unresolved_items"`
@@ -133,9 +133,9 @@ type PortfolioRebalanceExecutionProgress struct {
 	CompletionPercent float64    `json:"completion_percent"`
 	IsTerminal        bool       `json:"is_terminal"`
 	LastEventAt       *time.Time `json:"last_event_at"`
-} //@name PortfolioRebalanceExecutionProgress
+} //@name PortfolioRebalanceStatusProgress
 
-type PortfolioRebalanceExecutionItem struct {
+type PortfolioRebalanceStatusItem struct {
 	ID                  int        `json:"id"`
 	Ticker              string     `json:"ticker"`
 	InstrumentID        string     `json:"instrument_id"`
@@ -151,9 +151,9 @@ type PortfolioRebalanceExecutionItem struct {
 	ProviderOperationID *string    `json:"provider_operation_id"`
 	UpdatedAt           time.Time  `json:"updated_at"`
 	LastEventAt         *time.Time `json:"last_event_at"`
-} //@name PortfolioRebalanceExecutionItem
+} //@name PortfolioRebalanceStatusItem
 
-type PortfolioRebalanceExecutionLink struct {
+type PortfolioRebalanceStatusLink struct {
 	ID                      int                    `json:"id"`
 	RebalanceItemID         *int                   `json:"rebalance_item_id"`
 	Status                  string                 `json:"status"`
@@ -162,11 +162,11 @@ type PortfolioRebalanceExecutionLink struct {
 	Metadata                map[string]interface{} `json:"metadata"`
 	CreatedAt               time.Time              `json:"created_at"`
 	UpdatedAt               time.Time              `json:"updated_at"`
-} //@name PortfolioRebalanceExecutionLink
+} //@name PortfolioRebalanceStatusLink
 
-type PortfolioRebalanceExecutionStatusResponse struct {
-	Run      PortfolioRebalanceRun               `json:"run"`
-	Progress PortfolioRebalanceExecutionProgress `json:"progress"`
-	Items    []PortfolioRebalanceExecutionItem   `json:"items"`
-	Links    []PortfolioRebalanceExecutionLink   `json:"links"`
-} //@name PortfolioRebalanceExecutionStatusResponse
+type PortfolioRebalanceStatusResponse struct {
+	Run      PortfolioRebalanceRun            `json:"run"`
+	Progress PortfolioRebalanceStatusProgress `json:"progress"`
+	Items    []PortfolioRebalanceStatusItem   `json:"items"`
+	Links    []PortfolioRebalanceStatusLink   `json:"links"`
+} //@name PortfolioRebalanceStatusResponse

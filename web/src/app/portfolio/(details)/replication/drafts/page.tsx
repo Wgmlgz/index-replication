@@ -39,12 +39,12 @@ import { RebalanceDraftCreateForm } from './rebalance-draft-create-form';
 import { RebalanceDraftDetailCard } from './rebalance-draft-detail-card';
 import {
   canExecuteRunStatus,
-  hasExecutionState,
+  hasStatusState,
   isRunExecutionInProgress,
   isRunPlanningInProgress,
   mergeRunByID,
-} from './rebalance-execution-utils';
-import { useRebalanceExecutionStatus } from './use-rebalance-execution-status';
+} from './rebalance-status-utils';
+import { useRebalanceStatus } from './use-rebalance-status';
 
 type RebalanceDraftFormState = {
   asOfDate: string;
@@ -149,16 +149,16 @@ export default function PortfolioReplicationDraftsPage() {
   }, []);
 
   const {
-    executionStatus,
-    executionLoading,
-    executionError,
-    refreshExecutionStatus,
-    clearExecutionStatus,
-  } = useRebalanceExecutionStatus({
+    status,
+    statusLoading,
+    statusError,
+    refreshStatus,
+    clearStatus,
+  } = useRebalanceStatus({
     portfolioID,
     rebalanceID: selectedRebalanceID,
     detailDialogOpen,
-    enabled: hasExecutionState(rebalanceDetail?.run?.status),
+    enabled: hasStatusState(rebalanceDetail?.run?.status),
     t,
     parseErrorMessage,
     onRunUpdate: applyRunUpdate,
@@ -255,50 +255,6 @@ export default function PortfolioReplicationDraftsPage() {
     };
   }, [parseErrorMessage, portfolioID, selectedRebalanceID, t]);
 
-  useEffect(() => {
-    if (!portfolioID || !detailDialogOpen || !selectedRebalanceID) {
-      return;
-    }
-    if (!isRunPlanningInProgress(rebalanceDetail?.run?.status)) {
-      return;
-    }
-
-    let cancelled = false;
-    const refresh = async () => {
-      try {
-        const response =
-          await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
-            portfolioID,
-            selectedRebalanceID,
-          );
-        if (cancelled) {
-          return;
-        }
-        const detail = response.data ?? null;
-        setRebalanceDetail(detail);
-        if (detail?.run) {
-          applyRunUpdate(detail.run);
-        }
-      } catch {
-        // Best-effort polling while planning is running.
-      }
-    };
-
-    const timerID = window.setInterval(() => {
-      void refresh();
-    }, 2000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timerID);
-    };
-  }, [
-    applyRunUpdate,
-    detailDialogOpen,
-    portfolioID,
-    rebalanceDetail?.run?.status,
-    selectedRebalanceID,
-  ]);
-
   const onCreateDraft = useCallback(async () => {
     if (!portfolioID || !isReplicationEnabled) {
       if (!isReplicationEnabled) {
@@ -350,7 +306,7 @@ export default function PortfolioReplicationDraftsPage() {
     t,
   ]);
 
-  const selectedRun = executionStatus?.run ?? rebalanceDetail?.run;
+  const selectedRun = status?.run ?? rebalanceDetail?.run;
   const selectedEntityLabel = selectedRun
     ? selectedRun.status === 'draft'
       ? t('portfolio.replication.rebalances.entity.draft')
@@ -395,7 +351,7 @@ export default function PortfolioReplicationDraftsPage() {
           applyRunUpdate(run);
         }
         if (selectedRebalanceID === runID && detailDialogOpen) {
-          await refreshExecutionStatus();
+          await refreshStatus();
         }
       } catch (err) {
         setRebalanceError(
@@ -410,7 +366,7 @@ export default function PortfolioReplicationDraftsPage() {
       detailDialogOpen,
       parseErrorMessage,
       portfolioID,
-      refreshExecutionStatus,
+      refreshStatus,
       selectedRebalanceID,
       t,
     ],
@@ -433,7 +389,7 @@ export default function PortfolioReplicationDraftsPage() {
           setRebalanceDetail(null);
           setDetailDialogOpen(false);
           setSelectedRebalanceInQuery(null);
-          clearExecutionStatus();
+          clearStatus();
         }
         await loadRebalanceRuns();
       } catch (err) {
@@ -448,7 +404,7 @@ export default function PortfolioReplicationDraftsPage() {
       loadRebalanceRuns,
       parseErrorMessage,
       portfolioID,
-      clearExecutionStatus,
+      clearStatus,
       selectedRebalanceID,
       setSelectedRebalanceInQuery,
       t,
@@ -499,10 +455,10 @@ export default function PortfolioReplicationDraftsPage() {
         </CardHeader>
 
         <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
-          {rebalanceError || executionError ? (
+          {rebalanceError || statusError ? (
             <Alert variant='destructive'>
               <AlertTitle>{t('common.error')}</AlertTitle>
-              <AlertDescription>{rebalanceError || executionError}</AlertDescription>
+              <AlertDescription>{rebalanceError || statusError}</AlertDescription>
             </Alert>
           ) : null}
 
@@ -637,7 +593,7 @@ export default function PortfolioReplicationDraftsPage() {
             setDetailDialogOpen(open);
             if (!open) {
               setSelectedRebalanceInQuery(null);
-              clearExecutionStatus();
+              clearStatus();
             }
           }}
         >
@@ -671,8 +627,8 @@ export default function PortfolioReplicationDraftsPage() {
               rebalanceDetail ? (
                 <RebalanceDraftDetailCard
                   detail={rebalanceDetail}
-                  executionStatus={executionStatus}
-                  executionLoading={executionLoading}
+                  status={status}
+                  statusLoading={statusLoading}
                   language={i18n.language || 'en'}
                 />
               ) : null}

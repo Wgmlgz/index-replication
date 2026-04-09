@@ -1,4 +1,4 @@
-# PortfolioRebalanceExecutionProgress
+# PortfolioRebalanceStatusProgress
 
 
 ## Properties
@@ -19,9 +19,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { PortfolioRebalanceExecutionProgress } from './api';
+import { PortfolioRebalanceStatusProgress } from './api';
 
-const instance: PortfolioRebalanceExecutionProgress = {
+const instance: PortfolioRebalanceStatusProgress = {
     actionable_items,
     completed_items,
     completion_percent,

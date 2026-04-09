@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import type {
   PortfolioRebalanceDetailResponse,
-  PortfolioRebalanceExecutionStatusResponse,
+  PortfolioRebalanceStatusResponse,
   PortfolioRebalanceInput,
   PortfolioRebalanceOutput,
   PortfolioRebalanceSummary,
@@ -29,15 +29,15 @@ import { formatDateTime, formatNumber } from './rebalance-draft-detail-helpers';
 
 type RebalanceDraftDetailCardProps = {
   detail: PortfolioRebalanceDetailResponse;
-  executionStatus: PortfolioRebalanceExecutionStatusResponse | null;
-  executionLoading: boolean;
+  status: PortfolioRebalanceStatusResponse | null;
+  statusLoading: boolean;
   language: string;
 };
 
 export function RebalanceDraftDetailCard({
   detail,
-  executionStatus,
-  executionLoading,
+  status,
+  statusLoading,
   language,
 }: RebalanceDraftDetailCardProps) {
   const { t } = useTranslation();
@@ -60,10 +60,10 @@ export function RebalanceDraftDetailCard({
   const summaryUnresolvedItems: number | undefined = summary?.unresolved_items;
   const summaryEstimatedTurnover: number | undefined =
     summary?.estimated_turnover_abs;
-  const executionProgress = executionStatus?.progress;
-  const executionItems = executionStatus?.items ?? [];
-  const executionLinks = executionStatus?.links ?? [];
-  const completionPercent = executionProgress?.completion_percent ?? 0;
+  const statusProgress = status?.progress;
+  const statusItems = status?.items ?? [];
+  const statusLinks = status?.links ?? [];
+  const completionPercent = statusProgress?.completion_percent ?? 0;
 
   const itemColumns = useMemo(() => buildItemColumns(t), [t]);
   const executionItemsColumns = useMemo(
@@ -167,52 +167,52 @@ export function RebalanceDraftDetailCard({
         <div className='grid gap-2 rounded border p-3'>
           <div className='flex items-center justify-between gap-2'>
             <p className='font-medium text-foreground'>
-              {t('portfolio.replication.rebalances.executionTitle')}
+              {t('portfolio.replication.rebalances.statusTitle')}
             </p>
             <p className='text-[11px]'>
-              {executionLoading
-                ? t('portfolio.replication.rebalances.executionRefreshing')
-                : t('portfolio.replication.rebalances.executionRefreshIdle')}
+              {statusLoading
+                ? t('portfolio.replication.rebalances.statusRefreshing')
+                : t('portfolio.replication.rebalances.statusReady')}
             </p>
           </div>
           <Progress value={completionPercent} />
           <p>
-            {t('portfolio.replication.rebalances.executionCompletion')}:{' '}
+            {t('portfolio.replication.rebalances.statusCompletion')}:{' '}
             {formatNumber(completionPercent, 2)}%
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionLastEventAt')}:{' '}
-            {formatDateTime(executionProgress?.last_event_at, language)}
+            {t('portfolio.replication.rebalances.statusLastEventAt')}:{' '}
+            {formatDateTime(statusProgress?.last_event_at, language)}
           </p>
         </div>
 
         <div className='grid gap-1 rounded border p-3'>
           <p className='font-medium text-foreground'>
-            {t('portfolio.replication.rebalances.executionCountersTitle')}
+            {t('portfolio.replication.rebalances.statusCountersTitle')}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionCounters.total')}:{' '}
-            {formatNumber(executionProgress?.total_items, 0)}
+            {t('portfolio.replication.rebalances.statusCounters.total')}:{' '}
+            {formatNumber(statusProgress?.total_items, 0)}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionCounters.actionable')}:{' '}
-            {formatNumber(executionProgress?.actionable_items, 0)}
+            {t('portfolio.replication.rebalances.statusCounters.actionable')}:{' '}
+            {formatNumber(statusProgress?.actionable_items, 0)}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionCounters.pending')}:{' '}
-            {formatNumber(executionProgress?.pending_items, 0)}
+            {t('portfolio.replication.rebalances.statusCounters.pending')}:{' '}
+            {formatNumber(statusProgress?.pending_items, 0)}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionCounters.executing')}:{' '}
-            {formatNumber(executionProgress?.executing_items, 0)}
+            {t('portfolio.replication.rebalances.statusCounters.executing')}:{' '}
+            {formatNumber(statusProgress?.executing_items, 0)}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionCounters.completed')}:{' '}
-            {formatNumber(executionProgress?.completed_items, 0)}
+            {t('portfolio.replication.rebalances.statusCounters.completed')}:{' '}
+            {formatNumber(statusProgress?.completed_items, 0)}
           </p>
           <p>
-            {t('portfolio.replication.rebalances.executionCounters.failed')}:{' '}
-            {formatNumber(executionProgress?.failed_items, 0)}
+            {t('portfolio.replication.rebalances.statusCounters.failed')}:{' '}
+            {formatNumber(statusProgress?.failed_items, 0)}
           </p>
         </div>
       </div>
@@ -325,7 +325,7 @@ export function RebalanceDraftDetailCard({
 
             <TabsContent value='execution-items'>
               <SortableDataTable
-                data={executionItems}
+                data={statusItems}
                 columns={executionItemsColumns}
                 emptyLabel={t('portfolio.replication.rebalances.emptyExecutionItems')}
                 getRowKey={(row, index) =>
@@ -336,7 +336,7 @@ export function RebalanceDraftDetailCard({
 
             <TabsContent value='execution-events'>
               <SortableDataTable
-                data={executionLinks}
+                data={statusLinks}
                 columns={executionLinksColumns}
                 emptyLabel={t('portfolio.replication.rebalances.emptyExecutionEvents')}
                 getRowKey={(row, index) =>

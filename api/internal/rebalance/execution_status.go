@@ -6,16 +6,17 @@ import (
 	"time"
 
 	"server/internal/api/dto"
+	"server/internal/models"
 
 	"gorm.io/gorm"
 )
 
-func (s *Service) GetRunExecutionStatus(
+func (s *Service) GetRunStatus(
 	ctx context.Context,
 	userID int,
 	portfolioID int,
 	runID int,
-) (*dto.PortfolioRebalanceExecutionStatusResponse, error) {
+) (*dto.PortfolioRebalanceStatusResponse, error) {
 	if portfolioID <= 0 {
 		return nil, ErrInvalidProfileID
 	}
@@ -37,7 +38,11 @@ func (s *Service) GetRunExecutionStatus(
 		return nil, err
 	}
 
-	state, err := s.executor.GetRebalanceExecutionStatus(ctx, runID)
+	if planningResponse, handled := buildPlanningExecutionStatus(run); handled {
+		return planningResponse, nil
+	}
+
+	state, err := s.executor.GetRebalanceStatus(ctx, runID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,10 +56,10 @@ func (s *Service) GetRunExecutionStatus(
 		runDTO.EndedAt = state.EndedAt
 	}
 
-	items := make([]dto.PortfolioRebalanceExecutionItem, 0, len(state.Items))
+	items := make([]dto.PortfolioRebalanceStatusItem, 0, len(state.Items))
 	for i := range state.Items {
 		row := state.Items[i]
-		items = append(items, dto.PortfolioRebalanceExecutionItem{
+		items = append(items, dto.PortfolioRebalanceStatusItem{
 			ID:                  row.ID,
 			Ticker:              row.Ticker,
 			InstrumentID:        row.InstrumentID,
@@ -73,10 +78,10 @@ func (s *Service) GetRunExecutionStatus(
 		})
 	}
 
-	links := make([]dto.PortfolioRebalanceExecutionLink, 0, len(state.Links))
+	links := make([]dto.PortfolioRebalanceStatusLink, 0, len(state.Links))
 	for i := range state.Links {
 		row := state.Links[i]
-		links = append(links, dto.PortfolioRebalanceExecutionLink{
+		links = append(links, dto.PortfolioRebalanceStatusLink{
 			ID:                      row.ID,
 			RebalanceItemID:         cloneIntPtr(row.RebalanceItemID),
 			Status:                  row.Status,
@@ -88,7 +93,7 @@ func (s *Service) GetRunExecutionStatus(
 		})
 	}
 
-	progress := dto.PortfolioRebalanceExecutionProgress{
+	progress := dto.PortfolioRebalanceStatusProgress{
 		TotalItems:        state.Progress.TotalItems,
 		ActionableItems:   state.Progress.ActionableItems,
 		UnresolvedItems:   state.Progress.UnresolvedItems,
@@ -101,12 +106,61 @@ func (s *Service) GetRunExecutionStatus(
 		LastEventAt:       cloneTimePtr(state.Progress.LastEventAt),
 	}
 
-	return &dto.PortfolioRebalanceExecutionStatusResponse{
+	return &dto.PortfolioRebalanceStatusResponse{
 		Run:      runDTO,
 		Progress: progress,
 		Items:    items,
 		Links:    links,
 	}, nil
+}
+
+func buildPlanningExecutionStatus(run *models.PortfolioRebalanceRun) (*dto.PortfolioRebalanceStatusResponse, bool) {
+	if run == nil {
+		return nil, false
+	}
+
+	progress := dto.PortfolioRebalanceStatusProgress{
+		TotalItems:      2,
+		ActionableItems: 2,
+	}
+	switch run.Status {
+	case models.PortfolioRebalanceRunStatusPlanningQueued:
+		progress.PendingItems = 2
+		progress.CompletionPercent = 0
+		progress.IsTerminal = false
+	case models.PortfolioRebalanceRunStatusPlanning:
+		progress.PendingItems = 1
+		progress.ExecutingItems = 1
+		progress.CompletionPercent = 50
+		progress.IsTerminal = false
+		if run.StartedAt != nil {
+			progress.LastEventAt = cloneTimePtr(run.StartedAt)
+		}
+	case models.PortfolioRebalanceRunStatusDraft:
+		progress.CompletedItems = 2
+		progress.CompletionPercent = 100
+		progress.IsTerminal = true
+		if run.EndedAt != nil {
+			progress.LastEventAt = cloneTimePtr(run.EndedAt)
+		}
+	case models.PortfolioRebalanceRunStatusPlanningFailed:
+		progress.CompletedItems = 1
+		progress.FailedItems = 1
+		progress.CompletionPercent = 100
+		progress.IsTerminal = true
+		if run.EndedAt != nil {
+			progress.LastEventAt = cloneTimePtr(run.EndedAt)
+		}
+	default:
+		return nil, false
+	}
+
+	return &dto.PortfolioRebalanceStatusResponse{
+		Run:      toRunDTO(run),
+		Progress: progress,
+		Items:    []dto.PortfolioRebalanceStatusItem{},
+		Links:    []dto.PortfolioRebalanceStatusLink{},
+	}, true
 }
 
 func copyMetadata(source map[string]interface{}) map[string]interface{} {

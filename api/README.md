@@ -233,7 +233,7 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `POST /api/me/portfolios/:id/rebalances`
 - `GET /api/me/portfolios/:id/rebalances`
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId`
-- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution`
+- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status`
 - `DELETE /api/me/portfolios/:id/rebalances/:rebalanceId`
 - `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute`
 - `GET /api/me/portfolios/:id/summary`
@@ -255,8 +255,8 @@ Rebalance planning and execution:
   - `planning_queued -> planning -> planning_failed` on planning error
 - `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` starts Temporal workflow
   orchestration only for runs in `draft` or `failed` status.
-- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution` is Temporal-driven and returns
-  pollable execution status (run status, progress counters, item statuses, execution links) from
+- `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status` is Temporal-driven and returns
+  pollable rebalance status (run status, progress counters, item statuses, links) from
   workflow heartbeat/result without DB fallback.
 - During execution, DB is not used as execution state storage: per-item statuses and execution links
   are not written to DB in-flight; DB keeps draft payloads plus run timestamps/final terminal status.

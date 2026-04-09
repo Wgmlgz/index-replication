@@ -1,6 +1,6 @@
 import type { PortfolioRebalanceRun } from '@/api-client';
 
-export const EXECUTION_POLLING_MS = 2000;
+export const STATUS_POLLING_MS = 2000;
 
 export function canExecuteRunStatus(status: string | undefined): boolean {
   return status === 'draft' || status === 'failed';
@@ -14,8 +14,12 @@ export function isRunExecutionInProgress(status: string | undefined): boolean {
   return status === 'queued' || status === 'executing';
 }
 
-export function hasExecutionState(status: string | undefined): boolean {
+export function hasStatusState(status: string | undefined): boolean {
   return (
+    status === 'planning_queued' ||
+    status === 'planning' ||
+    status === 'planning_failed' ||
+    status === 'draft' ||
     status === 'queued' ||
     status === 'executing' ||
     status === 'completed' ||

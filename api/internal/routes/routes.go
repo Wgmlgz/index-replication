@@ -158,7 +158,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.POST("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.CreateRebalanceDraft)
 		a.GET("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.ListRebalances)
 		a.GET("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceDetail)
-		a.GET("/me/portfolios/:id/rebalances/:rebalanceId/execution", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceExecutionStatus)
+		a.GET("/me/portfolios/:id/rebalances/:rebalanceId/status", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceStatus)
 		a.DELETE("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.DeleteRebalanceDraft)
 		a.POST("/me/portfolios/:id/rebalances/:rebalanceId/execute", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.ExecuteRebalance)
 		a.GET("/me/portfolios/:id/summary", m.RPM(cs, config.SelfView), portfolioHandler.GetSummary)

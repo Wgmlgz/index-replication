@@ -1,4 +1,4 @@
-# PortfolioRebalanceExecutionLink
+# PortfolioRebalanceStatusLink
 
 
 ## Properties
@@ -17,9 +17,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { PortfolioRebalanceExecutionLink } from './api';
+import { PortfolioRebalanceStatusLink } from './api';
 
-const instance: PortfolioRebalanceExecutionLink = {
+const instance: PortfolioRebalanceStatusLink = {
     created_at,
     id,
     metadata,

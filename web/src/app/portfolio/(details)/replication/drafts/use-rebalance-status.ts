@@ -4,20 +4,21 @@ import { useCallback, useEffect, useState } from 'react';
 import type { TFunction } from 'i18next';
 
 import type {
-  PortfolioRebalanceExecutionStatusResponse,
+  PortfolioRebalanceStatusResponse,
   PortfolioRebalanceRun,
 } from '@/api-client';
 import { portfolioApi } from '@/lib/api';
 import {
-  EXECUTION_POLLING_MS,
+  STATUS_POLLING_MS,
+  isRunPlanningInProgress,
   isRunExecutionInProgress,
-} from './rebalance-execution-utils';
+} from './rebalance-status-utils';
 
-type LoadExecutionStatusOptions = {
+type LoadStatusOptions = {
   silent?: boolean;
 };
 
-type UseRebalanceExecutionStatusParams = {
+type UseRebalanceStatusParams = {
   portfolioID: number | null;
   rebalanceID: number | null;
   detailDialogOpen: boolean;
@@ -27,7 +28,7 @@ type UseRebalanceExecutionStatusParams = {
   onRunUpdate: (run: PortfolioRebalanceRun) => void;
 };
 
-export function useRebalanceExecutionStatus({
+export function useRebalanceStatus({
   portfolioID,
   rebalanceID,
   detailDialogOpen,
@@ -35,36 +36,34 @@ export function useRebalanceExecutionStatus({
   t,
   parseErrorMessage,
   onRunUpdate,
-}: UseRebalanceExecutionStatusParams) {
-  const [executionStatus, setExecutionStatus] =
-    useState<PortfolioRebalanceExecutionStatusResponse | null>(null);
-  const [executionLoading, setExecutionLoading] = useState(false);
-  const [executionError, setExecutionError] = useState('');
+}: UseRebalanceStatusParams) {
+  const [status, setStatus] = useState<PortfolioRebalanceStatusResponse | null>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState('');
 
-  const clearExecutionStatus = useCallback(() => {
-    setExecutionStatus(null);
-    setExecutionLoading(false);
-    setExecutionError('');
+  const clearStatus = useCallback(() => {
+    setStatus(null);
+    setStatusLoading(false);
+    setStatusError('');
   }, []);
 
-  const refreshExecutionStatus = useCallback(
-    async (options?: LoadExecutionStatusOptions) => {
+  const refreshStatus = useCallback(
+    async (options?: LoadStatusOptions) => {
       if (!portfolioID || !rebalanceID) {
         return null;
       }
       const silent = options?.silent === true;
       if (!silent) {
-        setExecutionLoading(true);
+        setStatusLoading(true);
       }
       try {
-        const response =
-          await portfolioApi.mePortfoliosIdRebalancesRebalanceIdExecutionGet(
-            portfolioID,
-            rebalanceID,
-          );
+        const response = await portfolioApi.mePortfoliosIdRebalancesRebalanceIdStatusGet(
+          portfolioID,
+          rebalanceID,
+        );
         const nextStatus = response.data ?? null;
-        setExecutionStatus(nextStatus);
-        setExecutionError('');
+        setStatus(nextStatus);
+        setStatusError('');
         const nextRun = nextStatus?.run;
         if (nextRun) {
           onRunUpdate(nextRun);
@@ -72,17 +71,17 @@ export function useRebalanceExecutionStatus({
         return nextStatus;
       } catch (error) {
         if (!silent) {
-          setExecutionError(
+          setStatusError(
             parseErrorMessage(
               error,
-              t('portfolio.replication.errors.loadExecutionStatus'),
+              t('portfolio.replication.errors.loadStatus'),
             ),
           );
         }
         return null;
       } finally {
         if (!silent) {
-          setExecutionLoading(false);
+          setStatusLoading(false);
         }
       }
     },
@@ -90,44 +89,44 @@ export function useRebalanceExecutionStatus({
   );
 
   useEffect(() => {
-    clearExecutionStatus();
-  }, [clearExecutionStatus, portfolioID, rebalanceID]);
+    clearStatus();
+  }, [clearStatus, portfolioID, rebalanceID]);
 
   useEffect(() => {
     if (!enabled || !detailDialogOpen || !portfolioID || !rebalanceID) {
       return;
     }
-    void refreshExecutionStatus();
-  }, [detailDialogOpen, enabled, portfolioID, rebalanceID, refreshExecutionStatus]);
+    void refreshStatus();
+  }, [detailDialogOpen, enabled, portfolioID, rebalanceID, refreshStatus]);
 
   useEffect(() => {
     if (!enabled || !detailDialogOpen || !portfolioID || !rebalanceID) {
       return;
     }
-    const runStatus = executionStatus?.run?.status;
-    if (!isRunExecutionInProgress(runStatus)) {
+    const runStatus = status?.run?.status;
+    if (!isRunPlanningInProgress(runStatus) && !isRunExecutionInProgress(runStatus)) {
       return;
     }
     const timerID = window.setInterval(() => {
-      void refreshExecutionStatus({ silent: true });
-    }, EXECUTION_POLLING_MS);
+      void refreshStatus({ silent: true });
+    }, STATUS_POLLING_MS);
     return () => {
       window.clearInterval(timerID);
     };
   }, [
     detailDialogOpen,
     enabled,
-    executionStatus?.run?.status,
+    status?.run?.status,
     portfolioID,
     rebalanceID,
-    refreshExecutionStatus,
+    refreshStatus,
   ]);
 
   return {
-    executionStatus,
-    executionLoading,
-    executionError,
-    refreshExecutionStatus,
-    clearExecutionStatus,
+    status,
+    statusLoading,
+    statusError,
+    refreshStatus,
+    clearStatus,
   };
 }

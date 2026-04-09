@@ -102,7 +102,7 @@ func (s *TemporalExecutionStarter) StartRebalanceExecution(ctx context.Context, 
 	return nil
 }
 
-func (s *TemporalExecutionStarter) GetRebalanceExecutionStatus(
+func (s *TemporalExecutionStarter) GetRebalanceStatus(
 	ctx context.Context,
 	runID int,
 ) (*workflows.RebalanceExecutionResult, error) {

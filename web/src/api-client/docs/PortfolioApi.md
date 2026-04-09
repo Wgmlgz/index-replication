@@ -16,7 +16,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**mePortfoliosIdRebalancesPost**](#meportfoliosidrebalancespost) | **POST** /me/portfolios/{id}/rebalances | Create rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdDelete**](#meportfoliosidrebalancesrebalanceiddelete) | **DELETE** /me/portfolios/{id}/rebalances/{rebalanceId} | Delete rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdExecutePost**](#meportfoliosidrebalancesrebalanceidexecutepost) | **POST** /me/portfolios/{id}/rebalances/{rebalanceId}/execute | Execute rebalance draft|
-|[**mePortfoliosIdRebalancesRebalanceIdExecutionGet**](#meportfoliosidrebalancesrebalanceidexecutionget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId}/execution | Get rebalance execution status|
+|[**mePortfoliosIdRebalancesRebalanceIdStatusGet**](#meportfoliosidrebalancesrebalanceidexecutionget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId}/status | Get rebalance status|
 |[**mePortfoliosIdRebalancesRebalanceIdGet**](#meportfoliosidrebalancesrebalanceidget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId} | Get rebalance draft detail|
 |[**mePortfoliosIdReplicationDelete**](#meportfoliosidreplicationdelete) | **DELETE** /me/portfolios/{id}/replication | Delete portfolio replication config|
 |[**mePortfoliosIdReplicationPut**](#meportfoliosidreplicationput) | **PUT** /me/portfolios/{id}/replication | Upsert portfolio replication config|
@@ -725,8 +725,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **mePortfoliosIdRebalancesRebalanceIdExecutionGet**
-> PortfolioRebalanceExecutionStatusResponse mePortfoliosIdRebalancesRebalanceIdExecutionGet()
+# **mePortfoliosIdRebalancesRebalanceIdStatusGet**
+> PortfolioRebalanceStatusResponse mePortfoliosIdRebalancesRebalanceIdStatusGet()
 
 Returns pollable execution state with live item statuses and execution links
 
@@ -744,7 +744,7 @@ const apiInstance = new PortfolioApi(configuration);
 let id: number; //Portfolio profile id (default to undefined)
 let rebalanceId: number; //Rebalance run id (default to undefined)
 
-const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdExecutionGet(
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdStatusGet(
     id,
     rebalanceId
 );
@@ -760,7 +760,7 @@ const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdEx
 
 ### Return type
 
-**PortfolioRebalanceExecutionStatusResponse**
+**PortfolioRebalanceStatusResponse**
 
 ### Authorization
 

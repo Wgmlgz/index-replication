@@ -3,8 +3,8 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 import type {
   PortfolioRebalanceBenchmarkConstituent,
-  PortfolioRebalanceExecutionItem,
-  PortfolioRebalanceExecutionLink,
+  PortfolioRebalanceStatusItem,
+  PortfolioRebalanceStatusLink,
   PortfolioRebalanceHolding,
   PortfolioRebalanceInstrumentInfo,
   PortfolioRebalanceItem,
@@ -510,7 +510,7 @@ function metadataSummary(value: Record<string, unknown> | undefined): string {
 export function buildExecutionItemsColumns(
   t: TFunction,
   language: string,
-): ColumnDef<PortfolioRebalanceExecutionItem>[] {
+): ColumnDef<PortfolioRebalanceStatusItem>[] {
   return [
     {
       accessorFn: row => row.ticker || row.instrument_id || '',
@@ -610,7 +610,7 @@ export function buildExecutionItemsColumns(
 export function buildExecutionLinksColumns(
   t: TFunction,
   language: string,
-): ColumnDef<PortfolioRebalanceExecutionLink>[] {
+): ColumnDef<PortfolioRebalanceStatusLink>[] {
   return [
     {
       accessorFn: row => row.id ?? 0,
