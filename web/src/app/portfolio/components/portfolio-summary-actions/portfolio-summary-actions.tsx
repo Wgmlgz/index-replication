@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { PortfolioActionControl } from "@/app/portfolio/components/portfolio-summary-actions/portfolio-action-control";
@@ -6,7 +6,6 @@ import type { PortfolioSummaryActionsProps } from "@/app/portfolio/components/po
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function PortfolioSummaryActions({
-  profile: _profile,
   actions,
   working,
   onRunAction,
@@ -21,17 +20,10 @@ export function PortfolioSummaryActions({
       })),
     [actions, t],
   );
-  const [activeActionTab, setActiveActionTab] = useState<string>("");
-
-  useEffect(() => {
-    if (actionTabs.length === 0) {
-      setActiveActionTab("");
-      return;
-    }
-    if (!actionTabs.some(tab => tab.value === activeActionTab)) {
-      setActiveActionTab(actionTabs[0].value);
-    }
-  }, [actionTabs, activeActionTab]);
+  const actionTabsKey = useMemo(
+    () => actionTabs.map(tab => tab.value).join("|"),
+    [actionTabs],
+  );
 
   return (
     <div className="space-y-2">
@@ -42,7 +34,7 @@ export function PortfolioSummaryActions({
       ) : null}
 
       {actionTabs.length > 0 ? (
-        <Tabs value={activeActionTab} onValueChange={setActiveActionTab} className="gap-3">
+        <Tabs key={actionTabsKey} defaultValue={actionTabs[0].value} className="gap-3">
           <TabsList className="h-auto w-full justify-start overflow-x-auto">
             {actionTabs.map(tab => (
               <TabsTrigger key={tab.value} value={tab.value} className="flex-none">

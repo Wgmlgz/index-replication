@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 function renderSortIcon(sorted: false | 'asc' | 'desc') {
   if (sorted === 'asc') {
@@ -89,12 +90,13 @@ export function SortableDataTable<TData extends RowData>({
 
   return (
     <div
-      className={
-        className ?? 'w-full max-w-full min-w-0 overflow-auto rounded-md border'
-      }
+      className={cn(
+        'relative w-full max-w-full min-w-0 overflow-auto rounded-md border [&_[data-slot=table-container]]:overflow-visible',
+        className,
+      )}
     >
       <Table>
-        <TableHeader>
+        <TableHeader className='[&_th]:bg-background [&_th]:sticky [&_th]:top-0 [&_th]:z-20'>
           {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map(header => (

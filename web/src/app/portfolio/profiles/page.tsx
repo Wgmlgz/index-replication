@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,11 +8,11 @@ import {
   ArrowUpRight,
   CircleHelp,
   FlaskConical,
-  Landmark,
   Monitor,
   Plus,
   Star,
   Trash2,
+  X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -29,6 +30,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
@@ -102,6 +104,15 @@ export default function PortfolioProfilesPage() {
     },
   });
 
+  const toggleDefaultMutation = useMutation({
+    mutationFn: async ({ portfolioID, isDefault }: { portfolioID: number; isDefault: boolean }) => {
+      await portfolioApi.mePortfoliosIdPatch(portfolioID, { is_default: isDefault });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: PORTFOLIO_V2_PROFILES_QUERY_KEY });
+    },
+  });
+
   const profiles = useMemo(
     () =>
       (profilesQuery.data ?? []).filter(
@@ -126,7 +137,7 @@ export default function PortfolioProfilesPage() {
       },
       tbank: {
         label: t('portfolio.profiles.providerTbank'),
-        icon: Landmark,
+        icon: null,
       },
     }),
     [t],
@@ -210,6 +221,26 @@ export default function PortfolioProfilesPage() {
       }
     },
     [deleteMutation, parseErrorMessage, t],
+  );
+
+  const onToggleDefault = useCallback(
+    async (profile: NormalizedPortfolioProfile, isDefault: boolean) => {
+      try {
+        setError('');
+        await toggleDefaultMutation.mutateAsync({
+          portfolioID: profile.id,
+          isDefault,
+        });
+      } catch (err) {
+        setError(parseErrorMessage(err, t('portfolio.errors.updateProfile')));
+      }
+    },
+    [parseErrorMessage, t, toggleDefaultMutation],
+  );
+
+  const hasDefaultProfile = useMemo(
+    () => profiles.some(profile => profile.is_default),
+    [profiles],
   );
 
   const formatDateTime = (value?: string) => {
@@ -391,7 +422,7 @@ export default function PortfolioProfilesPage() {
                 const providerConfig = providerDetails[providerKey];
                 const ProviderIcon = providerConfig?.icon ?? CircleHelp;
                 const providerName = providerConfig?.label ?? profile.provider;
-                const actionsCount = profile.capabilities?.actions?.length ?? 0;
+                const isTbank = providerKey === 'tbank';
 
                 return (
                   <div
@@ -400,27 +431,71 @@ export default function PortfolioProfilesPage() {
                   >
                     <div className='flex items-start justify-between gap-2'>
                       <p className='font-medium'>{profile.name}</p>
-                      {profile.is_default ? (
-                        <span className='inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>
-                          <Star className='size-3' />
-                          {t('portfolio.profiles.defaultLabelShort')}
-                        </span>
-                      ) : null}
+                      <div className='flex items-center gap-1'>
+                        {profile.is_default ? (
+                          <>
+                            <span className='inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>
+                              <Star className='size-3' />
+                              {t('portfolio.profiles.defaultLabelShort')}
+                            </span>
+                            <Button
+                              type='button'
+                              size='icon'
+                              variant='ghost'
+                              className='size-6'
+                              onClick={() => {
+                                void onToggleDefault(profile, false);
+                              }}
+                              aria-label={t('portfolio.profiles.removeDefaultAriaLabel', {
+                                name: profile.name,
+                              })}
+                              disabled={toggleDefaultMutation.isPending}
+                            >
+                              <X className='size-3' />
+                            </Button>
+                          </>
+                        ) : null}
+                        {!profile.is_default && !hasDefaultProfile ? (
+                          <button
+                            type='button'
+                            className='inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50'
+                            onClick={() => {
+                              void onToggleDefault(profile, true);
+                            }}
+                            aria-label={t('portfolio.profiles.setDefaultAriaLabel', {
+                              name: profile.name,
+                            })}
+                            disabled={toggleDefaultMutation.isPending}
+                          >
+                            {t('portfolio.profiles.setDefaultButton')}
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className='space-y-1 text-sm text-muted-foreground'>
                       <p className='inline-flex items-center gap-2'>
-                        <ProviderIcon className='size-4' />
+                        {isTbank ? (
+                          <Image
+                            src='/tbank-logo-32x32.png'
+                            alt={providerName}
+                            width={16}
+                            height={16}
+                            unoptimized
+                            className='size-4 rounded-[3px]'
+                          />
+                        ) : (
+                          <ProviderIcon className='size-4' />
+                        )}
                         <span>{t('portfolio.profiles.providerSummary', { provider: providerName })}</span>
                       </p>
-                      <p>{t('portfolio.profiles.actionsSummary', { count: actionsCount })}</p>
                     </div>
 
                     <div className='mt-auto flex items-end justify-between gap-3'>
                       <p className='text-xs text-muted-foreground'>
                         {t('portfolio.profiles.updatedLabel')}: {formatDateTime(profile.updated_at)}
                       </p>
-                      <div className='flex shrink-0 items-center gap-2'>
+                      <ButtonGroup className='shrink-0'>
                         <Button asChild size='default' variant='outline'>
                           <Link
                             href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.overview, profile.id)}
@@ -445,7 +520,7 @@ export default function PortfolioProfilesPage() {
                         >
                           <Trash2 className='size-4' />
                         </Button>
-                      </div>
+                      </ButtonGroup>
                     </div>
                   </div>
                 );

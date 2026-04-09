@@ -234,8 +234,8 @@ export function CompositionCompareTable({
       )}
       {!loading && !hasError && rows.length > 0 && (
         <div className='h-full flex flex-col gap-4'>
-          <div className='grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3'>
-            <div className='rounded border p-2'>
+          <div className='flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground'>
+            <div className='inline-flex items-center gap-1 whitespace-nowrap'>
               {t('portfolio.composition.compare.summary.trackingError')}:{' '}
               <span
                 className='font-medium'
@@ -247,7 +247,7 @@ export function CompositionCompareTable({
                 {formatPercent(summary.trackingError)}
               </span>
             </div>
-            <div className='rounded border p-2'>
+            <div className='inline-flex items-center gap-1 whitespace-nowrap'>
               {t('portfolio.composition.compare.summary.meanAbsActive')}:{' '}
               <span
                 className='font-medium'
@@ -259,7 +259,7 @@ export function CompositionCompareTable({
                 {formatPercent(summary.meanAbsActive)}
               </span>
             </div>
-            <div className='rounded border p-2'>
+            <div className='inline-flex items-center gap-1 whitespace-nowrap'>
               {t('portfolio.composition.compare.summary.overlap')}:{' '}
               <span
                 className='font-medium'
@@ -271,19 +271,19 @@ export function CompositionCompareTable({
                 {formatPercent(summary.overlap)}
               </span>
             </div>
-            <div className='rounded border p-2'>
+            <div className='inline-flex items-center gap-1 whitespace-nowrap'>
               {t('portfolio.composition.compare.summary.overweightCount')}:{' '}
               <span className='font-medium text-foreground'>
                 {summary.overweightCount}
               </span>
             </div>
-            <div className='rounded border p-2'>
+            <div className='inline-flex items-center gap-1 whitespace-nowrap'>
               {t('portfolio.composition.compare.summary.underweightCount')}:{' '}
               <span className='font-medium text-foreground'>
                 {summary.underweightCount}
               </span>
             </div>
-            <div className='rounded border p-2'>
+            <div className='inline-flex items-center gap-1 whitespace-nowrap'>
               {t('portfolio.composition.compare.summary.missingCount')}:{' '}
               <span className='font-medium text-foreground'>
                 {summary.portfolioOnlyCount + summary.benchmarkOnlyCount}

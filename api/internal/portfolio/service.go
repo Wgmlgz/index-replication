@@ -190,8 +190,6 @@ func (s *Service) PatchProfile(ctx context.Context, userID int, id int, req *dto
 		return nil, err
 	}
 
-	wasDefault := model.IsDefault
-
 	if req.Name != nil {
 		name := strings.TrimSpace(*req.Name)
 		if name == "" {
@@ -228,11 +226,6 @@ func (s *Service) PatchProfile(ctx context.Context, userID int, id int, req *dto
 			return nil, err
 		}
 		model.IsDefault = true
-	}
-	if req.IsDefault != nil && !*req.IsDefault && wasDefault {
-		if err := s.repo.EnsureSingleDefault(userID); err != nil {
-			return nil, err
-		}
 	}
 
 	parsed, err := s.parseModel(model)

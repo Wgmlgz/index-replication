@@ -1,10 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { LogIn, LogOut, Package, PanelLeftIcon, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+import type { PortfolioProfile } from '@/api-client';
+import {
+  buildPortfolioActionTabs,
+  resolvePortfolioActionTabValue,
+} from '@/app/portfolio/components/actions-tabs';
 import { useUser } from '@/components/user-context';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import {
@@ -12,6 +19,7 @@ import {
   PortfolioSidebarSubItems,
   type SidebarSubItem,
 } from '@/lib/menu';
+import { portfolioApi } from '@/lib/api';
 import {
   LAST_SELECTED_PORTFOLIO_EVENT,
   LAST_SELECTED_PORTFOLIO_STORAGE_KEY,
@@ -19,6 +27,7 @@ import {
   buildPortfolioHref,
   parsePortfolioID,
   PORTFOLIO_ID_QUERY_KEY,
+  PORTFOLIO_V2_PROFILES_QUERY_KEY,
   PORTFOLIO_V2_ROUTES,
   readLastSelectedPortfolio,
 } from '@/lib/portfolio';
@@ -48,12 +57,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
   const [lastSelectedPortfolio, setLastSelectedPortfolio] = useState<LastSelectedPortfolio | null>(null);
   const resolvedPortfolioID = selectedPortfolioID ?? lastSelectedPortfolio?.id ?? null;
+  const actionTabParam = searchParams.get('action_tab')?.trim() ?? '';
   const isPortfolioSectionActive = pathname.startsWith('/portfolio');
   const detailsLabelText = useMemo(() => {
     const detailsLabel = t('navigation.portfolio.details');
     const portfolioName = lastSelectedPortfolio?.name.trim();
     return portfolioName ? `${detailsLabel}: ${portfolioName}` : detailsLabel;
   }, [lastSelectedPortfolio?.name, t]);
+  const profilesQuery = useQuery<PortfolioProfile[]>({
+    queryKey: PORTFOLIO_V2_PROFILES_QUERY_KEY,
+    queryFn: async () => (await portfolioApi.mePortfoliosGet()).data ?? [],
+    enabled: Boolean(user),
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+  const actionSidebarItems = useMemo(() => {
+    if (!resolvedPortfolioID) {
+      return [];
+    }
+
+    const selectedProfile = (profilesQuery.data ?? []).find(profile => profile.id === resolvedPortfolioID);
+    return buildPortfolioActionTabs(
+      selectedProfile?.capabilities?.actions ?? [],
+      t('portfolio.card.runAction'),
+    );
+  }, [profilesQuery.data, resolvedPortfolioID, t]);
+  const resolvedActionTab = useMemo(
+    () => resolvePortfolioActionTabValue(actionSidebarItems, actionTabParam),
+    [actionSidebarItems, actionTabParam],
+  );
 
   const handleLogout = async () => {
     await logoutUser();
@@ -165,6 +197,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   {PortfolioSidebarSubItems.map(item => {
                     if (item.kind === 'label') {
                       const isDetailsLabel = item.titleKey === 'navigation.portfolio.details';
+                      const isActionsLabel = item.titleKey === 'navigation.portfolio.actions';
+                      if (isActionsLabel) {
+                        return (
+                          <Fragment key={item.titleKey}>
+                            <SidebarMenuSubItem>
+                              <div className='px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                                {t(item.titleKey)}
+                              </div>
+                            </SidebarMenuSubItem>
+                            {actionSidebarItems.map(actionItem => (
+                              <SidebarMenuSubItem key={`${item.titleKey}:${actionItem.value}`}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={
+                                    pathname === PORTFOLIO_V2_ROUTES.actions
+                                    && resolvedActionTab === actionItem.value
+                                  }
+                                >
+                                  <Link
+                                    href={buildPortfolioHref(
+                                      `${PORTFOLIO_V2_ROUTES.actions}?action_tab=${encodeURIComponent(actionItem.value)}`,
+                                      resolvedPortfolioID,
+                                    )}
+                                  >
+                                    <span>{actionItem.label}</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            ))}
+                          </Fragment>
+                        );
+                      }
+
                       return (
                         <SidebarMenuSubItem key={item.titleKey}>
                           <div className={isDetailsLabel

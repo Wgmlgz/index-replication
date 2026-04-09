@@ -324,6 +324,56 @@ func TestService_ProviderSelectionErrors(t *testing.T) {
 	}
 }
 
+func TestService_PatchProfileCanUnsetDefault(t *testing.T) {
+	repo := newFakeRepo()
+	replicationRepo := newFakeReplicationRepo()
+	service := NewService(repo, replicationRepo, &fakeAudit{}, &fakeProvider{})
+
+	first, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
+		Provider: "mock",
+		Name:     "First",
+	})
+	if err != nil {
+		t.Fatalf("create first profile: %v", err)
+	}
+	if !first.IsDefault {
+		t.Fatalf("expected first profile to be default")
+	}
+
+	_, err = service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
+		Provider: "mock",
+		Name:     "Second",
+	})
+	if err != nil {
+		t.Fatalf("create second profile: %v", err)
+	}
+
+	isDefault := false
+	updated, err := service.PatchProfile(context.Background(), 9, first.ID, &dto.PortfolioProfilePatchRequest{
+		IsDefault: &isDefault,
+	})
+	if err != nil {
+		t.Fatalf("patch profile: %v", err)
+	}
+	if updated.IsDefault {
+		t.Fatalf("expected patched profile to be non-default")
+	}
+
+	rows, err := repo.ListByUser(9)
+	if err != nil {
+		t.Fatalf("list profiles: %v", err)
+	}
+	defaultCount := 0
+	for _, row := range rows {
+		if row.IsDefault {
+			defaultCount++
+		}
+	}
+	if defaultCount != 0 {
+		t.Fatalf("expected zero default profiles, got %d", defaultCount)
+	}
+}
+
 func TestService_CreateProfileCallsProviderPreparer(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()

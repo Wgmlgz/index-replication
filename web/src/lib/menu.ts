@@ -140,11 +140,8 @@ export const PortfolioSidebarSubItems: SidebarSubEntry[] = [
     permission: null,
   },
   {
-    kind: "item",
+    kind: "label",
     titleKey: 'navigation.portfolio.actions',
-    href: PORTFOLIO_V2_ROUTES.actions,
-    activePathname: PORTFOLIO_V2_ROUTES.actions,
-    permission: null,
   },
   {
     kind: "label",

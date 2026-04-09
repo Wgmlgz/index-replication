@@ -1,5 +1,4 @@
 import type { PortfolioProviderAction } from "@/api-client";
-import type { NormalizedPortfolioProfile } from "@/app/portfolio/use-portfolio";
 
 export type RunActionFn = (
   actionID: string,
@@ -7,7 +6,6 @@ export type RunActionFn = (
 ) => Promise<void>;
 
 export type PortfolioSummaryActionsProps = {
-  profile: NormalizedPortfolioProfile | null;
   actions: PortfolioProviderAction[];
   working: boolean;
   onRunAction: RunActionFn;
