@@ -27,6 +27,10 @@ type RebalanceExecutionProgress struct {
 	CompletedItems    int        `json:"completedItems"`
 	FailedItems       int        `json:"failedItems"`
 	CompletionPercent float64    `json:"completionPercent"`
+	StageCode         string     `json:"stageCode"`
+	StageMessage      string     `json:"stageMessage"`
+	StageIndex        int        `json:"stageIndex"`
+	StageTotal        int        `json:"stageTotal"`
 	IsTerminal        bool       `json:"isTerminal"`
 	LastEventAt       *time.Time `json:"lastEventAt"`
 }

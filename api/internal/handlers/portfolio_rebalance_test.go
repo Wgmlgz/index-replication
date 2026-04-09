@@ -265,6 +265,12 @@ func TestPortfolioRebalanceAPI_GetStatus(t *testing.T) {
 	if executionResp.Progress.TotalItems == 0 {
 		t.Fatalf("expected progress total_items > 0")
 	}
+	if executionResp.Progress.StageCode == "" {
+		t.Fatalf("expected non-empty execution stage_code")
+	}
+	if executionResp.Progress.StageMessage == "" {
+		t.Fatalf("expected non-empty execution stage_message")
+	}
 	if len(executionResp.Items) == 0 {
 		t.Fatalf("expected execution items")
 	}
@@ -304,6 +310,9 @@ func TestPortfolioRebalanceAPI_GetStatusWhilePlanning(t *testing.T) {
 	}
 	if executionResp.Progress.CompletionPercent != 0 {
 		t.Fatalf("expected completion 0, got %.2f", executionResp.Progress.CompletionPercent)
+	}
+	if executionResp.Progress.StageCode != "planning_queued" {
+		t.Fatalf("expected stage_code %q, got %q", "planning_queued", executionResp.Progress.StageCode)
 	}
 	if executionResp.Progress.IsTerminal {
 		t.Fatalf("expected non-terminal progress")
@@ -357,6 +366,9 @@ func TestPortfolioRebalanceAPI_GetStatusAfterPlanning(t *testing.T) {
 	}
 	if executionResp.Progress.CompletionPercent != 100 {
 		t.Fatalf("expected completion 100, got %.2f", executionResp.Progress.CompletionPercent)
+	}
+	if executionResp.Progress.StageCode != "planning_completed" {
+		t.Fatalf("expected stage_code %q, got %q", "planning_completed", executionResp.Progress.StageCode)
 	}
 	if !executionResp.Progress.IsTerminal {
 		t.Fatalf("expected terminal progress for draft status")
@@ -533,6 +545,10 @@ func (s *fakeRebalanceExecutionStarter) StartRebalanceExecution(_ context.Contex
 	return nil
 }
 
+func (s *fakeRebalanceExecutionStarter) GetRebalancePlanningStatus(_ context.Context, runID int) (*workflows.RebalancePlanningStatus, error) {
+	return nil, nil
+}
+
 func (s *fakeRebalanceExecutionStarter) GetRebalanceStatus(_ context.Context, runID int) (*workflows.RebalanceExecutionResult, error) {
 	return &workflows.RebalanceExecutionResult{
 		RunID:     runID,
@@ -541,6 +557,10 @@ func (s *fakeRebalanceExecutionStarter) GetRebalanceStatus(_ context.Context, ru
 			TotalItems:      1,
 			ActionableItems: 1,
 			PendingItems:    1,
+			StageCode:       "execution_preparing_items",
+			StageMessage:    "Preparing execution items",
+			StageIndex:      0,
+			StageTotal:      1,
 			IsTerminal:      false,
 		},
 		Items: []workflows.RebalanceExecutionItem{

@@ -256,7 +256,7 @@ Rebalance planning and execution:
 - `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` starts Temporal workflow
   orchestration only for runs in `draft` or `failed` status.
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status` is Temporal-driven and returns
-  pollable rebalance status (run status, progress counters, item statuses, links) from
+  pollable rebalance status (run status, progress counters, stage code/message, item statuses, links) from
   workflow heartbeat/result without DB fallback.
 - During execution, DB is not used as execution state storage: per-item statuses and execution links
   are not written to DB in-flight; DB keeps draft payloads plus run timestamps/final terminal status.

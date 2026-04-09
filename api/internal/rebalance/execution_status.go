@@ -7,6 +7,7 @@ import (
 
 	"server/internal/api/dto"
 	"server/internal/models"
+	"server/internal/workflows"
 
 	"gorm.io/gorm"
 )
@@ -38,7 +39,14 @@ func (s *Service) GetRunStatus(
 		return nil, err
 	}
 
-	if planningResponse, handled := buildPlanningExecutionStatus(run); handled {
+	var planningState *workflows.RebalancePlanningStatus
+	if isPlanningLifecycleStatus(run.Status) {
+		state, stateErr := s.executor.GetRebalancePlanningStatus(ctx, runID)
+		if stateErr == nil {
+			planningState = state
+		}
+	}
+	if planningResponse, handled := buildPlanningExecutionStatus(run, planningState); handled {
 		return planningResponse, nil
 	}
 
@@ -102,6 +110,10 @@ func (s *Service) GetRunStatus(
 		CompletedItems:    state.Progress.CompletedItems,
 		FailedItems:       state.Progress.FailedItems,
 		CompletionPercent: state.Progress.CompletionPercent,
+		StageCode:         state.Progress.StageCode,
+		StageMessage:      state.Progress.StageMessage,
+		StageIndex:        state.Progress.StageIndex,
+		StageTotal:        state.Progress.StageTotal,
 		IsTerminal:        state.Progress.IsTerminal,
 		LastEventAt:       cloneTimePtr(state.Progress.LastEventAt),
 	}
@@ -114,53 +126,71 @@ func (s *Service) GetRunStatus(
 	}, nil
 }
 
-func buildPlanningExecutionStatus(run *models.PortfolioRebalanceRun) (*dto.PortfolioRebalanceStatusResponse, bool) {
+func buildPlanningExecutionStatus(
+	run *models.PortfolioRebalanceRun,
+	planningState *workflows.RebalancePlanningStatus,
+) (*dto.PortfolioRebalanceStatusResponse, bool) {
 	if run == nil {
 		return nil, false
 	}
 
-	progress := dto.PortfolioRebalanceStatusProgress{
-		TotalItems:      2,
-		ActionableItems: 2,
+	runDTO := toRunDTO(run)
+	if planningState != nil {
+		progress := toDTOPlanningProgress(planningState.Progress)
+		if planningState.RunStatus != "" {
+			runDTO.Status = planningState.RunStatus
+		}
+		return &dto.PortfolioRebalanceStatusResponse{
+			Run:      runDTO,
+			Progress: progress,
+			Items:    []dto.PortfolioRebalanceStatusItem{},
+			Links:    []dto.PortfolioRebalanceStatusLink{},
+		}, true
 	}
-	switch run.Status {
-	case models.PortfolioRebalanceRunStatusPlanningQueued:
-		progress.PendingItems = 2
-		progress.CompletionPercent = 0
-		progress.IsTerminal = false
-	case models.PortfolioRebalanceRunStatusPlanning:
-		progress.PendingItems = 1
-		progress.ExecutingItems = 1
-		progress.CompletionPercent = 50
-		progress.IsTerminal = false
-		if run.StartedAt != nil {
-			progress.LastEventAt = cloneTimePtr(run.StartedAt)
-		}
-	case models.PortfolioRebalanceRunStatusDraft:
-		progress.CompletedItems = 2
-		progress.CompletionPercent = 100
-		progress.IsTerminal = true
-		if run.EndedAt != nil {
-			progress.LastEventAt = cloneTimePtr(run.EndedAt)
-		}
-	case models.PortfolioRebalanceRunStatusPlanningFailed:
-		progress.CompletedItems = 1
-		progress.FailedItems = 1
-		progress.CompletionPercent = 100
-		progress.IsTerminal = true
-		if run.EndedAt != nil {
-			progress.LastEventAt = cloneTimePtr(run.EndedAt)
-		}
-	default:
+
+	progressFallback, handled := planningProgressFallbackForRun(run)
+	if !handled {
 		return nil, false
 	}
 
 	return &dto.PortfolioRebalanceStatusResponse{
-		Run:      toRunDTO(run),
-		Progress: progress,
+		Run:      runDTO,
+		Progress: toDTOPlanningProgress(progressFallback),
 		Items:    []dto.PortfolioRebalanceStatusItem{},
 		Links:    []dto.PortfolioRebalanceStatusLink{},
 	}, true
+}
+
+func isPlanningLifecycleStatus(status string) bool {
+	switch status {
+	case models.PortfolioRebalanceRunStatusPlanningQueued,
+		models.PortfolioRebalanceRunStatusPlanning,
+		models.PortfolioRebalanceRunStatusDraft,
+		models.PortfolioRebalanceRunStatusPlanningFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+func toDTOPlanningProgress(
+	progress workflows.RebalancePlanningProgress,
+) dto.PortfolioRebalanceStatusProgress {
+	return dto.PortfolioRebalanceStatusProgress{
+		TotalItems:        progress.TotalItems,
+		ActionableItems:   progress.ActionableItems,
+		PendingItems:      progress.PendingItems,
+		ExecutingItems:    progress.ExecutingItems,
+		CompletedItems:    progress.CompletedItems,
+		FailedItems:       progress.FailedItems,
+		CompletionPercent: progress.CompletionPercent,
+		StageCode:         progress.StageCode,
+		StageMessage:      progress.StageMessage,
+		StageIndex:        progress.StageIndex,
+		StageTotal:        progress.StageTotal,
+		IsTerminal:        progress.IsTerminal,
+		LastEventAt:       cloneTimePtr(progress.LastEventAt),
+	}
 }
 
 func copyMetadata(source map[string]interface{}) map[string]interface{} {

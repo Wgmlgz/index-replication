@@ -13,6 +13,10 @@ Name | Type | Description | Notes
 **is_terminal** | **boolean** |  | [optional] [default to undefined]
 **last_event_at** | **string** |  | [optional] [default to undefined]
 **pending_items** | **number** |  | [optional] [default to undefined]
+**stage_code** | **string** |  | [optional] [default to undefined]
+**stage_index** | **number** |  | [optional] [default to undefined]
+**stage_message** | **string** |  | [optional] [default to undefined]
+**stage_total** | **number** |  | [optional] [default to undefined]
 **total_items** | **number** |  | [optional] [default to undefined]
 **unresolved_items** | **number** |  | [optional] [default to undefined]
 
@@ -30,6 +34,10 @@ const instance: PortfolioRebalanceStatusProgress = {
     is_terminal,
     last_event_at,
     pending_items,
+    stage_code,
+    stage_index,
+    stage_message,
+    stage_total,
     total_items,
     unresolved_items,
 };

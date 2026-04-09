@@ -56,6 +56,8 @@ This document describes the end-to-end rebalance flow in general phases, from us
 - UI polls `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status`.
 - While workflow is running, status is served from Temporal heartbeat.
 - After workflow completion, status is served from workflow result.
+- Status payload includes coarse run `status` plus stage telemetry (`stage_code`, `stage_message`,
+  `stage_index`, `stage_total`) so UI can display what the planner/executor is currently doing.
 
 ## Run Status Lifecycle
 

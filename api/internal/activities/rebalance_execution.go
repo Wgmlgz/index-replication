@@ -48,7 +48,9 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		RunID:     params.RunID,
 		RunStatus: models.PortfolioRebalanceRunStatusExecuting,
 		Progress: workflows.RebalanceExecutionProgress{
-			IsTerminal: false,
+			StageCode:    "execution_starting",
+			StageMessage: "Preparing execution run",
+			IsTerminal:   false,
 		},
 		Items: []workflows.RebalanceExecutionItem{},
 		Links: []workflows.RebalanceExecutionLink{},
@@ -75,10 +77,24 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		return result, err
 	}
 	result.Items = items
+	setExecutionStage(
+		&result,
+		"execution_preparing_items",
+		"Preparing execution items",
+		0,
+		len(result.Items),
+	)
 	recomputeExecutionProgress(&result)
 	recordExecutionHeartbeat(ctx, &result)
 
 	if !supportsAutomaticExecutionProvider(run.Provider) {
+		setExecutionStage(
+			&result,
+			"execution_provider_unsupported",
+			"Execution provider does not support automatic execution",
+			0,
+			len(result.Items),
+		)
 		result.RunStatus = models.PortfolioRebalanceRunStatusFailed
 		finished := time.Now().UTC()
 		result.EndedAt = &finished
@@ -97,6 +113,13 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 	}
 
 	if len(result.Items) == 0 {
+		setExecutionStage(
+			&result,
+			"execution_no_items",
+			"No actionable items to execute",
+			0,
+			0,
+		)
 		result.RunStatus = models.PortfolioRebalanceRunStatusFailed
 		finished := time.Now().UTC()
 		result.EndedAt = &finished
@@ -170,6 +193,17 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 			continue
 		}
 
+		stageMessage := fmt.Sprintf("Executing %s %s", strings.ToUpper(side), strings.TrimSpace(item.Ticker))
+		if strings.TrimSpace(item.Ticker) == "" {
+			stageMessage = fmt.Sprintf("Executing %s item %d", strings.ToUpper(side), idx+1)
+		}
+		setExecutionStage(
+			&result,
+			"execution_item_running",
+			stageMessage,
+			idx+1,
+			len(result.Items),
+		)
 		result.Items[snapshotIndex].Status = models.PortfolioRebalanceItemStatusExecuting
 		recomputeExecutionProgress(&result)
 		recordExecutionHeartbeat(ctx, &result)
@@ -276,9 +310,45 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		recordExecutionHeartbeat(ctx, &result)
 	}
 
+	setExecutionStage(
+		&result,
+		"execution_finalizing",
+		"Finalizing execution result",
+		len(result.Items),
+		len(result.Items),
+	)
+	recomputeExecutionProgress(&result)
+
 	finalStatus := resolveFinalRunStatus(result.Progress)
 	result.RunStatus = finalStatus
 	result.Progress.IsTerminal = true
+	switch finalStatus {
+	case models.PortfolioRebalanceRunStatusCompleted:
+		setExecutionStage(
+			&result,
+			"execution_completed",
+			"Execution completed",
+			len(result.Items),
+			len(result.Items),
+		)
+	case models.PortfolioRebalanceRunStatusPartiallyCompleted:
+		setExecutionStage(
+			&result,
+			"execution_partially_completed",
+			"Execution partially completed",
+			len(result.Items),
+			len(result.Items),
+		)
+	default:
+		setExecutionStage(
+			&result,
+			"execution_failed",
+			"Execution failed",
+			len(result.Items),
+			len(result.Items),
+		)
+	}
+	recomputeExecutionProgress(&result)
 	finishedAt := time.Now().UTC()
 	result.EndedAt = &finishedAt
 	if err := a.runsRepo.MarkRunExecutionFinished(
@@ -414,6 +484,10 @@ func recomputeExecutionProgress(result *workflows.RebalanceExecutionResult) {
 	progress := workflows.RebalanceExecutionProgress{
 		TotalItems:      len(result.Items),
 		ActionableItems: len(result.Items),
+		StageCode:       result.Progress.StageCode,
+		StageMessage:    result.Progress.StageMessage,
+		StageIndex:      result.Progress.StageIndex,
+		StageTotal:      result.Progress.StageTotal,
 		IsTerminal:      result.Progress.IsTerminal,
 	}
 	for i := range result.Items {
@@ -443,6 +517,22 @@ func recomputeExecutionProgress(result *workflows.RebalanceExecutionResult) {
 		progress.CompletionPercent = 100
 	}
 	result.Progress = progress
+}
+
+func setExecutionStage(
+	result *workflows.RebalanceExecutionResult,
+	stageCode string,
+	stageMessage string,
+	stageIndex int,
+	stageTotal int,
+) {
+	if result == nil {
+		return
+	}
+	result.Progress.StageCode = stageCode
+	result.Progress.StageMessage = stageMessage
+	result.Progress.StageIndex = stageIndex
+	result.Progress.StageTotal = stageTotal
 }
 
 func resolveFinalRunStatus(progress workflows.RebalanceExecutionProgress) string {

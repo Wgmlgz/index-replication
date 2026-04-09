@@ -131,6 +131,10 @@ type PortfolioRebalanceStatusProgress struct {
 	CompletedItems    int        `json:"completed_items"`
 	FailedItems       int        `json:"failed_items"`
 	CompletionPercent float64    `json:"completion_percent"`
+	StageCode         string     `json:"stage_code"`
+	StageMessage      string     `json:"stage_message"`
+	StageIndex        int        `json:"stage_index"`
+	StageTotal        int        `json:"stage_total"`
 	IsTerminal        bool       `json:"is_terminal"`
 	LastEventAt       *time.Time `json:"last_event_at"`
 } //@name PortfolioRebalanceStatusProgress

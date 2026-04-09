@@ -26,6 +26,10 @@ import {
   buildTransactionsColumns,
 } from './rebalance-draft-detail-columns';
 import { formatDateTime, formatNumber } from './rebalance-draft-detail-helpers';
+import {
+  runStatusPhaseLabelKey,
+  statusStageLabelKey,
+} from './rebalance-status-utils';
 
 type RebalanceDraftDetailCardProps = {
   detail: PortfolioRebalanceDetailResponse;
@@ -64,6 +68,9 @@ export function RebalanceDraftDetailCard({
   const statusItems = status?.items ?? [];
   const statusLinks = status?.links ?? [];
   const completionPercent = statusProgress?.completion_percent ?? 0;
+  const runStatus = status?.run?.status || run?.status;
+  const stageKey = statusStageLabelKey(statusProgress?.stage_code);
+  const stageLabel = statusProgress?.stage_message || (stageKey ? t(stageKey) : '-');
 
   const itemColumns = useMemo(() => buildItemColumns(t), [t]);
   const executionItemsColumns = useMemo(
@@ -113,8 +120,8 @@ export function RebalanceDraftDetailCard({
         </Alert>
       ) : null}
 
-      <div className='grid gap-3 text-xs text-muted-foreground md:grid-cols-2'>
-        <div className='grid gap-1 rounded border p-3'>
+      <div className='grid auto-rows-max rounded border text-xs text-muted-foreground md:grid-cols-2'>
+        <div className='grid gap-1 p-3'>
           <p className='font-medium text-foreground'>
             {t('portfolio.replication.rebalances.inputTitle')}
           </p>
@@ -140,7 +147,7 @@ export function RebalanceDraftDetailCard({
           </p>
         </div>
 
-        <div className='grid gap-1 rounded border p-3'>
+        <div className='grid gap-1 border-t p-3 md:border-t-0 md:border-l'>
           <p className='font-medium text-foreground'>
             {t('portfolio.replication.rebalances.summaryTitle')}
           </p>
@@ -161,10 +168,7 @@ export function RebalanceDraftDetailCard({
             {formatNumber(summaryEstimatedTurnover, 2)}
           </p>
         </div>
-      </div>
-
-      <div className='grid gap-3 text-xs text-muted-foreground md:grid-cols-2'>
-        <div className='grid gap-2 rounded border p-3'>
+        <div className='grid gap-2 border-t p-3'>
           <div className='flex items-center justify-between gap-2'>
             <p className='font-medium text-foreground'>
               {t('portfolio.replication.rebalances.statusTitle')}
@@ -177,6 +181,17 @@ export function RebalanceDraftDetailCard({
           </div>
           <Progress value={completionPercent} />
           <p>
+            {t('portfolio.replication.rebalances.statusPhaseLabel')}:{' '}
+            {t(runStatusPhaseLabelKey(runStatus))}
+          </p>
+          <p>
+            {t('portfolio.replication.rebalances.statusStageLabel')}:{' '}
+            {stageLabel}
+            {(statusProgress?.stage_index || statusProgress?.stage_total)
+              ? ` (${formatNumber(statusProgress?.stage_index, 0)}/${formatNumber(statusProgress?.stage_total, 0)})`
+              : ''}
+          </p>
+          <p>
             {t('portfolio.replication.rebalances.statusCompletion')}:{' '}
             {formatNumber(completionPercent, 2)}%
           </p>
@@ -186,7 +201,7 @@ export function RebalanceDraftDetailCard({
           </p>
         </div>
 
-        <div className='grid gap-1 rounded border p-3'>
+        <div className='grid gap-1 border-t p-3 md:border-l'>
           <p className='font-medium text-foreground'>
             {t('portfolio.replication.rebalances.statusCountersTitle')}
           </p>

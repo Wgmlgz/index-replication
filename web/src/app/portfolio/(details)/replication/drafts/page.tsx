@@ -1,11 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { Play, Plus, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleHelp,
+  FileCheck2,
+  LoaderCircle,
+  Play,
+  XCircle,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 
 import type {
   PortfolioRebalanceCreateRequest,
@@ -33,6 +43,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { RebalanceDraftCreateForm } from './rebalance-draft-create-form';
@@ -42,6 +57,8 @@ import {
   hasStatusState,
   isRunExecutionInProgress,
   isRunPlanningInProgress,
+  runStatusBadgeIconKey,
+  runStatusBadgeLabelKey,
   mergeRunByID,
 } from './rebalance-status-utils';
 import { useRebalanceStatus } from './use-rebalance-status';
@@ -92,6 +109,34 @@ function executeButtonLabel(status: string | undefined, t: TFunction): string {
   return t('portfolio.replication.rebalances.executeDraftButton');
 }
 
+function renderRunStatusIcon(status: string | undefined) {
+  const iconKey = runStatusBadgeIconKey(status);
+  const spinning = status === 'planning_queued' ||
+    status === 'planning' ||
+    status === 'queued' ||
+    status === 'executing';
+  const className = `size-3.5 ${spinning ? 'animate-spin' : ''}`;
+
+  switch (iconKey) {
+    case 'planning':
+      return <LoaderCircle className={className} />;
+    case 'planning_done':
+      return <FileCheck2 className={className} />;
+    case 'planning_failed':
+      return <XCircle className={className} />;
+    case 'executing':
+      return <LoaderCircle className={className} />;
+    case 'completed':
+      return <CheckCircle2 className={className} />;
+    case 'partially_completed':
+      return <AlertTriangle className={className} />;
+    case 'failed':
+      return <XCircle className={className} />;
+    default:
+      return <CircleHelp className={className} />;
+  }
+}
+
 export default function PortfolioReplicationDraftsPage() {
   const { t, i18n } = useTranslation();
   const { selectedPortfolioID, selectedProfile } = usePortfolioDetailsContext();
@@ -118,6 +163,7 @@ export default function PortfolioReplicationDraftsPage() {
   const [rebalanceWorking, setRebalanceWorking] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const syncedDetailRunStatusRef = useRef('');
 
   const selectedRebalanceID = useMemo(
     () => parseRebalanceID(searchParams.get('rebalance_id')),
@@ -209,51 +255,78 @@ export default function PortfolioReplicationDraftsPage() {
     void loadRebalanceRuns();
   }, [loadRebalanceRuns]);
 
-  useEffect(() => {
-    if (!portfolioID) {
-      setRebalanceDetail(null);
-      return;
+  const loadRebalanceDetail = useCallback(async (
+    runID: number,
+    options?: { silent?: boolean },
+  ) => {
+    if (!portfolioID || runID <= 0) {
+      return null;
     }
-
-    if (!selectedRebalanceID) {
-      setRebalanceDetail(null);
-      return;
-    }
-
-    let cancelled = false;
-    const run = async () => {
+    const silent = options?.silent === true;
+    if (!silent) {
       setRebalanceDetailLoading(true);
-      try {
-        const response =
-          await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
-            portfolioID,
-            selectedRebalanceID,
-          );
-        if (!cancelled) {
-          setRebalanceDetail(response.data ?? null);
-          setRebalanceError('');
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setRebalanceError(
-            parseErrorMessage(
-              err,
-              t('portfolio.replication.errors.loadRebalanceDetail'),
-            ),
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setRebalanceDetailLoading(false);
-        }
+    }
+    try {
+      const response =
+        await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
+          portfolioID,
+          runID,
+        );
+      const detail = response.data ?? null;
+      setRebalanceDetail(detail);
+      setRebalanceError('');
+      const runStatus = detail?.run?.status;
+      syncedDetailRunStatusRef.current = typeof runStatus === 'string'
+        ? runStatus
+        : '';
+      return detail;
+    } catch (err) {
+      if (!silent) {
+        setRebalanceError(
+          parseErrorMessage(
+            err,
+            t('portfolio.replication.errors.loadRebalanceDetail'),
+          ),
+        );
       }
-    };
+      return null;
+    } finally {
+      if (!silent) {
+        setRebalanceDetailLoading(false);
+      }
+    }
+  }, [parseErrorMessage, portfolioID, t]);
 
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [parseErrorMessage, portfolioID, selectedRebalanceID, t]);
+  useEffect(() => {
+    syncedDetailRunStatusRef.current = '';
+    if (!portfolioID || !selectedRebalanceID) {
+      setRebalanceDetail(null);
+      return;
+    }
+    void loadRebalanceDetail(selectedRebalanceID);
+  }, [loadRebalanceDetail, portfolioID, selectedRebalanceID]);
+
+  useEffect(() => {
+    if (!detailDialogOpen || !portfolioID || !selectedRebalanceID) {
+      return;
+    }
+    const statusRunID = status?.run?.id;
+    const statusRunStatus = status?.run?.status;
+    if (statusRunID !== selectedRebalanceID || !statusRunStatus) {
+      return;
+    }
+    if (syncedDetailRunStatusRef.current === statusRunStatus) {
+      return;
+    }
+    void loadRebalanceDetail(selectedRebalanceID, { silent: true });
+  }, [
+    detailDialogOpen,
+    loadRebalanceDetail,
+    portfolioID,
+    selectedRebalanceID,
+    status?.run?.id,
+    status?.run?.status,
+  ]);
 
   const onCreateDraft = useCallback(async () => {
     if (!portfolioID || !isReplicationEnabled) {
@@ -264,7 +337,7 @@ export default function PortfolioReplicationDraftsPage() {
     }
 
     const payload: PortfolioRebalanceCreateRequest = {
-      execution_mode: 'automatic',
+      execution_mode: 'manual',
       as_of_date: draftForm.asOfDate.trim() || undefined,
       planning_params: {},
     };
@@ -389,6 +462,7 @@ export default function PortfolioReplicationDraftsPage() {
           setRebalanceDetail(null);
           setDetailDialogOpen(false);
           setSelectedRebalanceInQuery(null);
+          syncedDetailRunStatusRef.current = '';
           clearStatus();
         }
         await loadRebalanceRuns();
@@ -462,7 +536,7 @@ export default function PortfolioReplicationDraftsPage() {
             </Alert>
           ) : null}
 
-          <div className='grid gap-2'>
+          <div className='grid gap-0'>
             {rebalanceListLoading ? (
               <p className='px-2 text-xs text-muted-foreground'>
                 {t('portfolio.replication.rebalances.loadingList')}
@@ -481,79 +555,100 @@ export default function PortfolioReplicationDraftsPage() {
               const entityLabel = isDraftRun
                 ? t('portfolio.replication.rebalances.entity.draft')
                 : t('portfolio.replication.rebalances.entity.run');
+              const openTooltipLabel = t(
+                'portfolio.replication.rebalances.openTooltip',
+                {
+                  entity: entityLabel,
+                },
+              );
+              const isOpenDisabled = !runID || rebalanceWorking;
               const deleteDescriptionKey = isDraftRun
                 ? 'portfolio.replication.rebalances.deleteConfirmDescriptionDraft'
                 : 'portfolio.replication.rebalances.deleteConfirmDescriptionRun';
               return (
-                <div
-                  key={runID || `${run.created_at}-${run.status}`}
-                  className={`flex items-center justify-between gap-3 rounded p-2 text-xs transition-colors`}
-                >
-                  <div className='grid gap-1'>
-                    <div className='flex w-full items-center gap-2'>
-                      <span className='font-medium'>#{runID || '-'}</span>
-                      <Badge variant='outline'>{run.status || '-'}</Badge>
-                    </div>
-                    <span className='text-muted-foreground'>
-                      {run.as_of_date || '-'} | {run.execution_mode || '-'}
-                    </span>
-                    <span className='text-muted-foreground'>
-                      {formatDateTime(run.created_at, i18n.language || 'en')}
-                    </span>
-                  </div>
+                <Tooltip key={runID || `${run.created_at}-${run.status}`}>
+                  <TooltipTrigger asChild>
+                    <div
+                      role='button'
+                      tabIndex={isOpenDisabled ? -1 : 0}
+                      aria-disabled={isOpenDisabled}
+                      onClick={() => {
+                        if (!isOpenDisabled) {
+                          onOpenDraftDetail(runID || null);
+                        }
+                      }}
+                      onKeyDown={event => {
+                        if (isOpenDisabled) {
+                          return;
+                        }
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onOpenDraftDetail(runID || null);
+                        }
+                      }}
+                      className={`-mt-px flex items-center justify-between gap-3 border p-2 text-xs transition-colors first:mt-0 first:rounded-t-md last:rounded-b-md ${
+                        isOpenDisabled
+                          ? 'cursor-not-allowed opacity-70'
+                          : 'cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                      }`}
+                    >
+                      <div className='grid flex-1 gap-1'>
+                        <div className='flex w-full items-center gap-2'>
+                          <span className='font-medium'>#{runID || '-'}</span>
+                          <Badge variant='outline' className='inline-flex items-center gap-1'>
+                            {renderRunStatusIcon(run.status)}
+                            {t(runStatusBadgeLabelKey(run.status))}
+                          </Badge>
+                        </div>
+                        <span className='text-muted-foreground'>
+                          {formatDateTime(run.created_at, i18n.language || 'en')} | {run.execution_mode || '-'}
+                        </span>
+                      </div>
 
-                  <ButtonGroup className='shrink-0'>
-                    <Button
-                      type='button'
-                      variant='secondary'
-                      size='sm'
-                      onClick={() => void onExecuteDraft(runID)}
-                      disabled={!runID || rebalanceWorking || !canExecuteRunStatus(run.status)}
-                    >
-                      <Play className='size-4' />
-                      {executeButtonLabel(run.status, t)}
-                    </Button>
-                    <Button
-                      type='button'
-                      variant='secondary'
-                      size='sm'
-                      onClick={() => onOpenDraftDetail(runID || null)}
-                      disabled={!runID || rebalanceWorking}
-                    >
-                      {t('portfolio.replication.rebalances.viewButton', {
-                        entity: entityLabel,
-                      })}
-                    </Button>
-                    <ConfirmActionDialog
-                      trigger={(
+                      <ButtonGroup className='shrink-0' onClick={event => event.stopPropagation()}>
                         <Button
                           type='button'
-                          variant='destructive'
+                          variant='secondary'
                           size='sm'
-                          disabled={!runID || rebalanceWorking}
+                          onClick={() => void onExecuteDraft(runID)}
+                          disabled={!runID || rebalanceWorking || !canExecuteRunStatus(run.status)}
                         >
-                          <Trash2 className='size-4' />
-                          {t('portfolio.replication.rebalances.deleteButton', {
-                            entity: entityLabel,
-                          })}
+                          <Play className='size-4' />
+                          {executeButtonLabel(run.status, t)}
                         </Button>
-                      )}
-                      title={t('portfolio.replication.rebalances.deleteConfirmTitle', {
-                        entity: entityLabel,
-                        id: runID || '-',
-                      })}
-                      description={t(deleteDescriptionKey)}
-                      cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
-                      actionLabel={rebalanceWorking
-                        ? t('portfolio.replication.rebalances.deleteDraftWorking')
-                        : t('portfolio.replication.rebalances.deleteConfirmAction', {
-                          entity: entityLabel,
-                        })}
-                      disabled={!runID || rebalanceWorking}
-                      onAction={() => onDeleteDraft(runID)}
-                    />
-                  </ButtonGroup>
-                </div>
+                        <ConfirmActionDialog
+                          trigger={(
+                            <Button
+                              type='button'
+                              variant='destructive'
+                              size='sm'
+                              disabled={!runID || rebalanceWorking}
+                              aria-label={t('portfolio.replication.rebalances.deleteButton', {
+                                entity: entityLabel,
+                              })}
+                            >
+                              <Trash2 className='size-4' />
+                            </Button>
+                          )}
+                          title={t('portfolio.replication.rebalances.deleteConfirmTitle', {
+                            entity: entityLabel,
+                            id: runID || '-',
+                          })}
+                          description={t(deleteDescriptionKey)}
+                          cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
+                          actionLabel={rebalanceWorking
+                            ? t('portfolio.replication.rebalances.deleteDraftWorking')
+                            : t('portfolio.replication.rebalances.deleteConfirmAction', {
+                              entity: entityLabel,
+                            })}
+                          disabled={!runID || rebalanceWorking}
+                          onAction={() => onDeleteDraft(runID)}
+                        />
+                      </ButtonGroup>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{openTooltipLabel}</TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -593,6 +688,7 @@ export default function PortfolioReplicationDraftsPage() {
             setDetailDialogOpen(open);
             if (!open) {
               setSelectedRebalanceInQuery(null);
+              syncedDetailRunStatusRef.current = '';
               clearStatus();
             }
           }}
@@ -604,7 +700,10 @@ export default function PortfolioReplicationDraftsPage() {
                   entity: selectedEntityLabel,
                   id: selectedRun.id ?? '-',
                 })}
-                <Badge>{selectedRun.status || '-'}</Badge>
+                <Badge className='inline-flex items-center gap-1'>
+                  {renderRunStatusIcon(selectedRun.status)}
+                  {t(runStatusBadgeLabelKey(selectedRun.status))}
+                </Badge>
               </div>
             </DialogTitle>
 

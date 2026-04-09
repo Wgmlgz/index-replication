@@ -3,13 +3,22 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"server/internal/models"
 	"server/internal/workflows"
+
+	"go.temporal.io/sdk/activity"
 )
 
 type rebalancePlanningService interface {
-	ProcessDraftPlanningRun(ctx context.Context, userID int, portfolioID int, runID int) (*models.PortfolioRebalanceRun, error)
+	ProcessDraftPlanningRun(
+		ctx context.Context,
+		userID int,
+		portfolioID int,
+		runID int,
+		reportProgress func(workflows.RebalancePlanningStatus),
+	) (*models.PortfolioRebalanceRun, error)
 }
 
 type RebalancePlanningActivities struct {
@@ -37,7 +46,15 @@ func (a *RebalancePlanningActivities) PlanRun(
 		return result, fmt.Errorf("invalid rebalance planning params")
 	}
 
-	runModel, err := a.service.ProcessDraftPlanningRun(ctx, params.UserID, params.PortfolioID, params.RunID)
+	runModel, err := a.service.ProcessDraftPlanningRun(
+		ctx,
+		params.UserID,
+		params.PortfolioID,
+		params.RunID,
+		func(status workflows.RebalancePlanningStatus) {
+			recordPlanningHeartbeat(ctx, status)
+		},
+	)
 	if err != nil {
 		return result, err
 	}
@@ -50,4 +67,16 @@ func (a *RebalancePlanningActivities) PlanRun(
 	result.StartedAt = runModel.StartedAt
 	result.EndedAt = runModel.EndedAt
 	return result, nil
+}
+
+func recordPlanningHeartbeat(ctx context.Context, status workflows.RebalancePlanningStatus) {
+	copy := status
+	if copy.RunID <= 0 {
+		return
+	}
+	if copy.Progress.LastEventAt == nil {
+		now := time.Now().UTC()
+		copy.Progress.LastEventAt = &now
+	}
+	activity.RecordHeartbeat(ctx, copy)
 }

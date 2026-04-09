@@ -282,6 +282,10 @@ export interface PortfolioRebalanceStatusProgress {
     'is_terminal'?: boolean;
     'last_event_at'?: string;
     'pending_items'?: number;
+    'stage_code'?: string;
+    'stage_index'?: number;
+    'stage_message'?: string;
+    'stage_total'?: number;
     'total_items'?: number;
     'unresolved_items'?: number;
 }
@@ -4566,5 +4570,4 @@ export class VerificationApi extends BaseAPI {
         return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
-
 

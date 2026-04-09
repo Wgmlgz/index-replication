@@ -11,6 +11,7 @@ import (
 	"server/internal/api/dto"
 	"server/internal/models"
 	"server/internal/rebalance/planner"
+	"server/internal/workflows"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -147,6 +148,7 @@ func (s *Service) ProcessDraftPlanningRun(
 	userID int,
 	portfolioID int,
 	runID int,
+	reportProgress func(workflows.RebalancePlanningStatus),
 ) (*models.PortfolioRebalanceRun, error) {
 	if portfolioID <= 0 {
 		return nil, ErrInvalidProfileID
@@ -180,6 +182,19 @@ func (s *Service) ProcessDraftPlanningRun(
 	if err := s.runsRepo.MarkRunPlanningStarted(userID, portfolioID, runID, startedAt); err != nil {
 		return nil, err
 	}
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusPlanning,
+		planningProgressStarted(startedAt),
+	)
+
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusPlanning,
+		planningProgressSnapshotLoading(time.Now().UTC()),
+	)
 
 	planningParams := mapFromJSONMap(runModel.PlanningParamsSnapshot)
 	snapshot, err := s.snapshotLoader.Load(
@@ -190,13 +205,30 @@ func (s *Service) ProcessDraftPlanningRun(
 		planningParams,
 	)
 	if err != nil {
-		return s.markPlanningFailedAndReturnRun(userID, portfolioID, runID, runModel.ExecutionMode, runModel.AsOfDate, err)
+		return s.markPlanningFailedAndReturnRun(
+			userID,
+			portfolioID,
+			runID,
+			runModel.ExecutionMode,
+			runModel.AsOfDate,
+			err,
+			reportProgress,
+			planningStageCodeSnapshotLoading,
+			"Failed while loading snapshot",
+		)
 	}
 
 	typedPlanningParams, planningParamsSnapshot := normalizePlanningParams(planningParams)
 	snapshot.PlanningParams = typedPlanningParams
 	snapshot.PlanningParamsSnapshot = planningParamsSnapshot
 	snapshot.PlannerInput.Params = typedPlanningParams
+
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusPlanning,
+		planningProgressAlgorithmRunning(time.Now().UTC()),
+	)
 
 	planOutput, err := s.planner.Plan(snapshot.PlannerInput)
 	if err != nil {
@@ -208,11 +240,21 @@ func (s *Service) ProcessDraftPlanningRun(
 			runModel.ExecutionMode,
 			snapshot.PlannerInput.AsOfAt,
 			planErr,
+			reportProgress,
+			planningStageCodeAlgorithm,
+			"Failed while running planning algorithm",
 		)
 	}
 	if len(snapshot.Warnings) > 0 {
 		planOutput.Warnings = append(planOutput.Warnings, snapshot.Warnings...)
 	}
+
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusPlanning,
+		planningProgressEncoding(time.Now().UTC()),
+	)
 
 	planSummary := planner.BuildSummary(planOutput.Items, snapshot.PlannerInput.InvestableCapital)
 	planInputDTO := toPlanInputDTO(snapshot.PlannerInput)
@@ -228,6 +270,9 @@ func (s *Service) ProcessDraftPlanningRun(
 			runModel.ExecutionMode,
 			snapshot.PlannerInput.AsOfAt,
 			fmt.Errorf("%w: encode plan input: %v", ErrPlanningFailed, err),
+			reportProgress,
+			planningStageCodeEncoding,
+			"Failed while encoding planning input",
 		)
 	}
 	outputJSON, err := toJSONMap(planOutputDTO)
@@ -239,6 +284,9 @@ func (s *Service) ProcessDraftPlanningRun(
 			runModel.ExecutionMode,
 			snapshot.PlannerInput.AsOfAt,
 			fmt.Errorf("%w: encode plan output: %v", ErrPlanningFailed, err),
+			reportProgress,
+			planningStageCodeEncoding,
+			"Failed while encoding planning output",
 		)
 	}
 	summaryJSON, err := toJSONMap(planSummaryDTO)
@@ -250,6 +298,9 @@ func (s *Service) ProcessDraftPlanningRun(
 			runModel.ExecutionMode,
 			snapshot.PlannerInput.AsOfAt,
 			fmt.Errorf("%w: encode plan summary: %v", ErrPlanningFailed, err),
+			reportProgress,
+			planningStageCodeEncoding,
+			"Failed while encoding planning summary",
 		)
 	}
 	warnings := planOutput.Warnings
@@ -265,8 +316,18 @@ func (s *Service) ProcessDraftPlanningRun(
 			runModel.ExecutionMode,
 			snapshot.PlannerInput.AsOfAt,
 			fmt.Errorf("%w: encode plan warnings: %v", ErrPlanningFailed, err),
+			reportProgress,
+			planningStageCodeEncoding,
+			"Failed while encoding planning warnings",
 		)
 	}
+
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusPlanning,
+		planningProgressPersisting(time.Now().UTC()),
+	)
 
 	endedAt := time.Now().UTC()
 	plannedRun := &models.PortfolioRebalanceRun{
@@ -290,6 +351,13 @@ func (s *Service) ProcessDraftPlanningRun(
 		return nil, err
 	}
 
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusDraft,
+		planningProgressCompleted(endedAt),
+	)
+
 	return s.runsRepo.GetRunByID(userID, portfolioID, runID)
 }
 
@@ -300,15 +368,40 @@ func (s *Service) markPlanningFailedAndReturnRun(
 	executionMode string,
 	asOfDate time.Time,
 	planErr error,
+	reportProgress func(workflows.RebalancePlanningStatus),
+	failedStageCode string,
+	failedStageMessage string,
 ) (*models.PortfolioRebalanceRun, error) {
 	endedAt := time.Now().UTC()
 	if err := s.runsRepo.MarkRunPlanningFailed(userID, portfolioID, runID, endedAt); err != nil {
 		return nil, err
 	}
+	s.reportPlanningProgress(
+		reportProgress,
+		runID,
+		models.PortfolioRebalanceRunStatusPlanningFailed,
+		planningProgressFailed(failedStageCode, failedStageMessage, endedAt),
+	)
 	s.logPlanningFailed(userID, portfolioID, executionMode, asOfDate.UTC().Format("2006-01-02"), planErr)
 	runModel, err := s.runsRepo.GetRunByID(userID, portfolioID, runID)
 	if err != nil {
 		return nil, err
 	}
 	return runModel, nil
+}
+
+func (s *Service) reportPlanningProgress(
+	reportProgress func(workflows.RebalancePlanningStatus),
+	runID int,
+	runStatus string,
+	progress workflows.RebalancePlanningProgress,
+) {
+	if reportProgress == nil || runID <= 0 {
+		return
+	}
+	reportProgress(workflows.RebalancePlanningStatus{
+		RunID:     runID,
+		RunStatus: runStatus,
+		Progress:  progress,
+	})
 }

@@ -3424,6 +3424,18 @@ const docTemplate = `{
                 "pending_items": {
                     "type": "integer"
                 },
+                "stage_code": {
+                    "type": "string"
+                },
+                "stage_index": {
+                    "type": "integer"
+                },
+                "stage_message": {
+                    "type": "string"
+                },
+                "stage_total": {
+                    "type": "integer"
+                },
                 "total_items": {
                     "type": "integer"
                 },

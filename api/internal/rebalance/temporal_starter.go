@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"server/internal/models"
 	"server/internal/workflows"
 
 	enumspb "go.temporal.io/api/enums/v1"
@@ -102,6 +104,80 @@ func (s *TemporalExecutionStarter) StartRebalanceExecution(ctx context.Context, 
 	return nil
 }
 
+func (s *TemporalExecutionStarter) GetRebalancePlanningStatus(
+	ctx context.Context,
+	runID int,
+) (*workflows.RebalancePlanningStatus, error) {
+	if s == nil || s.address == "" || s.namespace == "" || s.taskQueue == "" {
+		return nil, ErrPlanningUnavailable
+	}
+	if runID <= 0 {
+		return nil, ErrInvalidRebalanceID
+	}
+
+	temporalClient, err := client.Dial(client.Options{
+		HostPort:  s.address,
+		Namespace: s.namespace,
+	})
+	if err != nil {
+		return nil, normalizeTemporalPlanningError(fmt.Errorf("temporal client connection failed: %w", err))
+	}
+	defer temporalClient.Close()
+
+	workflowID := rebalancePlanningWorkflowID(runID)
+	describe, err := temporalClient.DescribeWorkflowExecution(ctx, workflowID, "")
+	if err != nil {
+		var notFound *serviceerror.NotFound
+		if errors.As(err, &notFound) {
+			return nil, ErrExecutionNotFound
+		}
+		return nil, normalizeTemporalPlanningError(err)
+	}
+
+	if describe.GetWorkflowExecutionInfo().GetStatus() == enumspb.WORKFLOW_EXECUTION_STATUS_RUNNING {
+		if heartbeat := decodePlanningHeartbeat(describe); heartbeat != nil {
+			return heartbeat, nil
+		}
+		now := time.Now().UTC()
+		return &workflows.RebalancePlanningStatus{
+			RunID:     runID,
+			RunStatus: models.PortfolioRebalanceRunStatusPlanning,
+			Progress:  planningProgressStarted(now),
+		}, nil
+	}
+
+	workflowRunID := ""
+	if info := describe.GetWorkflowExecutionInfo(); info != nil && info.GetExecution() != nil {
+		workflowRunID = info.GetExecution().GetRunId()
+	}
+	workflowRun := temporalClient.GetWorkflow(ctx, workflowID, workflowRunID)
+	var result workflows.RebalancePlanningResult
+	if err := workflowRun.Get(ctx, &result); err != nil {
+		return nil, normalizeTemporalPlanningError(err)
+	}
+	if result.RunID <= 0 {
+		result.RunID = runID
+	}
+
+	status := result.RunStatus
+	if status == "" {
+		status = models.PortfolioRebalanceRunStatusPlanningFailed
+	}
+	finishedAt := time.Now().UTC()
+	if result.EndedAt != nil {
+		finishedAt = result.EndedAt.UTC()
+	}
+	progress := planningProgressFailed(planningStageCodeFailed, "Planning failed", finishedAt)
+	if status == models.PortfolioRebalanceRunStatusDraft {
+		progress = planningProgressCompleted(finishedAt)
+	}
+	return &workflows.RebalancePlanningStatus{
+		RunID:     result.RunID,
+		RunStatus: status,
+		Progress:  progress,
+	}, nil
+}
+
 func (s *TemporalExecutionStarter) GetRebalanceStatus(
 	ctx context.Context,
 	runID int,
@@ -140,7 +216,9 @@ func (s *TemporalExecutionStarter) GetRebalanceStatus(
 			RunID:     runID,
 			RunStatus: "executing",
 			Progress: workflows.RebalanceExecutionProgress{
-				IsTerminal: false,
+				StageCode:    "execution_running",
+				StageMessage: "Execution in progress",
+				IsTerminal:   false,
 			},
 			Items: []workflows.RebalanceExecutionItem{},
 			Links: []workflows.RebalanceExecutionLink{},
@@ -185,6 +263,31 @@ func decodeExecutionHeartbeat(
 		var result workflows.RebalanceExecutionResult
 		if err := client.NewValues(details).Get(&result); err == nil {
 			return &result
+		}
+	}
+	return nil
+}
+
+func decodePlanningHeartbeat(
+	describe *workflowservice.DescribeWorkflowExecutionResponse,
+) *workflows.RebalancePlanningStatus {
+	if describe == nil {
+		return nil
+	}
+	for _, pending := range describe.GetPendingActivities() {
+		if pending == nil {
+			continue
+		}
+		if pending.GetActivityType().GetName() != workflows.RebalancePlanRunActivityName {
+			continue
+		}
+		details := pending.GetHeartbeatDetails()
+		if details == nil {
+			continue
+		}
+		var status workflows.RebalancePlanningStatus
+		if err := client.NewValues(details).Get(&status); err == nil {
+			return &status
 		}
 	}
 	return nil

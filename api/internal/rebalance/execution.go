@@ -15,6 +15,7 @@ import (
 type ExecutionStarter interface {
 	StartRebalancePlanning(ctx context.Context, userID int, portfolioID int, runID int) error
 	StartRebalanceExecution(ctx context.Context, userID int, portfolioID int, runID int) error
+	GetRebalancePlanningStatus(ctx context.Context, runID int) (*workflows.RebalancePlanningStatus, error)
 	GetRebalanceStatus(ctx context.Context, runID int) (*workflows.RebalanceExecutionResult, error)
 }
 
