@@ -13,6 +13,7 @@ import (
 )
 
 type ExecutionStarter interface {
+	StartRebalancePlanning(ctx context.Context, userID int, portfolioID int, runID int) error
 	StartRebalanceExecution(ctx context.Context, userID int, portfolioID int, runID int) error
 	GetRebalanceExecutionStatus(ctx context.Context, runID int) (*workflows.RebalanceExecutionResult, error)
 }
@@ -44,8 +45,9 @@ func (s *Service) ExecuteRun(
 		return nil, err
 	}
 	switch run.Status {
-	case models.PortfolioRebalanceRunStatusCompleted,
-		models.PortfolioRebalanceRunStatusPartiallyCompleted:
+	case models.PortfolioRebalanceRunStatusDraft,
+		models.PortfolioRebalanceRunStatusFailed:
+	default:
 		return nil, ErrRebalanceNotExecutable
 	}
 

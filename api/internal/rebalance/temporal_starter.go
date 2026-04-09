@@ -28,6 +28,43 @@ func NewTemporalExecutionStarter(address string, namespace string, taskQueue str
 	}
 }
 
+func (s *TemporalExecutionStarter) StartRebalancePlanning(ctx context.Context, userID int, portfolioID int, runID int) error {
+	if s == nil || s.address == "" || s.namespace == "" || s.taskQueue == "" {
+		return ErrPlanningUnavailable
+	}
+
+	temporalClient, err := client.Dial(client.Options{
+		HostPort:  s.address,
+		Namespace: s.namespace,
+	})
+	if err != nil {
+		return normalizeTemporalPlanningError(fmt.Errorf("temporal client connection failed: %w", err))
+	}
+	defer temporalClient.Close()
+
+	_, err = temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:        rebalancePlanningWorkflowID(runID),
+			TaskQueue: s.taskQueue,
+		},
+		workflows.RebalancePlanningWorkflow,
+		workflows.RebalancePlanningParams{
+			UserID:      userID,
+			PortfolioID: portfolioID,
+			RunID:       runID,
+		},
+	)
+	if err != nil {
+		var alreadyStarted *serviceerror.WorkflowExecutionAlreadyStarted
+		if errors.As(err, &alreadyStarted) {
+			return nil
+		}
+		return normalizeTemporalPlanningError(err)
+	}
+	return nil
+}
+
 func (s *TemporalExecutionStarter) StartRebalanceExecution(ctx context.Context, userID int, portfolioID int, runID int) error {
 	if s == nil || s.address == "" || s.namespace == "" || s.taskQueue == "" {
 		return ErrExecutionUnavailable
@@ -173,6 +210,10 @@ func rebalanceWorkflowID(runID int) string {
 	return fmt.Sprintf("rebalance-run-%d", runID)
 }
 
+func rebalancePlanningWorkflowID(runID int) string {
+	return fmt.Sprintf("rebalance-plan-%d", runID)
+}
+
 func normalizeTemporalError(err error) error {
 	if err == nil {
 		return nil
@@ -186,6 +227,23 @@ func normalizeTemporalError(err error) error {
 		strings.Contains(message, "connection refused") ||
 		strings.Contains(message, "context deadline exceeded") {
 		return fmt.Errorf("%w: %v", ErrExecutionUnavailable, err)
+	}
+	return err
+}
+
+func normalizeTemporalPlanningError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var unavailable *serviceerror.Unavailable
+	var namespaceNotFound *serviceerror.NamespaceNotFound
+	message := strings.ToLower(err.Error())
+	if errors.As(err, &unavailable) || errors.As(err, &namespaceNotFound) ||
+		errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) ||
+		strings.Contains(message, "failed reaching server") ||
+		strings.Contains(message, "connection refused") ||
+		strings.Contains(message, "context deadline exceeded") {
+		return fmt.Errorf("%w: %v", ErrPlanningUnavailable, err)
 	}
 	return err
 }

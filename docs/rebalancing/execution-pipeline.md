@@ -12,27 +12,29 @@ This document describes the end-to-end rebalance flow in general phases, from us
 
 1. Draft request
 - User calls `POST /api/me/portfolios/:id/rebalances`.
-- System validates profile/config and starts draft creation.
+- System validates profile/config, creates run with status `planning_queued`, starts Temporal planning workflow (`rebalance.plan`), and returns `202 Accepted`.
 
-2. Snapshot assembly
-- Load portfolio holdings, cash balances, replication config, benchmark composition, and instrument prices.
-- Resolve/fill instrument IDs at snapshot build time (provider-aware).
-- Build normalized planner input.
+2. Temporal planning workflow run
+- Workflow `rebalance.plan` runs activity `rebalance.plan_run_activity`.
+- Activity transitions run status to `planning`.
 
-3. Pure planning
-- Execute planning algorithm (`full`) on normalized input.
-- Produce planned items (`planned` / `unresolved`), warnings, and summary.
+3. Snapshot assembly
+- Worker loads portfolio holdings, cash balances, replication config, benchmark composition, and instrument prices.
+- Worker resolves/fills instrument IDs at snapshot build time (provider-aware).
+- Worker builds normalized planner input.
 
-4. Draft persistence
-- Persist run snapshot payloads (input/output/summary) with run status `draft`.
-- Return draft detail to UI.
+4. Pure planning and draft persistence
+- Worker executes planning algorithm (`full`) on normalized input.
+- Worker persists run payloads (input/output/summary/warnings) and transitions:
+  - to `draft` on success
+  - to `planning_failed` on planning failure
 
 5. Execution start request
 - User calls `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute`.
-- System validates run state and queues Temporal workflow.
+- System validates run state (`draft` or `failed`) and queues Temporal workflow.
 - API returns run status `queued`.
 
-6. Temporal workflow run
+6. Temporal execution workflow run
 - Workflow `rebalance.execute` runs activity `rebalance.execute_run_activity`.
 - Activity marks run execution start and initializes in-memory execution state from planned items.
 
@@ -58,7 +60,8 @@ This document describes the end-to-end rebalance flow in general phases, from us
 ## Run Status Lifecycle
 
 ```text
-draft -> queued -> executing -> (completed | partially_completed | failed)
+planning_queued -> planning -> (draft | planning_failed)
+draft|failed -> queued -> executing -> (completed | partially_completed | failed)
 ```
 
 ## Item Status Lifecycle
@@ -73,25 +76,27 @@ planned with missing instrument_id -> failed
 
 ```mermaid
 flowchart TD
-    A["User request: create rebalance draft"] --> B["Load snapshot"]
-    B --> C["Run pure planner"]
-    C --> D["Persist draft run (status=draft)"]
-    D --> E["User request: execute draft"]
-    E --> F["Start Temporal workflow (status=queued)"]
-    F --> G["Activity ExecuteRun (status=executing)"]
-    G --> H{For each item}
-    H --> I["Resolve side and quantity"]
-    I --> J{"instrument_id present?"}
-    J -->|No| O["Item failed + link"]
-    J -->|Yes| L["Run buy/sell action"]
-    L --> M{Action result}
-    M -->|Success| N["Item completed + link"]
-    M -->|Failure| O["Item failed + link"]
-    N --> H
-    O --> H
-    H --> P["Finalize run status"]
-    P --> Q["Mark ended_at in DB"]
-    Q --> R["UI polls execution status"]
+    A["User request: create rebalance draft"] --> B["Create run (status=planning_queued) + start rebalance.plan"]
+    B --> C["Activity PlanRun (status=planning)"]
+    C --> D["Load snapshot"]
+    D --> E["Run pure planner + persist payloads"]
+    E --> F["Run status: draft or planning_failed"]
+    F --> G["User request: execute draft"]
+    G --> H["Start rebalance.execute (status=queued)"]
+    H --> I["Activity ExecuteRun (status=executing)"]
+    I --> J{For each item}
+    J --> K["Resolve side and quantity"]
+    K --> L{"instrument_id present?"}
+    L -->|No| P["Item failed + link"]
+    L -->|Yes| M["Run buy/sell action"]
+    M --> N{Action result}
+    N -->|Success| O["Item completed + link"]
+    N -->|Failure| P["Item failed + link"]
+    O --> J
+    P --> J
+    J --> Q["Finalize run status"]
+    Q --> R["Mark ended_at in DB"]
+    R --> S["UI polls execution status"]
 ```
 
 ## Sequence Diagram
@@ -100,21 +105,27 @@ flowchart TD
 sequenceDiagram
     participant U as User/UI
     participant API as API Handler/Service
-    participant SNAP as Snapshot Loader
-    participant PLAN as Planner
     participant DB as Rebalance Runs DB
     participant TMP as Temporal
+    participant PACT as PlanRun Activity
+    participant SNAP as Snapshot Loader
+    participant PLAN as Planner
     participant ACT as ExecuteRun Activity
     participant PRV as Provider (virtual/tbank)
 
     U->>API: POST /rebalances
-    API->>SNAP: Build planner input
-    SNAP-->>API: Snapshot input
-    API->>PLAN: Plan(input)
-    PLAN-->>API: Output(items/warnings/summary)
-    API->>DB: Save run(status=draft, payloads)
-    DB-->>API: Run ID
-    API-->>U: Draft detail
+    API->>DB: Save run(status=planning_queued)
+    API->>TMP: Start workflow rebalance.plan
+    TMP-->>API: accepted
+    API-->>U: 202 + run(status=planning_queued)
+
+    TMP->>PACT: PlanRun(params)
+    PACT->>DB: Mark status=planning
+    PACT->>SNAP: Build planner input
+    SNAP-->>PACT: Snapshot input
+    PACT->>PLAN: Plan(input)
+    PLAN-->>PACT: Output(items/warnings/summary)
+    PACT->>DB: Save payloads + status=draft (or planning_failed)
 
     U->>API: POST execute rebalance run
     API->>TMP: Start workflow rebalance.execute

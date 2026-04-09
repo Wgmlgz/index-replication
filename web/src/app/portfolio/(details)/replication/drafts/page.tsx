@@ -16,6 +16,7 @@ import { usePortfolioDetailsContext } from '@/app/portfolio/components/portfolio
 import { ConfirmActionDialog } from '@/components/confirm-action-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Button } from '@/components/ui/button';
 import {
   CardAction,
@@ -38,7 +39,9 @@ import { RebalanceDraftCreateForm } from './rebalance-draft-create-form';
 import { RebalanceDraftDetailCard } from './rebalance-draft-detail-card';
 import {
   canExecuteRunStatus,
+  hasExecutionState,
   isRunExecutionInProgress,
+  isRunPlanningInProgress,
   mergeRunByID,
 } from './rebalance-execution-utils';
 import { useRebalanceExecutionStatus } from './use-rebalance-execution-status';
@@ -80,7 +83,7 @@ function executeButtonLabel(status: string | undefined, t: TFunction): string {
   if (status === 'failed') {
     return t('portfolio.replication.rebalances.executeDraftRetry');
   }
-  if (isRunExecutionInProgress(status)) {
+  if (isRunPlanningInProgress(status) || isRunExecutionInProgress(status)) {
     return t('portfolio.replication.rebalances.executeDraftRunning');
   }
   if (!canExecuteRunStatus(status)) {
@@ -155,7 +158,7 @@ export default function PortfolioReplicationDraftsPage() {
     portfolioID,
     rebalanceID: selectedRebalanceID,
     detailDialogOpen,
-    enabled: Boolean(rebalanceDetail?.run && rebalanceDetail.run.status !== 'draft'),
+    enabled: hasExecutionState(rebalanceDetail?.run?.status),
     t,
     parseErrorMessage,
     onRunUpdate: applyRunUpdate,
@@ -251,6 +254,50 @@ export default function PortfolioReplicationDraftsPage() {
       cancelled = true;
     };
   }, [parseErrorMessage, portfolioID, selectedRebalanceID, t]);
+
+  useEffect(() => {
+    if (!portfolioID || !detailDialogOpen || !selectedRebalanceID) {
+      return;
+    }
+    if (!isRunPlanningInProgress(rebalanceDetail?.run?.status)) {
+      return;
+    }
+
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const response =
+          await portfolioApi.mePortfoliosIdRebalancesRebalanceIdGet(
+            portfolioID,
+            selectedRebalanceID,
+          );
+        if (cancelled) {
+          return;
+        }
+        const detail = response.data ?? null;
+        setRebalanceDetail(detail);
+        if (detail?.run) {
+          applyRunUpdate(detail.run);
+        }
+      } catch {
+        // Best-effort polling while planning is running.
+      }
+    };
+
+    const timerID = window.setInterval(() => {
+      void refresh();
+    }, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timerID);
+    };
+  }, [
+    applyRunUpdate,
+    detailDialogOpen,
+    portfolioID,
+    rebalanceDetail?.run?.status,
+    selectedRebalanceID,
+  ]);
 
   const onCreateDraft = useCallback(async () => {
     if (!portfolioID || !isReplicationEnabled) {
@@ -499,7 +546,7 @@ export default function PortfolioReplicationDraftsPage() {
                     </span>
                   </div>
 
-                  <div className='flex items-center gap-2'>
+                  <ButtonGroup className='shrink-0'>
                     <Button
                       type='button'
                       variant='secondary'
@@ -512,7 +559,7 @@ export default function PortfolioReplicationDraftsPage() {
                     </Button>
                     <Button
                       type='button'
-                      variant='outline'
+                      variant='secondary'
                       size='sm'
                       onClick={() => onOpenDraftDetail(runID || null)}
                       disabled={!runID || rebalanceWorking}
@@ -549,7 +596,7 @@ export default function PortfolioReplicationDraftsPage() {
                       disabled={!runID || rebalanceWorking}
                       onAction={() => onDeleteDraft(runID)}
                     />
-                  </div>
+                  </ButtonGroup>
                 </div>
               );
             })}

@@ -10,6 +10,9 @@ const (
 	PortfolioRebalanceExecutionModeManual    = "manual"
 	PortfolioRebalanceExecutionModeAutomatic = "automatic"
 
+	PortfolioRebalanceRunStatusPlanningQueued     = "planning_queued"
+	PortfolioRebalanceRunStatusPlanning           = "planning"
+	PortfolioRebalanceRunStatusPlanningFailed     = "planning_failed"
 	PortfolioRebalanceRunStatusDraft              = "draft"
 	PortfolioRebalanceRunStatusQueued             = "queued"
 	PortfolioRebalanceRunStatusExecuting          = "executing"

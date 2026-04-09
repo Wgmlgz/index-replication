@@ -4,7 +4,11 @@ import (
 	"log"
 	"server/internal/activities"
 	"server/internal/config"
+	"server/internal/marketprice"
+	"server/internal/moex"
 	"server/internal/portfolio"
+	"server/internal/rebalance"
+	rebalanceplanner "server/internal/rebalance/planner"
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/tbank"
@@ -33,6 +37,14 @@ func main() {
 
 	w := worker.New(temporalClient, cfg.TemporalQueue, worker.Options{})
 	acts := activities.NewMoexSyncActivities(db, cfg.MoexBaseURL, cfg.MoexMutableDays, cfg.MoexImmutableBeforeDate)
+	moexLiveService := moex.NewMoexService(cfg.MoexBaseURL)
+	moexReadService := moex.NewMoexReadService(repos.MoexDataRepo, moexLiveService, cfg.MoexLiveCurrentDayEnabled)
+	marketPriceService := marketprice.NewService(
+		repos.MarketPriceRepo,
+		repos.MoexDataRepo,
+		repos.MoexSyncRepo,
+		moexLiveService,
+	)
 	tbankService := tbank.NewService(
 		tbank.Config{
 			TBankInvestGrpcEndpoint:        cfg.TBankInvestGrpcEndpoint,
@@ -41,17 +53,42 @@ func main() {
 		},
 		repos.UserSettingsRepo,
 		auditService,
-		nil,
+		marketPriceService,
 	)
 	tbankProvider := portfolio.NewTBankProvider(tbankService)
-	virtualProvider := portfolio.NewVirtualProvider(repos.VirtualPortfolioTransactionsRepo, nil)
+	mockProvider := portfolio.NewMockProvider()
+	virtualProvider := portfolio.NewVirtualProvider(repos.VirtualPortfolioTransactionsRepo, marketPriceService)
 	portfolioService := portfolio.NewService(
 		repos.PortfolioProfilesRepo,
 		repos.PortfolioReplicationConfigsRepo,
 		auditService,
 		tbankProvider,
+		mockProvider,
 		virtualProvider,
 	)
+	rebalancePlanner := rebalanceplanner.NewService(
+		rebalanceplanner.NewRegistry(
+			rebalanceplanner.NewFullAlgorithm(),
+		),
+	)
+	rebalanceSnapshotLoader := rebalance.NewSnapshotLoader(
+		repos.PortfolioProfilesRepo,
+		repos.PortfolioReplicationConfigsRepo,
+		moexReadService,
+		marketPriceService,
+		tbankProvider,
+		mockProvider,
+		virtualProvider,
+	)
+	rebalanceService := rebalance.NewService(
+		repos.PortfolioProfilesRepo,
+		repos.PortfolioRebalancesRepo,
+		rebalanceSnapshotLoader,
+		rebalancePlanner,
+		auditService,
+		nil,
+	)
+	rebalancePlanningActs := activities.NewRebalancePlanningActivities(rebalanceService)
 	rebalanceActs := activities.NewRebalanceExecutionActivities(
 		repos.PortfolioRebalancesRepo,
 		portfolioService,
@@ -60,6 +97,7 @@ func main() {
 	w.RegisterWorkflowWithOptions(workflows.MetaRefreshWorkflow, workflow.RegisterOptions{Name: workflows.MetaRefreshWorkflowName})
 	w.RegisterWorkflowWithOptions(workflows.DailySyncWorkflow, workflow.RegisterOptions{Name: workflows.DailySyncWorkflowName})
 	w.RegisterWorkflowWithOptions(workflows.DailySyncWorkflow, workflow.RegisterOptions{Name: "DailySyncWorkflow"})
+	w.RegisterWorkflowWithOptions(workflows.RebalancePlanningWorkflow, workflow.RegisterOptions{Name: workflows.RebalancePlanningWorkflowName})
 	w.RegisterWorkflowWithOptions(workflows.RebalanceExecutionWorkflow, workflow.RegisterOptions{Name: workflows.RebalanceExecutionWorkflowName})
 
 	w.RegisterActivityWithOptions(acts.MetaRefresh, activity.RegisterOptions{Name: workflows.MetaRefreshActivityName})
@@ -67,6 +105,7 @@ func main() {
 	w.RegisterActivityWithOptions(acts.ListIndexSecids, activity.RegisterOptions{Name: workflows.ListIndexSecidsActivityName})
 	w.RegisterActivityWithOptions(acts.SyncIndex, activity.RegisterOptions{Name: workflows.SyncIndexActivityName})
 	w.RegisterActivityWithOptions(acts.DailySync, activity.RegisterOptions{Name: "moex.daily_sync_legacy_activity"})
+	w.RegisterActivityWithOptions(rebalancePlanningActs.PlanRun, activity.RegisterOptions{Name: workflows.RebalancePlanRunActivityName})
 	w.RegisterActivityWithOptions(rebalanceActs.ExecuteRun, activity.RegisterOptions{Name: workflows.RebalanceExecuteRunActivityName})
 
 	log.Printf("Temporal worker started address=%s namespace=%s taskQueue=%s", cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue)

@@ -45,10 +45,10 @@ Common tasks:
 - Shared UI and features live in `web/src/components/`.
 - API access is centralized in `web/src/lib/api.ts` using a generated client.
 - Portfolio (`/portfolio`) uses provider-agnostic backend endpoints (`/api/me/portfolios/:id/*`) and profile selection via `portfolio_id` URL param.
-- Portfolio overview includes a Replication tab for config CRUD and rebalance draft planning
-  (create/list/detail/delete; no execution yet). It reads replication data embedded in
+- Portfolio overview includes a Replication tab for config CRUD, async rebalance planning,
+  and execution monitoring. It reads replication data embedded in
   `GET /api/me/portfolios` / `GET /api/me/portfolios/:id/summary`, writes config via PUT/DELETE replication endpoints,
-  and uses `/api/me/portfolios/:id/rebalances*` for draft planning data.
+  and uses `/api/me/portfolios/:id/rebalances*` for planning queue/list/detail/delete/execute/execution status flows.
 - MOEX data access is handled by backend endpoints via `web/src/lib/moex-client.ts`.
 - Generated code in `web/src/api-client/` should not be edited manually.
 - Forms use React Hook Form with Zod schemas for validation.

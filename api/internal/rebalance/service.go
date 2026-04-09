@@ -2,17 +2,12 @@ package rebalance
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
+	"gorm.io/gorm"
 	"server/internal/api/dto"
 	"server/internal/models"
-	"server/internal/rebalance/planner"
-
-	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type runRepository interface {
@@ -20,16 +15,21 @@ type runRepository interface {
 	ListRunsByPortfolio(userID int, portfolioProfileID int, limit int) ([]models.PortfolioRebalanceRun, error)
 	GetRunByID(userID int, portfolioProfileID int, runID int) (*models.PortfolioRebalanceRun, error)
 	DeleteRunByID(userID int, portfolioProfileID int, runID int) error
+	MarkRunPlanningStarted(userID int, portfolioProfileID int, runID int, startedAt time.Time) error
+	MarkRunPlanningFailed(userID int, portfolioProfileID int, runID int, endedAt time.Time) error
+	MarkRunPlanningFinished(
+		userID int,
+		portfolioProfileID int,
+		runID int,
+		run *models.PortfolioRebalanceRun,
+		endedAt time.Time,
+	) error
 	MarkRunExecutionStarted(userID int, portfolioProfileID int, runID int, startedAt time.Time) error
 	MarkRunExecutionFinished(userID int, portfolioProfileID int, runID int, status string, endedAt time.Time) error
 }
 
 type auditLogger interface {
 	LogUserAction(performedBy int, action string, userID int, details interface{}) error
-}
-
-type plannerService interface {
-	Plan(input planner.Input) (planner.Output, error)
 }
 
 type Service struct {
@@ -47,19 +47,15 @@ func NewService(
 	snapshotLoader *SnapshotLoader,
 	planner plannerService,
 	audit auditLogger,
-	executor ...ExecutionStarter,
+	executor ExecutionStarter,
 ) *Service {
-	var executionStarter ExecutionStarter
-	if len(executor) > 0 {
-		executionStarter = executor[0]
-	}
 	return &Service{
 		profilesRepo:   profilesRepo,
 		runsRepo:       runsRepo,
 		snapshotLoader: snapshotLoader,
 		planner:        planner,
 		audit:          audit,
-		executor:       executionStarter,
+		executor:       executor,
 	}
 }
 
@@ -69,116 +65,11 @@ func (s *Service) CreateDraft(
 	portfolioID int,
 	req *dto.PortfolioRebalanceCreateRequest,
 ) (*dto.PortfolioRebalanceDetailResponse, error) {
-	if req == nil {
-		return nil, ErrInvalidRequest
-	}
-	if portfolioID <= 0 {
-		return nil, ErrInvalidProfileID
-	}
-
-	executionMode, err := normalizeExecutionMode(req.ExecutionMode)
+	runModel, err := s.EnqueueDraftPlanning(ctx, userID, portfolioID, req)
 	if err != nil {
 		return nil, err
 	}
-	planningParams, planningParamsSnapshot := normalizePlanningParams(req.PlanningParams)
-	confirmationRequired := executionMode == models.PortfolioRebalanceExecutionModeManual
-	if req.ConfirmationRequired != nil {
-		confirmationRequired = *req.ConfirmationRequired
-	}
-
-	startedAt := time.Now().UTC()
-	snapshot, err := s.snapshotLoader.Load(ctx, userID, portfolioID, req.AsOfDate, req.PlanningParams)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, req.AsOfDate, err)
-		return nil, err
-	}
-	snapshot.PlanningParams = planningParams
-	snapshot.PlanningParamsSnapshot = planningParamsSnapshot
-	snapshot.PlannerInput.Params = planningParams
-
-	planOutput, err := s.planner.Plan(snapshot.PlannerInput)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
-		return nil, fmt.Errorf("%w: %v", ErrPlanningFailed, err)
-	}
-	if len(snapshot.Warnings) > 0 {
-		planOutput.Warnings = append(planOutput.Warnings, snapshot.Warnings...)
-	}
-	endedAt := time.Now().UTC()
-	planSummary := planner.BuildSummary(planOutput.Items, snapshot.PlannerInput.InvestableCapital)
-	planInputDTO := toPlanInputDTO(snapshot.PlannerInput)
-	planOutputDTO := toPlanOutputDTO(planOutput)
-	planSummaryDTO := toPlanSummaryDTO(planSummary)
-
-	asOfDate := snapshot.PlannerInput.AsOfAt
-	if asOfDate.IsZero() {
-		asOfDate = time.Now().UTC()
-	}
-
-	inputJSON, err := toJSONMap(planInputDTO)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
-		return nil, fmt.Errorf("%w: encode plan input: %v", ErrPlanningFailed, err)
-	}
-	outputJSON, err := toJSONMap(planOutputDTO)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
-		return nil, fmt.Errorf("%w: encode plan output: %v", ErrPlanningFailed, err)
-	}
-	summaryJSON, err := toJSONMap(planSummaryDTO)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
-		return nil, fmt.Errorf("%w: encode plan summary: %v", ErrPlanningFailed, err)
-	}
-	warnings := planOutput.Warnings
-	if warnings == nil {
-		warnings = []string{}
-	}
-	warningsJSON, err := json.Marshal(warnings)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
-		return nil, fmt.Errorf("%w: encode plan warnings: %v", ErrPlanningFailed, err)
-	}
-
-	runModel := &models.PortfolioRebalanceRun{
-		UserID:                        userID,
-		PortfolioProfileID:            portfolioID,
-		Provider:                      snapshot.Provider,
-		BenchmarkSecidSnapshot:        strPtr(snapshot.BenchmarkSecid),
-		ReplicationModeKeySnapshot:    snapshot.ModeKey,
-		ReplicationModeParamsSnapshot: datatypes.JSONMap(snapshot.ModeParams),
-		PlanningParamsSnapshot:        datatypes.JSONMap(snapshot.PlanningParamsSnapshot),
-		ExecutionMode:                 executionMode,
-		ConfirmationRequired:          confirmationRequired,
-		Status:                        models.PortfolioRebalanceRunStatusDraft,
-		AsOfDate:                      asOfDate,
-		InputJSON:                     inputJSON,
-		OutputJSON:                    outputJSON,
-		SummaryJSON:                   summaryJSON,
-		WarningsJSON:                  datatypes.JSON(warningsJSON),
-		StartedAt:                     &startedAt,
-		EndedAt:                       &endedAt,
-	}
-
-	savedRun, err := s.runsRepo.CreateRun(runModel)
-	if err != nil {
-		s.logPlanningFailed(userID, portfolioID, executionMode, snapshot.AsOfDate, err)
-		return nil, err
-	}
-
-	_ = s.audit.LogUserAction(userID, models.ActionPortfolioRebalanceCreated, userID, map[string]interface{}{
-		"portfolio_id":          portfolioID,
-		"rebalance_run_id":      savedRun.ID,
-		"provider":              savedRun.Provider,
-		"benchmark_secid":       derefString(savedRun.BenchmarkSecidSnapshot),
-		"replication_mode_key":  savedRun.ReplicationModeKeySnapshot,
-		"execution_mode":        savedRun.ExecutionMode,
-		"confirmation_required": savedRun.ConfirmationRequired,
-		"status":                savedRun.Status,
-		"items_total":           len(planOutput.Items),
-	})
-
-	return toDetailDTO(savedRun)
+	return toDetailDTO(runModel)
 }
 
 func (s *Service) ListRuns(
@@ -322,11 +213,4 @@ func toRunDTO(model *models.PortfolioRebalanceRun) dto.PortfolioRebalanceRun {
 func strPtr(value string) *string {
 	trimmed := value
 	return &trimmed
-}
-
-func derefString(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
 }

@@ -247,8 +247,14 @@ Action payload requirement:
 - `POST /api/me/portfolios/:id/actions/:action` now requires `payload.action_id` (UUID string).
 - The same `action_id` can be reused by callers (for example Temporal retries) to keep provider-side execution idempotent.
 
-Rebalance execution:
-- `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` starts Temporal workflow orchestration.
+Rebalance planning and execution:
+- `POST /api/me/portfolios/:id/rebalances` is fully async: it creates a run with status
+  `planning_queued`, starts Temporal workflow `rebalance.plan`, and returns `202 Accepted`.
+- Planning workflow transitions:
+  - `planning_queued -> planning -> draft` on success
+  - `planning_queued -> planning -> planning_failed` on planning error
+- `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` starts Temporal workflow
+  orchestration only for runs in `draft` or `failed` status.
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId/execution` is Temporal-driven and returns
   pollable execution status (run status, progress counters, item statuses, execution links) from
   workflow heartbeat/result without DB fallback.

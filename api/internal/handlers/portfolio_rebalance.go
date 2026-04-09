@@ -31,7 +31,7 @@ func NewPortfolioRebalanceHandler(service *rebalance.Service) *PortfolioRebalanc
 //	@Produce		json
 //	@Param			id		path		int							true	"Portfolio profile id"
 //	@Param			payload	body		dto.PortfolioRebalanceCreateRequest	true	"Rebalance draft payload"
-//	@Success		201		{object}	dto.PortfolioRebalanceDetailResponse
+//	@Success		202		{object}	dto.PortfolioRebalanceDetailResponse
 //	@Failure		400		{object}	dto.ErrorResponse
 //	@Failure		404		{object}	dto.ErrorResponse
 //	@Failure		500		{object}	dto.ErrorResponse
@@ -54,7 +54,7 @@ func (h *PortfolioRebalanceHandler) CreateRebalanceDraft(c *gin.Context) {
 		writePortfolioRebalanceError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusAccepted, resp)
 }
 
 // ListRebalances godoc
@@ -247,6 +247,8 @@ func writePortfolioRebalanceError(c *gin.Context, err error) {
 		errors.Is(err, rebalance.ErrExecutionProviderUnsupported):
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	case errors.Is(err, rebalance.ErrExecutionUnavailable):
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: err.Error()})
+	case errors.Is(err, rebalance.ErrPlanningUnavailable):
 		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: err.Error()})
 	case errors.Is(err, rebalance.ErrProfileNotFound),
 		errors.Is(err, rebalance.ErrReplicationConfigNotFound),

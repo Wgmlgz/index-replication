@@ -16,6 +16,7 @@ var (
 	ErrBenchmarkNotFound            = errors.New("benchmark not found")
 	ErrRebalanceNotFound            = errors.New("rebalance run not found")
 	ErrRebalanceNotExecutable       = errors.New("rebalance run is not executable")
+	ErrPlanningUnavailable          = errors.New("rebalance planning is unavailable")
 	ErrExecutionUnavailable         = errors.New("rebalance execution is unavailable")
 	ErrExecutionNotFound            = errors.New("rebalance execution workflow not found")
 	ErrExecutionProviderUnsupported = errors.New("rebalance execution is supported only for virtual and tbank providers")

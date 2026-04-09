@@ -28,7 +28,8 @@ import (
 )
 
 func TestPortfolioRebalanceAPI_CreateDraftSuccess(t *testing.T) {
-	router, _, profileID := setupRebalanceTestRouter(t, true)
+	starter := &fakeRebalanceExecutionStarter{}
+	router, _, profileID := setupRebalanceTestRouterWithStarter(t, true, starter)
 
 	payload := dto.PortfolioRebalanceCreateRequest{
 		ExecutionMode: "manual",
@@ -40,8 +41,8 @@ func TestPortfolioRebalanceAPI_CreateDraftSuccess(t *testing.T) {
 
 	rec := performJSONRequest(t, router, http.MethodPost,
 		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), payload)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d, body=%s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d, body=%s", rec.Code, rec.Body.String())
 	}
 
 	var resp dto.PortfolioRebalanceDetailResponse
@@ -51,17 +52,17 @@ func TestPortfolioRebalanceAPI_CreateDraftSuccess(t *testing.T) {
 	if resp.Run.ID <= 0 {
 		t.Fatalf("expected run id > 0")
 	}
-	if resp.Run.Status != models.PortfolioRebalanceRunStatusDraft {
-		t.Fatalf("expected draft status, got %q", resp.Run.Status)
+	if resp.Run.Status != models.PortfolioRebalanceRunStatusPlanningQueued {
+		t.Fatalf("expected planning_queued status, got %q", resp.Run.Status)
 	}
 	if resp.Run.ModeKey != "full" {
 		t.Fatalf("expected mode full, got %q", resp.Run.ModeKey)
 	}
-	if len(resp.Output.Items) == 0 {
-		t.Fatalf("expected planned items")
+	if starter.planningCalls != 1 {
+		t.Fatalf("expected planning starter to be called once, got %d", starter.planningCalls)
 	}
-	if len(resp.Transactions) == 0 {
-		t.Fatalf("expected derived transactions")
+	if starter.calls != 0 {
+		t.Fatalf("expected execution starter not to be called during draft creation, got %d", starter.calls)
 	}
 }
 
@@ -101,8 +102,8 @@ func TestPortfolioRebalanceAPI_DetailAndListContract(t *testing.T) {
 
 	createRec := performJSONRequest(t, router, http.MethodPost,
 		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
-	if createRec.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	if createRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d, body=%s", createRec.Code, createRec.Body.String())
 	}
 
 	var created dto.PortfolioRebalanceDetailResponse
@@ -140,12 +141,6 @@ func TestPortfolioRebalanceAPI_DetailAndListContract(t *testing.T) {
 	if detailResp.Run.ID != created.Run.ID {
 		t.Fatalf("expected detail run id %d, got %d", created.Run.ID, detailResp.Run.ID)
 	}
-	if len(detailResp.Output.Items) == 0 {
-		t.Fatalf("expected detail items")
-	}
-	if len(detailResp.Transactions) == 0 {
-		t.Fatalf("expected detail transactions")
-	}
 }
 
 func TestPortfolioRebalanceAPI_DeleteDraft(t *testing.T) {
@@ -157,8 +152,8 @@ func TestPortfolioRebalanceAPI_DeleteDraft(t *testing.T) {
 	}
 	createRec := performJSONRequest(t, router, http.MethodPost,
 		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
-	if createRec.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	if createRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d, body=%s", createRec.Code, createRec.Body.String())
 	}
 
 	var created dto.PortfolioRebalanceDetailResponse
@@ -190,7 +185,7 @@ func TestPortfolioRebalanceAPI_DeleteDraft(t *testing.T) {
 
 func TestPortfolioRebalanceAPI_ExecuteDraft(t *testing.T) {
 	starter := &fakeRebalanceExecutionStarter{}
-	router, _, profileID := setupRebalanceTestRouterWithStarter(t, true, starter)
+	router, db, profileID := setupRebalanceTestRouterWithStarter(t, true, starter)
 
 	createPayload := dto.PortfolioRebalanceCreateRequest{
 		ExecutionMode: "automatic",
@@ -198,13 +193,18 @@ func TestPortfolioRebalanceAPI_ExecuteDraft(t *testing.T) {
 	}
 	createRec := performJSONRequest(t, router, http.MethodPost,
 		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
-	if createRec.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	if createRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d, body=%s", createRec.Code, createRec.Body.String())
 	}
 
 	var created dto.PortfolioRebalanceDetailResponse
 	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
 		t.Fatalf("decode create response: %v", err)
+	}
+	if err := db.Model(&models.PortfolioRebalanceRun{}).
+		Where("id = ?", created.Run.ID).
+		Update("status", models.PortfolioRebalanceRunStatusDraft).Error; err != nil {
+		t.Fatalf("update run status to draft: %v", err)
 	}
 
 	executeRec := performJSONRequest(t, router, http.MethodPost,
@@ -230,8 +230,8 @@ func TestPortfolioRebalanceAPI_GetExecutionStatus(t *testing.T) {
 	}
 	createRec := performJSONRequest(t, router, http.MethodPost,
 		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
-	if createRec.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d, body=%s", createRec.Code, createRec.Body.String())
+	if createRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d, body=%s", createRec.Code, createRec.Body.String())
 	}
 
 	var created dto.PortfolioRebalanceDetailResponse
@@ -314,6 +314,9 @@ func setupRebalanceTestRouterWithStarter(t *testing.T, withReplication bool, sta
 			rebalanceplanner.NewFullAlgorithm(),
 		),
 	)
+	if starter == nil {
+		starter = &fakeRebalanceExecutionStarter{}
+	}
 
 	service := rebalance.NewService(
 		profilesRepo,
@@ -416,10 +419,16 @@ func (s *fakeBenchmarkReadService) GetIndexComposition(_ context.Context, _ stri
 }
 
 type fakeRebalanceExecutionStarter struct {
-	calls       int
-	userID      int
-	portfolioID int
-	runID       int
+	planningCalls int
+	calls         int
+	userID        int
+	portfolioID   int
+	runID         int
+}
+
+func (s *fakeRebalanceExecutionStarter) StartRebalancePlanning(_ context.Context, _ int, _ int, _ int) error {
+	s.planningCalls++
+	return nil
 }
 
 func (s *fakeRebalanceExecutionStarter) StartRebalanceExecution(_ context.Context, userID int, portfolioID int, runID int) error {
