@@ -25,6 +25,7 @@ Common tasks:
 
 - `task dev`
 - `task worker:dev`
+- `task telegram:dev`
 - `task schedules:apply` (manual/local schedule upsert only; Docker startup auto-applies namespace/search-attributes/schedules via `infra/temporal-setup`)
 - `task lint`
 - `task test`
@@ -46,7 +47,8 @@ Note: `task dev` uses `go run github.com/air-verse/air@latest` for hot reloading
 
 ## Entry Points
 
-- `main.go` boots the server and wires config, routes, and middleware.
+- `main.go` boots the HTTP API server and wires config, routes, and middleware.
+- `cmd/telegram-bot/main.go` boots the dedicated Telegram polling process.
 - `internal/routes/` defines the HTTP routes.
 - `internal/handlers/` contains request handlers (HTTP layer).
 - `internal/api/dto/` contains HTTP DTOs and OpenAPI schema models.
@@ -105,6 +107,7 @@ Environment variables live in `.env`. Key settings:
 - `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
 - `TELEGRAM_BOT_TOKEN` (optional; enables Telegram login verification transport)
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)
+- `TELEGRAM_SOCKS5_PROXY` (optional; SOCKS5 proxy for Telegram API calls in format `socks5://user:pass@host:port`)
 - `TELEGRAM_POLL_TIMEOUT_SEC` (default `30`, Telegram long-poll timeout)
 - `LOGIN_VERIFICATION_TTL_SECONDS` (default `300`, login challenge expiration)
 - `MOEX_MUTABLE_DAYS` (default `30`)

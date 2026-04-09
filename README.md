@@ -76,6 +76,7 @@ task docker
 
 ```bash
 cd api && task dev
+cd api && task telegram:dev
 cd web && task dev
 ```
 

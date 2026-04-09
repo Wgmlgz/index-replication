@@ -8,6 +8,7 @@ vars:
   MIGRATIONS_DIR: ./migrations
   DATABASE_URL: '{{.DATABASE_URL | default "postgres://app:app@localhost:5432/app?sslmode=disable"}}'
   WORKER_BIN: '{{if eq OS "windows"}}./tmp/moex-worker.exe{{else}}./tmp/moex-worker{{end}}'
+  TELEGRAM_BOT_BIN: '{{if eq OS "windows"}}./tmp/telegram-bot.exe{{else}}./tmp/telegram-bot{{end}}'
 
 tasks:
   default:
@@ -62,6 +63,11 @@ tasks:
     desc: Run MOEX Temporal worker locally with hot reload
     cmds:
       - go run github.com/air-verse/air@latest --build.cmd "go build -o {{.WORKER_BIN}} ./cmd/moex-worker" --build.entrypoint "{{.WORKER_BIN}}"
+
+  telegram:dev:
+    desc: Run Telegram polling bot locally with hot reload
+    cmds:
+      - go run github.com/air-verse/air@latest --build.cmd "go build -o {{.TELEGRAM_BOT_BIN}} ./cmd/telegram-bot" --build.entrypoint "{{.TELEGRAM_BOT_BIN}}"
 
   schedules:apply:
     desc: Create/update Temporal schedules for MOEX sync workflows

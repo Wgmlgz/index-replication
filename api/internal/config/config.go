@@ -28,6 +28,7 @@ type Config struct {
 	BotsToken                      string
 	TelegramBotToken               string
 	TelegramBotUsername            string
+	TelegramSocks5Proxy            string
 	TelegramPollTimeoutSec         int
 	LoginVerificationTTLSeconds    int
 	MoexBaseURL                    string
@@ -74,6 +75,7 @@ func LoadConfig() *Config {
 		BotsToken:                      getEnv("BOTS_TOKEN", "secret_token"),
 		TelegramBotToken:               getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramBotUsername:            getEnv("TELEGRAM_BOT_USERNAME", ""),
+		TelegramSocks5Proxy:            getEnv("TELEGRAM_SOCKS5_PROXY", ""),
 		TelegramPollTimeoutSec:         getEnvInt("TELEGRAM_POLL_TIMEOUT_SEC", 30),
 		LoginVerificationTTLSeconds:    getEnvInt("LOGIN_VERIFICATION_TTL_SECONDS", 300),
 		MoexBaseURL:                    getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),

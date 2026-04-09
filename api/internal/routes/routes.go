@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"context"
 	"fmt"
 	"log"
 	keycloakauth "server/internal/auth"
@@ -62,7 +61,6 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		telegramService,
 	)
-	verificationService.StartTelegramPolling(context.Background())
 
 	keycloakAuth := keycloakauth.NewKeycloakAuthenticator(cfg)
 	authHandler := h.NewAuthHandler(auditService)

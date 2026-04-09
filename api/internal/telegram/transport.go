@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"server/internal/config"
+
+	"golang.org/x/net/proxy"
 )
 
 type TelegramUpdate struct {
@@ -59,11 +62,26 @@ func NewTelegramService(cfg *config.Config) *TelegramService {
 		httpTimeout = time.Duration(cfg.TelegramPollTimeoutSec+15) * time.Second
 	}
 
+	httpClient := &http.Client{
+		Timeout: httpTimeout,
+	}
+	if cfg != nil && strings.TrimSpace(cfg.TelegramSocks5Proxy) != "" {
+		dialContext, err := buildSOCKS5DialContext(cfg.TelegramSocks5Proxy, httpTimeout)
+		if err != nil {
+			log.Printf("telegram: invalid TELEGRAM_SOCKS5_PROXY value: %v", err)
+		} else {
+			httpClient.Transport = &http.Transport{
+				Proxy:             http.ProxyFromEnvironment,
+				DialContext:       dialContext,
+				ForceAttemptHTTP2: true,
+			}
+			log.Printf("telegram: using SOCKS5 proxy")
+		}
+	}
+
 	return &TelegramService{
-		cfg: cfg,
-		httpClient: &http.Client{
-			Timeout: httpTimeout,
-		},
+		cfg:        cfg,
+		httpClient: httpClient,
 	}
 }
 
@@ -282,4 +300,51 @@ func (s *TelegramService) setCachedBotUsername(username string) {
 	s.mu.Lock()
 	s.botUsername = trimmed
 	s.mu.Unlock()
+}
+
+func buildSOCKS5DialContext(rawProxy string, timeout time.Duration) (func(context.Context, string, string) (net.Conn, error), error) {
+	trimmed := strings.TrimSpace(rawProxy)
+	if trimmed == "" {
+		return nil, fmt.Errorf("proxy value is empty")
+	}
+
+	proxyURL, err := url.Parse(trimmed)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.EqualFold(proxyURL.Scheme, "socks5") {
+		return nil, fmt.Errorf("unsupported proxy scheme %q (expected socks5)", proxyURL.Scheme)
+	}
+	host := strings.TrimSpace(proxyURL.Hostname())
+	port := strings.TrimSpace(proxyURL.Port())
+	if host == "" || port == "" {
+		return nil, fmt.Errorf("proxy host must include hostname and port")
+	}
+
+	proxyAddr := net.JoinHostPort(host, port)
+	var auth *proxy.Auth
+
+	if proxyURL.User != nil {
+		username := strings.TrimSpace(proxyURL.User.Username())
+		if username == "" {
+			return nil, fmt.Errorf("proxy username is empty")
+		}
+		password, _ := proxyURL.User.Password()
+		auth = &proxy.Auth{User: username, Password: password}
+	}
+
+	baseDialer := &net.Dialer{
+		Timeout:   timeout,
+		KeepAlive: 30 * time.Second,
+	}
+	socksDialer, err := proxy.SOCKS5("tcp", proxyAddr, auth, baseDialer)
+	if err != nil {
+		return nil, err
+	}
+	if contextDialer, ok := socksDialer.(proxy.ContextDialer); ok {
+		return contextDialer.DialContext, nil
+	}
+	return func(_ context.Context, network, address string) (net.Conn, error) {
+		return socksDialer.Dial(network, address)
+	}, nil
 }

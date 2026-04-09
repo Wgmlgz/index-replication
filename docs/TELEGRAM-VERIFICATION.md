@@ -10,7 +10,7 @@ This project supports optional two-step login verification via Telegram.
 4. User taps `Approve login` or `Deny`.
 5. Frontend checks challenge status via `/api/login/verify` and completes session login on approval.
 
-The bot implementation is embedded in the API process. There is no separate bot service.
+Telegram polling runs as a dedicated bot process (`telegram-bot`) that shares the same database as the API.
 
 ## Developer Setup
 
@@ -21,6 +21,7 @@ The bot implementation is embedded in the API process. There is no separate bot 
 ```bash
 TELEGRAM_BOT_TOKEN=<your_bot_token>
 TELEGRAM_BOT_USERNAME=<your_bot_username_without_@>
+TELEGRAM_SOCKS5_PROXY=socks5://user:pass@host:port
 TELEGRAM_POLL_TIMEOUT_SEC=30
 LOGIN_VERIFICATION_TTL_SECONDS=300
 ```
@@ -38,7 +39,14 @@ task migrate:up
 task docker
 ```
 
-When `TELEGRAM_BOT_TOKEN` is set, API starts long-polling Telegram updates automatically.
+When `TELEGRAM_BOT_TOKEN` is set, the `telegram-bot` service starts long-polling Telegram updates.
+
+For local non-Docker development:
+
+```bash
+cd api
+task telegram:dev
+```
 
 ## User Setup Flow (In App)
 

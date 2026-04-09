@@ -3,8 +3,8 @@ output: prefixed
 vars:
   COMPOSE_NON_APP_SERVICES_RAW:
     sh: docker compose config --services
-  COMPOSE_INFRA_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api" "moex-worker") }}'
-  COMPOSE_WAIT_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api" "moex-worker" "temporal-admin-tools" "temporal-setup" "keycloak-terraform-db" "keycloak-terraform") }}'
+  COMPOSE_INFRA_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api" "moex-worker" "telegram-bot") }}'
+  COMPOSE_WAIT_SERVICES: '{{ join " " (without (splitList "\n" .COMPOSE_NON_APP_SERVICES_RAW) "web" "server" "api" "moex-worker" "telegram-bot" "temporal-admin-tools" "temporal-setup" "keycloak-terraform-db" "keycloak-terraform") }}'
   COMPOSE_WAIT_TIMEOUT: '{{.COMPOSE_WAIT_TIMEOUT | default "180"}}'
 tasks:
   default:
@@ -23,25 +23,25 @@ tasks:
       - docker compose down
 
   upx:
-    desc: Compose up infra services (without web/api/moex-worker)
+    desc: Compose up infra services (without web/api/moex-worker/telegram-bot)
     cmds:
       - docker compose up -d {{.COMPOSE_INFRA_SERVICES}}
       - docker compose up --wait --wait-timeout {{.COMPOSE_WAIT_TIMEOUT}} -d {{.COMPOSE_WAIT_SERVICES}}
 
   devx:
-    desc: Run upx, then start API, worker and web in dev mode
+    desc: Run upx, then start API, worker, Telegram bot and web in dev mode
     cmds:
       - task upx
       - task dev
 
   upxb:
-    desc: Rebuild and recreate infra services (without web/api/moex-worker)
+    desc: Rebuild and recreate infra services (without web/api/moex-worker/telegram-bot)
     cmds:
       - docker compose up --build --force-recreate -d {{.COMPOSE_INFRA_SERVICES}}
       - docker compose up --wait --wait-timeout {{.COMPOSE_WAIT_TIMEOUT}} -d {{.COMPOSE_WAIT_SERVICES}}
 
   devxb:
-    desc: Run upxb, then start API, worker and web in dev mode
+    desc: Run upxb, then start API, worker, Telegram bot and web in dev mode
     cmds:
       - task upxb
       - task dev
@@ -83,10 +83,11 @@ tasks:
       - docker compose build --no-cache moex-worker
 
   dev:
-    desc: Run API, worker and web in dev mode
+    desc: Run API, worker, Telegram bot and web in dev mode
     deps:
       - dev:api
       - dev:worker
+      - dev:telegram
       - dev:web
 
   lint:
@@ -164,6 +165,10 @@ tasks:
   dev:worker:
     cmds:
       - task -d api worker:dev
+
+  dev:telegram:
+    cmds:
+      - task -d api telegram:dev
 
   dev:web:
     cmds:
