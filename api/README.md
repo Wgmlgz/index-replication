@@ -96,7 +96,11 @@ task migrate:up
 
 Environment variables live in `.env`. Key settings:
 
-- `DATABASE_URL` (preferred)
+- `POSTGRES_USER` (default `postgres`)
+- `POSTGRES_PASSWORD` (default empty)
+- `POSTGRES_HOST` (default `localhost`)
+- `POSTGRES_PORT` (default `5432`)
+- `POSTGRES_DB` (default `postgres`)
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
 - `KEYCLOAK_BASE_URL` (default `http://localhost:18081/auth`, used to build issuer URL; docker-compose sets internal default `http://keycloak:8080/auth`)

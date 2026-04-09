@@ -12,12 +12,11 @@ import (
 )
 
 type Config struct {
-	DatabaseURL                    string
-	DBUser                         string
-	DBPassword                     string
-	DBHost                         string
-	DBPort                         string
-	DBName                         string
+	PostgresUser                   string
+	PostgresPassword               string
+	PostgresHost                   string
+	PostgresPort                   string
+	PostgresDB                     string
 	ServerPort                     string
 	KeycloakBaseURL                string
 	KeycloakRealm                  string
@@ -58,12 +57,11 @@ func LoadConfig() *Config {
 	keycloakIssuerURL := getEnvNonEmpty("KEYCLOAK_ISSUER_URL", fmt.Sprintf("%s/realms/%s", keycloakBaseURL, keycloakRealm))
 
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL", ""),
-		DBUser:      getEnv("DB_USER", "postgres"),
-		DBPassword:  getEnv("DB_PASSWORD", ""),
-		DBHost:      getEnv("DB_HOST", "localhost"),
-		DBPort:      getEnv("DB_PORT", "5432"),
-		DBName:      getEnv("DB_NAME", "postgres"),
+		PostgresUser:     getEnv("POSTGRES_USER", "postgres"),
+		PostgresPassword: getEnv("POSTGRES_PASSWORD", ""),
+		PostgresHost:     getEnv("POSTGRES_HOST", "localhost"),
+		PostgresPort:     getEnv("POSTGRES_PORT", "5432"),
+		PostgresDB:       getEnv("POSTGRES_DB", "postgres"),
 
 		ServerPort:                     getEnv("SERVER_PORT", "8080"),
 		KeycloakBaseURL:                keycloakBaseURL,
@@ -98,11 +96,8 @@ func LoadConfig() *Config {
 }
 
 func InitDB(cfg *Config) *gorm.DB {
-	dsn := cfg.DatabaseURL
-	if dsn == "" {
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-			cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
-	}
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
+		cfg.PostgresHost, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB, cfg.PostgresPort)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		// Logger: logger.Default.LogMode(logger.Info),

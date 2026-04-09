@@ -252,7 +252,11 @@ services:
       - ./api/certs:/root/certs:ro
     environment:
       - PORT=30000
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - JWT_SECRET=${JWT_SECRET}
       - ACCESS_TOKEN_TTL=15m
       - REFRESH_TOKEN_TTL=168h
@@ -291,7 +295,11 @@ services:
     volumes:
       - ./api/certs:/root/certs:ro
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - MOEX_BASE_URL=${MOEX_BASE_URL:-https://iss.amogos.pro/iss}
       - MOEX_MUTABLE_DAYS=${MOEX_MUTABLE_DAYS:-30}
       - MOEX_IMMUTABLE_BEFORE_DATE=${MOEX_IMMUTABLE_BEFORE_DATE:-}
@@ -316,7 +324,11 @@ services:
       dockerfile: Dockerfile.worker
     command: ["./telegram-bot"]
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME}
       - TELEGRAM_SOCKS5_PROXY=${TELEGRAM_SOCKS5_PROXY:-}
