@@ -806,8 +806,8 @@ export function RebalanceSchedulePreviewForm({
       ) : null}
 
       <div className='grid gap-3'>
-        <div className='grid gap-3 lg:grid-cols-3'>
-          <div className='grid gap-2 rounded-md border justify-items-center'>
+        <div className='grid lg:grid-cols-3'>
+          <div className='grid gap-2 rounded-l-md border justify-items-center'>
             <div className='w-full border-b px-2 py-2 text-sm font-medium'>
               {t('portfolio.replication.schedule.calendarTitle')}
             </div>
@@ -858,20 +858,20 @@ export function RebalanceSchedulePreviewForm({
             </div>
           </div>
 
-          <div className='rounded-md border p-2 text-xs'>
-            <div className='border-b pb-2'>
-              <p className='text-sm font-medium'>
+          <div className='border-y text-xs'>
+            <div className='w-full border-b px-2 py-2 text-sm font-medium'>
+              <p>
                 {t('portfolio.replication.schedule.selectedDateTitle', {
                   date: calendarSelected ? formatDate(calendarSelected) : '-',
                 })}
               </p>
             </div>
             {!preview ? (
-              <p className='mt-1 text-muted-foreground'>
+              <p className='mt-1 px-2 py-2 text-muted-foreground'>
                 {t('portfolio.replication.schedule.selectedDateNeedPreview')}
               </p>
             ) : (
-              <div className='mt-2 grid gap-2'>
+              <div className='grid gap-2 px-2 py-2'>
                 <div>
                   <p className='font-medium'>
                     {t('portfolio.replication.schedule.selectedDateEventsLabel')}
@@ -934,9 +934,9 @@ export function RebalanceSchedulePreviewForm({
             )}
           </div>
 
-          <div className='flex gap-2 flex-col rounded-md border p-2'>
-            <div className='flex items-center justify-between gap-2'>
-              <p className='text-sm font-medium'>{t('portfolio.replication.schedule.eventsTitle')}</p>
+          <div className='flex flex-col rounded-r-md border'>
+            <div className='w-full border-b px-2 py-2 text-sm font-medium'>
+              <p>{t('portfolio.replication.schedule.eventsTitle')}</p>
             </div>
             <div className='h-full relative'>
               <div className='absolute  inset-0'>
@@ -945,7 +945,7 @@ export function RebalanceSchedulePreviewForm({
                   columns={eventColumns}
                   emptyLabel={t('portfolio.replication.schedule.eventsEmpty')}
                   getRowKey={row => row.id}
-                  className='h-full'
+                  className='h-full border-none rounded-tl-none'
                 />
               </div>
             </div>
