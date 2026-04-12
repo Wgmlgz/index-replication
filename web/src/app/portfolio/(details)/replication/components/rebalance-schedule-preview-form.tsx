@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { addMonths, endOfMonth, format, isSameMonth, startOfMonth, subMonths } from 'date-fns';
-import { CalendarClock, Save, Trash2 } from 'lucide-react';
+import { CalendarClock, CircleHelp, Loader2, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -25,11 +25,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { SortHeader, SortableDataTable } from '@/app/portfolio/components/sortable-data-table';
 import { axiosClient, portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 
 type ScheduleFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM_INTERVAL';
+type BusinessDayAdjustment =
+  | 'strict'
+  | 'following'
+  | 'preceding'
+  | 'modified_following'
+  | 'modified_preceding';
 
 type EventRow = {
   id: string;
@@ -51,6 +58,7 @@ type ScheduleConfigResponse = {
   is_enabled?: boolean;
   dtstart?: string;
   rrule?: string;
+  business_day_adjustment?: string;
   updated_at?: string;
 };
 
@@ -58,7 +66,66 @@ type ScheduleConfigUpsertRequest = {
   is_enabled: boolean;
   dtstart: string;
   rrule: string;
+  business_day_adjustment: BusinessDayAdjustment;
 };
+
+type SchedulePreviewRequestPayload = PortfolioRebalanceSchedulePreviewRequest & {
+  business_day_adjustment: BusinessDayAdjustment;
+};
+
+const DEFAULT_BUSINESS_DAY_ADJUSTMENT: BusinessDayAdjustment = 'strict';
+const DEFAULT_PREFERRED_TIME = '09:30';
+const DEFAULT_WEEKLY_DAY_OF_WEEK = 1;
+const DEFAULT_MONTHLY_DAY_INPUT = '1';
+const DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT = '14';
+
+type ScheduleFormSnapshot = {
+  frequency: ScheduleFrequency;
+  preferredTime: string;
+  weeklyDayOfWeek: number;
+  monthlyDayInput: string;
+  customIntervalDaysInput: string;
+  customAnchorAtMs: number;
+  businessDayAdjustment: BusinessDayAdjustment;
+};
+
+type ScheduleFormState = {
+  frequency: ScheduleFrequency;
+  preferredTime: string;
+  weeklyDayOfWeek: number;
+  monthlyDayInput: string;
+  customIntervalDaysInput: string;
+  customAnchorAt: Date;
+  businessDayAdjustment: BusinessDayAdjustment;
+};
+
+function normalizeBusinessDayAdjustment(value: string | undefined): BusinessDayAdjustment {
+  if (!value) {
+    return DEFAULT_BUSINESS_DAY_ADJUSTMENT;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'strict'
+    || normalized === 'following'
+    || normalized === 'preceding'
+    || normalized === 'modified_following'
+    || normalized === 'modified_preceding'
+  ) {
+    return normalized;
+  }
+  return DEFAULT_BUSINESS_DAY_ADJUSTMENT;
+}
+
+function isSameScheduleFormSnapshot(a: ScheduleFormSnapshot, b: ScheduleFormSnapshot): boolean {
+  return a.frequency === b.frequency
+    && a.preferredTime === b.preferredTime
+    && a.weeklyDayOfWeek === b.weeklyDayOfWeek
+    && a.monthlyDayInput === b.monthlyDayInput
+    && a.customIntervalDaysInput === b.customIntervalDaysInput
+    && a.customAnchorAtMs === b.customAnchorAtMs
+    && a.businessDayAdjustment === b.businessDayAdjustment;
+}
 
 function isValidDate(value: Date): boolean {
   return Number.isFinite(value.getTime());
@@ -101,9 +168,9 @@ function parseDayKey(value: string): Date | null {
   return isValidDate(parsed) ? parsed : null;
 }
 
-function formatUTCClock(value: Date): string {
-  const hours = String(value.getUTCHours()).padStart(2, '0');
-  const minutes = String(value.getUTCMinutes()).padStart(2, '0');
+function formatLocalClock(value: Date): string {
+  const hours = String(value.getHours()).padStart(2, '0');
+  const minutes = String(value.getMinutes()).padStart(2, '0');
   return `${hours}:${minutes}`;
 }
 
@@ -149,11 +216,14 @@ export function RebalanceSchedulePreviewForm({
 }: RebalanceSchedulePreviewFormProps) {
   const { t, i18n } = useTranslation();
   const [frequency, setFrequency] = useState<ScheduleFrequency>('DAILY');
-  const [preferredTime, setPreferredTime] = useState('09:30');
-  const [weeklyDayOfWeek, setWeeklyDayOfWeek] = useState(1);
-  const [monthlyDayInput, setMonthlyDayInput] = useState('1');
-  const [customIntervalDaysInput, setCustomIntervalDaysInput] = useState('14');
-  const [customAnchorAt, setCustomAnchorAt] = useState(() => withTime(new Date(), '09:30'));
+  const [preferredTime, setPreferredTime] = useState(DEFAULT_PREFERRED_TIME);
+  const [weeklyDayOfWeek, setWeeklyDayOfWeek] = useState(DEFAULT_WEEKLY_DAY_OF_WEEK);
+  const [monthlyDayInput, setMonthlyDayInput] = useState(DEFAULT_MONTHLY_DAY_INPUT);
+  const [customIntervalDaysInput, setCustomIntervalDaysInput] = useState(DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT);
+  const [customAnchorAt, setCustomAnchorAt] = useState(() => withTime(new Date(), DEFAULT_PREFERRED_TIME));
+  const [businessDayAdjustment, setBusinessDayAdjustment] = useState<BusinessDayAdjustment>(
+    DEFAULT_BUSINESS_DAY_ADJUSTMENT,
+  );
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [calendarSelected, setCalendarSelected] = useState<Date | undefined>(new Date());
   const [preview, setPreview] = useState<PortfolioRebalanceSchedulePreviewResponse | null>(null);
@@ -161,6 +231,7 @@ export function RebalanceSchedulePreviewForm({
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
   const [scheduleWorking, setScheduleWorking] = useState(false);
+  const [baselineSnapshot, setBaselineSnapshot] = useState<ScheduleFormSnapshot | null>(null);
 
   const weekdayOptions = useMemo(() => [
     { value: 1, label: t('portfolio.replication.schedule.weekdays.mon') },
@@ -169,6 +240,124 @@ export function RebalanceSchedulePreviewForm({
     { value: 4, label: t('portfolio.replication.schedule.weekdays.thu') },
     { value: 5, label: t('portfolio.replication.schedule.weekdays.fri') },
   ], [t]);
+  const businessDayAdjustmentOptions = useMemo(() => [
+    {
+      value: 'strict' as const,
+      label: t('portfolio.replication.schedule.businessDayAdjustment.options.strict'),
+    },
+    {
+      value: 'following' as const,
+      label: t('portfolio.replication.schedule.businessDayAdjustment.options.following'),
+    },
+    {
+      value: 'preceding' as const,
+      label: t('portfolio.replication.schedule.businessDayAdjustment.options.preceding'),
+    },
+    {
+      value: 'modified_following' as const,
+      label: t('portfolio.replication.schedule.businessDayAdjustment.options.modifiedFollowing'),
+    },
+    {
+      value: 'modified_preceding' as const,
+      label: t('portfolio.replication.schedule.businessDayAdjustment.options.modifiedPreceding'),
+    },
+  ], [t]);
+  const toSnapshot = useCallback((state: ScheduleFormState): ScheduleFormSnapshot => ({
+    frequency: state.frequency,
+    preferredTime: state.preferredTime,
+    weeklyDayOfWeek: state.weeklyDayOfWeek,
+    monthlyDayInput: state.monthlyDayInput,
+    customIntervalDaysInput: state.customIntervalDaysInput,
+    customAnchorAtMs: state.customAnchorAt.getTime(),
+    businessDayAdjustment: state.businessDayAdjustment,
+  }), []);
+  const toState = useCallback((snapshot: ScheduleFormSnapshot): ScheduleFormState => ({
+    frequency: snapshot.frequency,
+    preferredTime: snapshot.preferredTime,
+    weeklyDayOfWeek: snapshot.weeklyDayOfWeek,
+    monthlyDayInput: snapshot.monthlyDayInput,
+    customIntervalDaysInput: snapshot.customIntervalDaysInput,
+    customAnchorAt: new Date(snapshot.customAnchorAtMs),
+    businessDayAdjustment: snapshot.businessDayAdjustment,
+  }), []);
+  const applyScheduleState = useCallback((nextState: ScheduleFormState) => {
+    setFrequency(nextState.frequency);
+    setPreferredTime(nextState.preferredTime);
+    setWeeklyDayOfWeek(nextState.weeklyDayOfWeek);
+    setMonthlyDayInput(nextState.monthlyDayInput);
+    setCustomIntervalDaysInput(nextState.customIntervalDaysInput);
+    setCustomAnchorAt(nextState.customAnchorAt);
+    setBusinessDayAdjustment(nextState.businessDayAdjustment);
+    setCalendarMonth(nextState.customAnchorAt);
+    setCalendarSelected(nextState.customAnchorAt);
+  }, []);
+  const buildDefaultScheduleState = useCallback((baseDate: Date): ScheduleFormState => {
+    const anchor = withTime(baseDate, DEFAULT_PREFERRED_TIME);
+    return {
+      frequency: 'DAILY',
+      preferredTime: DEFAULT_PREFERRED_TIME,
+      weeklyDayOfWeek: DEFAULT_WEEKLY_DAY_OF_WEEK,
+      monthlyDayInput: DEFAULT_MONTHLY_DAY_INPUT,
+      customIntervalDaysInput: DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT,
+      customAnchorAt: anchor,
+      businessDayAdjustment: DEFAULT_BUSINESS_DAY_ADJUSTMENT,
+    };
+  }, []);
+  const parseScheduleState = useCallback((schedule: ScheduleConfigResponse): ScheduleFormState | null => {
+    const dtStart = schedule.dtstart ? new Date(schedule.dtstart) : null;
+    if (!dtStart || !isValidDate(dtStart)) {
+      return null;
+    }
+
+    const parts = parseRRuleParts(schedule.rrule ?? '');
+    const freq = parts.FREQ ?? 'DAILY';
+    const interval = Number.parseInt(parts.INTERVAL ?? '1', 10);
+    const weeklyToken = (parts.BYDAY ?? 'MO').split(',')[0]?.trim() ?? 'MO';
+    const monthlyDay = resolveMonthlyDay(parts);
+
+    let nextFrequency: ScheduleFrequency = 'DAILY';
+    if (freq === 'WEEKLY') {
+      nextFrequency = 'WEEKLY';
+    } else if (freq === 'MONTHLY') {
+      nextFrequency = 'MONTHLY';
+    } else if (freq === 'DAILY' && Number.isFinite(interval) && interval > 1) {
+      nextFrequency = 'CUSTOM_INTERVAL';
+    }
+
+    return {
+      frequency: nextFrequency,
+      preferredTime: formatLocalClock(dtStart),
+      weeklyDayOfWeek: clampInt(WEEKDAY_FROM_RRULE[weeklyToken] ?? 1, 1, 5),
+      monthlyDayInput: String(monthlyDay),
+      customIntervalDaysInput: String(clampInt(interval > 0 ? interval : 14, 1, 365)),
+      customAnchorAt: dtStart,
+      businessDayAdjustment: normalizeBusinessDayAdjustment(schedule.business_day_adjustment),
+    };
+  }, []);
+  const currentSnapshot = useMemo<ScheduleFormSnapshot>(() => toSnapshot({
+    frequency,
+    preferredTime,
+    weeklyDayOfWeek,
+    monthlyDayInput,
+    customIntervalDaysInput,
+    customAnchorAt,
+    businessDayAdjustment,
+  }), [
+    businessDayAdjustment,
+    customAnchorAt,
+    customIntervalDaysInput,
+    frequency,
+    monthlyDayInput,
+    preferredTime,
+    toSnapshot,
+    weeklyDayOfWeek,
+  ]);
+  const hasUnsavedChanges = useMemo(() => {
+    if (!baselineSnapshot) {
+      return false;
+    }
+    return !isSameScheduleFormSnapshot(currentSnapshot, baselineSnapshot);
+  }, [baselineSnapshot, currentSnapshot]);
 
   const formatDateTime = useCallback((value: string) => {
     const date = new Date(value);
@@ -241,48 +430,25 @@ export function RebalanceSchedulePreviewForm({
     return `BYMONTHDAY=${allDaysUpToTarget};BYSETPOS=-1`;
   }, []);
 
-  const resetScheduleInputs = useCallback(() => {
-    const now = new Date();
-    setFrequency('DAILY');
-    setPreferredTime('09:30');
-    setWeeklyDayOfWeek(1);
-    setMonthlyDayInput('1');
-    setCustomIntervalDaysInput('14');
-    setCustomAnchorAt(withTime(now, '09:30'));
-    setCalendarMonth(now);
-    setCalendarSelected(now);
-  }, []);
-
-  const applySavedSchedule = useCallback((schedule: ScheduleConfigResponse) => {
-    const dtStart = schedule.dtstart ? new Date(schedule.dtstart) : null;
-    if (!dtStart || !isValidDate(dtStart)) {
-      return;
+  const resetScheduleInputs = useCallback((markAsBaseline = false) => {
+    const nextState = buildDefaultScheduleState(new Date());
+    applyScheduleState(nextState);
+    if (markAsBaseline) {
+      setBaselineSnapshot(toSnapshot(nextState));
     }
+  }, [applyScheduleState, buildDefaultScheduleState, toSnapshot]);
 
-    const parts = parseRRuleParts(schedule.rrule ?? '');
-    const freq = parts.FREQ ?? 'DAILY';
-    const interval = Number.parseInt(parts.INTERVAL ?? '1', 10);
-    const weeklyToken = (parts.BYDAY ?? 'MO').split(',')[0]?.trim() ?? 'MO';
-    const monthlyDay = resolveMonthlyDay(parts);
-
-    let nextFrequency: ScheduleFrequency = 'DAILY';
-    if (freq === 'WEEKLY') {
-      nextFrequency = 'WEEKLY';
-    } else if (freq === 'MONTHLY') {
-      nextFrequency = 'MONTHLY';
-    } else if (freq === 'DAILY' && Number.isFinite(interval) && interval > 1) {
-      nextFrequency = 'CUSTOM_INTERVAL';
+  const applySavedSchedule = useCallback((schedule: ScheduleConfigResponse, markAsBaseline = false): boolean => {
+    const nextState = parseScheduleState(schedule);
+    if (!nextState) {
+      return false;
     }
-
-    setFrequency(nextFrequency);
-    setPreferredTime(formatUTCClock(dtStart));
-    setWeeklyDayOfWeek(clampInt(WEEKDAY_FROM_RRULE[weeklyToken] ?? 1, 1, 5));
-    setMonthlyDayInput(String(monthlyDay));
-    setCustomIntervalDaysInput(String(clampInt(interval > 0 ? interval : 14, 1, 365)));
-    setCustomAnchorAt(dtStart);
-    setCalendarMonth(dtStart);
-    setCalendarSelected(dtStart);
-  }, []);
+    applyScheduleState(nextState);
+    if (markAsBaseline) {
+      setBaselineSnapshot(toSnapshot(nextState));
+    }
+    return true;
+  }, [applyScheduleState, parseScheduleState, toSnapshot]);
 
   const buildSchedulePayload = useCallback((): ScheduleConfigUpsertRequest => {
     const trimmedTime = preferredTime.trim();
@@ -328,8 +494,10 @@ export function RebalanceSchedulePreviewForm({
       is_enabled: true,
       dtstart: dtStart.toISOString(),
       rrule,
+      business_day_adjustment: businessDayAdjustment,
     };
   }, [
+    businessDayAdjustment,
     customAnchorAt,
     customIntervalDaysInput,
     frequency,
@@ -345,13 +513,13 @@ export function RebalanceSchedulePreviewForm({
     setSavedUpdatedAt('');
     setError('');
     setPreview(null);
-    resetScheduleInputs();
+    resetScheduleInputs(true);
 
     try {
       const response = await axiosClient.get<ScheduleConfigResponse>(
         `/me/portfolios/${portfolioID}/rebalances/schedule`,
       );
-      applySavedSchedule(response.data ?? {});
+      applySavedSchedule(response.data ?? {}, true);
       setSavedUpdatedAt(response.data?.updated_at ?? '');
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -374,7 +542,7 @@ export function RebalanceSchedulePreviewForm({
     void loadSavedSchedule();
   }, [loadSavedSchedule]);
 
-  const buildPreviewPayload = useCallback((): PortfolioRebalanceSchedulePreviewRequest => {
+  const buildPreviewPayload = useCallback((): SchedulePreviewRequestPayload => {
     const trimmedTime = preferredTime.trim();
     if (!/^\d{2}:\d{2}$/.test(trimmedTime)) {
       throw new Error(t('portfolio.replication.schedule.errors.preferredTime'));
@@ -422,10 +590,12 @@ export function RebalanceSchedulePreviewForm({
     return {
       dtstart: dtStart.toISOString(),
       rrule,
+      business_day_adjustment: businessDayAdjustment,
       from: fromBoundary.toISOString(),
       to: toBoundary.toISOString(),
     };
   }, [
+    businessDayAdjustment,
     customAnchorAt,
     customIntervalDaysInput,
     frequency,
@@ -487,7 +657,9 @@ export function RebalanceSchedulePreviewForm({
         payload,
       );
       const data = response.data ?? {};
-      applySavedSchedule(data);
+      if (!applySavedSchedule(data, true)) {
+        setBaselineSnapshot(currentSnapshot);
+      }
       setSavedUpdatedAt(data.updated_at ?? '');
     } catch (err) {
       if (err instanceof Error && !axios.isAxiosError(err)) {
@@ -503,7 +675,7 @@ export function RebalanceSchedulePreviewForm({
     } finally {
       setScheduleWorking(false);
     }
-  }, [applySavedSchedule, buildSchedulePayload, portfolioID, t]);
+  }, [applySavedSchedule, buildSchedulePayload, currentSnapshot, portfolioID, t]);
 
   const onDeleteSchedule = useCallback(async () => {
     setScheduleWorking(true);
@@ -511,6 +683,8 @@ export function RebalanceSchedulePreviewForm({
     try {
       await axiosClient.delete(`/me/portfolios/${portfolioID}/rebalances/schedule`);
       setSavedUpdatedAt('');
+      setPreview(null);
+      resetScheduleInputs(true);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(
@@ -523,7 +697,15 @@ export function RebalanceSchedulePreviewForm({
     } finally {
       setScheduleWorking(false);
     }
-  }, [portfolioID, t]);
+  }, [portfolioID, resetScheduleInputs, t]);
+
+  const onDiscardChanges = useCallback(() => {
+    if (!baselineSnapshot) {
+      return;
+    }
+    applyScheduleState(toState(baselineSnapshot));
+    setError('');
+  }, [applyScheduleState, baselineSnapshot, toState]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -770,6 +952,69 @@ export function RebalanceSchedulePreviewForm({
           </div>
         </div>
 
+        <div className='grid gap-2 md:grid-cols-2 md:items-start'>
+          <div className='grid gap-2 self-start'>
+            <Label htmlFor='schedule-preferred-time'>
+              {t('portfolio.replication.schedule.preferredTimeLabel')}
+            </Label>
+            <Input
+              id='schedule-preferred-time'
+              type='time'
+              value={preferredTime}
+              onChange={event => setPreferredTime(event.target.value)}
+              step={60}
+            />
+          </div>
+          <div className='grid gap-2 self-start'>
+            <div className='flex items-center gap-1'>
+              <Label htmlFor='schedule-business-day-adjustment'>
+                {t('portfolio.replication.schedule.businessDayAdjustment.label')}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type='button'
+                    aria-label={t('portfolio.replication.schedule.businessDayAdjustment.tooltipLabel')}
+                    className='text-muted-foreground transition-colors hover:text-foreground'
+                  >
+                    <CircleHelp className='size-4' />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side='top' className='max-w-sm space-y-1'>
+                  <p className='font-medium'>
+                    {t('portfolio.replication.schedule.businessDayAdjustment.tooltip.title')}
+                  </p>
+                  <p>{t('portfolio.replication.schedule.businessDayAdjustment.tooltip.strict')}</p>
+                  <p>{t('portfolio.replication.schedule.businessDayAdjustment.tooltip.following')}</p>
+                  <p>{t('portfolio.replication.schedule.businessDayAdjustment.tooltip.preceding')}</p>
+                  <p>{t('portfolio.replication.schedule.businessDayAdjustment.tooltip.modifiedFollowing')}</p>
+                  <p>{t('portfolio.replication.schedule.businessDayAdjustment.tooltip.modifiedPreceding')}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Select
+              value={businessDayAdjustment}
+              onValueChange={value => {
+                setBusinessDayAdjustment(normalizeBusinessDayAdjustment(value));
+              }}
+            >
+              <SelectTrigger id='schedule-business-day-adjustment' className='w-full'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {businessDayAdjustmentOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className='text-xs text-muted-foreground'>
+              {t('portfolio.replication.schedule.businessDayAdjustment.hint')}
+            </p>
+          </div>
+        </div>
+
         <div className='grid gap-2'>
           <Label>{t('portfolio.replication.schedule.frequencyLabel')}</Label>
           <Tabs
@@ -794,22 +1039,7 @@ export function RebalanceSchedulePreviewForm({
           </Tabs>
         </div>
 
-        <div className='grid gap-2 grid-cols-4'>
-          <div className='grid gap-2'>
-            <div className='grid gap-2'>
-              <Label htmlFor='schedule-preferred-time'>
-                {t('portfolio.replication.schedule.preferredTimeLabel')}
-              </Label>
-              <Input
-                id='schedule-preferred-time'
-                type='time'
-                value={preferredTime}
-                onChange={event => setPreferredTime(event.target.value)}
-                step={60}
-              />
-            </div>
-          </div>
-
+        <div className='grid gap-2 md:grid-cols-4'>
           {frequency === 'WEEKLY' ? (
             <div className='grid gap-2'>
               <Label htmlFor='schedule-weekly-day'>
@@ -867,7 +1097,7 @@ export function RebalanceSchedulePreviewForm({
                   onChange={event => setCustomIntervalDaysInput(event.target.value)}
                 />
               </div>
-              <div className='col-span-2'>
+              <div className='md:col-span-2'>
                 <DateTimePicker
                   idPrefix='schedule-custom-anchor'
                   label={t('portfolio.replication.schedule.customAnchorLabel')}
@@ -879,17 +1109,39 @@ export function RebalanceSchedulePreviewForm({
               </div>
             </>
           ) : null}
-
         </div>
 
         <div className='flex flex-wrap items-center gap-2'>
           <Button type='button' onClick={() => void onPreview()} disabled={working || scheduleWorking}>
             <CalendarClock className='size-4' />
-            {working
-              ? t('portfolio.replication.schedule.previewWorking')
-              : t('portfolio.replication.schedule.previewButton')}
+            {t('portfolio.replication.schedule.previewButton')}
           </Button>
-          <Button type='button' variant='outline' onClick={() => void onSaveSchedule()} disabled={working || scheduleWorking}>
+          {hasUnsavedChanges ? (
+            <Button
+              type='button'
+              variant='outline'
+              onClick={onDiscardChanges}
+              disabled={working || scheduleWorking}
+            >
+              <RotateCcw className='size-4' />
+              {t('portfolio.replication.schedule.discardButton')}
+            </Button>
+          ) : null}
+          {working ? (
+            <span className='inline-flex items-center gap-1 text-xs text-muted-foreground'>
+              <Loader2 className='size-3.5 animate-spin' />
+              {t('portfolio.replication.schedule.previewWorking')}
+            </span>
+          ) : null}
+        </div>
+
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={() => void onSaveSchedule()}
+            disabled={working || scheduleWorking || !hasUnsavedChanges}
+          >
             <Save className='size-4' />
             {scheduleWorking
               ? t('portfolio.replication.schedule.saveWorking')

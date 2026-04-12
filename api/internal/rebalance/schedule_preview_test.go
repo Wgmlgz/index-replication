@@ -204,6 +204,53 @@ func TestSchedulePreviewService_UsesMoscowTimezoneForWindowAndCalendarDay(t *tes
 	}
 }
 
+func TestSchedulePreviewService_MonthlyModifiedFollowingKeepsOneEventPerMonth(t *testing.T) {
+	dayoffServer := newIsDayOffMockServer(t, map[string]string{
+		"2026-02-27": "0",
+		"2026-02-28": "1",
+		"2026-03-30": "0",
+		"2026-03-31": "1",
+		"2026-04-30": "0",
+	})
+	defer dayoffServer.Close()
+
+	service := NewSchedulePreviewService(
+		&fakeScheduleProfileRepository{
+			profile: &models.PortfolioProfile{ID: 10, UserID: 5},
+		},
+		isdayoff.NewService(dayoffServer.URL),
+		"UTC",
+	)
+
+	from := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2026, 4, 30, 23, 59, 59, 0, time.UTC)
+	req := &dto.PortfolioRebalanceSchedulePreviewRequest{
+		DtStart:               time.Date(2026, 2, 1, 11, 0, 0, 0, time.UTC),
+		RRule:                 "FREQ=MONTHLY;BYMONTHDAY=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;BYSETPOS=-1;COUNT=3",
+		BusinessDayAdjustment: "modified_following",
+		From:                  &from,
+		To:                    &to,
+	}
+	resp, err := service.Preview(context.Background(), 5, 10, req)
+	if err != nil {
+		t.Fatalf("Preview returned error: %v", err)
+	}
+	if len(resp.Events) != 3 {
+		t.Fatalf("expected 3 monthly events, got %d", len(resp.Events))
+	}
+
+	expected := []string{
+		"2026-02-27T11:00:00Z",
+		"2026-03-30T11:00:00Z",
+		"2026-04-30T11:00:00Z",
+	}
+	for i, event := range resp.Events {
+		if got := event.Format(time.RFC3339); got != expected[i] {
+			t.Fatalf("unexpected event at index %d: got %s want %s", i, got, expected[i])
+		}
+	}
+}
+
 type fakeScheduleProfileRepository struct {
 	profile *models.PortfolioProfile
 	err     error

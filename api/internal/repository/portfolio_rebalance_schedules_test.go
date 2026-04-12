@@ -97,10 +97,11 @@ func TestPortfolioRebalanceSchedulesRepository_UpsertAndDelete(t *testing.T) {
 	initialStart := time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC)
 
 	created, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
-		PortfolioProfileID: profileID,
-		IsEnabled:          true,
-		DtStart:            initialStart,
-		RRule:              "FREQ=DAILY",
+		PortfolioProfileID:    profileID,
+		IsEnabled:             true,
+		DtStart:               initialStart,
+		RRule:                 "FREQ=DAILY",
+		BusinessDayAdjustment: "strict",
 	})
 	if err != nil {
 		t.Fatalf("upsert create: %v", err)
@@ -111,10 +112,11 @@ func TestPortfolioRebalanceSchedulesRepository_UpsertAndDelete(t *testing.T) {
 
 	updatedStart := time.Date(2026, 4, 14, 10, 30, 0, 0, time.UTC)
 	updated, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
-		PortfolioProfileID: profileID,
-		IsEnabled:          false,
-		DtStart:            updatedStart,
-		RRule:              "FREQ=WEEKLY;BYDAY=TU",
+		PortfolioProfileID:    profileID,
+		IsEnabled:             false,
+		DtStart:               updatedStart,
+		RRule:                 "FREQ=WEEKLY;BYDAY=TU",
+		BusinessDayAdjustment: "modified_following",
 	})
 	if err != nil {
 		t.Fatalf("upsert update: %v", err)
@@ -127,6 +129,9 @@ func TestPortfolioRebalanceSchedulesRepository_UpsertAndDelete(t *testing.T) {
 	}
 	if updated.RRule != "FREQ=WEEKLY;BYDAY=TU" {
 		t.Fatalf("expected updated rrule, got %q", updated.RRule)
+	}
+	if updated.BusinessDayAdjustment != "modified_following" {
+		t.Fatalf("expected updated business_day_adjustment=modified_following, got %q", updated.BusinessDayAdjustment)
 	}
 
 	deleted, err := repo.DeleteByPortfolioProfileID(profileID)

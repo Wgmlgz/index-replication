@@ -19,6 +19,8 @@ const (
 	maximumSchedulePreviewLimit   = 200
 	maximumScheduleSearchAttempts = 10000
 	defaultScheduleCalendarDays   = 31
+	scheduleCalendarPaddingDays   = 31
+	maximumAdjustmentSearchDays   = 370
 	defaultScheduleTimezone       = "Europe/Moscow"
 	sessionStartTime              = "10:00"
 	sessionStopTime               = "18:40"
@@ -72,18 +74,21 @@ func (s *SchedulePreviewService) Preview(
 		return nil, err
 	}
 
-	rule, from, to, limit, err := s.prepareRule(req)
+	rule, from, to, limit, freq, policy, err := s.prepareRule(req)
 	if err != nil {
 		return nil, err
 	}
 
-	calendarTo := resolveCalendarWindowEnd(from, to)
-	calendar, err := newTradingCalendar(ctx, s.dayOffService, from, calendarTo, s.location)
+	displayFrom := from
+	displayTo := resolveCalendarWindowEnd(from, to)
+	calendarFetchFrom, calendarFetchTo := resolveCalendarFetchWindow(displayFrom, displayTo)
+	calendar, err := newTradingCalendar(ctx, s.dayOffService, calendarFetchFrom, calendarFetchTo, s.location)
 	if err != nil {
 		return nil, err
 	}
 
 	events := make([]time.Time, 0, limit)
+	seen := make(map[string]struct{}, limit)
 	cursor := from
 	attempts := 0
 
@@ -92,12 +97,22 @@ func (s *SchedulePreviewService) Preview(
 		if next.IsZero() {
 			break
 		}
-		if next.After(calendarTo) {
+		if next.After(displayTo) {
 			break
 		}
-		decision := calendar.Evaluate(next)
-		if decision.Included {
-			events = append(events, next.UTC())
+
+		candidate, included := next, false
+		if freq == rrule.MONTHLY && policy != businessDayAdjustmentStrict {
+			candidate, included = calendar.AdjustByPolicy(next, policy)
+		} else {
+			included = calendar.Evaluate(next).Included
+		}
+		if included && !candidate.Before(displayFrom) && !candidate.After(displayTo) {
+			key := candidate.UTC().Format(time.RFC3339Nano)
+			if _, exists := seen[key]; !exists {
+				events = append(events, candidate.UTC())
+				seen[key] = struct{}{}
+			}
 		}
 		cursor = next.Add(time.Nanosecond)
 		attempts++
@@ -105,20 +120,20 @@ func (s *SchedulePreviewService) Preview(
 
 	return &dto.PortfolioRebalanceSchedulePreviewResponse{
 		Events:   events,
-		Calendar: calendar.Rows(),
+		Calendar: calendar.RowsInRange(displayFrom, displayTo),
 	}, nil
 }
 
 func (s *SchedulePreviewService) prepareRule(
 	req *dto.PortfolioRebalanceSchedulePreviewRequest,
-) (*rrule.RRule, time.Time, *time.Time, int, error) {
+) (*rrule.RRule, time.Time, *time.Time, int, rrule.Frequency, businessDayAdjustmentPolicy, error) {
 	if req.DtStart.IsZero() {
-		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: dtstart is required", ErrInvalidRequest)
+		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: dtstart is required", ErrInvalidRequest)
 	}
 
 	ruleText := strings.TrimSpace(req.RRule)
 	if ruleText == "" {
-		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: rrule is required", ErrInvalidRequest)
+		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: rrule is required", ErrInvalidRequest)
 	}
 	ruleText = strings.TrimSpace(ruleText)
 	if strings.HasPrefix(strings.ToUpper(ruleText), "RRULE:") {
@@ -127,7 +142,11 @@ func (s *SchedulePreviewService) prepareRule(
 
 	options, err := rrule.StrToROption(ruleText)
 	if err != nil {
-		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: invalid rrule: %v", ErrInvalidRequest, err)
+		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: invalid rrule: %v", ErrInvalidRequest, err)
+	}
+	policy, err := parseBusinessDayAdjustmentPolicy(req.BusinessDayAdjustment)
+	if err != nil {
+		return nil, time.Time{}, nil, 0, 0, "", err
 	}
 	options.Dtstart = req.DtStart.In(s.location)
 
@@ -143,26 +162,26 @@ func (s *SchedulePreviewService) prepareRule(
 		from = req.From.In(s.location)
 	}
 	if to != nil && from.After(*to) {
-		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: from must be <= to", ErrInvalidRequest)
+		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: from must be <= to", ErrInvalidRequest)
 	}
 
 	limit := defaultSchedulePreviewLimit
 	if req.Limit != nil {
 		if *req.Limit <= 0 {
-			return nil, time.Time{}, nil, 0, fmt.Errorf("%w: limit must be > 0", ErrInvalidRequest)
+			return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: limit must be > 0", ErrInvalidRequest)
 		}
 		if *req.Limit > maximumSchedulePreviewLimit {
-			return nil, time.Time{}, nil, 0, fmt.Errorf("%w: limit must be <= %d", ErrInvalidRequest, maximumSchedulePreviewLimit)
+			return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: limit must be <= %d", ErrInvalidRequest, maximumSchedulePreviewLimit)
 		}
 		limit = *req.Limit
 	}
 
 	rule, err := rrule.NewRRule(*options)
 	if err != nil {
-		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: invalid rrule options: %v", ErrInvalidRequest, err)
+		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: invalid rrule options: %v", ErrInvalidRequest, err)
 	}
 
-	return rule, from, to, limit, nil
+	return rule, from, to, limit, options.Freq, policy, nil
 }
 
 type tradingWindow struct {
@@ -237,10 +256,6 @@ func newTradingCalendar(
 	return result, nil
 }
 
-func (c tradingCalendar) Rows() []dto.PortfolioRebalanceSchedulePreviewCalendar {
-	return c.rows
-}
-
 type tradingDecision struct {
 	Included bool
 }
@@ -272,9 +287,84 @@ func (c tradingCalendar) Evaluate(at time.Time) tradingDecision {
 	}
 }
 
+func (c tradingCalendar) RowsInRange(from time.Time, to time.Time) []dto.PortfolioRebalanceSchedulePreviewCalendar {
+	fromDate := normalizeDateInLocation(from, c.loc)
+	toDate := normalizeDateInLocation(to, c.loc)
+	if toDate.Before(fromDate) {
+		fromDate, toDate = toDate, fromDate
+	}
+	fromKey := fromDate.Format("2006-01-02")
+	toKey := toDate.Format("2006-01-02")
+
+	result := make([]dto.PortfolioRebalanceSchedulePreviewCalendar, 0, len(c.rows))
+	for _, row := range c.rows {
+		if row.Date < fromKey || row.Date > toKey {
+			continue
+		}
+		result = append(result, row)
+	}
+	return result
+}
+
+func (c tradingCalendar) AdjustByPolicy(at time.Time, policy businessDayAdjustmentPolicy) (time.Time, bool) {
+	if c.Evaluate(at).Included {
+		return at, true
+	}
+
+	atLocal := at.In(c.loc)
+	switch policy {
+	case businessDayAdjustmentFollowing:
+		return c.findNearestTradingDay(atLocal, 1, false)
+	case businessDayAdjustmentPreceding:
+		return c.findNearestTradingDay(atLocal, -1, false)
+	case businessDayAdjustmentModifiedFollowing:
+		if adjusted, ok := c.findNearestTradingDay(atLocal, 1, true); ok {
+			return adjusted, true
+		}
+		return c.findNearestTradingDay(atLocal, -1, true)
+	case businessDayAdjustmentModifiedPreceding:
+		if adjusted, ok := c.findNearestTradingDay(atLocal, -1, true); ok {
+			return adjusted, true
+		}
+		return c.findNearestTradingDay(atLocal, 1, true)
+	default:
+		return at, false
+	}
+}
+
+func (c tradingCalendar) findNearestTradingDay(
+	start time.Time,
+	directionDays int,
+	sameMonthOnly bool,
+) (time.Time, bool) {
+	if directionDays == 0 {
+		return time.Time{}, false
+	}
+
+	month := start.Month()
+	year := start.Year()
+	steps := 0
+	for candidate := start; steps < maximumAdjustmentSearchDays; candidate = candidate.AddDate(0, 0, directionDays) {
+		if steps > 0 {
+			if sameMonthOnly && (candidate.Month() != month || candidate.Year() != year) {
+				return time.Time{}, false
+			}
+			if c.Evaluate(candidate).Included {
+				return candidate, true
+			}
+		}
+		steps++
+	}
+	return time.Time{}, false
+}
+
 func normalizeDateInLocation(value time.Time, location *time.Location) time.Time {
 	local := value.In(location)
 	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, location)
+}
+
+func resolveCalendarFetchWindow(from time.Time, to time.Time) (time.Time, time.Time) {
+	return from.AddDate(0, 0, -scheduleCalendarPaddingDays), to.AddDate(0, 0, scheduleCalendarPaddingDays)
 }
 
 func resolveCalendarWindowEnd(from time.Time, to *time.Time) time.Time {

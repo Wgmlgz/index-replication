@@ -35,6 +35,10 @@ func (r *PortfolioRebalanceSchedulesRepository) Upsert(
 	}
 
 	schedule.RRule = strings.TrimSpace(schedule.RRule)
+	schedule.BusinessDayAdjustment = strings.TrimSpace(schedule.BusinessDayAdjustment)
+	if schedule.BusinessDayAdjustment == "" {
+		schedule.BusinessDayAdjustment = "strict"
+	}
 	if schedule.RRule == "" || schedule.DtStart.IsZero() {
 		return nil, gorm.ErrInvalidData
 	}
@@ -43,10 +47,11 @@ func (r *PortfolioRebalanceSchedulesRepository) Upsert(
 	err := r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "portfolio_profile_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"is_enabled": schedule.IsEnabled,
-			"dtstart":    schedule.DtStart,
-			"rrule":      schedule.RRule,
-			"updated_at": now,
+			"is_enabled":              schedule.IsEnabled,
+			"dtstart":                 schedule.DtStart,
+			"rrule":                   schedule.RRule,
+			"business_day_adjustment": schedule.BusinessDayAdjustment,
+			"updated_at":              now,
 		}),
 	}).Create(schedule).Error
 	if err != nil {

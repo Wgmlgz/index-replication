@@ -407,6 +407,26 @@
           "customInterval": "Custom interval"
         },
         "preferredTimeLabel": "Preferred time",
+        "businessDayAdjustment": {
+          "label": "Business-day adjustment",
+          "hint": "For monthly schedules, modified following is recommended to avoid skipped months.",
+          "tooltipLabel": "Explain business-day adjustment policies",
+          "tooltip": {
+            "title": "Policy behavior",
+            "strict": "Strict: keep the original date/time only. If it falls on a non-trading day, that event is skipped.",
+            "following": "Following: move to the next trading day.",
+            "preceding": "Preceding: move to the previous trading day.",
+            "modifiedFollowing": "Modified following: move to the next trading day, but if that changes month, move to the previous trading day.",
+            "modifiedPreceding": "Modified preceding: move to the previous trading day, but if that changes month, move to the next trading day."
+          },
+          "options": {
+            "strict": "Strict (skip non-trading day)",
+            "following": "Following (next trading day)",
+            "preceding": "Preceding (previous trading day)",
+            "modifiedFollowing": "Modified following (recommended)",
+            "modifiedPreceding": "Modified preceding"
+          }
+        },
         "calendarTitle": "Calendar",
         "calendarHint": "Preview window is derived from visible month: {{from}} to {{to}}.",
         "weekdays": {
@@ -428,6 +448,7 @@
         "previewWorking": "Building preview...",
         "saveButton": "Save schedule",
         "saveWorking": "Saving schedule...",
+        "discardButton": "Discard changes",
         "deleteButton": "Delete saved",
         "deleteWorking": "Deleting...",
         "savedAtLabel": "Saved at",

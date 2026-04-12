@@ -3,11 +3,12 @@ package dto
 import "time"
 
 type PortfolioRebalanceSchedulePreviewRequest struct {
-	DtStart time.Time  `json:"dtstart" binding:"required"` // RFC3339 datetime
-	RRule   string     `json:"rrule" binding:"required"`   // RFC5545 RRULE (without DTSTART)
-	From    *time.Time `json:"from,omitempty"`             // optional lower bound (default now)
-	To      *time.Time `json:"to,omitempty"`               // optional upper bound
-	Limit   *int       `json:"limit,omitempty"`            // optional max event count
+	DtStart               time.Time  `json:"dtstart" binding:"required"` // RFC3339 datetime
+	RRule                 string     `json:"rrule" binding:"required"`   // RFC5545 RRULE (without DTSTART)
+	BusinessDayAdjustment string     `json:"business_day_adjustment,omitempty"`
+	From                  *time.Time `json:"from,omitempty"`  // optional lower bound (default now)
+	To                    *time.Time `json:"to,omitempty"`    // optional upper bound
+	Limit                 *int       `json:"limit,omitempty"` // optional max event count
 } //@name PortfolioRebalanceSchedulePreviewRequest
 
 type PortfolioRebalanceSchedulePreviewResponse struct {

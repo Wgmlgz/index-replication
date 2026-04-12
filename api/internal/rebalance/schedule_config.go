@@ -86,12 +86,17 @@ func (s *ScheduleConfigService) Upsert(
 	if err != nil {
 		return nil, err
 	}
+	policy, err := parseBusinessDayAdjustmentPolicy(req.BusinessDayAdjustment)
+	if err != nil {
+		return nil, err
+	}
 
 	row := &models.PortfolioRebalanceSchedule{
-		PortfolioProfileID: portfolioID,
-		IsEnabled:          req.IsEnabled,
-		DtStart:            req.DtStart.UTC(),
-		RRule:              ruleText,
+		PortfolioProfileID:    portfolioID,
+		IsEnabled:             req.IsEnabled,
+		DtStart:               req.DtStart.UTC(),
+		RRule:                 ruleText,
+		BusinessDayAdjustment: string(policy),
 	}
 	saved, err := s.schedulesRepo.Upsert(row)
 	if err != nil {
@@ -156,10 +161,15 @@ func toScheduleConfigDTO(model *models.PortfolioRebalanceSchedule) *dto.Portfoli
 	if model == nil {
 		return nil
 	}
+	policy := model.BusinessDayAdjustment
+	if strings.TrimSpace(policy) == "" {
+		policy = string(defaultBusinessDayAdjustmentPolicy)
+	}
 	return &dto.PortfolioRebalanceScheduleConfigResponse{
-		IsEnabled: model.IsEnabled,
-		DtStart:   model.DtStart,
-		RRule:     model.RRule,
-		UpdatedAt: model.UpdatedAt,
+		IsEnabled:             model.IsEnabled,
+		DtStart:               model.DtStart,
+		RRule:                 model.RRule,
+		BusinessDayAdjustment: policy,
+		UpdatedAt:             model.UpdatedAt,
 	}
 }
