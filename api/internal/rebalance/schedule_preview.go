@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultSchedulePreviewLimit    = 20
+	defaultSchedulePreviewLimit    = 100
 	maximumSchedulePreviewLimit    = 200
 	maximumScheduleSearchAttempts  = 10000
 	defaultScheduleCalendarDays    = 31

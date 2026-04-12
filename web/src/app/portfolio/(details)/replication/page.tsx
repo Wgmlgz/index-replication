@@ -73,7 +73,7 @@ export default function PortfolioReplicationSettingsPage() {
     <>
       <Card className='h-full min-h-0 overflow-hidden'>
         <CardHeader>
-          <div className='grid gap-4 lg:grid-cols-2'>
+          <div className='grid gap-4 lg:grid-cols-3'>
             <div className='grid gap-2'>
               <CardTitle>{t('portfolio.replication.title')}</CardTitle>
               <CardDescription>{t('portfolio.replication.description')}</CardDescription>
@@ -98,7 +98,7 @@ export default function PortfolioReplicationSettingsPage() {
               ) : null}
             </div>
 
-            <div className='grid content-start gap-1'>
+            <div className='grid content-start gap-1 col-span-2'>
               <CardTitle>{t('portfolio.replication.schedule.title')}</CardTitle>
               <CardDescription>{t('portfolio.replication.schedule.description')}</CardDescription>
             </div>
@@ -113,15 +113,15 @@ export default function PortfolioReplicationSettingsPage() {
             </Alert>
           ) : null}
 
-          <div className='grid min-h-0 flex-1 gap-4 lg:grid-cols-2'>
-            <div className='min-h-0 overflow-y-auto rounded-md border p-4'>
+          <div className='grid min-h-0 flex-1 gap-4 lg:grid-cols-3'>
+            <div className='min-h-0 overflow-y-auto'>
               <ReplicationSettingsReadonly
                 portfolioID={portfolioID}
                 onErrorChange={setError}
                 showEnableAction={false}
               />
             </div>
-            <div className='min-h-0 overflow-y-auto'>
+            <div className='min-h-0 overflow-y-auto col-span-2'>
               <RebalanceSchedulePreviewForm portfolioID={portfolioID} />
             </div>
           </div>

@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { endOfMonth, format, startOfMonth } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { addMonths, endOfMonth, format, startOfMonth, subMonths } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -11,10 +10,10 @@ import type { PortfolioRebalanceSchedulePreviewRequest } from '@/api-client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar, CalendarDayButton } from '@/components/ui/calendar';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -48,15 +47,6 @@ type EventRow = {
   eventAt: string;
 };
 
-type DateTimePickerProps = {
-  idPrefix: string;
-  label: string;
-  value: Date;
-  dateLabel: string;
-  timeLabel: string;
-  onChange: (nextValue: Date) => void;
-};
-
 const WEEKDAY_RRULE = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
 
 function isValidDate(value: Date): boolean {
@@ -76,16 +66,6 @@ function withTime(date: Date, timeValue: string): Date {
   return next;
 }
 
-function replaceDatePart(base: Date, pickedDate: Date): Date {
-  const next = new Date(base);
-  next.setFullYear(
-    pickedDate.getFullYear(),
-    pickedDate.getMonth(),
-    pickedDate.getDate(),
-  );
-  return next;
-}
-
 function clampInt(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -102,68 +82,12 @@ function startOfDayKey(value: Date): string {
   return format(value, 'yyyy-MM-dd');
 }
 
-function DateTimePicker({
-  idPrefix,
-  label,
-  value,
-  dateLabel,
-  timeLabel,
-  onChange,
-}: DateTimePickerProps) {
-  const [open, setOpen] = useState(false);
-  const dateButtonLabel = isValidDate(value)
-    ? format(value, 'yyyy-MM-dd')
-    : dateLabel;
-  const timeValue = isValidDate(value) ? format(value, 'HH:mm') : '00:00';
-
-  return (
-    <div className='grid gap-2'>
-      <Label>{label}</Label>
-      <div className='grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_7.5rem]'>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              id={`${idPrefix}-date`}
-              type='button'
-              variant='outline'
-              className='justify-start text-left font-normal'
-            >
-              <CalendarIcon className='size-4' />
-              {dateButtonLabel}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className='w-auto p-0' align='start'>
-            <Calendar
-              mode='single'
-              selected={value}
-              onSelect={nextDate => {
-                if (!nextDate) {
-                  return;
-                }
-                onChange(replaceDatePart(value, nextDate));
-                setOpen(false);
-              }}
-              captionLayout='dropdown'
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-
-        <div className='grid gap-1'>
-          <Label htmlFor={`${idPrefix}-time`} className='text-xs text-muted-foreground'>
-            {timeLabel}
-          </Label>
-          <Input
-            id={`${idPrefix}-time`}
-            type='time'
-            value={timeValue}
-            onChange={event => onChange(withTime(value, event.target.value))}
-            step={60}
-          />
-        </div>
-      </div>
-    </div>
-  );
+function parseDayKey(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+  const parsed = new Date(`${value}T00:00:00`);
+  return isValidDate(parsed) ? parsed : null;
 }
 
 type RebalanceSchedulePreviewFormProps = {
@@ -177,7 +101,7 @@ export function RebalanceSchedulePreviewForm({
   const [frequency, setFrequency] = useState<ScheduleFrequency>('DAILY');
   const [preferredTime, setPreferredTime] = useState('09:30');
   const [weeklyDayOfWeek, setWeeklyDayOfWeek] = useState(1);
-  const [monthlyDayInput, setMonthlyDayInput] = useState('31');
+  const [monthlyDayInput, setMonthlyDayInput] = useState('1');
   const [customIntervalDaysInput, setCustomIntervalDaysInput] = useState('14');
   const [customAnchorAt, setCustomAnchorAt] = useState(() => withTime(new Date(), '09:30'));
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
@@ -187,13 +111,13 @@ export function RebalanceSchedulePreviewForm({
   const [working, setWorking] = useState(false);
 
   const weekdayOptions = useMemo(() => [
-    { value: 0, label: t('portfolio.replication.schedule.weekdays.sun') },
     { value: 1, label: t('portfolio.replication.schedule.weekdays.mon') },
     { value: 2, label: t('portfolio.replication.schedule.weekdays.tue') },
     { value: 3, label: t('portfolio.replication.schedule.weekdays.wed') },
     { value: 4, label: t('portfolio.replication.schedule.weekdays.thu') },
     { value: 5, label: t('portfolio.replication.schedule.weekdays.fri') },
     { value: 6, label: t('portfolio.replication.schedule.weekdays.sat') },
+    { value: 0, label: t('portfolio.replication.schedule.weekdays.sun') },
   ], [t]);
 
   const formatDateTime = useCallback((value: string) => {
@@ -209,6 +133,14 @@ export function RebalanceSchedulePreviewForm({
   const formatDate = useCallback((value: Date) => new Intl.DateTimeFormat(i18n.language || 'en', {
     dateStyle: 'long',
   }).format(value), [i18n.language]);
+  const previewWindowStart = useMemo(
+    () => startOfMonth(subMonths(calendarMonth, 1)),
+    [calendarMonth],
+  );
+  const previewWindowEnd = useMemo(
+    () => endOfMonth(addMonths(calendarMonth, 1)),
+    [calendarMonth],
+  );
 
   const eventDays = useMemo(() => {
     if (!preview?.events?.length) {
@@ -227,6 +159,26 @@ export function RebalanceSchedulePreviewForm({
     }
     return [...byDay.values()];
   }, [preview?.events]);
+  const nonWorkDays = useMemo(() => {
+    if (!preview?.moex?.calendar?.length) {
+      return [] as Date[];
+    }
+    const byDay = new Map<string, Date>();
+    for (const row of preview.moex.calendar) {
+      if (row.is_work_day || !row.date) {
+        continue;
+      }
+      const parsed = parseDayKey(row.date);
+      if (!parsed) {
+        continue;
+      }
+      const key = startOfDayKey(parsed);
+      if (!byDay.has(key)) {
+        byDay.set(key, parsed);
+      }
+    }
+    return [...byDay.values()];
+  }, [preview?.moex?.calendar]);
 
   const monthlyRRulePart = useCallback((monthlyDayOfMonth: number) => {
     if (monthlyDayOfMonth <= 1) {
@@ -260,9 +212,9 @@ export function RebalanceSchedulePreviewForm({
       throw new Error(t('portfolio.replication.schedule.errors.customIntervalDays'));
     }
 
-    const fromBoundary = startOfMonth(calendarMonth);
+    const fromBoundary = new Date(previewWindowStart);
     fromBoundary.setHours(0, 0, 0, 0);
-    const toBoundary = endOfMonth(calendarMonth);
+    const toBoundary = new Date(previewWindowEnd);
     toBoundary.setHours(23, 59, 59, 999);
 
     let dtStart = withTime(fromBoundary, trimmedTime);
@@ -291,12 +243,13 @@ export function RebalanceSchedulePreviewForm({
       to: toBoundary.toISOString(),
     };
   }, [
-    calendarMonth,
     customAnchorAt,
     customIntervalDaysInput,
     frequency,
     monthlyDayInput,
     monthlyRRulePart,
+    previewWindowEnd,
+    previewWindowStart,
     preferredTime,
     t,
     weeklyDayOfWeek,
@@ -341,6 +294,16 @@ export function RebalanceSchedulePreviewForm({
       setWorking(false);
     }
   }, [buildPreviewPayload, portfolioID, t]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void onPreview();
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [onPreview]);
 
   const events = useMemo(() => preview?.events ?? [], [preview?.events]);
   const eventRows = useMemo<EventRow[]>(
@@ -397,23 +360,11 @@ export function RebalanceSchedulePreviewForm({
         </Alert>
       ) : null}
 
-      <div className='grid gap-3 rounded-md border p-3'>
+      <div className='grid gap-3'>
         <div className='grid gap-3 lg:grid-cols-3'>
-          <div className='grid gap-2 rounded-md border p-2'>
-            <p className='text-sm font-medium'>{t('portfolio.replication.schedule.calendarTitle')}</p>
-            <p className='text-xs text-muted-foreground'>
-              {t('portfolio.replication.schedule.calendarHint', {
-                from: format(startOfMonth(calendarMonth), 'yyyy-MM-dd'),
-                to: format(endOfMonth(calendarMonth), 'yyyy-MM-dd'),
-              })}
-            </p>
-            <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-              <span className='inline-flex items-center gap-1'>
-                <span className='inline-block size-2 rounded-sm bg-emerald-500' />
-                {t('portfolio.replication.schedule.legendEventDay')}
-              </span>
-            </div>
+          <div className='grid gap-2 rounded-md border justify-items-center'>
             <Calendar
+              weekStartsOn={1}
               mode='single'
               month={calendarMonth}
               selected={calendarSelected}
@@ -423,14 +374,40 @@ export function RebalanceSchedulePreviewForm({
                 setPreview(null);
                 setError('');
               }}
+              className='min-h-[331px]'
               modifiers={{
                 event: eventDays,
+                nonWorkday: nonWorkDays,
               }}
               modifiersClassNames={{
-                event: 'bg-emerald-100 text-emerald-900',
+                nonWorkday: '[&>button]:line-through opacity-100',
+              }}
+              components={{
+                DayButton: ({ children, modifiers, day, ...props }) => (
+                  <CalendarDayButton day={day} modifiers={modifiers} {...props}>
+                    {children}
+                    {modifiers.event ? (
+                      <span
+                        aria-hidden
+                        className={`inline-block size-1.5 rounded-full ${modifiers.selected ? 'bg-primary-foreground' : 'bg-emerald-500'
+                          }`}
+                      />
+                    ) :
+                      <span
+                        aria-hidden
+                        className={`inline-block size-1.5 rounded-full`}
+                      />}
+                  </CalendarDayButton>
+                ),
               }}
               captionLayout='dropdown'
             />
+            <div className='grid justify-items-center items-center gap-2 text-xs text-muted-foreground px-4 pb-2'>
+              <span className='inline-flex items-center gap-1'>
+                <span className='inline-block size-1.5 rounded-full bg-emerald-500' />
+                {t('portfolio.replication.schedule.legendEventDay')}
+              </span>
+            </div>
           </div>
 
           <div className='rounded-md border p-2 text-xs'>
@@ -545,89 +522,93 @@ export function RebalanceSchedulePreviewForm({
           </Tabs>
         </div>
 
-        <div className='grid gap-2'>
+        <div className='grid gap-2 grid-cols-4'>
           <div className='grid gap-2'>
-            <Label htmlFor='schedule-preferred-time'>
-              {t('portfolio.replication.schedule.preferredTimeLabel')}
-            </Label>
-            <Input
-              id='schedule-preferred-time'
-              type='time'
-              value={preferredTime}
-              onChange={event => setPreferredTime(event.target.value)}
-              step={60}
-            />
-          </div>
-        </div>
-
-        {frequency === 'WEEKLY' ? (
-          <div className='grid gap-2'>
-            <Label htmlFor='schedule-weekly-day'>
-              {t('portfolio.replication.schedule.weeklyDayLabel')}
-            </Label>
-            <Select
-              value={String(weeklyDayOfWeek)}
-              onValueChange={value => {
-                const parsed = Number.parseInt(value, 10);
-                setWeeklyDayOfWeek(Number.isFinite(parsed) ? clampInt(parsed, 0, 6) : 1);
-              }}
-            >
-              <SelectTrigger id='schedule-weekly-day' className='w-full'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {weekdayOptions.map(option => (
-                  <SelectItem key={option.value} value={String(option.value)}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
-
-        {frequency === 'MONTHLY' ? (
-          <div className='grid gap-2 sm:max-w-48'>
-            <Label htmlFor='schedule-monthly-day'>
-              {t('portfolio.replication.schedule.monthlyDayLabel')}
-            </Label>
-            <Input
-              id='schedule-monthly-day'
-              type='number'
-              min={1}
-              max={31}
-              value={monthlyDayInput}
-              onChange={event => setMonthlyDayInput(event.target.value)}
-            />
-          </div>
-        ) : null}
-
-        {frequency === 'CUSTOM_INTERVAL' ? (
-          <div className='grid gap-3'>
-            <div className='grid gap-2 sm:max-w-48'>
-              <Label htmlFor='schedule-custom-interval-days'>
-                {t('portfolio.replication.schedule.customIntervalDaysLabel')}
+            <div className='grid gap-2'>
+              <Label htmlFor='schedule-preferred-time'>
+                {t('portfolio.replication.schedule.preferredTimeLabel')}
               </Label>
               <Input
-                id='schedule-custom-interval-days'
-                type='number'
-                min={1}
-                max={365}
-                value={customIntervalDaysInput}
-                onChange={event => setCustomIntervalDaysInput(event.target.value)}
+                id='schedule-preferred-time'
+                type='time'
+                value={preferredTime}
+                onChange={event => setPreferredTime(event.target.value)}
+                step={60}
               />
             </div>
-            <DateTimePicker
-              idPrefix='schedule-custom-anchor'
-              label={t('portfolio.replication.schedule.customAnchorLabel')}
-              value={customAnchorAt}
-              dateLabel={t('portfolio.replication.schedule.datePlaceholder')}
-              timeLabel={t('portfolio.replication.schedule.timeLabel')}
-              onChange={setCustomAnchorAt}
-            />
           </div>
-        ) : null}
 
+          {frequency === 'WEEKLY' ? (
+            <div className='grid gap-2'>
+              <Label htmlFor='schedule-weekly-day'>
+                {t('portfolio.replication.schedule.weeklyDayLabel')}
+              </Label>
+              <Select
+                value={String(weeklyDayOfWeek)}
+                onValueChange={value => {
+                  const parsed = Number.parseInt(value, 10);
+                  setWeeklyDayOfWeek(Number.isFinite(parsed) ? clampInt(parsed, 0, 6) : 1);
+                }}
+              >
+                <SelectTrigger id='schedule-weekly-day' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {weekdayOptions.map(option => (
+                    <SelectItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {frequency === 'MONTHLY' ? (
+            <div className='grid gap-2'>
+              <Label htmlFor='schedule-monthly-day'>
+                {t('portfolio.replication.schedule.monthlyDayLabel')}
+              </Label>
+              <Input
+                id='schedule-monthly-day'
+                type='number'
+                min={1}
+                max={31}
+                value={monthlyDayInput}
+                onChange={event => setMonthlyDayInput(event.target.value)}
+              />
+            </div>
+          ) : null}
+
+          {frequency === 'CUSTOM_INTERVAL' ? (
+            <>
+              <div className='grid gap-2'>
+                <Label htmlFor='schedule-custom-interval-days'>
+                  {t('portfolio.replication.schedule.customIntervalDaysLabel')}
+                </Label>
+                <Input
+                  id='schedule-custom-interval-days'
+                  type='number'
+                  min={1}
+                  max={365}
+                  value={customIntervalDaysInput}
+                  onChange={event => setCustomIntervalDaysInput(event.target.value)}
+                />
+              </div>
+              <div className='col-span-2'>
+                <DateTimePicker
+                  idPrefix='schedule-custom-anchor'
+                  label={t('portfolio.replication.schedule.customAnchorLabel')}
+                  value={customAnchorAt}
+                  dateLabel={t('portfolio.replication.schedule.datePlaceholder')}
+                  timeLabel={t('portfolio.replication.schedule.timeLabel')}
+                  onChange={setCustomAnchorAt}
+                />
+              </div>
+            </>
+          ) : null}
+
+        </div>
         <Button type='button' onClick={() => void onPreview()} disabled={working}>
           {working
             ? t('portfolio.replication.schedule.previewWorking')

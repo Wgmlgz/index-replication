@@ -390,7 +390,7 @@
         "selectButton": "Select and save"
       },
       "title": "Replication config",
-      "description": "Configure benchmark and mode parameters for future replication workflows.",
+      "description": "Configure replication parameters for future rebalancing.",
       "selectPrompt": "Select a portfolio profile to configure replication.",
       "tabs": {
         "settings": "Settings",
@@ -398,7 +398,7 @@
       },
       "schedule": {
         "title": "Schedule config",
-        "description": "Plan recurring rebalances, preview accepted dates, and inspect MOEX filtering details.",
+        "description": "Configure rebalancing schedule and parameters.",
         "frequencyLabel": "Frequency",
         "frequency": {
           "daily": "Daily",
@@ -437,9 +437,9 @@
         "selectedDateNeedPreview": "Run preview to inspect this date.",
         "selectedDateEventsLabel": "Planned events:",
         "selectedDateNoEvents": "No planned events on this date.",
-        "selectedDateSource": "Source:",
-        "selectedDateWorkday": "Workday:",
-        "selectedDateWindow": "Window:",
+        "selectedDateMoexSource": "Source:",
+        "selectedDateMoexWorkday": "Workday:",
+        "selectedDateMoexWindow": "Window:",
         "selectedDateNoMoex": "No MOEX data for this date in current preview.",
         "moexTitle": "MOEX schedule data",
         "moexEngine": "Engine:",
