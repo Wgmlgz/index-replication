@@ -16,8 +16,9 @@ All URIs are relative to *http://localhost:8080/api*
 |[**mePortfoliosIdRebalancesPost**](#meportfoliosidrebalancespost) | **POST** /me/portfolios/{id}/rebalances | Create rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdDelete**](#meportfoliosidrebalancesrebalanceiddelete) | **DELETE** /me/portfolios/{id}/rebalances/{rebalanceId} | Delete rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdExecutePost**](#meportfoliosidrebalancesrebalanceidexecutepost) | **POST** /me/portfolios/{id}/rebalances/{rebalanceId}/execute | Execute rebalance draft|
-|[**mePortfoliosIdRebalancesRebalanceIdStatusGet**](#meportfoliosidrebalancesrebalanceidexecutionget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId}/status | Get rebalance status|
 |[**mePortfoliosIdRebalancesRebalanceIdGet**](#meportfoliosidrebalancesrebalanceidget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId} | Get rebalance draft detail|
+|[**mePortfoliosIdRebalancesRebalanceIdStatusGet**](#meportfoliosidrebalancesrebalanceidstatusget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId}/status | Get rebalance status|
+|[**mePortfoliosIdRebalancesSchedulePreviewPost**](#meportfoliosidrebalancesschedulepreviewpost) | **POST** /me/portfolios/{id}/rebalances/schedule/preview | Preview rebalance schedule|
 |[**mePortfoliosIdReplicationDelete**](#meportfoliosidreplicationdelete) | **DELETE** /me/portfolios/{id}/replication | Delete portfolio replication config|
 |[**mePortfoliosIdReplicationPut**](#meportfoliosidreplicationput) | **PUT** /me/portfolios/{id}/replication | Upsert portfolio replication config|
 |[**mePortfoliosIdSummaryGet**](#meportfoliosidsummaryget) | **GET** /me/portfolios/{id}/summary | Get portfolio summary|
@@ -604,7 +605,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**201** | Created |  -  |
+|**202** | Accepted |  -  |
 |**400** | Bad Request |  -  |
 |**404** | Not Found |  -  |
 |**500** | Internal Server Error |  -  |
@@ -725,63 +726,6 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **mePortfoliosIdRebalancesRebalanceIdStatusGet**
-> PortfolioRebalanceStatusResponse mePortfoliosIdRebalancesRebalanceIdStatusGet()
-
-Returns pollable execution state with live item statuses and execution links
-
-### Example
-
-```typescript
-import {
-    PortfolioApi,
-    Configuration
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new PortfolioApi(configuration);
-
-let id: number; //Portfolio profile id (default to undefined)
-let rebalanceId: number; //Rebalance run id (default to undefined)
-
-const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdStatusGet(
-    id,
-    rebalanceId
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **id** | [**number**] | Portfolio profile id | defaults to undefined|
-| **rebalanceId** | [**number**] | Rebalance run id | defaults to undefined|
-
-
-### Return type
-
-**PortfolioRebalanceStatusResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | OK |  -  |
-|**400** | Bad Request |  -  |
-|**404** | Not Found |  -  |
-|**500** | Internal Server Error |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **mePortfoliosIdRebalancesRebalanceIdGet**
 > PortfolioRebalanceDetailResponse mePortfoliosIdRebalancesRebalanceIdGet()
 
@@ -836,6 +780,122 @@ No authorization required
 |**400** | Bad Request |  -  |
 |**404** | Not Found |  -  |
 |**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesRebalanceIdStatusGet**
+> PortfolioRebalanceStatusResponse mePortfoliosIdRebalancesRebalanceIdStatusGet()
+
+Returns pollable run status with live progress, item statuses, and links
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let rebalanceId: number; //Rebalance run id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesRebalanceIdStatusGet(
+    id,
+    rebalanceId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+| **rebalanceId** | [**number**] | Rebalance run id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceStatusResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesSchedulePreviewPost**
+> PortfolioRebalanceSchedulePreviewResponse mePortfoliosIdRebalancesSchedulePreviewPost(payload)
+
+Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration,
+    PortfolioRebalanceSchedulePreviewRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let payload: PortfolioRebalanceSchedulePreviewRequest; //Schedule preview payload
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesSchedulePreviewPost(
+    id,
+    payload
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **payload** | **PortfolioRebalanceSchedulePreviewRequest**| Schedule preview payload | |
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceSchedulePreviewResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+|**503** | Service Unavailable |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

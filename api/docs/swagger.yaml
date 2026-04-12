@@ -603,6 +603,64 @@ definitions:
       updated_at:
         type: string
     type: object
+  PortfolioRebalanceSchedulePreviewMoexCalendar:
+    properties:
+      date:
+        description: YYYY-MM-DD
+        type: string
+      is_work_day:
+        description: nil for source=none
+        type: boolean
+      source:
+        description: dailytable|timetable|none
+        type: string
+      start_time:
+        description: MOEX window start (HH:mm[:ss])
+        type: string
+      stop_time:
+        description: MOEX window stop (HH:mm[:ss])
+        type: string
+    type: object
+  PortfolioRebalanceSchedulePreviewMoexMetadata:
+    properties:
+      calendar:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceSchedulePreviewMoexCalendar'
+        type: array
+      engine:
+        type: string
+    type: object
+  PortfolioRebalanceSchedulePreviewRequest:
+    properties:
+      dtstart:
+        description: RFC3339 datetime
+        type: string
+      from:
+        description: optional lower bound (default now)
+        type: string
+      limit:
+        description: optional max event count
+        type: integer
+      rrule:
+        description: RFC5545 RRULE (without DTSTART)
+        type: string
+      to:
+        description: optional upper bound
+        type: string
+    required:
+    - dtstart
+    - rrule
+    type: object
+  PortfolioRebalanceSchedulePreviewResponse:
+    properties:
+      events:
+        description: RFC3339 datetimes
+        items:
+          type: string
+        type: array
+      moex:
+        $ref: '#/definitions/PortfolioRebalanceSchedulePreviewMoexMetadata'
+    type: object
   PortfolioRebalanceStatusItem:
     properties:
       current_quantity:
@@ -1747,6 +1805,50 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Get rebalance status
+      tags:
+      - portfolio
+  /me/portfolios/{id}/rebalances/schedule/preview:
+    post:
+      consumes:
+      - application/json
+      description: Generates upcoming rebalance timestamps from RFC5545 RRULE and
+        filters by MOEX trading availability
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Schedule preview payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/PortfolioRebalanceSchedulePreviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioRebalanceSchedulePreviewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Preview rebalance schedule
       tags:
       - portfolio
   /me/portfolios/{id}/replication:

@@ -8,9 +8,10 @@ import { usePortfolioDetailsContext } from '@/app/portfolio/components/portfolio
 import { ConfirmActionDialog } from '@/components/confirm-action-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
+import { RebalanceSchedulePreviewForm } from './components/rebalance-schedule-preview-form';
 import { ReplicationSettingsReadonly } from './components/replication-settings-readonly';
 
 export default function PortfolioReplicationSettingsPage() {
@@ -72,30 +73,39 @@ export default function PortfolioReplicationSettingsPage() {
     <>
       <Card className='h-full min-h-0 overflow-hidden'>
         <CardHeader>
-          <CardTitle>{t('portfolio.replication.title')}</CardTitle>
-          <CardDescription>{t('portfolio.replication.description')}</CardDescription>
-          {!isReplicationEnabled ? (
-            <CardAction>
-              <ConfirmActionDialog
-                trigger={(
-                  <Button type='button' disabled={working}>
-                    {t('portfolio.replication.isEnabledLabel')}
-                  </Button>
-                )}
-                title={t('portfolio.replication.toggleConfirmTitle')}
-                description={t('portfolio.replication.toggleConfirmEnableDescription')}
-                cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
-                actionLabel={t('portfolio.replication.toggleConfirmEnableAction')}
-                disabled={working}
-                onAction={() => {
-                  void onEnableReplication();
-                }}
-              />
-            </CardAction>
-          ) : null}
+          <div className='grid gap-4 lg:grid-cols-2'>
+            <div className='grid gap-2'>
+              <CardTitle>{t('portfolio.replication.title')}</CardTitle>
+              <CardDescription>{t('portfolio.replication.description')}</CardDescription>
+              {!isReplicationEnabled ? (
+                <div>
+                  <ConfirmActionDialog
+                    trigger={(
+                      <Button type='button' disabled={working}>
+                        {t('portfolio.replication.isEnabledLabel')}
+                      </Button>
+                    )}
+                    title={t('portfolio.replication.toggleConfirmTitle')}
+                    description={t('portfolio.replication.toggleConfirmEnableDescription')}
+                    cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
+                    actionLabel={t('portfolio.replication.toggleConfirmEnableAction')}
+                    disabled={working}
+                    onAction={() => {
+                      void onEnableReplication();
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className='grid content-start gap-1'>
+              <CardTitle>{t('portfolio.replication.schedule.title')}</CardTitle>
+              <CardDescription>{t('portfolio.replication.schedule.description')}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
 
-        <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm'>
+        <CardContent className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden text-sm'>
           {error ? (
             <Alert variant='destructive'>
               <AlertTitle>{t('common.error')}</AlertTitle>
@@ -103,11 +113,18 @@ export default function PortfolioReplicationSettingsPage() {
             </Alert>
           ) : null}
 
-          <ReplicationSettingsReadonly
-            portfolioID={portfolioID}
-            onErrorChange={setError}
-            showEnableAction={false}
-          />
+          <div className='grid min-h-0 flex-1 gap-4 lg:grid-cols-2'>
+            <div className='min-h-0 overflow-y-auto rounded-md border p-4'>
+              <ReplicationSettingsReadonly
+                portfolioID={portfolioID}
+                onErrorChange={setError}
+                showEnableAction={false}
+              />
+            </div>
+            <div className='min-h-0 overflow-y-auto'>
+              <RebalanceSchedulePreviewForm portfolioID={portfolioID} />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </>

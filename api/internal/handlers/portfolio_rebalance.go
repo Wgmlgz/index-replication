@@ -15,11 +15,16 @@ import (
 )
 
 type PortfolioRebalanceHandler struct {
-	service *rebalance.Service
+	service         *rebalance.Service
+	schedulePreview *rebalance.SchedulePreviewService
 }
 
-func NewPortfolioRebalanceHandler(service *rebalance.Service) *PortfolioRebalanceHandler {
-	return &PortfolioRebalanceHandler{service: service}
+func NewPortfolioRebalanceHandler(service *rebalance.Service, schedulePreview ...*rebalance.SchedulePreviewService) *PortfolioRebalanceHandler {
+	handler := &PortfolioRebalanceHandler{service: service}
+	if len(schedulePreview) > 0 {
+		handler.schedulePreview = schedulePreview[0]
+	}
+	return handler
 }
 
 // CreateRebalanceDraft godoc
@@ -224,6 +229,48 @@ func (h *PortfolioRebalanceHandler) GetRebalanceStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// PreviewSchedule godoc
+//
+//	@Summary		Preview rebalance schedule
+//	@Description	Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+//	@Tags			portfolio
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int												true	"Portfolio profile id"
+//	@Param			payload	body		dto.PortfolioRebalanceSchedulePreviewRequest	true	"Schedule preview payload"
+//	@Success		200		{object}	dto.PortfolioRebalanceSchedulePreviewResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Failure		503		{object}	dto.ErrorResponse
+//	@Router			/me/portfolios/{id}/rebalances/schedule/preview [post]
+func (h *PortfolioRebalanceHandler) PreviewSchedule(c *gin.Context) {
+	userID := utils.GetRequestContext(c).UserID
+	portfolioID, ok := parsePortfolioID(c)
+	if !ok {
+		return
+	}
+
+	if h.schedulePreview == nil {
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: rebalance.ErrSchedulePreviewUnavailable.Error()})
+		return
+	}
+
+	var req dto.PortfolioRebalanceSchedulePreviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid payload"})
+		return
+	}
+
+	resp, err := h.schedulePreview.Preview(c.Request.Context(), userID, portfolioID, &req)
+	if err != nil {
+		writePortfolioRebalanceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 func parseRebalanceID(c *gin.Context) (int, bool) {
 	runID, err := strconv.Atoi(strings.TrimSpace(c.Param("rebalanceId")))
 	if err != nil || runID <= 0 {
@@ -249,6 +296,8 @@ func writePortfolioRebalanceError(c *gin.Context, err error) {
 	case errors.Is(err, rebalance.ErrExecutionUnavailable):
 		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: err.Error()})
 	case errors.Is(err, rebalance.ErrPlanningUnavailable):
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: err.Error()})
+	case errors.Is(err, rebalance.ErrSchedulePreviewUnavailable):
 		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: err.Error()})
 	case errors.Is(err, rebalance.ErrProfileNotFound),
 		errors.Is(err, rebalance.ErrReplicationConfigNotFound),

@@ -841,6 +841,71 @@
                 }
             }
         },
+        "/me/portfolios/{id}/rebalances/schedule/preview": {
+            "post": {
+                "description": "Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Preview rebalance schedule",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Schedule preview payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/portfolios/{id}/rebalances/{rebalanceId}": {
             "get": {
                 "description": "Returns run metadata and persisted planning payload (input, output, summary)",
@@ -3308,6 +3373,89 @@
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceSchedulePreviewMoexCalendar": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "is_work_day": {
+                    "description": "nil for source=none",
+                    "type": "boolean"
+                },
+                "source": {
+                    "description": "dailytable|timetable|none",
+                    "type": "string"
+                },
+                "start_time": {
+                    "description": "MOEX window start (HH:mm[:ss])",
+                    "type": "string"
+                },
+                "stop_time": {
+                    "description": "MOEX window stop (HH:mm[:ss])",
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceSchedulePreviewMoexMetadata": {
+            "type": "object",
+            "properties": {
+                "calendar": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewMoexCalendar"
+                    }
+                },
+                "engine": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceSchedulePreviewRequest": {
+            "type": "object",
+            "required": [
+                "dtstart",
+                "rrule"
+            ],
+            "properties": {
+                "dtstart": {
+                    "description": "RFC3339 datetime",
+                    "type": "string"
+                },
+                "from": {
+                    "description": "optional lower bound (default now)",
+                    "type": "string"
+                },
+                "limit": {
+                    "description": "optional max event count",
+                    "type": "integer"
+                },
+                "rrule": {
+                    "description": "RFC5545 RRULE (without DTSTART)",
+                    "type": "string"
+                },
+                "to": {
+                    "description": "optional upper bound",
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceSchedulePreviewResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "description": "RFC3339 datetimes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "moex": {
+                    "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewMoexMetadata"
                 }
             }
         },

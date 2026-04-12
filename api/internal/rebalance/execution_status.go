@@ -46,6 +46,7 @@ func (s *Service) GetRunStatus(
 			planningState = state
 		}
 	}
+	run = s.reconcilePlanningTerminalStatus(run, planningState)
 	if planningResponse, handled := buildPlanningExecutionStatus(run, planningState); handled {
 		return planningResponse, nil
 	}
@@ -233,4 +234,36 @@ func updatedAt(lastEvent *time.Time) time.Time {
 		return lastEvent.UTC()
 	}
 	return time.Now().UTC()
+}
+
+func (s *Service) reconcilePlanningTerminalStatus(
+	run *models.PortfolioRebalanceRun,
+	planningState *workflows.RebalancePlanningStatus,
+) *models.PortfolioRebalanceRun {
+	if run == nil || planningState == nil || s == nil || s.runsRepo == nil {
+		return run
+	}
+	if !planningState.Progress.IsTerminal {
+		return run
+	}
+	if planningState.RunStatus != models.PortfolioRebalanceRunStatusPlanningFailed {
+		return run
+	}
+	if run.Status != models.PortfolioRebalanceRunStatusPlanningQueued &&
+		run.Status != models.PortfolioRebalanceRunStatusPlanning {
+		return run
+	}
+
+	endedAt := time.Now().UTC()
+	if planningState.Progress.LastEventAt != nil {
+		endedAt = planningState.Progress.LastEventAt.UTC()
+	}
+	if err := s.runsRepo.MarkRunPlanningFailed(run.UserID, run.PortfolioProfileID, run.ID, endedAt); err != nil {
+		return run
+	}
+
+	endedAtCopy := endedAt
+	run.Status = models.PortfolioRebalanceRunStatusPlanningFailed
+	run.EndedAt = &endedAtCopy
+	return run
 }

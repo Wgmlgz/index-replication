@@ -58,6 +58,15 @@ func (s *MoexService) GetIndexesOverview(ctx context.Context, lang string) (moex
 	}, nil
 }
 
+func (s *MoexService) GetEngineSchedule(
+	ctx context.Context,
+	engine, lang string,
+	from *time.Time,
+	to *time.Time,
+) (moexdomain.EngineSchedule, error) {
+	return s.client.FetchEngineSchedule(ctx, engine, lang, from, to)
+}
+
 func (s *MoexService) GetIndexHistory(ctx context.Context, secid, from, till string, intervalDays int) ([]moexdomain.IndexHistoryPoint, error) {
 	points, err := s.client.FetchHistory(ctx, secid, from, till)
 	if err != nil {

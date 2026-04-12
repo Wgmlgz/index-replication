@@ -7,6 +7,8 @@ This document describes the end-to-end rebalance flow in general phases, from us
 - Covers planning draft creation and execution orchestration.
 - Covers execution for automatic providers (`virtual`, `tbank`).
 - Uses API-level and workflow-level terminology (not provider-internal implementation details).
+- Includes schedule preview API (`POST /api/me/portfolios/:id/rebalances/schedule/preview`)
+  that generates RFC5545 recurrence events and filters by MOEX trading availability.
 
 ## Phases
 

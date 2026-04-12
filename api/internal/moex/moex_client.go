@@ -215,6 +215,12 @@ type moexIndexTickersPayload struct {
 	Tickers moexTable `json:"tickers"`
 }
 
+type moexEnginePayload struct {
+	Engine    moexTable `json:"engine"`
+	Timetable moexTable `json:"timetable"`
+	Daily     moexTable `json:"dailytable"`
+}
+
 func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]moexdomain.Index, error) {
 	params := url.Values{}
 	params.Set("iss.meta", "off")
@@ -254,6 +260,87 @@ func (c *moexISSClient) FetchIndexes(ctx context.Context, lang string) ([]moexdo
 		})
 	}
 	return indexes, nil
+}
+
+func (c *moexISSClient) FetchEngineSchedule(
+	ctx context.Context,
+	engine, lang string,
+	from *time.Time,
+	to *time.Time,
+) (moexdomain.EngineSchedule, error) {
+	engine = strings.TrimSpace(engine)
+	if engine == "" {
+		engine = "stock"
+	}
+	lang = strings.TrimSpace(lang)
+	if lang == "" {
+		lang = "en"
+	}
+
+	params := url.Values{}
+	params.Set("iss.meta", "off")
+	params.Set("lang", lang)
+	params.Set("timetable.columns", "week_day,is_work_day,start_time,stop_time")
+	params.Set("dailytable.columns", "date,is_work_day,start_time,stop_time")
+	params.Set("engine.columns", "NAME")
+	if from != nil {
+		params.Set("from", from.UTC().Format("2006-01-02"))
+	}
+	if to != nil {
+		params.Set("till", to.UTC().Format("2006-01-02"))
+	}
+
+	var payload moexEnginePayload
+	if err := c.get(ctx, fmt.Sprintf("engines/%s.json", url.PathEscape(engine)), params, &payload); err != nil {
+		return moexdomain.EngineSchedule{}, err
+	}
+
+	result := moexdomain.EngineSchedule{
+		Engine:    engine,
+		Timetable: []moexdomain.EngineWeeklySchedule{},
+		Daily:     []moexdomain.EngineDailySchedule{},
+	}
+
+	engineRows := tableToObjects(payload.Engine)
+	if len(engineRows) > 0 {
+		if name := strings.TrimSpace(asString(getValue(engineRows[0], "NAME", "name"))); name != "" {
+			result.Engine = strings.ToLower(name)
+		}
+	}
+
+	timetableRows := tableToObjects(payload.Timetable)
+	result.Timetable = make([]moexdomain.EngineWeeklySchedule, 0, len(timetableRows))
+	for _, row := range timetableRows {
+		weekDay := asIntPtr(getValue(row, "week_day", "WEEK_DAY", "weekday", "WEEKDAY"))
+		if weekDay == nil || *weekDay <= 0 {
+			continue
+		}
+		isWorkDay := asIntPtr(getValue(row, "is_work_day", "IS_WORK_DAY"))
+		result.Timetable = append(result.Timetable, moexdomain.EngineWeeklySchedule{
+			WeekDay:   *weekDay,
+			IsWorkDay: isWorkDay != nil && *isWorkDay != 0,
+			StartTime: asStringPtr(getValue(row, "start_time", "START_TIME", "start", "START")),
+			StopTime:  asStringPtr(getValue(row, "stop_time", "STOP_TIME", "stop", "STOP")),
+		})
+	}
+
+	dailyRows := tableToObjects(payload.Daily)
+	result.Daily = make([]moexdomain.EngineDailySchedule, 0, len(dailyRows))
+	for _, row := range dailyRows {
+		date := strings.TrimSpace(asString(getValue(row, "date", "DATE")))
+		if date == "" {
+			continue
+		}
+		isWorkDay := asIntPtr(getValue(row, "is_work_day", "IS_WORK_DAY"))
+		result.Daily = append(result.Daily, moexdomain.EngineDailySchedule{
+			Date:      date,
+			IsWorkDay: isWorkDay != nil && *isWorkDay != 0,
+			StartTime: asStringPtr(getValue(row, "start_time", "START_TIME", "start", "START")),
+			StopTime:  asStringPtr(getValue(row, "stop_time", "STOP_TIME", "stop", "STOP")),
+		})
+	}
+
+	return result, nil
 }
 
 func (c *moexISSClient) FetchCollections(ctx context.Context, lang string) ([]moexdomain.IndexCollection, error) {

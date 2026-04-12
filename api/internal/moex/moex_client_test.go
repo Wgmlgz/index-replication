@@ -185,3 +185,62 @@ func TestMoexISSClientFetchShareSecurityHistory(t *testing.T) {
 		t.Fatalf("unexpected close: %+v", rows[0].Close)
 	}
 }
+
+func TestMoexISSClientFetchEngineSchedule(t *testing.T) {
+	var gotFrom string
+	var gotTill string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/engines/stock.json" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		gotFrom = r.URL.Query().Get("from")
+		gotTill = r.URL.Query().Get("till")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+  "engine": {
+    "columns": ["NAME"],
+    "data": [["stock"]]
+  },
+  "timetable": {
+    "columns": ["week_day","is_work_day","start_time","stop_time"],
+    "data": [
+      [1,1,"06:20:00","23:59:59"],
+      [7,0,null,null]
+    ]
+  },
+  "dailytable": {
+    "columns": ["date","is_work_day","start_time","stop_time"],
+    "data": [
+      ["2026-04-13",1,"07:00:00","20:00:00"]
+    ]
+  }
+}`))
+	}))
+	defer server.Close()
+
+	client := newMoexISSClient(server.URL, 2*time.Second)
+	from := time.Date(2026, 4, 1, 12, 30, 0, 0, time.FixedZone("+03", 3*3600))
+	to := time.Date(2026, 4, 30, 23, 59, 59, 0, time.FixedZone("+03", 3*3600))
+	schedule, err := client.FetchEngineSchedule(context.Background(), "stock", "en", &from, &to)
+	if err != nil {
+		t.Fatalf("FetchEngineSchedule returned error: %v", err)
+	}
+	if gotFrom != "2026-04-01" {
+		t.Fatalf("expected query from=2026-04-01, got %q", gotFrom)
+	}
+	if gotTill != "2026-04-30" {
+		t.Fatalf("expected query till=2026-04-30, got %q", gotTill)
+	}
+	if schedule.Engine != "stock" {
+		t.Fatalf("expected engine stock, got %q", schedule.Engine)
+	}
+	if len(schedule.Timetable) != 2 {
+		t.Fatalf("expected 2 weekly rows, got %d", len(schedule.Timetable))
+	}
+	if len(schedule.Daily) != 1 {
+		t.Fatalf("expected 1 daily row, got %d", len(schedule.Daily))
+	}
+	if schedule.Daily[0].StartTime == nil || *schedule.Daily[0].StartTime != "07:00:00" {
+		t.Fatalf("unexpected daily start time: %+v", schedule.Daily[0].StartTime)
+	}
+}

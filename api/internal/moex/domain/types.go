@@ -49,3 +49,23 @@ type IndexTickerAnalyticsPoint struct {
 	TradeDate string
 	Weight    *float64
 }
+
+type EngineWeeklySchedule struct {
+	WeekDay   int
+	IsWorkDay bool
+	StartTime *string
+	StopTime  *string
+}
+
+type EngineDailySchedule struct {
+	Date      string
+	IsWorkDay bool
+	StartTime *string
+	StopTime  *string
+}
+
+type EngineSchedule struct {
+	Engine    string
+	Timetable []EngineWeeklySchedule
+	Daily     []EngineDailySchedule
+}

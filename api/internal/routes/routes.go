@@ -132,7 +132,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
-	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(rebalanceService)
+	rebalanceSchedulePreviewService := rebalance.NewSchedulePreviewService(repoRegistry.PortfolioProfilesRepo, moexLiveService)
+	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(rebalanceService, rebalanceSchedulePreviewService)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -156,6 +157,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.PUT("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.UpsertReplicationConfig)
 		a.DELETE("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteReplicationConfig)
 		a.POST("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.CreateRebalanceDraft)
+		a.POST("/me/portfolios/:id/rebalances/schedule/preview", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.PreviewSchedule)
 		a.GET("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.ListRebalances)
 		a.GET("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceDetail)
 		a.GET("/me/portfolios/:id/rebalances/:rebalanceId/status", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceStatus)

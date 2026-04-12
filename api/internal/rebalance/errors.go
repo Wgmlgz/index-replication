@@ -18,6 +18,7 @@ var (
 	ErrRebalanceNotExecutable       = errors.New("rebalance run is not executable")
 	ErrPlanningUnavailable          = errors.New("rebalance planning is unavailable")
 	ErrExecutionUnavailable         = errors.New("rebalance execution is unavailable")
+	ErrSchedulePreviewUnavailable   = errors.New("rebalance schedule preview is unavailable")
 	ErrExecutionNotFound            = errors.New("rebalance execution workflow not found")
 	ErrExecutionProviderUnsupported = errors.New("rebalance execution is supported only for virtual and tbank providers")
 	ErrPlanningFailed               = errors.New("planning failed")

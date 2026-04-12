@@ -12,6 +12,7 @@ import (
 
 	enumspb "go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
+	workflowpb "go.temporal.io/api/workflow/v1"
 	workflowservice "go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
 )
@@ -145,6 +146,9 @@ func (s *TemporalExecutionStarter) GetRebalancePlanningStatus(
 			Progress:  planningProgressStarted(now),
 		}, nil
 	}
+	if state, handled := planningTerminalFailedState(runID, describe.GetWorkflowExecutionInfo()); handled {
+		return state, nil
+	}
 
 	workflowRunID := ""
 	if info := describe.GetWorkflowExecutionInfo(); info != nil && info.GetExecution() != nil {
@@ -176,6 +180,35 @@ func (s *TemporalExecutionStarter) GetRebalancePlanningStatus(
 		RunStatus: status,
 		Progress:  progress,
 	}, nil
+}
+
+func planningTerminalFailedState(
+	runID int,
+	info *workflowpb.WorkflowExecutionInfo,
+) (*workflows.RebalancePlanningStatus, bool) {
+	if info == nil {
+		return nil, false
+	}
+
+	switch info.GetStatus() {
+	case enumspb.WORKFLOW_EXECUTION_STATUS_FAILED,
+		enumspb.WORKFLOW_EXECUTION_STATUS_CANCELED,
+		enumspb.WORKFLOW_EXECUTION_STATUS_TERMINATED,
+		enumspb.WORKFLOW_EXECUTION_STATUS_TIMED_OUT:
+	default:
+		return nil, false
+	}
+
+	finishedAt := time.Now().UTC()
+	if closeTime := info.GetCloseTime(); closeTime != nil {
+		finishedAt = closeTime.AsTime().UTC()
+	}
+
+	return &workflows.RebalancePlanningStatus{
+		RunID:     runID,
+		RunStatus: models.PortfolioRebalanceRunStatusPlanningFailed,
+		Progress:  planningProgressFailed(planningStageCodeFailed, "Planning failed", finishedAt),
+	}, true
 }
 
 func (s *TemporalExecutionStarter) GetRebalanceStatus(

@@ -375,6 +375,77 @@ func TestPortfolioRebalanceAPI_GetStatusAfterPlanning(t *testing.T) {
 	}
 }
 
+func TestPortfolioRebalanceAPI_GetStatusReconcilesPlanningFailureFromTemporal(t *testing.T) {
+	starter := &fakeRebalanceExecutionStarter{}
+	router, db, profileID := setupRebalanceTestRouterWithStarter(t, true, starter)
+
+	createPayload := dto.PortfolioRebalanceCreateRequest{
+		ExecutionMode: "manual",
+		AsOfDate:      "2025-01-15",
+	}
+	createRec := performJSONRequest(t, router, http.MethodPost,
+		fmt.Sprintf("/me/portfolios/%d/rebalances", profileID), createPayload)
+	if createRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d, body=%s", createRec.Code, createRec.Body.String())
+	}
+
+	var created dto.PortfolioRebalanceDetailResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+
+	startedAt := time.Now().UTC().Add(-5 * time.Minute)
+	if err := db.Model(&models.PortfolioRebalanceRun{}).
+		Where("id = ?", created.Run.ID).
+		Updates(map[string]interface{}{
+			"status":     models.PortfolioRebalanceRunStatusPlanning,
+			"started_at": startedAt,
+			"ended_at":   nil,
+		}).Error; err != nil {
+		t.Fatalf("update run status: %v", err)
+	}
+
+	endedAt := time.Now().UTC()
+	starter.planningStatus = &workflows.RebalancePlanningStatus{
+		RunID:     created.Run.ID,
+		RunStatus: models.PortfolioRebalanceRunStatusPlanningFailed,
+		Progress: workflows.RebalancePlanningProgress{
+			CompletionPercent: 100,
+			StageCode:         "planning_failed",
+			StageMessage:      "Planning failed",
+			StageIndex:        6,
+			StageTotal:        6,
+			IsTerminal:        true,
+			LastEventAt:       &endedAt,
+		},
+	}
+
+	executionRec := performJSONRequest(t, router, http.MethodGet,
+		fmt.Sprintf("/me/portfolios/%d/rebalances/%d/status", profileID, created.Run.ID), nil)
+	if executionRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d body=%s", executionRec.Code, executionRec.Body.String())
+	}
+
+	var executionResp dto.PortfolioRebalanceStatusResponse
+	if err := json.Unmarshal(executionRec.Body.Bytes(), &executionResp); err != nil {
+		t.Fatalf("decode execution response: %v", err)
+	}
+	if executionResp.Run.Status != models.PortfolioRebalanceRunStatusPlanningFailed {
+		t.Fatalf("expected run status %q, got %q", models.PortfolioRebalanceRunStatusPlanningFailed, executionResp.Run.Status)
+	}
+
+	var persisted models.PortfolioRebalanceRun
+	if err := db.Where("id = ?", created.Run.ID).First(&persisted).Error; err != nil {
+		t.Fatalf("load persisted run: %v", err)
+	}
+	if persisted.Status != models.PortfolioRebalanceRunStatusPlanningFailed {
+		t.Fatalf("expected persisted status %q, got %q", models.PortfolioRebalanceRunStatusPlanningFailed, persisted.Status)
+	}
+	if persisted.EndedAt == nil {
+		t.Fatalf("expected persisted ended_at to be set")
+	}
+}
+
 func setupRebalanceTestRouter(t *testing.T, withReplication bool) (*gin.Engine, *gorm.DB, int) {
 	return setupRebalanceTestRouterWithStarter(t, withReplication, nil)
 }
@@ -525,11 +596,15 @@ func (s *fakeBenchmarkReadService) GetIndexComposition(_ context.Context, _ stri
 }
 
 type fakeRebalanceExecutionStarter struct {
-	planningCalls int
-	calls         int
-	userID        int
-	portfolioID   int
-	runID         int
+	planningCalls   int
+	calls           int
+	userID          int
+	portfolioID     int
+	runID           int
+	planningStatus  *workflows.RebalancePlanningStatus
+	planningErr     error
+	executionStatus *workflows.RebalanceExecutionResult
+	executionErr    error
 }
 
 func (s *fakeRebalanceExecutionStarter) StartRebalancePlanning(_ context.Context, _ int, _ int, _ int) error {
@@ -546,10 +621,22 @@ func (s *fakeRebalanceExecutionStarter) StartRebalanceExecution(_ context.Contex
 }
 
 func (s *fakeRebalanceExecutionStarter) GetRebalancePlanningStatus(_ context.Context, runID int) (*workflows.RebalancePlanningStatus, error) {
+	if s.planningErr != nil {
+		return nil, s.planningErr
+	}
+	if s.planningStatus != nil {
+		return s.planningStatus, nil
+	}
 	return nil, nil
 }
 
 func (s *fakeRebalanceExecutionStarter) GetRebalanceStatus(_ context.Context, runID int) (*workflows.RebalanceExecutionResult, error) {
+	if s.executionErr != nil {
+		return nil, s.executionErr
+	}
+	if s.executionStatus != nil {
+		return s.executionStatus, nil
+	}
 	return &workflows.RebalanceExecutionResult{
 		RunID:     runID,
 		RunStatus: models.PortfolioRebalanceRunStatusExecuting,

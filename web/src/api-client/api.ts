@@ -246,55 +246,6 @@ export interface PortfolioRebalanceDetailResponse {
     'summary'?: PortfolioRebalanceSummary;
     'transactions'?: Array<PortfolioRebalanceTransaction>;
 }
-export interface PortfolioRebalanceStatusItem {
-    'current_quantity'?: number;
-    'delta_quantity'?: number;
-    'id'?: number;
-    'instrument_id'?: string;
-    'last_action_id'?: string;
-    'last_error'?: string;
-    'last_event_at'?: string;
-    'planned_amount'?: number;
-    'provider_operation_id'?: string;
-    'reference_price'?: number;
-    'side'?: string;
-    'status'?: string;
-    'target_quantity'?: number;
-    'ticker'?: string;
-    'updated_at'?: string;
-}
-export interface PortfolioRebalanceStatusLink {
-    'created_at'?: string;
-    'id'?: number;
-    'metadata'?: { [key: string]: any; };
-    'provider_operation_cursor'?: string;
-    'provider_operation_id'?: string;
-    'rebalance_item_id'?: number;
-    'status'?: string;
-    'updated_at'?: string;
-}
-export interface PortfolioRebalanceStatusProgress {
-    'actionable_items'?: number;
-    'completed_items'?: number;
-    'completion_percent'?: number;
-    'executing_items'?: number;
-    'failed_items'?: number;
-    'is_terminal'?: boolean;
-    'last_event_at'?: string;
-    'pending_items'?: number;
-    'stage_code'?: string;
-    'stage_index'?: number;
-    'stage_message'?: string;
-    'stage_total'?: number;
-    'total_items'?: number;
-    'unresolved_items'?: number;
-}
-export interface PortfolioRebalanceStatusResponse {
-    'items'?: Array<PortfolioRebalanceStatusItem>;
-    'links'?: Array<PortfolioRebalanceStatusLink>;
-    'progress'?: PortfolioRebalanceStatusProgress;
-    'run'?: PortfolioRebalanceRun;
-}
 export interface PortfolioRebalanceHolding {
     'current_quantity'?: number;
     'instrument_id'?: string;
@@ -364,6 +315,110 @@ export interface PortfolioRebalanceRun {
     'started_at'?: string;
     'status'?: string;
     'updated_at'?: string;
+}
+export interface PortfolioRebalanceSchedulePreviewMoexCalendar {
+    /**
+     * YYYY-MM-DD
+     */
+    'date'?: string;
+    /**
+     * nil for source=none
+     */
+    'is_work_day'?: boolean;
+    /**
+     * dailytable|timetable|none
+     */
+    'source'?: string;
+    /**
+     * MOEX window start (HH:mm[:ss])
+     */
+    'start_time'?: string;
+    /**
+     * MOEX window stop (HH:mm[:ss])
+     */
+    'stop_time'?: string;
+}
+export interface PortfolioRebalanceSchedulePreviewMoexMetadata {
+    'calendar'?: Array<PortfolioRebalanceSchedulePreviewMoexCalendar>;
+    'engine'?: string;
+}
+export interface PortfolioRebalanceSchedulePreviewRequest {
+    /**
+     * RFC3339 datetime
+     */
+    'dtstart': string;
+    /**
+     * optional lower bound (default now)
+     */
+    'from'?: string;
+    /**
+     * optional max event count
+     */
+    'limit'?: number;
+    /**
+     * RFC5545 RRULE (without DTSTART)
+     */
+    'rrule': string;
+    /**
+     * optional upper bound
+     */
+    'to'?: string;
+}
+export interface PortfolioRebalanceSchedulePreviewResponse {
+    /**
+     * RFC3339 datetimes
+     */
+    'events'?: Array<string>;
+    'moex'?: PortfolioRebalanceSchedulePreviewMoexMetadata;
+}
+export interface PortfolioRebalanceStatusItem {
+    'current_quantity'?: number;
+    'delta_quantity'?: number;
+    'id'?: number;
+    'instrument_id'?: string;
+    'last_action_id'?: string;
+    'last_error'?: string;
+    'last_event_at'?: string;
+    'planned_amount'?: number;
+    'provider_operation_id'?: string;
+    'reference_price'?: number;
+    'side'?: string;
+    'status'?: string;
+    'target_quantity'?: number;
+    'ticker'?: string;
+    'updated_at'?: string;
+}
+export interface PortfolioRebalanceStatusLink {
+    'created_at'?: string;
+    'id'?: number;
+    'metadata'?: { [key: string]: any; };
+    'provider_operation_cursor'?: string;
+    'provider_operation_id'?: string;
+    'rebalance_item_id'?: number;
+    'status'?: string;
+    'updated_at'?: string;
+}
+export interface PortfolioRebalanceStatusProgress {
+    'actionable_items'?: number;
+    'completed_items'?: number;
+    'completion_percent'?: number;
+    'executing_items'?: number;
+    'failed_items'?: number;
+    'is_terminal'?: boolean;
+    'last_event_at'?: string;
+    'pending_items'?: number;
+    'stage_code'?: string;
+    'stage_index'?: number;
+    'stage_message'?: string;
+    'stage_total'?: number;
+    'total_items'?: number;
+    'unresolved_items'?: number;
+}
+export interface PortfolioRebalanceStatusResponse {
+    'items'?: Array<PortfolioRebalanceStatusItem>;
+    'links'?: Array<PortfolioRebalanceStatusLink>;
+    'progress'?: PortfolioRebalanceStatusProgress;
+    'run'?: PortfolioRebalanceRun;
 }
 export interface PortfolioRebalanceSummary {
     'actionable_items'?: number;
@@ -2218,7 +2273,45 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Returns pollable rebalance status with live progress, item statuses, and links
+         * Returns run metadata and persisted planning payload (input, output, summary)
+         * @summary Get rebalance draft detail
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdGet: async (id: number, rebalanceId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdGet', 'id', id)
+            // verify required parameter 'rebalanceId' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesRebalanceIdGet', 'rebalanceId', rebalanceId)
+            const localVarPath = `/me/portfolios/{id}/rebalances/{rebalanceId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"rebalanceId"}}`, encodeURIComponent(String(rebalanceId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns pollable run status with live progress, item statuses, and links
          * @summary Get rebalance status
          * @param {number} id Portfolio profile id
          * @param {number} rebalanceId Rebalance run id
@@ -2256,21 +2349,20 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Returns run metadata and persisted planning payload (input, output, summary)
-         * @summary Get rebalance draft detail
+         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+         * @summary Preview rebalance schedule
          * @param {number} id Portfolio profile id
-         * @param {number} rebalanceId Rebalance run id
+         * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        mePortfoliosIdRebalancesRebalanceIdGet: async (id: number, rebalanceId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        mePortfoliosIdRebalancesSchedulePreviewPost: async (id: number, payload: PortfolioRebalanceSchedulePreviewRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('mePortfoliosIdRebalancesRebalanceIdGet', 'id', id)
-            // verify required parameter 'rebalanceId' is not null or undefined
-            assertParamExists('mePortfoliosIdRebalancesRebalanceIdGet', 'rebalanceId', rebalanceId)
-            const localVarPath = `/me/portfolios/{id}/rebalances/{rebalanceId}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
-                .replace(`{${"rebalanceId"}}`, encodeURIComponent(String(rebalanceId)));
+            assertParamExists('mePortfoliosIdRebalancesSchedulePreviewPost', 'id', id)
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesSchedulePreviewPost', 'payload', payload)
+            const localVarPath = `/me/portfolios/{id}/rebalances/schedule/preview`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2278,15 +2370,17 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2620,7 +2714,21 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns pollable rebalance status with live progress, item statuses, and links
+         * Returns run metadata and persisted planning payload (input, output, summary)
+         * @summary Get rebalance draft detail
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceDetailResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesRebalanceIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns pollable run status with live progress, item statuses, and links
          * @summary Get rebalance status
          * @param {number} id Portfolio profile id
          * @param {number} rebalanceId Rebalance run id
@@ -2634,17 +2742,17 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns run metadata and persisted planning payload (input, output, summary)
-         * @summary Get rebalance draft detail
+         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+         * @summary Preview rebalance schedule
          * @param {number} id Portfolio profile id
-         * @param {number} rebalanceId Rebalance run id
+         * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceDetailResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options);
+        async mePortfoliosIdRebalancesSchedulePreviewPost(id: number, payload: PortfolioRebalanceSchedulePreviewRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceSchedulePreviewResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesSchedulePreviewPost(id, payload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesRebalanceIdGet']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesSchedulePreviewPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2849,7 +2957,18 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdRebalancesRebalanceIdExecutePost(id, rebalanceId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns pollable rebalance status with live progress, item statuses, and links
+         * Returns run metadata and persisted planning payload (input, output, summary)
+         * @summary Get rebalance draft detail
+         * @param {number} id Portfolio profile id
+         * @param {number} rebalanceId Rebalance run id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceDetailResponse> {
+            return localVarFp.mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns pollable run status with live progress, item statuses, and links
          * @summary Get rebalance status
          * @param {number} id Portfolio profile id
          * @param {number} rebalanceId Rebalance run id
@@ -2860,15 +2979,15 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdRebalancesRebalanceIdStatusGet(id, rebalanceId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns run metadata and persisted planning payload (input, output, summary)
-         * @summary Get rebalance draft detail
+         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+         * @summary Preview rebalance schedule
          * @param {number} id Portfolio profile id
-         * @param {number} rebalanceId Rebalance run id
+         * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceDetailResponse> {
-            return localVarFp.mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options).then((request) => request(axios, basePath));
+        mePortfoliosIdRebalancesSchedulePreviewPost(id: number, payload: PortfolioRebalanceSchedulePreviewRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceSchedulePreviewResponse> {
+            return localVarFp.mePortfoliosIdRebalancesSchedulePreviewPost(id, payload, options).then((request) => request(axios, basePath));
         },
         /**
          * Deletes replication config for selected portfolio profile
@@ -3070,7 +3189,19 @@ export class PortfolioApi extends BaseAPI {
     }
 
     /**
-     * Returns pollable rebalance status with live progress, item statuses, and links
+     * Returns run metadata and persisted planning payload (input, output, summary)
+     * @summary Get rebalance draft detail
+     * @param {number} id Portfolio profile id
+     * @param {number} rebalanceId Rebalance run id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns pollable run status with live progress, item statuses, and links
      * @summary Get rebalance status
      * @param {number} id Portfolio profile id
      * @param {number} rebalanceId Rebalance run id
@@ -3082,15 +3213,15 @@ export class PortfolioApi extends BaseAPI {
     }
 
     /**
-     * Returns run metadata and persisted planning payload (input, output, summary)
-     * @summary Get rebalance draft detail
+     * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+     * @summary Preview rebalance schedule
      * @param {number} id Portfolio profile id
-     * @param {number} rebalanceId Rebalance run id
+     * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public mePortfoliosIdRebalancesRebalanceIdGet(id: number, rebalanceId: number, options?: RawAxiosRequestConfig) {
-        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesRebalanceIdGet(id, rebalanceId, options).then((request) => request(this.axios, this.basePath));
+    public mePortfoliosIdRebalancesSchedulePreviewPost(id: number, payload: PortfolioRebalanceSchedulePreviewRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesSchedulePreviewPost(id, payload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4570,4 +4701,6 @@ export class VerificationApi extends BaseAPI {
         return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
+
 

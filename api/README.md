@@ -231,6 +231,7 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `PUT /api/me/portfolios/:id/replication`
 - `DELETE /api/me/portfolios/:id/replication`
 - `POST /api/me/portfolios/:id/rebalances`
+- `POST /api/me/portfolios/:id/rebalances/schedule/preview`
 - `GET /api/me/portfolios/:id/rebalances`
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId`
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status`
@@ -248,6 +249,11 @@ Action payload requirement:
 - The same `action_id` can be reused by callers (for example Temporal retries) to keep provider-side execution idempotent.
 
 Rebalance planning and execution:
+- `POST /api/me/portfolios/:id/rebalances/schedule/preview` accepts RFC5545 recurrence rule input
+  (`dtstart`, `rrule`, optional `from`/`to`/`limit`) and returns preview event timestamps,
+  candidate evaluation details (accepted/skipped + reason), and MOEX resolved day-by-day calendar.
+  Returned events are additionally filtered by MOEX stock engine trading schedule
+  (`/iss/engines/stock` timetable + dailytable). Non-trading timestamps are skipped (no shifting).
 - `POST /api/me/portfolios/:id/rebalances` is fully async: it creates a run with status
   `planning_queued`, starts Temporal workflow `rebalance.plan`, and returns `202 Accepted`.
 - Planning workflow transitions:
