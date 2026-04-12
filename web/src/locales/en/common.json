@@ -409,7 +409,7 @@
         "preferredTimeLabel": "Preferred time",
         "businessDayAdjustment": {
           "label": "Business-day adjustment",
-          "hint": "For monthly schedules, modified following is recommended to avoid skipped months.",
+          "hint": "Applied when an event falls on a non-trading day. For monthly schedules, modified following is usually best to avoid skipped months.",
           "tooltipLabel": "Explain business-day adjustment policies",
           "tooltip": {
             "title": "Policy behavior",

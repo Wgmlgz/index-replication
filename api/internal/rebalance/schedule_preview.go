@@ -74,7 +74,7 @@ func (s *SchedulePreviewService) Preview(
 		return nil, err
 	}
 
-	rule, from, to, limit, freq, policy, err := s.prepareRule(req)
+	rule, from, to, limit, policy, err := s.prepareRule(req)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +101,9 @@ func (s *SchedulePreviewService) Preview(
 			break
 		}
 
+		shouldAdjustByPolicy := policy != businessDayAdjustmentStrict
 		candidate, included := next, false
-		if freq == rrule.MONTHLY && policy != businessDayAdjustmentStrict {
+		if shouldAdjustByPolicy {
 			candidate, included = calendar.AdjustByPolicy(next, policy)
 		} else {
 			included = calendar.Evaluate(next).Included
@@ -126,14 +127,14 @@ func (s *SchedulePreviewService) Preview(
 
 func (s *SchedulePreviewService) prepareRule(
 	req *dto.PortfolioRebalanceSchedulePreviewRequest,
-) (*rrule.RRule, time.Time, *time.Time, int, rrule.Frequency, businessDayAdjustmentPolicy, error) {
+) (*rrule.RRule, time.Time, *time.Time, int, businessDayAdjustmentPolicy, error) {
 	if req.DtStart.IsZero() {
-		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: dtstart is required", ErrInvalidRequest)
+		return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: dtstart is required", ErrInvalidRequest)
 	}
 
 	ruleText := strings.TrimSpace(req.RRule)
 	if ruleText == "" {
-		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: rrule is required", ErrInvalidRequest)
+		return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: rrule is required", ErrInvalidRequest)
 	}
 	ruleText = strings.TrimSpace(ruleText)
 	if strings.HasPrefix(strings.ToUpper(ruleText), "RRULE:") {
@@ -142,11 +143,11 @@ func (s *SchedulePreviewService) prepareRule(
 
 	options, err := rrule.StrToROption(ruleText)
 	if err != nil {
-		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: invalid rrule: %v", ErrInvalidRequest, err)
+		return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: invalid rrule: %v", ErrInvalidRequest, err)
 	}
 	policy, err := parseBusinessDayAdjustmentPolicy(req.BusinessDayAdjustment)
 	if err != nil {
-		return nil, time.Time{}, nil, 0, 0, "", err
+		return nil, time.Time{}, nil, 0, "", err
 	}
 	options.Dtstart = req.DtStart.In(s.location)
 
@@ -162,26 +163,26 @@ func (s *SchedulePreviewService) prepareRule(
 		from = req.From.In(s.location)
 	}
 	if to != nil && from.After(*to) {
-		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: from must be <= to", ErrInvalidRequest)
+		return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: from must be <= to", ErrInvalidRequest)
 	}
 
 	limit := defaultSchedulePreviewLimit
 	if req.Limit != nil {
 		if *req.Limit <= 0 {
-			return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: limit must be > 0", ErrInvalidRequest)
+			return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: limit must be > 0", ErrInvalidRequest)
 		}
 		if *req.Limit > maximumSchedulePreviewLimit {
-			return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: limit must be <= %d", ErrInvalidRequest, maximumSchedulePreviewLimit)
+			return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: limit must be <= %d", ErrInvalidRequest, maximumSchedulePreviewLimit)
 		}
 		limit = *req.Limit
 	}
 
 	rule, err := rrule.NewRRule(*options)
 	if err != nil {
-		return nil, time.Time{}, nil, 0, 0, "", fmt.Errorf("%w: invalid rrule options: %v", ErrInvalidRequest, err)
+		return nil, time.Time{}, nil, 0, "", fmt.Errorf("%w: invalid rrule options: %v", ErrInvalidRequest, err)
 	}
 
-	return rule, from, to, limit, options.Freq, policy, nil
+	return rule, from, to, limit, policy, nil
 }
 
 type tradingWindow struct {
