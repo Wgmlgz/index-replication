@@ -63,14 +63,6 @@ import {
 } from './rebalance-status-utils';
 import { useRebalanceStatus } from './use-rebalance-status';
 
-type RebalanceDraftFormState = {
-  asOfDate: string;
-};
-
-const EMPTY_DRAFT_FORM: RebalanceDraftFormState = {
-  asOfDate: '',
-};
-
 function parseRebalanceID(value: string | null): number | null {
   if (!value) {
     return null;
@@ -149,9 +141,6 @@ export default function PortfolioReplicationDraftsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [draftForm, setDraftForm] = useState<RebalanceDraftFormState>({
-    ...EMPTY_DRAFT_FORM,
-  });
   const [rebalanceRuns, setRebalanceRuns] = useState<PortfolioRebalanceRun[]>(
     [],
   );
@@ -338,7 +327,6 @@ export default function PortfolioReplicationDraftsPage() {
 
     const payload: PortfolioRebalanceCreateRequest = {
       execution_mode: 'manual',
-      as_of_date: draftForm.asOfDate.trim() || undefined,
       planning_params: {},
     };
 
@@ -369,7 +357,6 @@ export default function PortfolioReplicationDraftsPage() {
       setRebalanceWorking(false);
     }
   }, [
-    draftForm.asOfDate,
     applyRunUpdate,
     createDraftDisabledReason,
     isReplicationEnabled,
@@ -715,16 +702,9 @@ export default function PortfolioReplicationDraftsPage() {
           </DialogHeader>
 
           <RebalanceDraftCreateForm
-            asOfDate={draftForm.asOfDate}
             working={rebalanceWorking}
             canCreateDraft={isReplicationEnabled}
             disabledReasonText={createDraftDisabledReason}
-            onAsOfDateChange={value =>
-              setDraftForm(prev => ({
-                ...prev,
-                asOfDate: value,
-              }))
-            }
             onSubmit={() => {
               void onSubmitCreateDraft();
             }}

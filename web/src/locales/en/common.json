@@ -535,7 +535,6 @@
           "manual": "Manual",
           "automatic": "Automatic"
         },
-        "asOfDateLabel": "As-of date",
         "createDraftWorking": "Creating draft...",
         "createDraftButton": "Create draft",
         "title": "Rebalance runs",
