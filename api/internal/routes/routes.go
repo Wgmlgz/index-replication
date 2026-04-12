@@ -6,6 +6,7 @@ import (
 	keycloakauth "server/internal/auth"
 	"server/internal/config"
 	h "server/internal/handlers"
+	"server/internal/isdayoff"
 	"server/internal/marketprice"
 	m "server/internal/middleware"
 	"server/internal/moex"
@@ -132,8 +133,21 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
-	rebalanceSchedulePreviewService := rebalance.NewSchedulePreviewService(repoRegistry.PortfolioProfilesRepo, moexLiveService)
-	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(rebalanceService, rebalanceSchedulePreviewService)
+	dayOffService := isdayoff.NewService(cfg.IsDayOffBaseURL)
+	rebalanceSchedulePreviewService := rebalance.NewSchedulePreviewService(
+		repoRegistry.PortfolioProfilesRepo,
+		dayOffService,
+		cfg.MoexScheduleTimezone,
+	)
+	rebalanceScheduleConfigService := rebalance.NewScheduleConfigService(
+		repoRegistry.PortfolioProfilesRepo,
+		repoRegistry.PortfolioRebalanceSchedulesRepo,
+	)
+	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(
+		rebalanceService,
+		rebalanceSchedulePreviewService,
+		rebalanceScheduleConfigService,
+	)
 
 	// Protected user routes
 	a := api.Group("/")
@@ -157,6 +171,9 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.PUT("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.UpsertReplicationConfig)
 		a.DELETE("/me/portfolios/:id/replication", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.DeleteReplicationConfig)
 		a.POST("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.CreateRebalanceDraft)
+		a.GET("/me/portfolios/:id/rebalances/schedule", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetSchedule)
+		a.PUT("/me/portfolios/:id/rebalances/schedule", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.UpsertSchedule)
+		a.DELETE("/me/portfolios/:id/rebalances/schedule", m.RPM(cs, config.SelfUpdateSettings), portfolioRebalanceHandler.DeleteSchedule)
 		a.POST("/me/portfolios/:id/rebalances/schedule/preview", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.PreviewSchedule)
 		a.GET("/me/portfolios/:id/rebalances", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.ListRebalances)
 		a.GET("/me/portfolios/:id/rebalances/:rebalanceId", m.RPM(cs, config.SelfView), portfolioRebalanceHandler.GetRebalanceDetail)

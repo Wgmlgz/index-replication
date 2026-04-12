@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { addMonths, endOfMonth, format, startOfMonth, subMonths } from 'date-fns';
+import { addMonths, endOfMonth, format, isSameMonth, startOfMonth, subMonths } from 'date-fns';
+import { CalendarClock, Save, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
-import type { PortfolioRebalanceSchedulePreviewRequest } from '@/api-client';
+import type {
+  PortfolioRebalanceSchedulePreviewRequest,
+  PortfolioRebalanceSchedulePreviewResponse,
+} from '@/api-client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -23,24 +26,10 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SortHeader, SortableDataTable } from '@/app/portfolio/components/sortable-data-table';
-import { portfolioApi } from '@/lib/api';
+import { axiosClient, portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 
 type ScheduleFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM_INTERVAL';
-
-type SchedulePreviewResponse = {
-  events: string[];
-  moex: {
-    engine: string;
-    calendar: Array<{
-      date: string;
-      source: string;
-      is_work_day: boolean;
-      start_time?: string;
-      stop_time?: string;
-    }>;
-  };
-};
 
 type EventRow = {
   id: string;
@@ -48,6 +37,28 @@ type EventRow = {
 };
 
 const WEEKDAY_RRULE = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
+const WEEKDAY_FROM_RRULE: Record<string, number> = {
+  SU: 0,
+  MO: 1,
+  TU: 2,
+  WE: 3,
+  TH: 4,
+  FR: 5,
+  SA: 6,
+};
+
+type ScheduleConfigResponse = {
+  is_enabled?: boolean;
+  dtstart?: string;
+  rrule?: string;
+  updated_at?: string;
+};
+
+type ScheduleConfigUpsertRequest = {
+  is_enabled: boolean;
+  dtstart: string;
+  rrule: string;
+};
 
 function isValidDate(value: Date): boolean {
   return Number.isFinite(value.getTime());
@@ -90,6 +101,45 @@ function parseDayKey(value: string): Date | null {
   return isValidDate(parsed) ? parsed : null;
 }
 
+function formatUTCClock(value: Date): string {
+  const hours = String(value.getUTCHours()).padStart(2, '0');
+  const minutes = String(value.getUTCMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function normalizeRuleText(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.toUpperCase().startsWith('RRULE:')) {
+    return trimmed.slice(6).trim();
+  }
+  return trimmed;
+}
+
+function parseRRuleParts(rruleValue: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const part of normalizeRuleText(rruleValue).toUpperCase().split(';')) {
+    const [keyRaw, valueRaw] = part.split('=');
+    const key = keyRaw?.trim();
+    const value = valueRaw?.trim();
+    if (!key || !value) {
+      continue;
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+function resolveMonthlyDay(parts: Record<string, string>): number {
+  const values = (parts.BYMONTHDAY ?? '')
+    .split(',')
+    .map(raw => Number.parseInt(raw.trim(), 10))
+    .filter(value => Number.isFinite(value) && value >= 1 && value <= 31);
+  if (values.length === 0) {
+    return 1;
+  }
+  return Math.max(...values);
+}
+
 type RebalanceSchedulePreviewFormProps = {
   portfolioID: number;
 };
@@ -106,9 +156,11 @@ export function RebalanceSchedulePreviewForm({
   const [customAnchorAt, setCustomAnchorAt] = useState(() => withTime(new Date(), '09:30'));
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [calendarSelected, setCalendarSelected] = useState<Date | undefined>(new Date());
-  const [preview, setPreview] = useState<SchedulePreviewResponse | null>(null);
+  const [preview, setPreview] = useState<PortfolioRebalanceSchedulePreviewResponse | null>(null);
+  const [savedUpdatedAt, setSavedUpdatedAt] = useState('');
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
+  const [scheduleWorking, setScheduleWorking] = useState(false);
 
   const weekdayOptions = useMemo(() => [
     { value: 1, label: t('portfolio.replication.schedule.weekdays.mon') },
@@ -116,8 +168,6 @@ export function RebalanceSchedulePreviewForm({
     { value: 3, label: t('portfolio.replication.schedule.weekdays.wed') },
     { value: 4, label: t('portfolio.replication.schedule.weekdays.thu') },
     { value: 5, label: t('portfolio.replication.schedule.weekdays.fri') },
-    { value: 6, label: t('portfolio.replication.schedule.weekdays.sat') },
-    { value: 0, label: t('portfolio.replication.schedule.weekdays.sun') },
   ], [t]);
 
   const formatDateTime = useCallback((value: string) => {
@@ -160,11 +210,11 @@ export function RebalanceSchedulePreviewForm({
     return [...byDay.values()];
   }, [preview?.events]);
   const nonWorkDays = useMemo(() => {
-    if (!preview?.moex?.calendar?.length) {
+    if (!preview?.calendar?.length) {
       return [] as Date[];
     }
     const byDay = new Map<string, Date>();
-    for (const row of preview.moex.calendar) {
+    for (const row of preview.calendar) {
       if (row.is_work_day || !row.date) {
         continue;
       }
@@ -178,7 +228,7 @@ export function RebalanceSchedulePreviewForm({
       }
     }
     return [...byDay.values()];
-  }, [preview?.moex?.calendar]);
+  }, [preview?.calendar]);
 
   const monthlyRRulePart = useCallback((monthlyDayOfMonth: number) => {
     if (monthlyDayOfMonth <= 1) {
@@ -191,13 +241,146 @@ export function RebalanceSchedulePreviewForm({
     return `BYMONTHDAY=${allDaysUpToTarget};BYSETPOS=-1`;
   }, []);
 
+  const resetScheduleInputs = useCallback(() => {
+    const now = new Date();
+    setFrequency('DAILY');
+    setPreferredTime('09:30');
+    setWeeklyDayOfWeek(1);
+    setMonthlyDayInput('1');
+    setCustomIntervalDaysInput('14');
+    setCustomAnchorAt(withTime(now, '09:30'));
+    setCalendarMonth(now);
+    setCalendarSelected(now);
+  }, []);
+
+  const applySavedSchedule = useCallback((schedule: ScheduleConfigResponse) => {
+    const dtStart = schedule.dtstart ? new Date(schedule.dtstart) : null;
+    if (!dtStart || !isValidDate(dtStart)) {
+      return;
+    }
+
+    const parts = parseRRuleParts(schedule.rrule ?? '');
+    const freq = parts.FREQ ?? 'DAILY';
+    const interval = Number.parseInt(parts.INTERVAL ?? '1', 10);
+    const weeklyToken = (parts.BYDAY ?? 'MO').split(',')[0]?.trim() ?? 'MO';
+    const monthlyDay = resolveMonthlyDay(parts);
+
+    let nextFrequency: ScheduleFrequency = 'DAILY';
+    if (freq === 'WEEKLY') {
+      nextFrequency = 'WEEKLY';
+    } else if (freq === 'MONTHLY') {
+      nextFrequency = 'MONTHLY';
+    } else if (freq === 'DAILY' && Number.isFinite(interval) && interval > 1) {
+      nextFrequency = 'CUSTOM_INTERVAL';
+    }
+
+    setFrequency(nextFrequency);
+    setPreferredTime(formatUTCClock(dtStart));
+    setWeeklyDayOfWeek(clampInt(WEEKDAY_FROM_RRULE[weeklyToken] ?? 1, 1, 5));
+    setMonthlyDayInput(String(monthlyDay));
+    setCustomIntervalDaysInput(String(clampInt(interval > 0 ? interval : 14, 1, 365)));
+    setCustomAnchorAt(dtStart);
+    setCalendarMonth(dtStart);
+    setCalendarSelected(dtStart);
+  }, []);
+
+  const buildSchedulePayload = useCallback((): ScheduleConfigUpsertRequest => {
+    const trimmedTime = preferredTime.trim();
+    if (!/^\d{2}:\d{2}$/.test(trimmedTime)) {
+      throw new Error(t('portfolio.replication.schedule.errors.preferredTime'));
+    }
+
+    const normalizedWeekDay = clampInt(weeklyDayOfWeek, 1, 5);
+    const monthlyDay = parseIntStrict(monthlyDayInput);
+    const customIntervalDays = parseIntStrict(customIntervalDaysInput);
+
+    if (frequency === 'MONTHLY' && (monthlyDay === null || monthlyDay < 1 || monthlyDay > 31)) {
+      throw new Error(t('portfolio.replication.schedule.errors.monthlyDay'));
+    }
+
+    if (
+      frequency === 'CUSTOM_INTERVAL'
+      && (customIntervalDays === null || customIntervalDays < 1 || customIntervalDays > 365)
+    ) {
+      throw new Error(t('portfolio.replication.schedule.errors.customIntervalDays'));
+    }
+
+    let dtStart = withTime(new Date(), trimmedTime);
+    let rrule = 'FREQ=DAILY';
+
+    if (frequency === 'WEEKLY') {
+      const byDay = WEEKDAY_RRULE[normalizedWeekDay] ?? WEEKDAY_RRULE[1];
+      rrule = `FREQ=WEEKLY;BYDAY=${byDay}`;
+    } else if (frequency === 'MONTHLY') {
+      const normalizedMonthlyDay = clampInt(monthlyDay ?? 31, 1, 31);
+      rrule = `FREQ=MONTHLY;${monthlyRRulePart(normalizedMonthlyDay)}`;
+    } else if (frequency === 'CUSTOM_INTERVAL') {
+      const normalizedInterval = clampInt(customIntervalDays ?? 14, 1, 365);
+      dtStart = new Date(customAnchorAt);
+      rrule = `FREQ=DAILY;INTERVAL=${normalizedInterval}`;
+    }
+
+    if (!isValidDate(dtStart)) {
+      throw new Error(t('portfolio.replication.schedule.errors.dtstart'));
+    }
+
+    return {
+      is_enabled: true,
+      dtstart: dtStart.toISOString(),
+      rrule,
+    };
+  }, [
+    customAnchorAt,
+    customIntervalDaysInput,
+    frequency,
+    monthlyDayInput,
+    monthlyRRulePart,
+    preferredTime,
+    t,
+    weeklyDayOfWeek,
+  ]);
+
+  const loadSavedSchedule = useCallback(async () => {
+    setScheduleWorking(true);
+    setSavedUpdatedAt('');
+    setError('');
+    setPreview(null);
+    resetScheduleInputs();
+
+    try {
+      const response = await axiosClient.get<ScheduleConfigResponse>(
+        `/me/portfolios/${portfolioID}/rebalances/schedule`,
+      );
+      applySavedSchedule(response.data ?? {});
+      setSavedUpdatedAt(response.data?.updated_at ?? '');
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        return;
+      }
+      if (axios.isAxiosError(err)) {
+        setError(
+          getApiErrorMessage(err.response?.data as unknown)
+          ?? t('portfolio.replication.schedule.errors.load'),
+        );
+      } else {
+        setError(t('portfolio.replication.schedule.errors.load'));
+      }
+    } finally {
+      setScheduleWorking(false);
+    }
+  }, [applySavedSchedule, portfolioID, resetScheduleInputs, t]);
+
+  useEffect(() => {
+    void loadSavedSchedule();
+  }, [loadSavedSchedule]);
+
   const buildPreviewPayload = useCallback((): PortfolioRebalanceSchedulePreviewRequest => {
     const trimmedTime = preferredTime.trim();
     if (!/^\d{2}:\d{2}$/.test(trimmedTime)) {
       throw new Error(t('portfolio.replication.schedule.errors.preferredTime'));
     }
 
-    const normalizedWeekDay = clampInt(weeklyDayOfWeek, 0, 6);
+    const normalizedWeekDay = clampInt(weeklyDayOfWeek, 1, 5);
     const monthlyDay = parseIntStrict(monthlyDayInput);
     const customIntervalDays = parseIntStrict(customIntervalDaysInput);
 
@@ -267,16 +450,15 @@ export function RebalanceSchedulePreviewForm({
       const data = response.data;
       setPreview({
         events: data.events ?? [],
-        moex: {
-          engine: data.moex?.engine ?? '',
-          calendar: (data.moex?.calendar ?? []).map(row => ({
-            date: row.date ?? '',
-            source: row.source ?? 'none',
-            is_work_day: row.is_work_day === true,
-            start_time: row.start_time,
-            stop_time: row.stop_time,
-          })),
-        },
+        calendar: (data.calendar ?? []).map(row => ({
+          date: row.date ?? '',
+          source: row.source ?? 'none',
+          day_code: row.day_code ?? '',
+          day_type: row.day_type ?? 'unknown',
+          is_work_day: row.is_work_day === true,
+          start_time: row.start_time,
+          stop_time: row.stop_time,
+        })),
       });
     } catch (err) {
       if (err instanceof Error && !axios.isAxiosError(err)) {
@@ -295,6 +477,54 @@ export function RebalanceSchedulePreviewForm({
     }
   }, [buildPreviewPayload, portfolioID, t]);
 
+  const onSaveSchedule = useCallback(async () => {
+    setScheduleWorking(true);
+    setError('');
+    try {
+      const payload = buildSchedulePayload();
+      const response = await axiosClient.put<ScheduleConfigResponse>(
+        `/me/portfolios/${portfolioID}/rebalances/schedule`,
+        payload,
+      );
+      const data = response.data ?? {};
+      applySavedSchedule(data);
+      setSavedUpdatedAt(data.updated_at ?? '');
+    } catch (err) {
+      if (err instanceof Error && !axios.isAxiosError(err)) {
+        setError(err.message);
+      } else if (axios.isAxiosError(err)) {
+        setError(
+          getApiErrorMessage(err.response?.data as unknown)
+          ?? t('portfolio.replication.schedule.errors.save'),
+        );
+      } else {
+        setError(t('portfolio.replication.schedule.errors.save'));
+      }
+    } finally {
+      setScheduleWorking(false);
+    }
+  }, [applySavedSchedule, buildSchedulePayload, portfolioID, t]);
+
+  const onDeleteSchedule = useCallback(async () => {
+    setScheduleWorking(true);
+    setError('');
+    try {
+      await axiosClient.delete(`/me/portfolios/${portfolioID}/rebalances/schedule`);
+      setSavedUpdatedAt('');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          getApiErrorMessage(err.response?.data as unknown)
+          ?? t('portfolio.replication.schedule.errors.delete'),
+        );
+      } else {
+        setError(t('portfolio.replication.schedule.errors.delete'));
+      }
+    } finally {
+      setScheduleWorking(false);
+    }
+  }, [portfolioID, t]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void onPreview();
@@ -306,11 +536,18 @@ export function RebalanceSchedulePreviewForm({
   }, [onPreview]);
 
   const events = useMemo(() => preview?.events ?? [], [preview?.events]);
-  const eventRows = useMemo<EventRow[]>(
-    () => events.map((eventAt, index) => ({ id: `${eventAt}-${index}`, eventAt })),
-    [events],
+  const eventsInCurrentMonth = useMemo(
+    () => events.filter(eventAt => {
+      const parsed = new Date(eventAt);
+      return isValidDate(parsed) && isSameMonth(parsed, calendarMonth);
+    }),
+    [calendarMonth, events],
   );
-  const moexRows = useMemo(() => preview?.moex.calendar ?? [], [preview?.moex.calendar]);
+  const eventRows = useMemo<EventRow[]>(
+    () => eventsInCurrentMonth.map((eventAt, index) => ({ id: `${eventAt}-${index}`, eventAt })),
+    [eventsInCurrentMonth],
+  );
+  const calendarRows = useMemo(() => preview?.calendar ?? [], [preview?.calendar]);
   const selectedDayKey = useMemo(() => {
     if (!calendarSelected || !isValidDate(calendarSelected)) {
       return null;
@@ -327,9 +564,28 @@ export function RebalanceSchedulePreviewForm({
     });
   }, [events, selectedDayKey]);
   const selectedDay = useMemo(
-    () => (selectedDayKey ? moexRows.find(row => row.date === selectedDayKey) ?? null : null),
-    [moexRows, selectedDayKey],
+    () => (selectedDayKey ? calendarRows.find(row => row.date === selectedDayKey) ?? null : null),
+    [calendarRows, selectedDayKey],
   );
+  const selectedDayTypeLabel = useMemo(() => {
+    if (!selectedDay?.day_type) {
+      return '-';
+    }
+    switch (selectedDay.day_type) {
+      case 'workday':
+        return t('portfolio.replication.schedule.dayTypes.workday');
+      case 'non_working_day':
+        return t('portfolio.replication.schedule.dayTypes.nonWorkingDay');
+      case 'shortened_workday':
+        return t('portfolio.replication.schedule.dayTypes.shortenedWorkday');
+      case 'special_workday':
+        return t('portfolio.replication.schedule.dayTypes.specialWorkday');
+      case 'public_holiday':
+        return t('portfolio.replication.schedule.dayTypes.publicHoliday');
+      default:
+        return t('portfolio.replication.schedule.dayTypes.unknown');
+    }
+  }, [selectedDay?.day_type, t]);
 
   const eventColumns = useMemo<ColumnDef<EventRow>[]>(() => [
     {
@@ -351,6 +607,13 @@ export function RebalanceSchedulePreviewForm({
     },
   ], [formatDateTime, t]);
 
+  const savedAtLabel = useMemo(() => {
+    if (!savedUpdatedAt) {
+      return t('portfolio.replication.schedule.savedAtEmpty');
+    }
+    return formatDateTime(savedUpdatedAt);
+  }, [formatDateTime, savedUpdatedAt, t]);
+
   return (
     <div className='grid min-h-0 gap-4'>
       {error ? (
@@ -363,6 +626,9 @@ export function RebalanceSchedulePreviewForm({
       <div className='grid gap-3'>
         <div className='grid gap-3 lg:grid-cols-3'>
           <div className='grid gap-2 rounded-md border justify-items-center'>
+            <div className='w-full border-b px-2 py-2 text-sm font-medium'>
+              {t('portfolio.replication.schedule.calendarTitle')}
+            </div>
             <Calendar
               weekStartsOn={1}
               mode='single'
@@ -380,7 +646,7 @@ export function RebalanceSchedulePreviewForm({
                 nonWorkday: nonWorkDays,
               }}
               modifiersClassNames={{
-                nonWorkday: '[&>button]:line-through opacity-100',
+                nonWorkday: '[&>button]:line-through opacity-50',
               }}
               components={{
                 DayButton: ({ children, modifiers, day, ...props }) => (
@@ -395,7 +661,7 @@ export function RebalanceSchedulePreviewForm({
                     ) :
                       <span
                         aria-hidden
-                        className={`inline-block size-1.5 rounded-full`}
+                        className='inline-block size-1.5 rounded-full'
                       />}
                   </CalendarDayButton>
                 ),
@@ -411,11 +677,13 @@ export function RebalanceSchedulePreviewForm({
           </div>
 
           <div className='rounded-md border p-2 text-xs'>
-            <p className='font-medium'>
-              {t('portfolio.replication.schedule.selectedDateTitle', {
-                date: calendarSelected ? formatDate(calendarSelected) : '-',
-              })}
-            </p>
+            <div className='border-b pb-2'>
+              <p className='text-sm font-medium'>
+                {t('portfolio.replication.schedule.selectedDateTitle', {
+                  date: calendarSelected ? formatDate(calendarSelected) : '-',
+                })}
+              </p>
+            </div>
             {!preview ? (
               <p className='mt-1 text-muted-foreground'>
                 {t('portfolio.replication.schedule.selectedDateNeedPreview')}
@@ -459,6 +727,13 @@ export function RebalanceSchedulePreviewForm({
                       : '-'}
                   </p>
                   <p>
+                    <span className='font-medium'>{t('portfolio.replication.schedule.selectedDateDayType')}</span>
+                    {' '}
+                    <span className='font-mono'>
+                      {selectedDayTypeLabel}
+                    </span>
+                  </p>
+                  <p>
                     <span className='font-medium'>{t('portfolio.replication.schedule.selectedDateMoexWindow')}</span>
                     {' '}
                     <span className='font-mono'>
@@ -480,9 +755,6 @@ export function RebalanceSchedulePreviewForm({
           <div className='flex gap-2 flex-col rounded-md border p-2'>
             <div className='flex items-center justify-between gap-2'>
               <p className='text-sm font-medium'>{t('portfolio.replication.schedule.eventsTitle')}</p>
-              <Badge variant='outline'>
-                {t('portfolio.replication.schedule.eventsCount', { count: events.length })}
-              </Badge>
             </div>
             <div className='h-full relative'>
               <div className='absolute  inset-0'>
@@ -547,7 +819,7 @@ export function RebalanceSchedulePreviewForm({
                 value={String(weeklyDayOfWeek)}
                 onValueChange={value => {
                   const parsed = Number.parseInt(value, 10);
-                  setWeeklyDayOfWeek(Number.isFinite(parsed) ? clampInt(parsed, 0, 6) : 1);
+                  setWeeklyDayOfWeek(Number.isFinite(parsed) ? clampInt(parsed, 1, 5) : 1);
                 }}
               >
                 <SelectTrigger id='schedule-weekly-day' className='w-full'>
@@ -609,11 +881,30 @@ export function RebalanceSchedulePreviewForm({
           ) : null}
 
         </div>
-        <Button type='button' onClick={() => void onPreview()} disabled={working}>
-          {working
-            ? t('portfolio.replication.schedule.previewWorking')
-            : t('portfolio.replication.schedule.previewButton')}
-        </Button>
+
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button type='button' onClick={() => void onPreview()} disabled={working || scheduleWorking}>
+            <CalendarClock className='size-4' />
+            {working
+              ? t('portfolio.replication.schedule.previewWorking')
+              : t('portfolio.replication.schedule.previewButton')}
+          </Button>
+          <Button type='button' variant='outline' onClick={() => void onSaveSchedule()} disabled={working || scheduleWorking}>
+            <Save className='size-4' />
+            {scheduleWorking
+              ? t('portfolio.replication.schedule.saveWorking')
+              : t('portfolio.replication.schedule.saveButton')}
+          </Button>
+          <Button type='button' variant='destructive' onClick={() => void onDeleteSchedule()} disabled={working || scheduleWorking}>
+            <Trash2 className='size-4' />
+            {scheduleWorking
+              ? t('portfolio.replication.schedule.deleteWorking')
+              : t('portfolio.replication.schedule.deleteButton')}
+          </Button>
+          <span className='text-xs text-muted-foreground'>
+            {t('portfolio.replication.schedule.savedAtLabel')}: {savedAtLabel}
+          </span>
+        </div>
       </div>
     </div>
   );

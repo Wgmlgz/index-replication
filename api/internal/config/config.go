@@ -31,6 +31,7 @@ type Config struct {
 	TelegramPollTimeoutSec         int
 	LoginVerificationTTLSeconds    int
 	MoexBaseURL                    string
+	IsDayOffBaseURL                string
 	MoexMutableDays                int
 	MoexImmutableBeforeDate        string
 	MoexLiveCurrentDayEnabled      bool
@@ -77,6 +78,7 @@ func LoadConfig() *Config {
 		TelegramPollTimeoutSec:         getEnvInt("TELEGRAM_POLL_TIMEOUT_SEC", 30),
 		LoginVerificationTTLSeconds:    getEnvInt("LOGIN_VERIFICATION_TTL_SECONDS", 300),
 		MoexBaseURL:                    getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),
+		IsDayOffBaseURL:                getEnv("ISDAYOFF_BASE_URL", "https://isdayoff.ru"),
 		MoexMutableDays:                getEnvInt("MOEX_MUTABLE_DAYS", 30),
 		MoexImmutableBeforeDate:        getEnv("MOEX_IMMUTABLE_BEFORE_DATE", ""),
 		MoexLiveCurrentDayEnabled:      getEnvBool("MOEX_LIVE_CURRENT_DAY_ENABLED", false),

@@ -8,35 +8,43 @@ import (
 	"time"
 
 	"server/internal/api/dto"
-	"server/internal/moex"
-	moexdomain "server/internal/moex/domain"
+	"server/internal/isdayoff"
 
 	"github.com/teambition/rrule-go"
 	"gorm.io/gorm"
 )
 
 const (
-	defaultSchedulePreviewLimit    = 100
-	maximumSchedulePreviewLimit    = 200
-	maximumScheduleSearchAttempts  = 10000
-	defaultScheduleCalendarDays    = 31
+	defaultSchedulePreviewLimit   = 100
+	maximumSchedulePreviewLimit   = 200
+	maximumScheduleSearchAttempts = 10000
+	defaultScheduleCalendarDays   = 31
+	defaultScheduleTimezone       = "Europe/Moscow"
+	sessionStartTime              = "10:00"
+	sessionStopTime               = "18:40"
+	sessionStartSec               = 10 * 3600
+	sessionStopSec                = 18*3600 + 40*60
 )
 
 type SchedulePreviewService struct {
-	profilesRepo profileRepository
-	moexService  *moex.MoexService
-	now          func() time.Time
+	profilesRepo  profileRepository
+	dayOffService *isdayoff.Service
+	location      *time.Location
+	now           func() time.Time
 }
 
 func NewSchedulePreviewService(
 	profilesRepo profileRepository,
-	moexService *moex.MoexService,
+	dayOffService *isdayoff.Service,
+	scheduleTimezone ...string,
 ) *SchedulePreviewService {
+	location := loadScheduleLocation(scheduleTimezone...)
 	return &SchedulePreviewService{
-		profilesRepo: profilesRepo,
-		moexService:  moexService,
+		profilesRepo:  profilesRepo,
+		dayOffService: dayOffService,
+		location:      location,
 		now: func() time.Time {
-			return time.Now().UTC()
+			return time.Now().In(location)
 		},
 	}
 }
@@ -53,7 +61,7 @@ func (s *SchedulePreviewService) Preview(
 	if portfolioID <= 0 {
 		return nil, ErrInvalidProfileID
 	}
-	if s.profilesRepo == nil || s.moexService == nil {
+	if s.profilesRepo == nil || s.dayOffService == nil {
 		return nil, ErrSchedulePreviewUnavailable
 	}
 
@@ -69,12 +77,11 @@ func (s *SchedulePreviewService) Preview(
 		return nil, err
 	}
 
-	schedule, err := s.moexService.GetEngineSchedule(ctx, "stock", "en", &from, to)
+	calendarTo := resolveCalendarWindowEnd(from, to)
+	calendar, err := newTradingCalendar(ctx, s.dayOffService, from, calendarTo, s.location)
 	if err != nil {
 		return nil, err
 	}
-	calendarTo := resolveCalendarWindowEnd(from, to)
-	calendar := newMoexTradingCalendar(schedule, from, calendarTo)
 
 	events := make([]time.Time, 0, limit)
 	cursor := from
@@ -85,24 +92,20 @@ func (s *SchedulePreviewService) Preview(
 		if next.IsZero() {
 			break
 		}
-		nextUTC := next.UTC()
-		if nextUTC.After(calendarTo) {
+		if next.After(calendarTo) {
 			break
 		}
-		decision := calendar.Evaluate(nextUTC)
+		decision := calendar.Evaluate(next)
 		if decision.Included {
-			events = append(events, nextUTC)
+			events = append(events, next.UTC())
 		}
-		cursor = nextUTC.Add(time.Nanosecond)
+		cursor = next.Add(time.Nanosecond)
 		attempts++
 	}
 
 	return &dto.PortfolioRebalanceSchedulePreviewResponse{
-		Events: events,
-		Moex: dto.PortfolioRebalanceSchedulePreviewMoexMetadata{
-			Engine:   schedule.Engine,
-			Calendar: calendar.Rows(),
-		},
+		Events:   events,
+		Calendar: calendar.Rows(),
 	}, nil
 }
 
@@ -126,18 +129,18 @@ func (s *SchedulePreviewService) prepareRule(
 	if err != nil {
 		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: invalid rrule: %v", ErrInvalidRequest, err)
 	}
-	options.Dtstart = req.DtStart.UTC()
+	options.Dtstart = req.DtStart.In(s.location)
 
 	var to *time.Time
 	if req.To != nil {
-		toValue := req.To.UTC()
+		toValue := req.To.In(s.location)
 		to = &toValue
 		options.Until = toValue
 	}
 
-	from := s.now().UTC()
+	from := s.now().In(s.location)
 	if req.From != nil {
-		from = req.From.UTC()
+		from = req.From.In(s.location)
 	}
 	if to != nil && from.After(*to) {
 		return nil, time.Time{}, nil, 0, fmt.Errorf("%w: from must be <= to", ErrInvalidRequest)
@@ -162,197 +165,137 @@ func (s *SchedulePreviewService) prepareRule(
 	return rule, from, to, limit, nil
 }
 
-type moexTradingWindow struct {
-	Source    string
+type tradingWindow struct {
 	IsWorkDay bool
-	StartSec  int
-	StopSec   int
-	HasTime   bool
-	StartTime *string
-	StopTime  *string
 }
 
-type moexTradingCalendar struct {
-	byDate map[string]moexTradingWindow
-	rows   []dto.PortfolioRebalanceSchedulePreviewMoexCalendar
+type tradingCalendar struct {
+	byDate map[string]tradingWindow
+	rows   []dto.PortfolioRebalanceSchedulePreviewCalendar
+	loc    *time.Location
 }
 
-func newMoexTradingCalendar(
-	schedule moexdomain.EngineSchedule,
+func newTradingCalendar(
+	ctx context.Context,
+	dayOffService *isdayoff.Service,
 	from time.Time,
 	to time.Time,
-) moexTradingCalendar {
-	fromDate := normalizeDateUTC(from)
-	toDate := normalizeDateUTC(to)
+	location *time.Location,
+) (tradingCalendar, error) {
+	fromDate := normalizeDateInLocation(from, location)
+	toDate := normalizeDateInLocation(to, location)
 	if toDate.Before(fromDate) {
 		fromDate, toDate = toDate, fromDate
 	}
 
-	daily := make(map[string]moexTradingWindow, len(schedule.Daily))
-	weekly := make(map[int]moexTradingWindow, len(schedule.Timetable))
-
-	for _, row := range schedule.Daily {
-		key := strings.TrimSpace(row.Date)
-		if key == "" {
-			continue
-		}
-		window := toTradingWindow(row.IsWorkDay, row.StartTime, row.StopTime)
-		window.Source = "dailytable"
-		daily[key] = window
-	}
-
-	for _, row := range schedule.Timetable {
-		if row.WeekDay <= 0 {
-			continue
-		}
-		window := toTradingWindow(row.IsWorkDay, row.StartTime, row.StopTime)
-		window.Source = "timetable"
-		weekly[row.WeekDay] = window
+	statuses, err := dayOffService.GetRange(ctx, fromDate, toDate)
+	if err != nil {
+		return tradingCalendar{}, err
 	}
 
 	dayCount := int(toDate.Sub(fromDate).Hours()/24) + 1
 	if dayCount < 0 {
 		dayCount = 0
 	}
-	result := moexTradingCalendar{
-		byDate: make(map[string]moexTradingWindow, dayCount),
-		rows:   make([]dto.PortfolioRebalanceSchedulePreviewMoexCalendar, 0, dayCount),
+	result := tradingCalendar{
+		byDate: make(map[string]tradingWindow, dayCount),
+		rows:   make([]dto.PortfolioRebalanceSchedulePreviewCalendar, 0, dayCount),
+		loc:    location,
 	}
 	for day := fromDate; !day.After(toDate); day = day.AddDate(0, 0, 1) {
 		key := day.Format("2006-01-02")
-		window, ok := daily[key]
+		status, ok := statuses[key]
 		if !ok {
-			window, ok = weekly[isoWeekday(day.Weekday())]
+			result.rows = append(result.rows, dto.PortfolioRebalanceSchedulePreviewCalendar{
+				Date:   key,
+				Source: "none",
+			})
+			continue
 		}
-		if ok {
-			result.byDate[key] = window
+
+		result.byDate[key] = tradingWindow{
+			IsWorkDay: status.IsWorkDay,
 		}
-		result.rows = append(result.rows, buildMoexCalendarRow(key, ok, window))
+
+		isWorkDay := status.IsWorkDay
+		row := dto.PortfolioRebalanceSchedulePreviewCalendar{
+			Date:      key,
+			Source:    "isdayoff",
+			DayCode:   status.Code,
+			DayType:   status.Type,
+			IsWorkDay: &isWorkDay,
+		}
+		if status.IsWorkDay {
+			start := sessionStartTime
+			stop := sessionStopTime
+			row.StartTime = &start
+			row.StopTime = &stop
+		}
+		result.rows = append(result.rows, row)
 	}
 
-	return result
+	return result, nil
 }
 
-func (c moexTradingCalendar) Rows() []dto.PortfolioRebalanceSchedulePreviewMoexCalendar {
+func (c tradingCalendar) Rows() []dto.PortfolioRebalanceSchedulePreviewCalendar {
 	return c.rows
 }
 
-func toTradingWindow(isWorkDay bool, startRaw, stopRaw *string) moexTradingWindow {
-	startSec, okStart := parseTimeOfDaySeconds(startRaw)
-	stopSec, okStop := parseTimeOfDaySeconds(stopRaw)
-	return moexTradingWindow{
-		Source:    "none",
-		IsWorkDay: isWorkDay,
-		StartSec:  startSec,
-		StopSec:   stopSec,
-		HasTime:   okStart && okStop,
-		StartTime: normalizeTimeStringPtr(startRaw),
-		StopTime:  normalizeTimeStringPtr(stopRaw),
-	}
-}
-
-type moexTradingDecision struct {
+type tradingDecision struct {
 	Included bool
 }
 
-func (c moexTradingCalendar) Evaluate(at time.Time) moexTradingDecision {
-	atUTC := at.UTC()
-	dateKey := atUTC.Format("2006-01-02")
+func (c tradingCalendar) Evaluate(at time.Time) tradingDecision {
+	atLocal := at.In(c.loc)
+	dateKey := atLocal.Format("2006-01-02")
 
 	window, ok := c.byDate[dateKey]
 	if !ok {
-		return moexTradingDecision{
+		return tradingDecision{
 			Included: false,
 		}
 	}
 	if !window.IsWorkDay {
-		return moexTradingDecision{
-			Included: false,
-		}
-	}
-	if !window.HasTime {
-		return moexTradingDecision{
+		return tradingDecision{
 			Included: false,
 		}
 	}
 
-	seconds := atUTC.Hour()*3600 + atUTC.Minute()*60 + atUTC.Second()
-	if seconds < window.StartSec || seconds > window.StopSec {
-		return moexTradingDecision{
+	seconds := atLocal.Hour()*3600 + atLocal.Minute()*60 + atLocal.Second()
+	if seconds < sessionStartSec || seconds > sessionStopSec {
+		return tradingDecision{
 			Included: false,
 		}
 	}
-	return moexTradingDecision{
+	return tradingDecision{
 		Included: true,
 	}
 }
 
-func parseTimeOfDaySeconds(value *string) (int, bool) {
-	if value == nil {
-		return 0, false
-	}
-	raw := strings.TrimSpace(*value)
-	if raw == "" {
-		return 0, false
-	}
-	layouts := []string{"15:04:05", "15:04"}
-	for _, layout := range layouts {
-		parsed, err := time.Parse(layout, raw)
-		if err != nil {
-			continue
-		}
-		return parsed.Hour()*3600 + parsed.Minute()*60 + parsed.Second(), true
-	}
-	return 0, false
-}
-
-func isoWeekday(weekday time.Weekday) int {
-	if weekday == time.Sunday {
-		return 7
-	}
-	return int(weekday)
-}
-
-func normalizeTimeStringPtr(value *string) *string {
-	if value == nil {
-		return nil
-	}
-	trimmed := strings.TrimSpace(*value)
-	if trimmed == "" {
-		return nil
-	}
-	return &trimmed
-}
-
-func buildMoexCalendarRow(
-	date string,
-	hasWindow bool,
-	window moexTradingWindow,
-) dto.PortfolioRebalanceSchedulePreviewMoexCalendar {
-	if !hasWindow {
-		return dto.PortfolioRebalanceSchedulePreviewMoexCalendar{
-			Date:   date,
-			Source: "none",
-		}
-	}
-	isWorkDay := window.IsWorkDay
-	return dto.PortfolioRebalanceSchedulePreviewMoexCalendar{
-		Date:      date,
-		Source:    window.Source,
-		IsWorkDay: &isWorkDay,
-		StartTime: window.StartTime,
-		StopTime:  window.StopTime,
-	}
-}
-
-func normalizeDateUTC(value time.Time) time.Time {
-	utc := value.UTC()
-	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+func normalizeDateInLocation(value time.Time, location *time.Location) time.Time {
+	local := value.In(location)
+	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, location)
 }
 
 func resolveCalendarWindowEnd(from time.Time, to *time.Time) time.Time {
 	if to != nil {
-		return to.UTC()
+		return *to
 	}
-	return from.UTC().AddDate(0, 0, defaultScheduleCalendarDays)
+	return from.AddDate(0, 0, defaultScheduleCalendarDays)
+}
+
+func loadScheduleLocation(scheduleTimezone ...string) *time.Location {
+	timezone := defaultScheduleTimezone
+	if len(scheduleTimezone) > 0 && strings.TrimSpace(scheduleTimezone[0]) != "" {
+		timezone = strings.TrimSpace(scheduleTimezone[0])
+	}
+	location, err := time.LoadLocation(timezone)
+	if err == nil {
+		return location
+	}
+	fallback, fallbackErr := time.LoadLocation(defaultScheduleTimezone)
+	if fallbackErr == nil {
+		return fallback
+	}
+	return time.UTC
 }

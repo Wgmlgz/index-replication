@@ -78,6 +78,7 @@ func ensurePostgresIdentity(db *sql.DB) error {
 		"user_favorite_indexes",
 		"portfolio_profiles",
 		"portfolio_replication_configs",
+		"portfolio_rebalance_schedules",
 		"portfolio_rebalance_runs",
 		"virtual_portfolio_transactions",
 	}

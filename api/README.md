@@ -109,6 +109,7 @@ Environment variables live in `.env`. Key settings:
 - `KEYCLOAK_CLIENT_ID` / `KEYCLOAK_SKIP_ISSUER_CHECK` / `KEYCLOAK_SKIP_CLIENT_ID_CHECK` are available overrides,
   but docker-compose now hardcodes `KEYCLOAK_CLIENT_ID=` and both skip flags to `true`.
 - `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
+- `ISDAYOFF_BASE_URL` (default `https://isdayoff.ru`, used by rebalance schedule preview calendar)
 - `TELEGRAM_BOT_TOKEN` (optional; enables Telegram login verification transport)
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)
 - `TELEGRAM_SOCKS5_PROXY` (optional; SOCKS5 proxy for Telegram API calls in format `socks5://user:pass@host:port`)
@@ -231,6 +232,9 @@ Authenticated user endpoints for provider-agnostic portfolio profiles and data:
 - `PUT /api/me/portfolios/:id/replication`
 - `DELETE /api/me/portfolios/:id/replication`
 - `POST /api/me/portfolios/:id/rebalances`
+- `GET /api/me/portfolios/:id/rebalances/schedule`
+- `PUT /api/me/portfolios/:id/rebalances/schedule`
+- `DELETE /api/me/portfolios/:id/rebalances/schedule`
 - `POST /api/me/portfolios/:id/rebalances/schedule/preview`
 - `GET /api/me/portfolios/:id/rebalances`
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId`
@@ -249,11 +253,15 @@ Action payload requirement:
 - The same `action_id` can be reused by callers (for example Temporal retries) to keep provider-side execution idempotent.
 
 Rebalance planning and execution:
+- `GET /api/me/portfolios/:id/rebalances/schedule` returns persisted per-portfolio rebalance schedule config
+  (`is_enabled`, `dtstart`, `rrule`, `updated_at`).
+- `PUT /api/me/portfolios/:id/rebalances/schedule` upserts persisted per-portfolio rebalance schedule config.
+- `DELETE /api/me/portfolios/:id/rebalances/schedule` removes persisted per-portfolio rebalance schedule config.
 - `POST /api/me/portfolios/:id/rebalances/schedule/preview` accepts RFC5545 recurrence rule input
   (`dtstart`, `rrule`, optional `from`/`to`/`limit`) and returns preview event timestamps,
-  candidate evaluation details (accepted/skipped + reason), and MOEX resolved day-by-day calendar.
-  Returned events are additionally filtered by MOEX stock engine trading schedule
-  (`/iss/engines/stock` timetable + dailytable). Non-trading timestamps are skipped (no shifting).
+  and resolved day-by-day calendar.
+  Returned events are filtered by `isdayoff.ru` workday status plus fixed trading window
+  `10:00-18:40` (main MOEX trading session). Non-trading timestamps are skipped (no shifting).
 - `POST /api/me/portfolios/:id/rebalances` is fully async: it creates a run with status
   `planning_queued`, starts Temporal workflow `rebalance.plan`, and returns `202 Accepted`.
 - Planning workflow transitions:

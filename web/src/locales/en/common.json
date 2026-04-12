@@ -407,7 +407,7 @@
           "customInterval": "Custom interval"
         },
         "preferredTimeLabel": "Preferred time",
-        "calendarTitle": "Calendar frame",
+        "calendarTitle": "Calendar",
         "calendarHint": "Preview window is derived from visible month: {{from}} to {{to}}.",
         "weekdays": {
           "sun": "Sunday",
@@ -426,12 +426,18 @@
         "timeLabel": "Time",
         "previewButton": "Preview schedule",
         "previewWorking": "Building preview...",
+        "saveButton": "Save schedule",
+        "saveWorking": "Saving schedule...",
+        "deleteButton": "Delete saved",
+        "deleteWorking": "Deleting...",
+        "savedAtLabel": "Saved at",
+        "savedAtEmpty": "Not saved",
         "previewTitle": "Preview result",
         "eventsCount": "Events: {{count}}",
         "previewEmpty": "Run preview to see generated events and MOEX diagnostics.",
         "legendEventDay": "Day has accepted events",
-        "eventsTitle": "Accepted events",
-        "eventsEmpty": "No accepted events in selected range.",
+        "eventsTitle": "Events",
+        "eventsEmpty": "No events in current month.",
         "eventsAt": "Event time",
         "selectedDateTitle": "Selected date: {{date}}",
         "selectedDateNeedPreview": "Run preview to inspect this date.",
@@ -439,8 +445,9 @@
         "selectedDateNoEvents": "No planned events on this date.",
         "selectedDateMoexSource": "Source:",
         "selectedDateMoexWorkday": "Workday:",
+        "selectedDateDayType": "Day type:",
         "selectedDateMoexWindow": "Window:",
-        "selectedDateNoMoex": "No MOEX data for this date in current preview.",
+        "selectedDateNoMoex": "No calendar data for this date in current preview.",
         "moexTitle": "MOEX schedule data",
         "moexEngine": "Engine:",
         "moexCalendar": "Resolved calendar",
@@ -449,14 +456,26 @@
         "moexWorkday": "Workday",
         "moexWindow": "Window",
         "moexDate": "Date",
+        "dayTypes": {
+          "workday": "Workday",
+          "nonWorkingDay": "Non-working day",
+          "shortenedWorkday": "Shortened workday",
+          "specialWorkday": "Special workday",
+          "publicHoliday": "Public holiday",
+          "unknown": "Unknown"
+        },
         "yes": "yes",
         "no": "no",
         "errors": {
           "preferredTime": "Preferred time must be in HH:mm format.",
+          "preferredTimeWindow": "Preferred time must be within trading session {{from}}-{{to}}.",
           "monthlyDay": "Monthly day must be from 1 to 31.",
           "customIntervalDays": "Custom interval days must be from 1 to 365.",
           "dtstart": "Failed to build start date for RRULE.",
-          "preview": "Failed to preview rebalance schedule."
+          "preview": "Failed to preview rebalance schedule.",
+          "load": "Failed to load saved schedule.",
+          "save": "Failed to save schedule.",
+          "delete": "Failed to delete saved schedule."
         }
       },
       "rebalances": {

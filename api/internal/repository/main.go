@@ -8,6 +8,7 @@ type RepositoryRegistry struct {
 	MoexDataRepo                     *MoexDataRepository
 	MoexSyncRepo                     *MoexSyncRepository
 	PortfolioRebalancesRepo          *PortfolioRebalancesRepository
+	PortfolioRebalanceSchedulesRepo  *PortfolioRebalanceSchedulesRepository
 	PortfolioProfilesRepo            *PortfolioProfilesRepository
 	PortfolioReplicationConfigsRepo  *PortfolioReplicationConfigsRepository
 	VirtualPortfolioTransactionsRepo *VirtualPortfolioTransactionsRepository
@@ -23,6 +24,7 @@ func NewRepositoryRegistry(db *gorm.DB) *RepositoryRegistry {
 		MoexDataRepo:                     NewMoexDataRepository(db),
 		MoexSyncRepo:                     NewMoexSyncRepository(db),
 		PortfolioRebalancesRepo:          NewPortfolioRebalancesRepository(db),
+		PortfolioRebalanceSchedulesRepo:  NewPortfolioRebalanceSchedulesRepository(db),
 		PortfolioProfilesRepo:            NewPortfolioProfilesRepository(db),
 		PortfolioReplicationConfigsRepo:  NewPortfolioReplicationConfigsRepository(db),
 		VirtualPortfolioTransactionsRepo: NewVirtualPortfolioTransactionsRepository(db),

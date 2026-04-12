@@ -316,31 +316,35 @@ export interface PortfolioRebalanceRun {
     'status'?: string;
     'updated_at'?: string;
 }
-export interface PortfolioRebalanceSchedulePreviewMoexCalendar {
+export interface PortfolioRebalanceSchedulePreviewCalendar {
+    /**
+     * isdayoff code: 0|1|2|4|8
+     */
+    'day_code'?: string;
+    /**
+     * workday|non_working_day|shortened_workday|special_workday|public_holiday
+     */
+    'day_type'?: string;
     /**
      * YYYY-MM-DD
      */
     'date'?: string;
     /**
-     * nil for source=none
+     * nil when date has no resolved status
      */
     'is_work_day'?: boolean;
     /**
-     * dailytable|timetable|none
+     * isdayoff
      */
     'source'?: string;
     /**
-     * MOEX window start (HH:mm[:ss])
+     * trading window start (HH:mm)
      */
     'start_time'?: string;
     /**
-     * MOEX window stop (HH:mm[:ss])
+     * trading window stop (HH:mm)
      */
     'stop_time'?: string;
-}
-export interface PortfolioRebalanceSchedulePreviewMoexMetadata {
-    'calendar'?: Array<PortfolioRebalanceSchedulePreviewMoexCalendar>;
-    'engine'?: string;
 }
 export interface PortfolioRebalanceSchedulePreviewRequest {
     /**
@@ -365,11 +369,11 @@ export interface PortfolioRebalanceSchedulePreviewRequest {
     'to'?: string;
 }
 export interface PortfolioRebalanceSchedulePreviewResponse {
+    'calendar'?: Array<PortfolioRebalanceSchedulePreviewCalendar>;
     /**
      * RFC3339 datetimes
      */
     'events'?: Array<string>;
-    'moex'?: PortfolioRebalanceSchedulePreviewMoexMetadata;
 }
 export interface PortfolioRebalanceStatusItem {
     'current_quantity'?: number;
@@ -4701,6 +4705,5 @@ export class VerificationApi extends BaseAPI {
         return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
-
 
 

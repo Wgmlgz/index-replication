@@ -503,7 +503,7 @@ func setupRebalanceTestRouterWithStarter(t *testing.T, withReplication bool, sta
 		services.NewAuditService(db),
 		starter,
 	)
-	handler := NewPortfolioRebalanceHandler(service)
+	handler := NewPortfolioRebalanceHandler(service, nil, nil)
 
 	router := gin.New()
 	router.Use(func(c *gin.Context) {

@@ -11,19 +11,16 @@ type PortfolioRebalanceSchedulePreviewRequest struct {
 } //@name PortfolioRebalanceSchedulePreviewRequest
 
 type PortfolioRebalanceSchedulePreviewResponse struct {
-	Events []time.Time                                   `json:"events"` // RFC3339 datetimes
-	Moex   PortfolioRebalanceSchedulePreviewMoexMetadata `json:"moex"`
+	Events   []time.Time                                 `json:"events"` // RFC3339 datetimes
+	Calendar []PortfolioRebalanceSchedulePreviewCalendar `json:"calendar"`
 } //@name PortfolioRebalanceSchedulePreviewResponse
 
-type PortfolioRebalanceSchedulePreviewMoexMetadata struct {
-	Engine   string                                          `json:"engine"`
-	Calendar []PortfolioRebalanceSchedulePreviewMoexCalendar `json:"calendar"`
-} //@name PortfolioRebalanceSchedulePreviewMoexMetadata
-
-type PortfolioRebalanceSchedulePreviewMoexCalendar struct {
-	Date      string  `json:"date"`                   // YYYY-MM-DD
-	Source    string  `json:"source"`                 // dailytable|timetable|none
-	IsWorkDay *bool   `json:"is_work_day,omitempty"`  // nil for source=none
-	StartTime *string `json:"start_time,omitempty"`   // MOEX window start (HH:mm[:ss])
-	StopTime  *string `json:"stop_time,omitempty"`    // MOEX window stop (HH:mm[:ss])
-} //@name PortfolioRebalanceSchedulePreviewMoexCalendar
+type PortfolioRebalanceSchedulePreviewCalendar struct {
+	Date      string  `json:"date"`                  // YYYY-MM-DD
+	Source    string  `json:"source"`                // isdayoff
+	DayCode   string  `json:"day_code"`              // isdayoff code: 0|1|2|4|8
+	DayType   string  `json:"day_type"`              // workday|non_working_day|shortened_workday|special_workday|public_holiday
+	IsWorkDay *bool   `json:"is_work_day,omitempty"` // nil when date has no resolved status
+	StartTime *string `json:"start_time,omitempty"`  // trading window start (HH:mm)
+	StopTime  *string `json:"stop_time,omitempty"`   // trading window stop (HH:mm)
+} //@name PortfolioRebalanceSchedulePreviewCalendar

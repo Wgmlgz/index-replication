@@ -8,7 +8,8 @@ This document describes the end-to-end rebalance flow in general phases, from us
 - Covers execution for automatic providers (`virtual`, `tbank`).
 - Uses API-level and workflow-level terminology (not provider-internal implementation details).
 - Includes schedule preview API (`POST /api/me/portfolios/:id/rebalances/schedule/preview`)
-  that generates RFC5545 recurrence events and filters by MOEX trading availability.
+  that generates RFC5545 recurrence events and filters by isdayoff workdays with
+  fixed trading session window `10:00-18:40`.
 
 ## Phases
 
