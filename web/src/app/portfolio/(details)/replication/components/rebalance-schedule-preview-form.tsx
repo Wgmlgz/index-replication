@@ -48,14 +48,6 @@ type EventRow = {
   eventAt: string;
 };
 
-type MoexCalendarRow = {
-  date: string;
-  source: string;
-  is_work_day: boolean;
-  start_time?: string;
-  stop_time?: string;
-};
-
 type DateTimePickerProps = {
   idPrefix: string;
   label: string;
@@ -214,6 +206,9 @@ export function RebalanceSchedulePreviewForm({
       timeStyle: 'short',
     }).format(date);
   }, [i18n.language]);
+  const formatDate = useCallback((value: Date) => new Intl.DateTimeFormat(i18n.language || 'en', {
+    dateStyle: 'long',
+  }).format(value), [i18n.language]);
 
   const eventDays = useMemo(() => {
     if (!preview?.events?.length) {
@@ -353,6 +348,25 @@ export function RebalanceSchedulePreviewForm({
     [events],
   );
   const moexRows = useMemo(() => preview?.moex.calendar ?? [], [preview?.moex.calendar]);
+  const selectedDayKey = useMemo(() => {
+    if (!calendarSelected || !isValidDate(calendarSelected)) {
+      return null;
+    }
+    return startOfDayKey(calendarSelected);
+  }, [calendarSelected]);
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDayKey) {
+      return [] as string[];
+    }
+    return events.filter(eventAt => {
+      const parsed = new Date(eventAt);
+      return isValidDate(parsed) && startOfDayKey(parsed) === selectedDayKey;
+    });
+  }, [events, selectedDayKey]);
+  const selectedDay = useMemo(
+    () => (selectedDayKey ? moexRows.find(row => row.date === selectedDayKey) ?? null : null),
+    [moexRows, selectedDayKey],
+  );
 
   const eventColumns = useMemo<ColumnDef<EventRow>[]>(() => [
     {
@@ -374,61 +388,6 @@ export function RebalanceSchedulePreviewForm({
     },
   ], [formatDateTime, t]);
 
-  const moexColumns = useMemo<ColumnDef<MoexCalendarRow>[]>(() => [
-    {
-      accessorFn: row => row.date,
-      id: 'date',
-      header: ({ column }) => (
-        <SortHeader
-          column={column}
-          label={t('portfolio.replication.schedule.moexDate')}
-        />
-      ),
-      cell: ({ row }) => row.original.date,
-    },
-    {
-      accessorFn: row => row.source,
-      id: 'source',
-      header: ({ column }) => (
-        <SortHeader
-          column={column}
-          label={t('portfolio.replication.schedule.moexSource')}
-        />
-      ),
-      cell: ({ row }) => <span className='font-mono text-xs'>{row.original.source}</span>,
-    },
-    {
-      accessorFn: row => (row.is_work_day ? 1 : 0),
-      id: 'is_work_day',
-      header: ({ column }) => (
-        <SortHeader
-          column={column}
-          label={t('portfolio.replication.schedule.moexWorkday')}
-        />
-      ),
-      cell: ({ row }) => (row.original.is_work_day
-        ? t('portfolio.replication.schedule.yes')
-        : t('portfolio.replication.schedule.no')),
-    },
-    {
-      accessorFn: row => (row.start_time && row.stop_time ? `${row.start_time}-${row.stop_time}` : ''),
-      id: 'window',
-      header: ({ column }) => (
-        <SortHeader
-          column={column}
-          label={t('portfolio.replication.schedule.moexWindow')}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className='font-mono text-xs'>
-          {row.original.start_time && row.original.stop_time
-            ? `${row.original.start_time} - ${row.original.stop_time}`
-            : '-'}
-        </span>
-      ),
-    },
-  ], [t]);
-
   return (
     <div className='grid min-h-0 gap-4'>
       {error ? (
@@ -439,7 +398,7 @@ export function RebalanceSchedulePreviewForm({
       ) : null}
 
       <div className='grid gap-3 rounded-md border p-3'>
-        <div className='grid gap-3 lg:grid-cols-2'>
+        <div className='grid gap-3 lg:grid-cols-3'>
           <div className='grid gap-2 rounded-md border p-2'>
             <p className='text-sm font-medium'>{t('portfolio.replication.schedule.calendarTitle')}</p>
             <p className='text-xs text-muted-foreground'>
@@ -472,6 +431,73 @@ export function RebalanceSchedulePreviewForm({
               }}
               captionLayout='dropdown'
             />
+          </div>
+
+          <div className='rounded-md border p-2 text-xs'>
+            <p className='font-medium'>
+              {t('portfolio.replication.schedule.selectedDateTitle', {
+                date: calendarSelected ? formatDate(calendarSelected) : '-',
+              })}
+            </p>
+            {!preview ? (
+              <p className='mt-1 text-muted-foreground'>
+                {t('portfolio.replication.schedule.selectedDateNeedPreview')}
+              </p>
+            ) : (
+              <div className='mt-2 grid gap-2'>
+                <div>
+                  <p className='font-medium'>
+                    {t('portfolio.replication.schedule.selectedDateEventsLabel')}
+                    {' '}
+                    {selectedDayEvents.length}
+                  </p>
+                  {selectedDayEvents.length === 0 ? (
+                    <p className='text-muted-foreground'>
+                      {t('portfolio.replication.schedule.selectedDateNoEvents')}
+                    </p>
+                  ) : (
+                    <div className='grid gap-1'>
+                      {selectedDayEvents.map((eventAt, index) => (
+                        <p key={`${eventAt}-${index}`} className='font-mono'>
+                          {formatDateTime(eventAt)}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className='grid gap-1'>
+                  <p>
+                    <span className='font-medium'>{t('portfolio.replication.schedule.selectedDateMoexSource')}</span>
+                    {' '}
+                    <span className='font-mono'>{selectedDay?.source ?? '-'}</span>
+                  </p>
+                  <p>
+                    <span className='font-medium'>{t('portfolio.replication.schedule.selectedDateMoexWorkday')}</span>
+                    {' '}
+                    {selectedDay
+                      ? (selectedDay.is_work_day
+                        ? t('portfolio.replication.schedule.yes')
+                        : t('portfolio.replication.schedule.no'))
+                      : '-'}
+                  </p>
+                  <p>
+                    <span className='font-medium'>{t('portfolio.replication.schedule.selectedDateMoexWindow')}</span>
+                    {' '}
+                    <span className='font-mono'>
+                      {selectedDay?.start_time && selectedDay?.stop_time
+                        ? `${selectedDay.start_time} - ${selectedDay.stop_time}`
+                        : '-'}
+                    </span>
+                  </p>
+                  {!selectedDay ? (
+                    <p className='text-muted-foreground'>
+                      {t('portfolio.replication.schedule.selectedDateNoMoex')}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className='flex gap-2 flex-col rounded-md border p-2'>
@@ -607,44 +633,6 @@ export function RebalanceSchedulePreviewForm({
             ? t('portfolio.replication.schedule.previewWorking')
             : t('portfolio.replication.schedule.previewButton')}
         </Button>
-      </div>
-
-      <div className='grid gap-3 rounded-md border p-3'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <h4 className='font-medium'>{t('portfolio.replication.schedule.previewTitle')}</h4>
-        </div>
-
-        {!preview ? (
-          <p className='text-sm text-muted-foreground'>
-            {t('portfolio.replication.schedule.previewEmpty')}
-          </p>
-        ) : (
-          <>
-            <div className='grid gap-2'>
-              <h5 className='text-sm font-medium'>{t('portfolio.replication.schedule.moexTitle')}</h5>
-              <div className='rounded-md border p-2 text-xs'>
-                <p>
-                  <span className='font-medium'>{t('portfolio.replication.schedule.moexEngine')}</span>
-                  {' '}
-                  <span className='font-mono'>{preview.moex.engine}</span>
-                </p>
-              </div>
-              <div className='grid gap-2 lg:grid-cols-2'>
-                <div className='rounded-md border p-2 lg:col-span-2'>
-                  <p className='mb-2 text-xs font-medium'>
-                    {t('portfolio.replication.schedule.moexCalendar')}
-                  </p>
-                  <SortableDataTable
-                    data={moexRows}
-                    columns={moexColumns}
-                    emptyLabel={t('portfolio.replication.schedule.moexEmpty')}
-                    getRowKey={(row, index) => `${row.date}-${index}`}
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
