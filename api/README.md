@@ -142,7 +142,7 @@ cd api
 task test:repo
 ```
 
-Tests run with an in-memory SQLite DB and the same SQL migrations.
+Tests run against Postgres via Testcontainers and apply the same SQL migrations used in runtime.
 
 ## OpenAPI
 
@@ -194,8 +194,9 @@ Behavior:
 
 Implementation notes:
 
-- Prices are stored in `moex_security_history_daily`.
-- Coverage tracking reuses `moex_data_coverage` with dataset key `security_history`.
+- Prices are stored in `moex.security_history_daily`.
+- Coverage tracking reuses `moex.data_coverage` with dataset key `security_history`.
+- MOEX sync/cache tables are stored in dedicated Postgres schema `moex`.
 - Reads are lazy: on cache miss, the requested range is fetched from MOEX shares history endpoint, upserted, and reused on subsequent requests.
 - Non-trading days are valued with as-of logic (latest close on or before the anchor date, UTC date boundaries).
 - If a quote is unavailable after cache fetch, valuation explicitly falls back to provider legacy price for stability.

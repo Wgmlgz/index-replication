@@ -14,20 +14,16 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
 
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
-
 	t.Run("table and benchmark index exist", func(t *testing.T) {
 		var count int64
-		if err := db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='portfolio_replication_configs'").Scan(&count).Error; err != nil {
+		if err := db.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'portfolio_replication_configs'").Scan(&count).Error; err != nil {
 			t.Fatalf("check table exists: %v", err)
 		}
 		if count != 1 {
 			t.Fatalf("expected portfolio_replication_configs table to exist")
 		}
 
-		if err := db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_portfolio_replication_configs_benchmark_secid'").Scan(&count).Error; err != nil {
+		if err := db.Raw("SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_portfolio_replication_configs_benchmark_secid'").Scan(&count).Error; err != nil {
 			t.Fatalf("check benchmark index exists: %v", err)
 		}
 		if count != 1 {
@@ -105,10 +101,6 @@ func TestPortfolioReplicationConfigs_MigrationAndConstraints(t *testing.T) {
 func TestPortfolioReplicationConfigsRepository_UpsertAndDelete(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
-
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
 
 	profileID := createPortfolioProfileRow(t, db, 2001)
 	seedMoexIndex(t, db, "IMOEX")

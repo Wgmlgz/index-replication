@@ -457,10 +457,6 @@ func setupRebalanceTestRouterWithStarter(t *testing.T, withReplication bool, sta
 	db, cleanup := testutil.NewTestDB(t)
 	t.Cleanup(cleanup)
 
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
-
 	profileID := createPortfolioProfileRow(t, db, 500)
 	if withReplication {
 		insertReplicationConfig(t, db, profileID, "IMOEX")

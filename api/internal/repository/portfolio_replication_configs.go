@@ -91,7 +91,7 @@ func (r *PortfolioReplicationConfigsRepository) BenchmarkExists(secid string) (b
 	}
 
 	var count int64
-	if err := r.db.Table("moex_indexes").Where("secid = ?", secid).Count(&count).Error; err != nil {
+	if err := r.db.Table("moex.indexes").Where("secid = ?", secid).Count(&count).Error; err != nil {
 		return false, err
 	}
 	return count > 0, nil

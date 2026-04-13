@@ -103,7 +103,7 @@ func createVirtualPortfolioProfile(t *testing.T, ts *testServer, bearerToken str
 func seedMoexIndex(t *testing.T, ts *testServer, secid string) {
 	t.Helper()
 	result := ts.db.Exec(
-		"INSERT INTO moex_indexes (secid, short_name, name, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+		"INSERT INTO moex.indexes (secid, short_name, name, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
 		secid,
 		secid,
 		secid+" index",

@@ -23,7 +23,7 @@ func NewMoexSyncAdminHandler(repo *repository.MoexDataRepository) *MoexSyncAdmin
 // GetMoexSyncState godoc
 //
 //	@Summary		Get MOEX sync state rows
-//	@Description	Returns rows from moex_sync_state with optional filters
+//	@Description	Returns rows from moex.sync_state with optional filters
 //	@Tags			moex
 //	@Produce		json
 //	@Param			dataset		query		string	false	"Dataset filter"
@@ -45,7 +45,7 @@ func (h *MoexSyncAdminHandler) GetMoexSyncState(c *gin.Context) {
 // GetMoexCoverage godoc
 //
 //	@Summary		Get MOEX coverage rows
-//	@Description	Returns rows from moex_data_coverage with optional filters
+//	@Description	Returns rows from moex.data_coverage with optional filters
 //	@Tags			moex
 //	@Produce		json
 //	@Param			dataset		query		string	false	"Dataset filter"
@@ -81,7 +81,7 @@ func (h *MoexSyncAdminHandler) GetMoexCoverage(c *gin.Context) {
 // GetMoexSyncRuns godoc
 //
 //	@Summary		Get MOEX sync run history
-//	@Description	Returns rows from moex_sync_runs with optional filters
+//	@Description	Returns rows from moex.sync_runs with optional filters
 //	@Tags			moex
 //	@Produce		json
 //	@Param			dataset		query		string	false	"Dataset filter"

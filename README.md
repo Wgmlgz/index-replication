@@ -92,8 +92,9 @@ MOEX namespace/search-attributes/schedules are applied automatically on startup 
 The `temporal-setup` container is built from `infra/temporal-setup` (independent from `api` and `moex-worker` images).
 Operational timeline and monitoring details are documented in `docs/TEMPORAL-MOEX-OPERATIONS.md`.
 Historical MOEX API reads are DB-backed; coverage status is exposed via response headers and sync admin endpoints.
+MOEX sync/cache tables are isolated in Postgres schema `moex` (app domain tables stay in `public`).
 Portfolio `virtual` and `tbank` mark-to-market valuation now uses on-demand MOEX share security history cache
-(`moex_security_history_daily` + `moex_data_coverage` dataset `security_history`): cache miss triggers fetch+upsert,
+(`moex.security_history_daily` + `moex.data_coverage` dataset `security_history`): cache miss triggers fetch+upsert,
 cache hit serves from DB. If no MOEX quote exists for an anchor date, valuation falls back to provider legacy price.
 
 ## Keycloak Infra (Auto-Bootstrap)
@@ -138,7 +139,7 @@ API integration:
 
 ## Move Backfilled MOEX Data (Local -> Prod)
 
-Use `scripts/moex-backfill-transfer.sh` to transfer only MOEX backfill tables (`moex_*`) between compose deployments.
+Use `scripts/moex-backfill-transfer.sh` to transfer only MOEX backfill tables between compose deployments.
 
 Examples:
 
@@ -154,6 +155,7 @@ Examples:
 ```
 
 If a docker context has multiple compose projects, pass `--source-project` / `--target-project`.
+The script auto-detects whether MOEX tables are in `moex` or `public` schema on each side.
 
 ## Repo Layout
 

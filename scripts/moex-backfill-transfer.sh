@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+MOEX_SCHEMA="moex"
 MOEX_TABLES=(
-  moex_indexes
-  moex_index_collections
-  moex_index_collection_memberships
-  moex_index_history_daily
-  moex_index_composition_daily
-  moex_sync_state
-  moex_data_coverage
-  moex_sync_runs
+  indexes
+  index_collections
+  index_collection_memberships
+  index_history_daily
+  index_composition_daily
+  security_history_daily
+  sync_state
+  data_coverage
+  sync_runs
 )
 
 SCRIPT_NAME="$(basename "$0")"
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
   scripts/moex-backfill-transfer.sh dump [options]
   scripts/moex-backfill-transfer.sh restore --file PATH [options]
@@ -41,7 +43,7 @@ Notes:
   - If multiple postgres containers match a context and no project is provided,
     pass --source-project / --target-project to disambiguate.
   - restore expects SQL or gzipped SQL produced by this script.
-EOF
+USAGE
 }
 
 log() {
@@ -108,16 +110,42 @@ read_postgres_env() {
 
   [[ -n "$user" ]] || die "POSTGRES_USER is missing in container '$container_id'."
   [[ -n "$db" ]] || die "POSTGRES_DB is missing in container '$container_id'."
-  # POSTGRES_PASSWORD can be empty in local setups.
 
   printf '%s|%s|%s\n' "$user" "$pass" "$db"
+}
+
+assert_moex_tables_exist() {
+  local context="$1"
+  local container="$2"
+  local pg_user="$3"
+  local pg_pass="$4"
+  local pg_db="$5"
+  local sql="
+SELECT CASE
+  WHEN EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = '${MOEX_SCHEMA}'
+      AND table_name = 'indexes'
+  ) THEN 1
+  ELSE 0
+END;
+"
+
+  local detected
+  detected="$(docker_cmd "$context" exec -e "PGPASSWORD=$pg_pass" "$container" \
+    psql -h 127.0.0.1 -U "$pg_user" -d "$pg_db" -At -v ON_ERROR_STOP=1 -c "$sql")"
+  detected="${detected//$'\n'/}"
+  if [[ "$detected" != "1" ]]; then
+    die "Expected ${MOEX_SCHEMA}.indexes in database '$pg_db'. Run MOEX schema/table migrations first."
+  fi
 }
 
 build_table_args() {
   local -a args=()
   local t
   for t in "${MOEX_TABLES[@]}"; do
-    args+=(--table="public.$t")
+    args+=(--table="${MOEX_SCHEMA}.${t}")
   done
   printf '%s\n' "${args[@]}"
 }
@@ -126,7 +154,7 @@ build_truncate_sql() {
   local sql="TRUNCATE TABLE "
   local t
   for t in "${MOEX_TABLES[@]}"; do
-    sql+="public.$t, "
+    sql+="${MOEX_SCHEMA}.${t}, "
   done
   sql="${sql%, }"
   sql+=" RESTART IDENTITY;"
@@ -140,7 +168,7 @@ dump_counts_sql() {
     if [[ -n "$sql" ]]; then
       sql+=" UNION ALL "
     fi
-    sql+="SELECT '$t' AS table_name, COUNT(*) AS row_count FROM public.$t"
+    sql+="SELECT '${t}' AS table_name, COUNT(*) AS row_count FROM ${MOEX_SCHEMA}.${t}"
   done
   sql+=" ORDER BY table_name;"
   printf '%s\n' "$sql"
@@ -172,13 +200,14 @@ do_dump() {
   source_container="$(resolve_postgres_container "$source_context" "$source_project")"
   source_env="$(read_postgres_env "$source_context" "$source_container")"
   IFS='|' read -r source_user source_pass source_db <<<"$source_env"
+  assert_moex_tables_exist "$source_context" "$source_container" "$source_user" "$source_pass" "$source_db"
 
   mkdir -p "$(dirname "$file")"
   while IFS= read -r arg; do
     table_args+=("$arg")
   done < <(build_table_args)
 
-  log "Dumping MOEX tables from container '$source_container' (context: ${source_context:-current}) to '$file'."
+  log "Dumping MOEX tables from container '$source_container' (context: ${source_context:-current}, schema: ${MOEX_SCHEMA}) to '$file'."
   docker_cmd "$source_context" exec -e "PGPASSWORD=$source_pass" "$source_container" \
     pg_dump -h 127.0.0.1 -U "$source_user" -d "$source_db" \
       --data-only --no-owner --no-privileges "${table_args[@]}" \
@@ -200,8 +229,9 @@ do_restore() {
   target_container="$(resolve_postgres_container "$target_context" "$target_project")"
   target_env="$(read_postgres_env "$target_context" "$target_container")"
   IFS='|' read -r target_user target_pass target_db <<<"$target_env"
+  assert_moex_tables_exist "$target_context" "$target_container" "$target_user" "$target_pass" "$target_db"
 
-  log "Restoring into container '$target_container' (context: ${target_context:-current}) from '$file'."
+  log "Restoring into container '$target_container' (context: ${target_context:-current}, schema: ${MOEX_SCHEMA}) from '$file'."
   if [[ "$truncate" == "true" ]]; then
     truncate_sql="$(build_truncate_sql)"
     log "Truncating target MOEX tables before import."

@@ -9,18 +9,13 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-const (
-	DialectPostgres = goose.DialectPostgres
-	DialectSQLite   = goose.DialectSQLite3
-)
-
-func Up(db *sql.DB, dialect goose.Dialect, dir string) error {
+func Up(db *sql.DB, dir string) error {
 	migrationsDir, err := resolveMigrationsDir(dir)
 	if err != nil {
 		return err
 	}
 
-	if err := goose.SetDialect(string(dialect)); err != nil {
+	if err := goose.SetDialect(string(goose.DialectPostgres)); err != nil {
 		return err
 	}
 
@@ -28,10 +23,7 @@ func Up(db *sql.DB, dialect goose.Dialect, dir string) error {
 		return err
 	}
 
-	if dialect == DialectPostgres {
-		return ensurePostgresIdentity(db)
-	}
-	return nil
+	return ensurePostgresIdentity(db)
 }
 
 func resolveMigrationsDir(dir string) (string, error) {

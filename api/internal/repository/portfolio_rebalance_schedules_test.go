@@ -15,13 +15,9 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
 
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
-
 	t.Run("table exists", func(t *testing.T) {
 		var count int64
-		if err := db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='portfolio_rebalance_schedules'").Scan(&count).Error; err != nil {
+		if err := db.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'portfolio_rebalance_schedules'").Scan(&count).Error; err != nil {
 			t.Fatalf("check table exists: %v", err)
 		}
 		if count != 1 {
@@ -87,10 +83,6 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 func TestPortfolioRebalanceSchedulesRepository_UpsertAndDelete(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
-
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
 
 	profileID := createPortfolioProfileRow(t, db, 3003)
 	repo := NewPortfolioRebalanceSchedulesRepository(db)

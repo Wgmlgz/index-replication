@@ -85,13 +85,13 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		}
 		var persisted int64
 		if err := ts.db.Raw(
-			"SELECT COUNT(*) FROM moex_security_history_daily WHERE secid = ? AND board = ?",
+			"SELECT COUNT(*) FROM moex.security_history_daily WHERE secid = ? AND board = ?",
 			"SBER", "TQBR",
 		).Scan(&persisted).Error; err != nil {
 			t.Fatalf("count persisted prices: %v", err)
 		}
 		if persisted == 0 {
-			t.Fatalf("expected persisted moex_security_history_daily rows")
+			t.Fatalf("expected persisted moex.security_history_daily rows")
 		}
 
 		callCount := moexCalls.Load()
@@ -152,13 +152,13 @@ func TestPortfolioHistory_UsesMoexCacheAndReusesPersistedRows(t *testing.T) {
 		}
 		var persisted int64
 		if err := ts.db.Raw(
-			"SELECT COUNT(*) FROM moex_security_history_daily WHERE secid = ? AND board = ?",
+			"SELECT COUNT(*) FROM moex.security_history_daily WHERE secid = ? AND board = ?",
 			"SBER", "TQBR",
 		).Scan(&persisted).Error; err != nil {
 			t.Fatalf("count persisted prices: %v", err)
 		}
 		if persisted == 0 {
-			t.Fatalf("expected persisted moex_security_history_daily rows")
+			t.Fatalf("expected persisted moex.security_history_daily rows")
 		}
 
 		callCount := moexCalls.Load()

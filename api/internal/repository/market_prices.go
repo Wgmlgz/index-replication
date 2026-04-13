@@ -93,7 +93,7 @@ func (r *MarketPriceRepository) ListSecurityHistory(
 	}
 
 	q := r.db.WithContext(ctx).
-		Table("moex_security_history_daily").
+		Table("moex.security_history_daily").
 		Select("trade_date", "open", "high", "low", "close").
 		Where("secid = ? AND board = ?", normalizedSecid, normalizedBoard).
 		Order("trade_date ASC")
@@ -124,7 +124,7 @@ func (r *MarketPriceRepository) GetLatestSecurityCloseOnOrBefore(
 
 	var row models.MoexSecurityLatestCloseRow
 	err := r.db.WithContext(ctx).
-		Table("moex_security_history_daily").
+		Table("moex.security_history_daily").
 		Select("trade_date", "close").
 		Where("secid = ? AND board = ? AND trade_date <= ?", normalizedSecid, normalizedBoard, dateOnlyUTCDay(date)).
 		Order("trade_date DESC").

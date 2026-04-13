@@ -16,17 +16,13 @@ func TestPortfolioRebalances_MigrationsCreateTables(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
 
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
-
 	tableNames := []string{
 		"portfolio_rebalance_runs",
 	}
 
 	for _, tableName := range tableNames {
 		var count int64
-		if err := db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name = ?", tableName).Scan(&count).Error; err != nil {
+		if err := db.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ?", tableName).Scan(&count).Error; err != nil {
 			t.Fatalf("check table %s exists: %v", tableName, err)
 		}
 		if count != 1 {
@@ -38,10 +34,6 @@ func TestPortfolioRebalances_MigrationsCreateTables(t *testing.T) {
 func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
-
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
 
 	profileID := createPortfolioProfileForRebalance(t, db, 101)
 	repo := NewPortfolioRebalancesRepository(db)
@@ -101,10 +93,6 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {
 	db, cleanup := testutil.NewTestDB(t)
 	defer cleanup()
-
-	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-		t.Fatalf("enable sqlite foreign keys: %v", err)
-	}
 
 	profileID := createPortfolioProfileForRebalance(t, db, 102)
 	repo := NewPortfolioRebalancesRepository(db)

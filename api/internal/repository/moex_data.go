@@ -23,7 +23,7 @@ func NewMoexDataRepository(db *gorm.DB) *MoexDataRepository {
 func (r *MoexDataRepository) GetOverview(ctx context.Context) (moexdomain.IndexesOverview, error) {
 	var indexRows []models.MoexOverviewIndexRow
 	if err := r.db.WithContext(ctx).
-		Table("moex_indexes AS i").
+		Table("moex.indexes AS i").
 		Select(`
 			i.secid,
 			i.short_name,
@@ -40,14 +40,14 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (moexdomain.Indexe
 		Joins(`
 			LEFT JOIN (
 				SELECT secid, MAX(trade_date) AS last_active_date
-				FROM moex_index_history_daily
+				FROM moex.index_history_daily
 				GROUP BY secid
 			) AS h ON h.secid = i.secid
 		`).
 		Joins(`
 			LEFT JOIN (
 				SELECT DISTINCT index_id
-				FROM moex_index_composition_daily
+				FROM moex.index_composition_daily
 			) AS c ON c.index_id = i.secid
 		`).
 		Order("i.secid ASC").
@@ -110,7 +110,7 @@ func (r *MoexDataRepository) GetOverview(ctx context.Context) (moexdomain.Indexe
 }
 
 func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string, fromDate, toDate *time.Time) ([]moexdomain.IndexHistoryPoint, error) {
-	q := r.db.WithContext(ctx).Table("moex_index_history_daily").
+	q := r.db.WithContext(ctx).Table("moex.index_history_daily").
 		Select("trade_date", "open", "high", "low", "close").
 		Where("secid = ?", secid).
 		Order("trade_date ASC")
@@ -140,7 +140,7 @@ func (r *MoexDataRepository) ListHistoryPoints(ctx context.Context, secid string
 }
 
 func (r *MoexDataRepository) ResolveCompositionDate(ctx context.Context, indexID string, preferredDate *time.Time) (*time.Time, error) {
-	q := r.db.WithContext(ctx).Table("moex_index_composition_daily").
+	q := r.db.WithContext(ctx).Table("moex.index_composition_daily").
 		Select("MAX(trade_date) as trade_date").
 		Where("index_id = ?", strings.TrimSpace(indexID))
 	if preferredDate != nil {
@@ -207,7 +207,7 @@ func (r *MoexDataRepository) ListCompositionSeriesRows(ctx context.Context, inde
 		return []models.MoexCompositionSeriesRow{}, nil
 	}
 
-	q := r.db.WithContext(ctx).Table("moex_index_composition_daily").
+	q := r.db.WithContext(ctx).Table("moex.index_composition_daily").
 		Select("ticker", "trade_date", "weight").
 		Where("index_id = ? AND ticker IN ?", indexID, normalizedTickers).
 		Order("ticker ASC, trade_date ASC")
@@ -240,7 +240,7 @@ WITH ranked AS (
 			PARTITION BY trade_date
 			ORDER BY COALESCE(weight, -1e9) DESC, ticker ASC
 		) AS rn
-	FROM moex_index_composition_daily
+	FROM moex.index_composition_daily
 	WHERE index_id = ?
 `
 	args := []any{strings.TrimSpace(indexID)}
@@ -275,7 +275,7 @@ func (r *MoexDataRepository) EvaluateCoverage(ctx context.Context, dataset, enti
 
 	var rows []models.MoexCoverageScanRow
 	err := r.db.WithContext(ctx).
-		Table("moex_data_coverage").
+		Table("moex.data_coverage").
 		Select("from_date", "to_date", "is_complete").
 		Where("dataset = ? AND entity_key = ? AND to_date >= ? AND from_date <= ?", dataset, strings.TrimSpace(entityKey), fromDate, toDate).
 		Order("from_date ASC, to_date ASC").
@@ -316,7 +316,7 @@ func (r *MoexDataRepository) ListSyncState(ctx context.Context, dataset, entityK
 	if limit <= 0 || limit > 1000 {
 		limit = 200
 	}
-	q := r.db.WithContext(ctx).Table("moex_sync_state")
+	q := r.db.WithContext(ctx).Table("moex.sync_state")
 	if strings.TrimSpace(dataset) != "" {
 		q = q.Where("dataset = ?", strings.TrimSpace(dataset))
 	}
@@ -333,7 +333,7 @@ func (r *MoexDataRepository) ListCoverage(ctx context.Context, dataset, entityKe
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
-	q := r.db.WithContext(ctx).Table("moex_data_coverage")
+	q := r.db.WithContext(ctx).Table("moex.data_coverage")
 	if strings.TrimSpace(dataset) != "" {
 		q = q.Where("dataset = ?", strings.TrimSpace(dataset))
 	}
@@ -356,7 +356,7 @@ func (r *MoexDataRepository) ListSyncRuns(ctx context.Context, dataset, entityKe
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
-	q := r.db.WithContext(ctx).Table("moex_sync_runs")
+	q := r.db.WithContext(ctx).Table("moex.sync_runs")
 	if strings.TrimSpace(dataset) != "" {
 		q = q.Where("dataset = ?", strings.TrimSpace(dataset))
 	}

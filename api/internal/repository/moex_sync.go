@@ -83,15 +83,15 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moexd
 		}
 	}
 
-	if err := tx.Exec("DELETE FROM moex_index_collection_memberships").Error; err != nil {
+	if err := tx.Exec("DELETE FROM moex.index_collection_memberships").Error; err != nil {
 		_ = tx.Rollback()
 		return err
 	}
-	if err := tx.Exec("DELETE FROM moex_index_collections").Error; err != nil {
+	if err := tx.Exec("DELETE FROM moex.index_collections").Error; err != nil {
 		_ = tx.Rollback()
 		return err
 	}
-	if err := tx.Exec("DELETE FROM moex_indexes").Error; err != nil {
+	if err := tx.Exec("DELETE FROM moex.indexes").Error; err != nil {
 		_ = tx.Rollback()
 		return err
 	}
@@ -124,7 +124,7 @@ func (r *MoexSyncRepository) ReplaceOverview(ctx context.Context, overview moexd
 func (r *MoexSyncRepository) ListIndexSecids(ctx context.Context) ([]string, error) {
 	var secids []string
 	err := r.db.WithContext(ctx).
-		Table("moex_indexes").
+		Table("moex.indexes").
 		Order("secid ASC").
 		Pluck("secid", &secids).Error
 	if err != nil {
@@ -136,7 +136,7 @@ func (r *MoexSyncRepository) ListIndexSecids(ctx context.Context) ([]string, err
 func (r *MoexSyncRepository) GetSyncState(ctx context.Context, dataset, entityKey string) (*models.MoexSyncState, error) {
 	var state models.MoexSyncState
 	err := r.db.WithContext(ctx).
-		Table("moex_sync_state").
+		Table("moex.sync_state").
 		Select("dataset", "entity_key", "checked_through_date", "immutable_before_date", "mutable_since_date").
 		Where("dataset = ? AND entity_key = ?", dataset, entityKey).
 		Take(&state).Error
@@ -262,7 +262,7 @@ func (r *MoexSyncRepository) UpsertCoverage(ctx context.Context, dataset, entity
 		fromDate, toDate = toDate, fromDate
 	}
 	return r.db.WithContext(ctx).Exec(
-		`INSERT INTO moex_data_coverage(dataset, entity_key, from_date, to_date, is_complete, updated_at)
+		`INSERT INTO moex.data_coverage(dataset, entity_key, from_date, to_date, is_complete, updated_at)
 		 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(dataset, entity_key, from_date, to_date)
 		 DO UPDATE SET is_complete = excluded.is_complete, updated_at = excluded.updated_at`,
@@ -279,7 +279,7 @@ func (r *MoexSyncRepository) ListIncompleteCoverage(ctx context.Context, dataset
 
 	var rows []models.MoexIncompleteCoverageRange
 	err := r.db.WithContext(ctx).
-		Table("moex_data_coverage").
+		Table("moex.data_coverage").
 		Select("from_date", "to_date").
 		Where("dataset = ? AND entity_key = ? AND is_complete = ? AND to_date >= ? AND from_date <= ?", dataset, entityKey, false, fromDate, toDate).
 		Order("from_date ASC, to_date ASC").
@@ -298,7 +298,7 @@ func (r *MoexSyncRepository) HasCompleteCoverage(ctx context.Context, dataset, e
 	err := r.db.WithContext(ctx).Raw(
 		`SELECT EXISTS (
 			SELECT 1
-			FROM moex_data_coverage
+			FROM moex.data_coverage
 			WHERE dataset = ?
 			  AND entity_key = ?
 			  AND is_complete = TRUE
@@ -312,7 +312,7 @@ func (r *MoexSyncRepository) HasCompleteCoverage(ctx context.Context, dataset, e
 
 func (r *MoexSyncRepository) StartSyncRun(ctx context.Context, runID, workflowID, workflowRunID, dataset, entityKey string) error {
 	return r.db.WithContext(ctx).Exec(
-		`INSERT INTO moex_sync_runs(run_id, workflow_id, workflow_run_id, dataset, entity_key, status, started_at)
+		`INSERT INTO moex.sync_runs(run_id, workflow_id, workflow_run_id, dataset, entity_key, status, started_at)
 		 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
 		runID, workflowID, workflowRunID, dataset, entityKey, MoexSyncStatusRunning,
 	).Error
@@ -320,7 +320,7 @@ func (r *MoexSyncRepository) StartSyncRun(ctx context.Context, runID, workflowID
 
 func (r *MoexSyncRepository) FinishSyncRun(ctx context.Context, runID, status string, fetchedRows, upsertedRows int, errorText, details string) error {
 	return r.db.WithContext(ctx).Exec(
-		`UPDATE moex_sync_runs
+		`UPDATE moex.sync_runs
 		 SET status = ?, finished_at = CURRENT_TIMESTAMP, fetched_rows = ?, upserted_rows = ?, error_text = ?, details = ?
 		 WHERE run_id = ?`,
 		status, fetchedRows, upsertedRows, nullableTrimmed(errorText), nullableTrimmed(details), runID,
@@ -329,7 +329,7 @@ func (r *MoexSyncRepository) FinishSyncRun(ctx context.Context, runID, status st
 
 func (r *MoexSyncRepository) MarkSyncRunning(ctx context.Context, dataset, entityKey string) error {
 	return r.db.WithContext(ctx).Exec(
-		`INSERT INTO moex_sync_state(dataset, entity_key, status, last_attempt_at, updated_at)
+		`INSERT INTO moex.sync_state(dataset, entity_key, status, last_attempt_at, updated_at)
 		 VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 		 ON CONFLICT(dataset, entity_key)
 		 DO UPDATE SET status = excluded.status, last_attempt_at = excluded.last_attempt_at, updated_at = excluded.updated_at`,
@@ -343,13 +343,13 @@ func (r *MoexSyncRepository) MarkSyncSuccess(ctx context.Context, dataset, entit
 
 func (r *MoexSyncRepository) MarkSyncSuccessWithState(ctx context.Context, dataset, entityKey string, checkedThroughDate, immutableBeforeDate, mutableSinceDate *time.Time) error {
 	return r.db.WithContext(ctx).Exec(
-		`INSERT INTO moex_sync_state(dataset, entity_key, status, checked_through_date, immutable_before_date, mutable_since_date, last_success_at, last_attempt_at, retry_count, last_error, updated_at)
+		`INSERT INTO moex.sync_state(dataset, entity_key, status, checked_through_date, immutable_before_date, mutable_since_date, last_success_at, last_attempt_at, retry_count, last_error, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, CURRENT_TIMESTAMP)
 		 ON CONFLICT(dataset, entity_key)
 		 DO UPDATE SET status = excluded.status,
-		               checked_through_date = COALESCE(excluded.checked_through_date, moex_sync_state.checked_through_date),
-		               immutable_before_date = COALESCE(excluded.immutable_before_date, moex_sync_state.immutable_before_date),
-		               mutable_since_date = COALESCE(excluded.mutable_since_date, moex_sync_state.mutable_since_date),
+		               checked_through_date = COALESCE(excluded.checked_through_date, moex.sync_state.checked_through_date),
+		               immutable_before_date = COALESCE(excluded.immutable_before_date, moex.sync_state.immutable_before_date),
+		               mutable_since_date = COALESCE(excluded.mutable_since_date, moex.sync_state.mutable_since_date),
 		               last_success_at = excluded.last_success_at,
 		               last_attempt_at = excluded.last_attempt_at,
 		               retry_count = 0,
@@ -361,12 +361,12 @@ func (r *MoexSyncRepository) MarkSyncSuccessWithState(ctx context.Context, datas
 
 func (r *MoexSyncRepository) MarkSyncError(ctx context.Context, dataset, entityKey, errMsg string) error {
 	return r.db.WithContext(ctx).Exec(
-		`INSERT INTO moex_sync_state(dataset, entity_key, status, last_attempt_at, retry_count, last_error, updated_at)
+		`INSERT INTO moex.sync_state(dataset, entity_key, status, last_attempt_at, retry_count, last_error, updated_at)
 		 VALUES (?, ?, ?, CURRENT_TIMESTAMP, 1, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(dataset, entity_key)
 		 DO UPDATE SET status = excluded.status,
 		               last_attempt_at = excluded.last_attempt_at,
-		               retry_count = moex_sync_state.retry_count + 1,
+		               retry_count = moex.sync_state.retry_count + 1,
 		               last_error = excluded.last_error,
 		               updated_at = excluded.updated_at`,
 		dataset, entityKey, MoexSyncStatusError, strings.TrimSpace(errMsg),

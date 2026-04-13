@@ -48,7 +48,7 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to get sql.DB:", err)
 		}
-		if err := migrations.Up(sqlDB, migrations.DialectPostgres, cfg.MigrationsDir); err != nil {
+		if err := migrations.Up(sqlDB, cfg.MigrationsDir); err != nil {
 			log.Fatal("Failed to run migrations:", err)
 		}
 	}

@@ -221,22 +221,17 @@ func userIDByUsername(t *testing.T, ts *testServer, username string) int {
 func insertAuditLog(t *testing.T, ts *testServer, performedBy int, action, entityType string, entityID *int, details string, tsTime time.Time) int {
 	t.Helper()
 
-	result := ts.db.Exec(
-		"INSERT INTO audit_logs (performed_by, action, entity_type, entity_id, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+	var id int
+	if err := ts.db.Raw(
+		"INSERT INTO audit_logs (performed_by, action, entity_type, entity_id, details, timestamp) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
 		performedBy,
 		action,
 		entityType,
 		entityID,
 		details,
 		tsTime,
-	)
-	if result.Error != nil {
-		t.Fatalf("failed to insert audit log: %v", result.Error)
-	}
-
-	var id int
-	if err := ts.db.Raw("SELECT last_insert_rowid()").Scan(&id).Error; err != nil {
-		t.Fatalf("failed to read audit log id: %v", err)
+	).Scan(&id).Error; err != nil {
+		t.Fatalf("failed to insert audit log: %v", err)
 	}
 	return id
 }

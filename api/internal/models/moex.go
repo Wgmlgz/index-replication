@@ -16,7 +16,7 @@ type MoexIndexDB struct {
 }
 
 func (MoexIndexDB) TableName() string {
-	return "moex_indexes"
+	return "moex.indexes"
 }
 
 type MoexIndexCollectionDB struct {
@@ -28,7 +28,7 @@ type MoexIndexCollectionDB struct {
 }
 
 func (MoexIndexCollectionDB) TableName() string {
-	return "moex_index_collections"
+	return "moex.index_collections"
 }
 
 type MoexIndexCollectionMembershipDB struct {
@@ -38,7 +38,7 @@ type MoexIndexCollectionMembershipDB struct {
 }
 
 func (MoexIndexCollectionMembershipDB) TableName() string {
-	return "moex_index_collection_memberships"
+	return "moex.index_collection_memberships"
 }
 
 type MoexIndexHistoryDailyDB struct {
@@ -53,7 +53,7 @@ type MoexIndexHistoryDailyDB struct {
 }
 
 func (MoexIndexHistoryDailyDB) TableName() string {
-	return "moex_index_history_daily"
+	return "moex.index_history_daily"
 }
 
 type MoexSecurityHistoryDailyDB struct {
@@ -69,7 +69,7 @@ type MoexSecurityHistoryDailyDB struct {
 }
 
 func (MoexSecurityHistoryDailyDB) TableName() string {
-	return "moex_security_history_daily"
+	return "moex.security_history_daily"
 }
 
 type PortfolioInstrumentMappingDB struct {
@@ -99,7 +99,7 @@ type MoexIndexCompositionDailyDB struct {
 }
 
 func (MoexIndexCompositionDailyDB) TableName() string {
-	return "moex_index_composition_daily"
+	return "moex.index_composition_daily"
 }
 
 type MoexSyncState struct {
