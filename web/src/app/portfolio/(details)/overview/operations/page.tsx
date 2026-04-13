@@ -46,7 +46,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const DEFAULT_OPERATIONS_PAGE_SIZE = 50;
+const DEFAULT_OPERATIONS_PAGE_SIZE = 20;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
 const TICKER_LIKE_PATTERN = /^[A-Za-z0-9._-]{1,12}$/;
 
