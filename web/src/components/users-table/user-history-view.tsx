@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { UserHistory } from '@/components/user-history/user-history';
-import { ArrowLeft } from 'lucide-react';
 import { usersApi as api } from '@/lib/api';
 import { User } from '@/components/users-table/columns';
 
@@ -14,31 +16,27 @@ interface UserHistoryViewProps {
 
 export default function UserHistoryView({ userId }: UserHistoryViewProps) {
   const router = useRouter();
-  const uid = parseInt(userId);
+  const { t } = useTranslation();
+  const uid = Number(userId);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
-    if (!uid || isNaN(uid)) {
+    if (!Number.isInteger(uid) || uid <= 0) {
       router.push('/users');
       return;
     }
+
     try {
       setIsLoading(true);
-      const response = await api.usersGet(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      );
-      if (response.status === 200 && response.data.users) {
-        const found = response.data.users.find(u => u.id === uid);
-        setUser(found || null);
-        if (!found) {
-          router.push('/users');
-        }
+      const response = await api.usersIdGet(uid);
+      if (response.status === 200 && response.data) {
+        setUser(response.data);
+        return;
       }
+      router.push('/users');
+    } catch {
+      router.push('/users');
     } finally {
       setIsLoading(false);
     }
@@ -50,9 +48,9 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
 
   if (isLoading) {
     return (
-      <div className='container mx-auto py-6'>
+      <div className='py-6'>
         <div className='text-center'>
-          <h1 className='text-2xl font-bold'>Загрузка...</h1>
+          <h1 className='text-2xl font-bold'>{t('auditLogs.userHistoryView.loading')}</h1>
         </div>
       </div>
     );
@@ -60,13 +58,13 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
 
   if (!user) {
     return (
-      <div className='container mx-auto py-6'>
+      <div className='py-6'>
         <div className='text-center'>
-          <h1 className='text-2xl font-bold text-red-600'>
-            Пользователь не найден
+          <h1 className='text-2xl font-bold text-destructive'>
+            {t('auditLogs.userHistoryView.notFoundTitle')}
           </h1>
-          <p className='text-gray-600 mt-2'>
-            Предоставленный ID пользователя не существует.
+          <p className='mt-2 text-muted-foreground'>
+            {t('auditLogs.userHistoryView.notFoundDescription')}
           </p>
           <Button
             className='mt-4'
@@ -74,7 +72,7 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
             variant='outline'
           >
             <ArrowLeft className='mr-2' />
-            Назад к пользователям
+            {t('auditLogs.userHistoryView.backToUsers')}
           </Button>
         </div>
       </div>
@@ -82,17 +80,16 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
   }
 
   return (
-    <div className='container mx-auto py-6'>
-      <div className='mb-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold'>История пользователя</h1>
-            <p className='text-gray-600 mt-2'>
+    <div className='space-y-6 py-6'>
+      <div>
+        <div className='flex items-center justify-between gap-3'>
+          <div className='space-y-2'>
+            <h1 className='text-3xl font-bold'>{t('auditLogs.userHistoryView.title')}</h1>
+            <p className='text-muted-foreground'>
               {user.full_name} ({user.username})
             </p>
-            <p className='text-sm text-gray-500'>
-              Просмотрите подробную историю действий, выполненных в отношении
-              этого пользователя
+            <p className='text-sm text-muted-foreground'>
+              {t('auditLogs.userHistoryView.description')}
             </p>
           </div>
           <Button
@@ -101,8 +98,8 @@ export default function UserHistoryView({ userId }: UserHistoryViewProps) {
             onClick={() => router.back()}
             className='flex items-center gap-2'
           >
-            <ArrowLeft className='w-4 h-4' />
-            Назад
+            <ArrowLeft className='h-4 w-4' />
+            {t('auditLogs.userHistoryView.back')}
           </Button>
         </div>
       </div>

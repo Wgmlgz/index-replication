@@ -7,6 +7,7 @@ import (
 	"server/internal/config"
 	"server/internal/repository"
 	"server/internal/services"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -43,8 +44,10 @@ func NewAuditLogHandler(
 //	@Param			entity_type		query		string	false	"Entity type filter"
 //	@Param			entity_id		query		string	false	"Entity id filter"
 //	@Param			performed_by	query		int		false	"Performed by user ID filter"
-//	@Param			start_date		query		string	false	"Start date (RFC3339)"
-//	@Param			end_date		query		string	false	"End date (RFC3339)"
+//	@Param			start_date		query		string	false	"Start date (RFC3339 or YYYY-MM-DD)"
+//	@Param			end_date		query		string	false	"End date (RFC3339 or YYYY-MM-DD)"
+//	@Param			sort_by			query		string	false	"Sort field (id, action, entity_type, performed_by, timestamp)"
+//	@Param			sort_dir		query		string	false	"Sort direction (asc, desc)"
 //	@Success		200				{object}	dto.AuditLogListResponse
 //	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/audit-logs [get]
@@ -71,22 +74,14 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 	entityType := c.Query("entity_type")
 	entityId := c.Query("entity_id")
 	performedBy := c.Query("performed_by")
+	sortBy := strings.TrimSpace(c.DefaultQuery("sort_by", "timestamp"))
+	sortDir := strings.TrimSpace(c.DefaultQuery("sort_dir", "desc"))
 
-	var startDate *time.Time
-	if c.Query("start_date") != "" {
-		if start, err := time.Parse(time.RFC3339, c.Query("start_date")); err == nil {
-			startDate = &start
-		}
-	}
-	var endDate *time.Time
-	if c.Query("end_date") != "" {
-		if start, err := time.Parse(time.RFC3339, c.Query("end_date")); err == nil {
-			startDate = &start
-		}
-	}
+	startDate := parseAuditFilterDate(c.Query("start_date"), false)
+	endDate := parseAuditFilterDate(c.Query("end_date"), true)
 
 	auditLogs, total, err := h.repo.ListAuditLogs(
-		page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate,
+		page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, sortBy, sortDir,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
@@ -139,4 +134,24 @@ func (h *AuditLogHandler) GetAuditLog(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.NewAuditLogResponse(log))
+}
+
+func parseAuditFilterDate(value string, dateOnlyEndExclusive bool) *time.Time {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+
+	if parsed, err := time.Parse(time.RFC3339, trimmed); err == nil {
+		return &parsed
+	}
+
+	if parsedDate, err := time.ParseInLocation("2006-01-02", trimmed, time.UTC); err == nil {
+		if dateOnlyEndExclusive {
+			parsedDate = parsedDate.AddDate(0, 0, 1)
+		}
+		return &parsedDate
+	}
+
+	return nil
 }

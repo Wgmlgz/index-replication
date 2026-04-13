@@ -1,19 +1,25 @@
 'use client';
+
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import JsonView from '@uiw/react-json-view';
 import ReactDiffViewer from 'react-diff-viewer-continued';
-import { useMemo, useState } from 'react';
+import { Eye } from 'lucide-react';
+
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye } from 'lucide-react';
 import { Time } from '../ui/time';
-import { actionColors, actionLabels } from '@/lib/logs';
 import { AuditLogResponse } from '@/api-client';
+import {
+  actionColors,
+  getActionLabel,
+  getEntityTypeLabel,
+} from '@/lib/logs';
 
 interface DetailsPopupProps {
   auditLog: AuditLogResponse | null;
@@ -26,7 +32,8 @@ export function DetailsPopup({
   open,
   onOpenChange,
 }: DetailsPopupProps) {
-  const [diffFormat, setDiffFormat] = useState<'yaml' | 'toml'>('yaml');
+  const { t } = useTranslation();
+
   const details = auditLog?.details ?? null;
   const parsedDetails = useMemo(() => {
     if (!details) {
@@ -38,6 +45,7 @@ export function DetailsPopup({
       return null;
     }
   }, [details]);
+
   const parsedDetailsObject = useMemo(() => {
     if (!parsedDetails || typeof parsedDetails !== 'object') {
       return null;
@@ -61,39 +69,44 @@ export function DetailsPopup({
     };
   }, [parsedDetails]);
 
-  if (!auditLog) return null;
+  if (!auditLog) {
+    return null;
+  }
 
   const action = auditLog.action;
-  const label = actionLabels[action] || action;
-  const color = actionColors[action] || 'bg-gray-100 text-gray-800';
+  const label = getActionLabel(action);
+  const color = actionColors[action] ?? 'bg-slate-100 text-slate-800';
+  const entityTypeLabel = getEntityTypeLabel(auditLog.entity_type);
+  const entityID = auditLog.entity_id ?? t('auditLogs.common.notAvailableShort');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-[1000px]! max-h-[90vh] overflow-y-auto'>
+      <DialogContent className='!max-w-5xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Eye className='h-5 w-5' />
-            Детали изменений
+            {t('auditLogs.details.title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className='space-y-6'>
-          {/* Basic Information */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
             <div className='space-y-3'>
               <div>
-                <label className='text-sm font-mediu'>Действие</label>
+                <label className='text-sm font-medium'>
+                  {t('auditLogs.details.action')}
+                </label>
                 <div className='mt-1'>
                   <Badge className={color}>{label}</Badge>
                 </div>
               </div>
 
               <div>
-                <label className='text-sm font-medium'>Тип и ID сущности</label>
+                <label className='text-sm font-medium'>
+                  {t('auditLogs.details.entity')}
+                </label>
                 <div className='mt-1 text-sm'>
-                  {auditLog.entity_type.charAt(0).toUpperCase() +
-                    auditLog.entity_type.slice(1)}
-                  ,{auditLog.entity_id || 'N/A'}
+                  {entityTypeLabel}, {entityID}
                 </div>
               </div>
             </div>
@@ -102,22 +115,23 @@ export function DetailsPopup({
               {auditLog.performed_by && (
                 <div>
                   <label className='text-sm font-medium'>
-                    Выполнено пользователем
+                    {t('auditLogs.details.performedBy')}
                   </label>
                   <div className='mt-1'>
                     <div className='text-sm font-medium'>
                       {auditLog.performed_by.full_name}
                     </div>
-                    <div className='text-sm'>
-                      @{auditLog.performed_by.username} (ID:{' '}
-                      {auditLog.performed_by.id})
+                    <div className='text-sm text-muted-foreground'>
+                      @{auditLog.performed_by.username} (ID: {auditLog.performed_by.id})
                     </div>
                   </div>
                 </div>
               )}
 
               <div>
-                <label className='text-sm font-medium'>Время</label>
+                <label className='text-sm font-medium'>
+                  {t('auditLogs.details.timestamp')}
+                </label>
                 <div>
                   <Time className='inline' time={auditLog.timestamp} />
                 </div>
@@ -125,32 +139,17 @@ export function DetailsPopup({
             </div>
           </div>
 
-          {/* Diff Viewer for old/new */}
           {diffStrings && (
             <div>
-              <div className='flex items-center gap-2 mb-2'>
-                <label className='text-sm font-medium'>Изменения</label>
-                <Button
-                  size='sm'
-                  variant={diffFormat === 'yaml' ? 'default' : 'outline'}
-                  onClick={() => setDiffFormat('yaml')}
-                >
-                  YAML
-                </Button>
-                <Button
-                  size='sm'
-                  variant={diffFormat === 'toml' ? 'default' : 'outline'}
-                  onClick={() => setDiffFormat('toml')}
-                >
-                  TOML
-                </Button>
-              </div>
+              <label className='mb-2 block text-sm font-medium'>
+                {t('auditLogs.details.changes')}
+              </label>
               <ReactDiffViewer
                 oldValue={diffStrings.old}
                 newValue={diffStrings.new}
                 splitView={true}
-                leftTitle='Было'
-                rightTitle='Стало'
+                leftTitle={t('auditLogs.details.previous')}
+                rightTitle={t('auditLogs.details.current')}
                 showDiffOnly={false}
                 styles={{
                   variables: {
@@ -167,38 +166,31 @@ export function DetailsPopup({
             </div>
           )}
 
-          {/* Details JSON (fallback) */}
           {!diffStrings && parsedDetailsObject && (
             <div>
-              <label className='text-sm font-medium mb-2 block'>
-                Изменения
+              <label className='mb-2 block text-sm font-medium'>
+                {t('auditLogs.details.changes')}
               </label>
-              <JsonView
-                value={parsedDetailsObject}
-                title='Детали'
-                className='w-full'
-              />
+              <JsonView value={parsedDetailsObject} title={t('auditLogs.details.rawJson')} />
             </div>
           )}
 
-          {/* Raw Details (if JSON parsing failed) */}
           {!parsedDetails && auditLog.details && (
             <div>
-              <label className='text-sm font-medium mb-2 block'>
-                Сырые данные
+              <label className='mb-2 block text-sm font-medium'>
+                {t('auditLogs.details.rawData')}
               </label>
-              <div className='bg-gray-50 rounded-lg border p-3'>
-                <pre className='text-sm whitespace-pre-wrap break-all'>
+              <div className='rounded-lg border bg-muted p-3'>
+                <pre className='whitespace-pre-wrap break-all text-sm'>
                   {auditLog.details}
                 </pre>
               </div>
             </div>
           )}
 
-          {/* No details */}
           {!auditLog.details && (
-            <div className='text-center py-8'>
-              Дополнительных деталей для этого действия нет.
+            <div className='py-8 text-center text-muted-foreground'>
+              {t('auditLogs.details.noDetails')}
             </div>
           )}
         </div>

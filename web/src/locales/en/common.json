@@ -927,7 +927,10 @@
   "common": {
     "error": "Error",
     "loading": "Loading...",
-    "articleUnavailable": "Article is not available for this language yet."
+    "articleUnavailable": "Article is not available for this language yet.",
+    "search": "Search",
+    "noResults": "No results.",
+    "hideBlocked": "Hide blocked"
   },
   "auth": {
     "login": {
@@ -953,5 +956,76 @@
     "notAuthorized": "Not authenticated.",
     "title": "Integrations",
     "description": "Manage external connections and credentials in one place."
+  },
+  "auditLogs": {
+    "page": {
+      "title": "Audit logs",
+      "description": "Review system activity and inspect full event details.",
+      "notAuthorized": "You do not have permission to view audit logs."
+    },
+    "common": {
+      "notAvailableShort": "N/A"
+    },
+    "filters": {
+      "title": "Filters",
+      "showButton": "Show filters",
+      "hideButton": "Hide filters",
+      "clearButton": "Clear",
+      "applyButton": "Apply",
+      "action": "Action",
+      "entityType": "Entity type",
+      "entityId": "Entity ID",
+      "entityIdPlaceholder": "Enter entity ID",
+      "allActions": "All actions",
+      "allEntityTypes": "All entity types",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "user": {
+        "label": "Performed by",
+        "notSelected": "No user selected",
+        "selectButton": "Select user",
+        "clearButton": "Clear selected user",
+        "dialogTitle": "Select user",
+        "dialogDescription": "Choose a user from the list.",
+        "selected": "Selected: {{fullName}} ({{username}})"
+      }
+    },
+    "table": {
+      "searchPlaceholder": "Search audit logs...",
+      "exportButton": "Download JSON",
+      "viewDetails": "View details",
+      "columns": {
+        "action": "Action",
+        "entity": "Entity, ID",
+        "performedBy": "Performed by",
+        "timestamp": "Time"
+      }
+    },
+    "details": {
+      "title": "Event details",
+      "action": "Action",
+      "entity": "Entity and ID",
+      "performedBy": "Performed by",
+      "timestamp": "Timestamp",
+      "changes": "Changes",
+      "previous": "Previous",
+      "current": "Current",
+      "rawJson": "Details",
+      "rawData": "Raw data",
+      "noDetails": "No additional details are available for this event."
+    },
+    "userHistory": {
+      "title": "User history",
+      "searchPlaceholder": "Search user history..."
+    },
+    "userHistoryView": {
+      "title": "User history",
+      "description": "Review detailed audit events related to this user.",
+      "loading": "Loading...",
+      "notFoundTitle": "User not found",
+      "notFoundDescription": "The provided user ID does not exist.",
+      "backToUsers": "Back to users",
+      "back": "Back"
+    }
   }
 }

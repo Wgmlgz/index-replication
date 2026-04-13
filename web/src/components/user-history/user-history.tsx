@@ -1,69 +1,86 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { DataTable } from "../ui/data-table/data-table"
-import { columns } from "../audit-logs-table/columns"
-import { type AuditLog } from "../audit-logs-table/columns"
-import { PaginationState, SortingState } from "@tanstack/react-table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { User } from "lucide-react"
-import { DetailsPopup } from "../audit-logs-table/details-popup"
-import { auditLogsApi as api } from "@/lib/api";
-import type { AuditLogResponse } from "@/api-client";
+import { useCallback, useState } from 'react';
+import { PaginationState, SortingState } from '@tanstack/react-table';
+import { User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+import { auditLogsApi as api } from '@/lib/api';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DetailsPopup } from '@/components/audit-logs-table/details-popup';
+import {
+  useAuditLogColumns,
+  type AuditLog,
+} from '@/components/audit-logs-table/columns';
+import type { AuditLogResponse } from '@/api-client';
 
 const fetchUserHistory = async (
   userId: number,
-  pagination: PaginationState, 
-  sorting: SortingState, 
+  pagination: PaginationState,
+  sorting: SortingState,
   search: string
 ) => {
-  const params = {
-    page: pagination.pageIndex + 1,
-    pageSize: pagination.pageSize,
-    sortBy: sorting[0]?.id || "timestamp",
-    sortDir: (sorting[0]?.desc ?? true) ? "desc" : "asc",
-    userId,
-    search,
-    entityType: "user",
-  };
-  const response = await api.auditLogsGet(params.page, params.pageSize, params.search, undefined, params.entityType, String(params.userId));
+  const sort = sorting[0];
+  const response = await api.auditLogsGet(
+    pagination.pageIndex + 1,
+    pagination.pageSize,
+    search || undefined,
+    undefined,
+    'user',
+    String(userId),
+    undefined,
+    undefined,
+    undefined,
+    {
+      params: {
+        sort_by: sort?.id,
+        sort_dir: sort?.desc ? 'desc' : 'asc',
+      },
+    }
+  );
+
   if (response.status === 200 && response.data) {
     const data = response.data;
     return { data: data.logs ?? [], total: data.total ?? 0 };
   }
   return { data: [], total: 0 };
-}
+};
 
 export type UserHistoryProps = {
-  userId: number
-  userName?: string
-}
+  userId: number;
+  userName?: string;
+};
 
 export function UserHistory({ userId, userName }: UserHistoryProps) {
-  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null)
-  const [detailsOpen, setDetailsOpen] = useState(false)
+  const { t } = useTranslation();
+  const columns = useAuditLogColumns();
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const fetchUserHistoryWithId = async (
-    pagination: PaginationState, 
-    sorting: SortingState, 
-    search: string
-  ) => {
-    const result = await fetchUserHistory(userId, pagination, sorting, search)
-    return {
-      ...result,
-      data: result.data.map((auditLog: AuditLogResponse) => ({
-        ...auditLog,
-        onViewDetails: (log: AuditLog) => {
-          setSelectedAuditLog(log)
-          setDetailsOpen(true)
-        },
-      })),
-    }
-  }
+  const fetchUserHistoryWithId = useCallback(
+    async (
+      pagination: PaginationState,
+      sorting: SortingState,
+      search: string
+    ) => {
+      const result = await fetchUserHistory(userId, pagination, sorting, search);
+      return {
+        ...result,
+        data: result.data.map((auditLog: AuditLogResponse) => ({
+          ...auditLog,
+          onViewDetails: (log: AuditLog) => {
+            setSelectedAuditLog(log);
+            setDetailsOpen(true);
+          },
+        })),
+      };
+    },
+    [userId]
+  );
 
   return (
-    <div className="container mx-auto space-y-4">
-      {/* Details Popup */}
+    <div className='space-y-4'>
       <DetailsPopup
         auditLog={selectedAuditLog}
         open={detailsOpen}
@@ -72,11 +89,11 @@ export function UserHistory({ userId, userName }: UserHistoryProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            История пользователя
+          <CardTitle className='flex items-center gap-2'>
+            <User className='h-5 w-5' />
+            {t('auditLogs.userHistory.title')}
             {userName && (
-              <span className="text-lg font-normal text-gray-600">
+              <span className='text-lg font-normal text-muted-foreground'>
                 - {userName}
               </span>
             )}
@@ -84,17 +101,17 @@ export function UserHistory({ userId, userName }: UserHistoryProps) {
         </CardHeader>
         <CardContent>
           <DataTable
-            filterPlaceholder="Поиск в истории пользователя..."
+            filterPlaceholder={t('auditLogs.userHistory.searchPlaceholder')}
             columns={columns}
             fetchData={fetchUserHistoryWithId}
             extraTableOptions={{
               initialState: {
-                sorting: [{ id: "timestamp", desc: true }],
+                sorting: [{ id: 'timestamp', desc: true }],
               },
             }}
           />
         </CardContent>
       </Card>
     </div>
-  )
-} 
+  );
+}

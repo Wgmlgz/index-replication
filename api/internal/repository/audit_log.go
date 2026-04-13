@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"fmt"
 	"server/internal/models"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,6 +21,7 @@ func (r *AuditLogRepository) ListAuditLogs(
 	page, pageSize int,
 	search, action, entityType, entityId, performedBy string,
 	start, end *time.Time,
+	sortBy, sortDir string,
 ) ([]models.AuditLog, int64, error) {
 	dbQuery := r.db.Model(&models.AuditLog{}).
 		Preload("PerformedByUser")
@@ -54,8 +57,29 @@ func (r *AuditLogRepository) ListAuditLogs(
 		return nil, 0, err
 	}
 
-	// sort by timestamp then id, if multiple logs happened in 1 transaction (equal timestamp, but id's still in order)
-	dbQuery = dbQuery.Order("timestamp DESC, id DESC")
+	allowedSortColumns := map[string]string{
+		"id":           "id",
+		"action":       "action",
+		"entity_type":  "entity_type",
+		"performed_by": "performed_by",
+		"timestamp":    "timestamp",
+	}
+	sortColumn, ok := allowedSortColumns[sortBy]
+	if !ok {
+		sortColumn = "timestamp"
+	}
+
+	direction := "DESC"
+	if strings.EqualFold(sortDir, "asc") {
+		direction = "ASC"
+	}
+
+	if sortColumn == "timestamp" {
+		// Keep stable ordering when logs share the same timestamp.
+		dbQuery = dbQuery.Order(fmt.Sprintf("timestamp %s, id %s", direction, direction))
+	} else {
+		dbQuery = dbQuery.Order(fmt.Sprintf("%s %s, id DESC", sortColumn, direction))
+	}
 	dbQuery = dbQuery.Offset((page - 1) * pageSize).Limit(pageSize)
 
 	var auditLogs []models.AuditLog

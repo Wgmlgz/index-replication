@@ -128,17 +128,25 @@ export const buildCompositionLegendRows = (
   series: CompositionSeries[],
   snapshotItems: CompositionSnapshotItem[]
 ): CompositionLegendRow[] => {
+  const seriesByTicker = new Map(series.map(item => [item.id, item]));
   const snapshotByTicker = new Map(snapshotItems.map(item => [item.ticker, item]));
+  const orderedTickers = [
+    ...series.map(item => item.id),
+    ...snapshotItems
+      .map(item => item.ticker)
+      .filter(ticker => !seriesByTicker.has(ticker)),
+  ];
 
-  return series.map(item => {
-    const latestPoint = item.data[item.data.length - 1];
-    const snapshotPoint = snapshotByTicker.get(item.id);
+  return orderedTickers.map(ticker => {
+    const seriesItem = seriesByTicker.get(ticker);
+    const latestPoint = seriesItem?.data[seriesItem.data.length - 1];
+    const snapshotPoint = snapshotByTicker.get(ticker);
 
     return {
-      ticker: item.id,
-      name: item.name,
+      ticker,
+      name: seriesItem?.name ?? snapshotPoint?.name ?? ticker,
       latestWeight: latestPoint?.value ?? null,
-      latestDate: latestPoint?.time ?? null,
+      latestDate: latestPoint?.time ?? snapshotPoint?.tradeDate ?? null,
       snapshotWeight: snapshotPoint?.weight ?? null,
     };
   });

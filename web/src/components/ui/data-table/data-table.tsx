@@ -27,6 +27,7 @@ import { SearchInput } from '../search-input';
 import { Button } from '../button';
 import { Switch } from '../switch';
 import { Label } from '../label';
+import { useTranslation } from 'react-i18next';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -68,6 +69,7 @@ export function DataTable<TData, TValue>({
   fetchData,
   enableHideBlocked,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation();
   const [data, setData] = useState<TData[]>([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState<string>('');
@@ -148,12 +150,12 @@ export function DataTable<TData, TValue>({
                 checked={!!hideBlocked}
                 onCheckedChange={setHideBlocked}
               />
-              <Label className=''>Скрыть заблокированные</Label>
+              <Label className=''>{t('common.hideBlocked')}</Label>
             </div>
           </div>
         )}
         <Button variant='outline' onClick={() => void doFetch()}>
-          Поиск
+          {t('common.search')}
         </Button>
         {/* <Input
           placeholder={filterPlaceholder}
@@ -210,7 +212,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className='h-24 text-center'
                 >
-                  Нет результатов.
+                  {t('common.noResults')}
                 </TableCell>
               </TableRow>
             )}
