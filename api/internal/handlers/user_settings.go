@@ -7,6 +7,7 @@ import (
 
 	"server/internal/api/dto"
 	"server/internal/repository"
+	"server/internal/usersettings"
 	"server/internal/utils"
 )
 
@@ -70,7 +71,7 @@ func (h *UserSettingsHandler) PatchSettings(c *gin.Context) {
 	}
 
 	if req.Values != nil {
-		if err := h.repo.UpsertSettings(userID, *req.Values); err != nil {
+		if err := h.repo.UpsertSettings(userID, usersettings.NormalizePatchValues(*req.Values)); err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 			return
 		}

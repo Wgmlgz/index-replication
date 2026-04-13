@@ -58,7 +58,6 @@ import { RebalanceDraftCreateForm } from './rebalance-draft-create-form';
 import { RebalanceDraftDetailCard } from './rebalance-draft-detail-card';
 import {
   canExecuteRunStatus,
-  hasStatusState,
   isRunExecutionInProgress,
   isRunPlanningInProgress,
   runStatusBadgeIconKey,
@@ -101,6 +100,12 @@ function parseDateTime(value: string | undefined): Date | null {
     return null;
   }
   return parsed;
+}
+
+function runSortTimestamp(run: PortfolioRebalanceRun): number {
+  const value = run.started_at || run.created_at || '';
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : -1;
 }
 
 function executeButtonLabel(status: string | undefined, t: TFunction): string {
@@ -178,6 +183,24 @@ export default function PortfolioReplicationDraftsPage() {
     () => parseRebalanceID(searchParams.get('rebalance_id')),
     [searchParams],
   );
+  const latestRebalanceID = useMemo(() => {
+    if (rebalanceRuns.length === 0) {
+      return null;
+    }
+    const latestRun = rebalanceRuns.reduce((latest, candidate) => {
+      const latestTs = runSortTimestamp(latest);
+      const candidateTs = runSortTimestamp(candidate);
+      if (candidateTs !== latestTs) {
+        return candidateTs > latestTs ? candidate : latest;
+      }
+      const latestID = typeof latest.id === 'number' ? latest.id : 0;
+      const candidateID = typeof candidate.id === 'number' ? candidate.id : 0;
+      return candidateID > latestID ? candidate : latest;
+    });
+    return typeof latestRun.id === 'number' && latestRun.id > 0
+      ? latestRun.id
+      : null;
+  }, [rebalanceRuns]);
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
@@ -211,9 +234,8 @@ export default function PortfolioReplicationDraftsPage() {
     clearStatus,
   } = useRebalanceStatus({
     portfolioID,
-    rebalanceID: selectedRebalanceID,
-    detailDialogOpen,
-    enabled: hasStatusState(rebalanceDetail?.run?.status),
+    rebalanceID: latestRebalanceID,
+    enabled: Boolean(latestRebalanceID),
     t,
     parseErrorMessage,
     onRunUpdate: applyRunUpdate,
@@ -414,7 +436,23 @@ export default function PortfolioReplicationDraftsPage() {
     t,
   ]);
 
-  const selectedRun = status?.run ?? rebalanceDetail?.run;
+  const selectedRun = useMemo(() => {
+    if (!selectedRebalanceID) {
+      return null;
+    }
+    const liveRun = status?.run;
+    if (liveRun?.id === selectedRebalanceID) {
+      return liveRun;
+    }
+    if (rebalanceDetail?.run?.id === selectedRebalanceID) {
+      return rebalanceDetail.run;
+    }
+    return rebalanceRuns.find(run => run.id === selectedRebalanceID) ?? null;
+  }, [rebalanceDetail?.run, rebalanceRuns, selectedRebalanceID, status?.run]);
+  const selectedLiveStatus = status?.run?.id === selectedRebalanceID ? status : null;
+  const selectedLiveStatusLoading = status?.run?.id === selectedRebalanceID
+    ? statusLoading
+    : false;
   const selectedEntityLabel = selectedRun
     ? selectedRun.status === 'draft'
       ? t('portfolio.replication.rebalances.entity.draft')
@@ -484,7 +522,11 @@ export default function PortfolioReplicationDraftsPage() {
         if (run) {
           applyRunUpdate(run);
         }
-        if (selectedRebalanceID === runID && detailDialogOpen) {
+        if (
+          selectedRebalanceID === runID &&
+          detailDialogOpen &&
+          runID === latestRebalanceID
+        ) {
           await refreshStatus();
         }
       } catch (err) {
@@ -523,6 +565,7 @@ export default function PortfolioReplicationDraftsPage() {
     [
       applyRunUpdate,
       detailDialogOpen,
+      latestRebalanceID,
       parseErrorMessage,
       portfolioID,
       refreshStatus,
@@ -951,8 +994,8 @@ export default function PortfolioReplicationDraftsPage() {
               rebalanceDetail ? (
                 <RebalanceDraftDetailCard
                   detail={rebalanceDetail}
-                  status={status}
-                  statusLoading={statusLoading}
+                  status={selectedLiveStatus}
+                  statusLoading={selectedLiveStatusLoading}
                   language={i18n.language || 'en'}
                 />
               ) : null}

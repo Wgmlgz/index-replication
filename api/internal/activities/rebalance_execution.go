@@ -15,6 +15,7 @@ import (
 	"server/internal/notifications"
 	"server/internal/portfolio"
 	"server/internal/repository"
+	"server/internal/usersettings"
 	"server/internal/workflows"
 
 	"github.com/google/uuid"
@@ -31,21 +32,28 @@ type rebalanceNotificationSender interface {
 	Send(ctx context.Context, req notifications.SendRequest) error
 }
 
+type rebalanceUserSettingsReader interface {
+	GetSettings(userID int) (map[string]string, error)
+}
+
 type RebalanceExecutionActivities struct {
 	runsRepo         *repository.PortfolioRebalancesRepository
 	portfolioService rebalanceActionRunner
 	notifier         rebalanceNotificationSender
+	userSettingsRepo rebalanceUserSettingsReader
 }
 
 func NewRebalanceExecutionActivities(
 	runsRepo *repository.PortfolioRebalancesRepository,
 	portfolioService *portfolio.Service,
 	notifier rebalanceNotificationSender,
+	userSettingsRepo rebalanceUserSettingsReader,
 ) *RebalanceExecutionActivities {
 	return &RebalanceExecutionActivities{
 		runsRepo:         runsRepo,
 		portfolioService: portfolioService,
 		notifier:         notifier,
+		userSettingsRepo: userSettingsRepo,
 	}
 }
 
@@ -394,24 +402,31 @@ func (a *RebalanceExecutionActivities) sendExecutionStartedNotification(
 	if run != nil {
 		provider = strings.TrimSpace(run.Provider)
 	}
-
-	lines := []string{
-		fmt.Sprintf("Portfolio #%d", params.PortfolioID),
-		fmt.Sprintf("Planned items: %d", totalItems),
-	}
-	if provider != "" {
-		lines = append(lines, fmt.Sprintf("Provider: %s", provider))
-	}
-	if asOf != "" {
-		lines = append(lines, fmt.Sprintf("As-of: %s", asOf))
+	language := a.resolveNotificationLanguage(params.UserID)
+	message, err := notifications.BuildRebalanceExecutionStartedMessage(
+		language,
+		notifications.RebalanceExecutionStartedTemplateData{
+			RunID:        params.RunID,
+			PortfolioID:  params.PortfolioID,
+			PlannedItems: totalItems,
+			Provider:     provider,
+			AsOfDate:     asOf,
+		},
+	)
+	if err != nil {
+		log.Printf(
+			"rebalance execution: failed to render start template user_id=%d portfolio_id=%d run_id=%d err=%v",
+			params.UserID,
+			params.PortfolioID,
+			params.RunID,
+			err,
+		)
+		return
 	}
 
 	if err := a.notifier.Send(ctx, notifications.SendRequest{
-		UserID: params.UserID,
-		Message: notifications.Message{
-			Subject: fmt.Sprintf("Rebalance execution started: run #%d", params.RunID),
-			Body:    strings.Join(lines, "\n"),
-		},
+		UserID:  params.UserID,
+		Message: message,
 	}); err != nil {
 		log.Printf(
 			"rebalance execution: failed to send start notification user_id=%d portfolio_id=%d run_id=%d err=%v",
@@ -436,27 +451,39 @@ func (a *RebalanceExecutionActivities) sendExecutionFinishedNotification(
 	if status == "" {
 		status = models.PortfolioRebalanceRunStatusFailed
 	}
-	subject := fmt.Sprintf("Rebalance execution finished (%s): run #%d", status, params.RunID)
 
 	asOf := ""
 	if run != nil && !run.AsOfDate.IsZero() {
 		asOf = run.AsOfDate.UTC().Format("2006-01-02")
 	}
-	summary := buildExecutionNotificationSummary(result.Progress)
-	lines := []string{
-		fmt.Sprintf("Portfolio #%d", params.PortfolioID),
-		fmt.Sprintf("Summary: %s", summary),
-	}
-	if asOf != "" {
-		lines = append(lines, fmt.Sprintf("As-of: %s", asOf))
+	language := a.resolveNotificationLanguage(params.UserID)
+	message, err := notifications.BuildRebalanceExecutionFinishedMessage(
+		language,
+		notifications.RebalanceExecutionFinishedTemplateData{
+			RunID:           params.RunID,
+			PortfolioID:     params.PortfolioID,
+			Status:          status,
+			TotalItems:      result.Progress.TotalItems,
+			CompletedItems:  result.Progress.CompletedItems,
+			FailedItems:     result.Progress.FailedItems,
+			UnresolvedItems: result.Progress.UnresolvedItems,
+			AsOfDate:        asOf,
+		},
+	)
+	if err != nil {
+		log.Printf(
+			"rebalance execution: failed to render completion template user_id=%d portfolio_id=%d run_id=%d err=%v",
+			params.UserID,
+			params.PortfolioID,
+			params.RunID,
+			err,
+		)
+		return
 	}
 
 	if err := a.notifier.Send(ctx, notifications.SendRequest{
-		UserID: params.UserID,
-		Message: notifications.Message{
-			Subject: subject,
-			Body:    strings.Join(lines, "\n"),
-		},
+		UserID:  params.UserID,
+		Message: message,
 	}); err != nil {
 		log.Printf(
 			"rebalance execution: failed to send completion notification user_id=%d portfolio_id=%d run_id=%d err=%v",
@@ -468,14 +495,16 @@ func (a *RebalanceExecutionActivities) sendExecutionFinishedNotification(
 	}
 }
 
-func buildExecutionNotificationSummary(progress workflows.RebalanceExecutionProgress) string {
-	return fmt.Sprintf(
-		"total %d, completed %d, failed %d, unresolved %d",
-		progress.TotalItems,
-		progress.CompletedItems,
-		progress.FailedItems,
-		progress.UnresolvedItems,
-	)
+func (a *RebalanceExecutionActivities) resolveNotificationLanguage(userID int) string {
+	if userID <= 0 || a == nil || a.userSettingsRepo == nil {
+		return usersettings.DefaultLanguage
+	}
+	values, err := a.userSettingsRepo.GetSettings(userID)
+	if err != nil {
+		log.Printf("rebalance execution: failed to read user settings user_id=%d err=%v", userID, err)
+		return usersettings.DefaultLanguage
+	}
+	return usersettings.ResolveLanguage(values)
 }
 
 func (a *RebalanceExecutionActivities) failItem(

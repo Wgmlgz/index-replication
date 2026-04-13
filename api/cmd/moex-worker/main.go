@@ -119,6 +119,7 @@ func main() {
 		repos.PortfolioRebalancesRepo,
 		portfolioService,
 		notificationService,
+		repos.UserSettingsRepo,
 	)
 	rebalanceScheduleDispatchService := rebalance.NewScheduleDispatchService(
 		repos.PortfolioRebalanceSchedulesRepo,

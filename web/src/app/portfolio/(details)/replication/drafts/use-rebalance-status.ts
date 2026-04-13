@@ -8,11 +8,7 @@ import type {
   PortfolioRebalanceRun,
 } from '@/api-client';
 import { portfolioApi } from '@/lib/api';
-import {
-  STATUS_POLLING_MS,
-  isRunPlanningInProgress,
-  isRunExecutionInProgress,
-} from './rebalance-status-utils';
+import { STATUS_POLLING_MS } from './rebalance-status-utils';
 
 type LoadStatusOptions = {
   silent?: boolean;
@@ -21,7 +17,6 @@ type LoadStatusOptions = {
 type UseRebalanceStatusParams = {
   portfolioID: number | null;
   rebalanceID: number | null;
-  detailDialogOpen: boolean;
   enabled: boolean;
   t: TFunction;
   parseErrorMessage: (error: unknown, fallback: string) => string;
@@ -31,7 +26,6 @@ type UseRebalanceStatusParams = {
 export function useRebalanceStatus({
   portfolioID,
   rebalanceID,
-  detailDialogOpen,
   enabled,
   t,
   parseErrorMessage,
@@ -93,18 +87,14 @@ export function useRebalanceStatus({
   }, [clearStatus, portfolioID, rebalanceID]);
 
   useEffect(() => {
-    if (!enabled || !detailDialogOpen || !portfolioID || !rebalanceID) {
+    if (!enabled || !portfolioID || !rebalanceID) {
       return;
     }
     void refreshStatus();
-  }, [detailDialogOpen, enabled, portfolioID, rebalanceID, refreshStatus]);
+  }, [enabled, portfolioID, rebalanceID, refreshStatus]);
 
   useEffect(() => {
-    if (!enabled || !detailDialogOpen || !portfolioID || !rebalanceID) {
-      return;
-    }
-    const runStatus = status?.run?.status;
-    if (!isRunPlanningInProgress(runStatus) && !isRunExecutionInProgress(runStatus)) {
+    if (!enabled || !portfolioID || !rebalanceID) {
       return;
     }
     const timerID = window.setInterval(() => {
@@ -113,14 +103,7 @@ export function useRebalanceStatus({
     return () => {
       window.clearInterval(timerID);
     };
-  }, [
-    detailDialogOpen,
-    enabled,
-    status?.run?.status,
-    portfolioID,
-    rebalanceID,
-    refreshStatus,
-  ]);
+  }, [enabled, portfolioID, rebalanceID, refreshStatus]);
 
   return {
     status,
