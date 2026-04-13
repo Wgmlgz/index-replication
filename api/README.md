@@ -114,6 +114,7 @@ Environment variables live in `.env`. Key settings:
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)
 - `TELEGRAM_SOCKS5_PROXY` (optional; SOCKS5 proxy for Telegram API calls in format `socks5://user:pass@host:port`)
 - `TELEGRAM_POLL_TIMEOUT_SEC` (default `30`, Telegram long-poll timeout)
+- `WEB_APP_URL` (optional; absolute web app URL used in Telegram rebalance confirmation links, fallback is `http://$WEB_HOST:$TRAEFIK_PORT` when both are set)
 - `LOGIN_VERIFICATION_TTL_SECONDS` (default `300`, login challenge expiration)
 - `MOEX_MUTABLE_DAYS` (default `30`)
 - `MOEX_IMMUTABLE_BEFORE_DATE` (optional `YYYY-MM-DD`, immutable boundary)
@@ -127,7 +128,7 @@ Environment variables live in `.env`. Key settings:
 - `TEMPORAL_NAMESPACE` (default `moex-sync`)
 - `TEMPORAL_TASK_QUEUE` (default `moex-sync`)
 - `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES` (default `false`, enable only if cluster supports custom search attrs)
-- `REBALANCE_SCHEDULER_ENABLED` (default `false`, dispatch workflow no-op when disabled)
+- `REBALANCE_SCHEDULER_ENABLED` (default `true`, dispatch workflow no-op when disabled)
 
 ## Tests
 
@@ -270,6 +271,8 @@ Rebalance planning and execution:
 - Planning workflow transitions:
   - `planning_queued -> planning -> draft` on success
   - `planning_queued -> planning -> planning_failed` on planning error
+- For `execution_mode=automatic` with `confirmation_required=true`, planning success also sends Telegram confirmation
+  with transaction preview and Continue/Abort actions; Continue triggers execution queueing, Abort leaves run as `draft`.
 - `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute` starts Temporal workflow
   orchestration only for runs in `draft` or `failed` status.
 - `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status` is Temporal-driven and returns

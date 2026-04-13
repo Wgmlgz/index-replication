@@ -141,6 +141,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
+	verificationService.SetRebalanceExecutionExecutor(rebalanceService)
 	rebalanceSchedulePreviewService := rebalance.NewSchedulePreviewService(
 		repoRegistry.PortfolioProfilesRepo,
 		dayOffService,

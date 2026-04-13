@@ -20,7 +20,7 @@ type normalizedCreateRequest struct {
 func normalizeExecutionMode(raw string) (string, error) {
 	mode := strings.ToLower(strings.TrimSpace(raw))
 	if mode == "" {
-		return models.PortfolioRebalanceExecutionModeManual, nil
+		return models.PortfolioRebalanceExecutionModeAutomatic, nil
 	}
 	switch mode {
 	case models.PortfolioRebalanceExecutionModeManual, models.PortfolioRebalanceExecutionModeAutomatic:

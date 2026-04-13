@@ -10,7 +10,7 @@ import (
 const (
 	RebalanceScheduleDispatchWorkflowName          = "rebalance.schedule.dispatch"
 	RebalanceScheduleDispatchSelectDueActivityName = "rebalance.schedule.dispatch.select_due_activity"
-	defaultRebalanceDispatchWindowSeconds          = 60
+	defaultRebalanceDispatchWindowSeconds          = 24 * 60 * 60
 )
 
 type RebalanceScheduleDispatchParams struct {
@@ -42,6 +42,7 @@ type RebalanceScheduleDispatchResult struct {
 	EvaluatedSchedules int                                   `json:"evaluatedSchedules"`
 	InvalidSchedules   int                                   `json:"invalidSchedules"`
 	DueCandidates      []RebalanceScheduleDispatchCandidate  `json:"dueCandidates"`
+	OverdueCandidates  []RebalanceScheduleDispatchCandidate  `json:"overdueCandidates"`
 	ClaimedSchedules   int                                   `json:"claimedSchedules"`
 	SkippedSchedules   int                                   `json:"skippedSchedules"`
 	CreatedRuns        int                                   `json:"createdRuns"`

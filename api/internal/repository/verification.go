@@ -33,9 +33,13 @@ func (r *VerificationRepository) SaveChallenge(challenge *models.VerificationCha
 	return r.db.Save(challenge).Error
 }
 
-func (r *VerificationRepository) ExpirePendingChallenges(now time.Time) error {
-	return r.db.Model(&models.VerificationChallenge{}).
-		Where("status = ? AND expires_at <= ?", models.VerificationStatusPending, now).
+func (r *VerificationRepository) ExpirePendingChallenges(now time.Time, purpose string) error {
+	query := r.db.Model(&models.VerificationChallenge{}).
+		Where("status = ? AND expires_at <= ?", models.VerificationStatusPending, now)
+	if purpose != "" {
+		query = query.Where("purpose = ?", purpose)
+	}
+	return query.
 		Updates(map[string]interface{}{
 			"status":     models.VerificationStatusExpired,
 			"updated_at": now,

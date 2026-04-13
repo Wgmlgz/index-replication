@@ -13,6 +13,7 @@ import (
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/tbank"
+	"server/internal/telegram"
 	"server/internal/workflows"
 
 	"go.temporal.io/sdk/activity"
@@ -26,6 +27,15 @@ func main() {
 	db := config.InitDB(cfg)
 	repos := repository.NewRepositoryRegistry(db)
 	auditService := services.NewAuditService(db)
+	telegramService := telegram.NewTelegramService(cfg)
+	verificationService := telegram.NewVerificationService(
+		cfg,
+		repos.UserRepo,
+		repos.UserSettingsRepo,
+		repos.VerificationRepo,
+		auditService,
+		telegramService,
+	)
 
 	temporalClient, err := client.Dial(client.Options{
 		HostPort:  cfg.TemporalAddr,
@@ -97,6 +107,7 @@ func main() {
 		auditService,
 		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
+	rebalanceService.SetAutoExecutionConfirmationRequester(verificationService)
 	rebalancePlanningActs := activities.NewRebalancePlanningActivities(rebalanceService)
 	rebalanceActs := activities.NewRebalanceExecutionActivities(
 		repos.PortfolioRebalancesRepo,

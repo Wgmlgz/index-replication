@@ -29,6 +29,7 @@ type Config struct {
 	TelegramBotUsername            string
 	TelegramSocks5Proxy            string
 	TelegramPollTimeoutSec         int
+	WebAppURL                      string
 	LoginVerificationTTLSeconds    int
 	MoexBaseURL                    string
 	IsDayOffBaseURL                string
@@ -77,6 +78,7 @@ func LoadConfig() *Config {
 		TelegramBotUsername:            getEnv("TELEGRAM_BOT_USERNAME", ""),
 		TelegramSocks5Proxy:            getEnv("TELEGRAM_SOCKS5_PROXY", ""),
 		TelegramPollTimeoutSec:         getEnvInt("TELEGRAM_POLL_TIMEOUT_SEC", 30),
+		WebAppURL:                      resolveWebAppURL(),
 		LoginVerificationTTLSeconds:    getEnvInt("LOGIN_VERIFICATION_TTL_SECONDS", 300),
 		MoexBaseURL:                    getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),
 		IsDayOffBaseURL:                getEnv("ISDAYOFF_BASE_URL", "https://isdayoff.ru"),
@@ -85,7 +87,7 @@ func LoadConfig() *Config {
 		MoexLiveCurrentDayEnabled:      getEnvBool("MOEX_LIVE_CURRENT_DAY_ENABLED", false),
 		MoexScheduleTimezone:           getEnv("MOEX_SCHEDULE_TIMEZONE", "Europe/Moscow"),
 		MoexEnableMonthlyDeepResync:    getEnvBool("MOEX_ENABLE_MONTHLY_DEEP_RESYNC", false),
-		RebalanceSchedulerEnabled:      getEnvBool("REBALANCE_SCHEDULER_ENABLED", false),
+		RebalanceSchedulerEnabled:      getEnvBool("REBALANCE_SCHEDULER_ENABLED", true),
 		TBankInvestGrpcEndpoint:        getEnv("TBANK_INVEST_GRPC_ENDPOINT", "invest-public-api.tbank.ru:443"),
 		TBankInvestSandboxGrpcEndpoint: getEnv("TBANK_INVEST_SANDBOX_GRPC_ENDPOINT", "sandbox-invest-public-api.tbank.ru:443"),
 		TBankCACertFile:                getEnvNonEmpty("TBANK_CA_CERT_FILE", defaultTBankCACertFile()),
@@ -97,6 +99,19 @@ func LoadConfig() *Config {
 		MigrationsDir:                  getEnv("MIGRATIONS_DIR", ""),
 		GinLogFormat:                   getEnv("GIN_LOG_FORMAT", ""),
 	}
+}
+
+func resolveWebAppURL() string {
+	if explicit := strings.TrimSpace(getEnv("WEB_APP_URL", "")); explicit != "" {
+		return strings.TrimRight(explicit, "/")
+	}
+
+	host := strings.TrimSpace(getEnv("WEB_HOST", ""))
+	port := strings.TrimSpace(getEnv("TRAEFIK_PORT", ""))
+	if host == "" || port == "" {
+		return ""
+	}
+	return fmt.Sprintf("http://%s:%s", host, port)
 }
 
 func InitDB(cfg *Config) *gorm.DB {

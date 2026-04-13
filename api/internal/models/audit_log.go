@@ -48,6 +48,9 @@ const (
 	ActionPortfolioRebalanceDeleted  = "portfolio_rebalance_deleted"
 	ActionPortfolioRebalanceQueued   = "portfolio_rebalance_queued"
 	ActionPortfolioRebalanceFinished = "portfolio_rebalance_finished"
+	ActionRebalanceConfirmationSent  = "rebalance_confirmation_sent"
+	ActionRebalanceConfirmationYes   = "rebalance_confirmation_approved"
+	ActionRebalanceConfirmationNo    = "rebalance_confirmation_denied"
 )
 
 // AuditLogEntityType constants

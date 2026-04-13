@@ -3,7 +3,8 @@ package models
 import "time"
 
 const (
-	VerificationPurposeLogin = "login"
+	VerificationPurposeLogin              = "login"
+	VerificationPurposeRebalanceExecution = "rebalance_execution"
 
 	VerificationStatusPending  = "pending"
 	VerificationStatusApproved = "approved"

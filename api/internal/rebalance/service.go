@@ -39,6 +39,7 @@ type Service struct {
 	planner        plannerService
 	audit          auditLogger
 	executor       ExecutionStarter
+	autoConfirm    autoExecutionConfirmationRequester
 }
 
 func NewService(
@@ -57,6 +58,15 @@ func NewService(
 		audit:          audit,
 		executor:       executor,
 	}
+}
+
+func (s *Service) SetAutoExecutionConfirmationRequester(
+	requester autoExecutionConfirmationRequester,
+) {
+	if s == nil {
+		return
+	}
+	s.autoConfirm = requester
 }
 
 func (s *Service) CreateDraft(

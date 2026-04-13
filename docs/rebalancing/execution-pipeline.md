@@ -32,30 +32,36 @@ This document describes the end-to-end rebalance flow in general phases, from us
   - to `draft` on success
   - to `planning_failed` on planning failure
 
-5. Execution start request
+5. Automatic mode confirmation (Telegram)
+- If run is created with `execution_mode=automatic` and `confirmation_required=true`, planning worker sends Telegram confirmation request.
+- Telegram message includes run metadata, planned transaction preview, and a web link to the full draft page.
+- User confirms with `Continue` or rejects with `Abort` using Telegram inline buttons.
+- `Continue` queues execution; `Abort` keeps run in `draft`.
+
+6. Execution start request
 - User calls `POST /api/me/portfolios/:id/rebalances/:rebalanceId/execute`.
 - System validates run state (`draft` or `failed`) and queues Temporal workflow.
 - API returns run status `queued`.
 
-6. Temporal execution workflow run
+7. Temporal execution workflow run
 - Workflow `rebalance.execute` runs activity `rebalance.execute_run_activity`.
 - Activity marks run execution start and initializes in-memory execution state from planned items.
 
-7. Item execution loop
+8. Item execution loop
 - For each actionable item:
   - Resolve side and quantity.
   - Validate `instrument_id` is present.
   - Execute provider action (`buy` / `sell`) via portfolio provider abstraction.
   - Record success/failure link and heartbeat progress.
 
-8. Finalization
+9. Finalization
 - Compute final run status:
   - `completed`
   - `partially_completed`
   - `failed`
 - Mark run execution finished in DB with terminal status and `ended_at`.
 
-9. Pollable run status
+10. Pollable run status
 - UI polls `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status`.
 - While workflow is running, status is served from Temporal heartbeat.
 - After workflow completion, status is served from workflow result.

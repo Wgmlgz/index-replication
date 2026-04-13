@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultScheduleDispatchWindow     = time.Minute
+	defaultScheduleDispatchWindow     = 24 * time.Hour
 	scheduleDispatchNextRunHorizonYrs = 5
 )
 
@@ -34,6 +34,13 @@ type schedulePlanningEnqueuer interface {
 		userID int,
 		portfolioID int,
 		req *dto.PortfolioRebalanceCreateRequest,
+	) (*models.PortfolioRebalanceRun, error)
+	CreateFailedPlanningRun(
+		ctx context.Context,
+		userID int,
+		portfolioID int,
+		req *dto.PortfolioRebalanceCreateRequest,
+		reason string,
 	) (*models.PortfolioRebalanceRun, error)
 }
 
@@ -56,6 +63,7 @@ type ScheduleDispatchSelection struct {
 	EvaluatedSchedules int
 	InvalidSchedules   int
 	Candidates         []ScheduleDispatchCandidate
+	OverdueCandidates  []ScheduleDispatchCandidate
 }
 
 type ScheduleDispatchResult struct {
@@ -64,6 +72,7 @@ type ScheduleDispatchResult struct {
 	EvaluatedSchedules int
 	InvalidSchedules   int
 	Candidates         []ScheduleDispatchCandidate
+	OverdueCandidates  []ScheduleDispatchCandidate
 	ClaimedSchedules   int
 	SkippedSchedules   int
 	CreatedRuns        int
@@ -120,89 +129,134 @@ func (s *ScheduleDispatchService) DispatchDueSchedules(
 		EvaluatedSchedules: selection.EvaluatedSchedules,
 		InvalidSchedules:   selection.InvalidSchedules,
 		Candidates:         selection.Candidates,
+		OverdueCandidates:  selection.OverdueCandidates,
 		Created:            []ScheduleDispatchCreatedRun{},
 	}
 	for _, candidate := range selection.Candidates {
-		schedule, getErr := s.schedulesRepo.GetByID(candidate.ScheduleID)
-		if getErr != nil {
-			if errors.Is(getErr, gorm.ErrRecordNotFound) {
-				result.SkippedSchedules++
-				continue
-			}
-			return nil, getErr
+		if err := s.dispatchCandidate(ctx, candidate, selection.WindowStart, false, result); err != nil {
+			return nil, err
 		}
-
-		nextRunAt, nextErr := s.nextRunAtAfterDue(ctx, schedule, candidate.DueAt)
-		if nextErr != nil {
-			result.FailedRuns++
-			_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, nextErr.Error())
-			continue
+	}
+	for _, candidate := range selection.OverdueCandidates {
+		if err := s.dispatchCandidate(ctx, candidate, selection.WindowStart, true, result); err != nil {
+			return nil, err
 		}
+	}
 
-		claimed, claimErr := s.schedulesRepo.ClaimDueAndAdvanceNextRun(
+	return result, nil
+}
+
+func (s *ScheduleDispatchService) dispatchCandidate(
+	ctx context.Context,
+	candidate ScheduleDispatchCandidate,
+	windowStart time.Time,
+	isOverdue bool,
+	result *ScheduleDispatchResult,
+) error {
+	schedule, getErr := s.schedulesRepo.GetByID(candidate.ScheduleID)
+	if getErr != nil {
+		if errors.Is(getErr, gorm.ErrRecordNotFound) {
+			result.SkippedSchedules++
+			return nil
+		}
+		return getErr
+	}
+
+	nextRunAt, nextErr := s.nextRunAtAfterDue(ctx, schedule, candidate.DueAt)
+	if nextErr != nil {
+		result.FailedRuns++
+		_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, nextErr.Error())
+		return nil
+	}
+
+	claimed, claimErr := s.schedulesRepo.ClaimDueAndAdvanceNextRun(
+		ctx,
+		candidate.ScheduleID,
+		candidate.PortfolioProfileID,
+		candidate.DueAt,
+		nextRunAt,
+	)
+	if claimErr != nil {
+		return claimErr
+	}
+	if !claimed {
+		result.SkippedSchedules++
+		return nil
+	}
+	result.ClaimedSchedules++
+
+	ownerID, ownerErr := s.schedulesRepo.GetPortfolioProfileOwnerID(ctx, candidate.PortfolioProfileID)
+	if ownerErr != nil {
+		result.FailedRuns++
+		_ = s.schedulesRepo.MarkDispatchPlanningFailure(
 			ctx,
 			candidate.ScheduleID,
-			candidate.PortfolioProfileID,
-			candidate.DueAt,
-			nextRunAt,
+			fmt.Sprintf("resolve profile owner: %v", ownerErr),
 		)
-		if claimErr != nil {
-			return nil, claimErr
-		}
-		if !claimed {
-			result.SkippedSchedules++
-			continue
-		}
-		result.ClaimedSchedules++
+		return nil
+	}
 
-		ownerID, ownerErr := s.schedulesRepo.GetPortfolioProfileOwnerID(ctx, candidate.PortfolioProfileID)
-		if ownerErr != nil {
-			result.FailedRuns++
-			_ = s.schedulesRepo.MarkDispatchPlanningFailure(
-				ctx,
-				candidate.ScheduleID,
-				fmt.Sprintf("resolve profile owner: %v", ownerErr),
-			)
-			continue
-		}
-
-		run, enqueueErr := s.planner.EnqueueDraftPlanning(
-			ctx,
-			ownerID,
-			candidate.PortfolioProfileID,
-			&dto.PortfolioRebalanceCreateRequest{
-				AsOfDate: candidate.DueAt.UTC().Format("2006-01-02"),
-			},
+	request := &dto.PortfolioRebalanceCreateRequest{
+		AsOfDate: candidate.DueAt.UTC().Format("2006-01-02"),
+	}
+	if isOverdue {
+		reason := fmt.Sprintf(
+			"due_at=%s is older than dispatch window_start=%s, planning skipped",
+			candidate.DueAt.UTC().Format(time.RFC3339),
+			windowStart.UTC().Format(time.RFC3339),
 		)
-		if enqueueErr != nil {
+		run, createErr := s.planner.CreateFailedPlanningRun(ctx, ownerID, candidate.PortfolioProfileID, request, reason)
+		if createErr != nil {
 			result.FailedRuns++
-			_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, enqueueErr.Error())
-			continue
+			_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, createErr.Error())
+			return nil
 		}
 		if run == nil || run.ID <= 0 {
 			result.FailedRuns++
-			_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, "planning enqueue returned empty run")
-			continue
-		}
-
-		if markErr := s.schedulesRepo.MarkDispatchPlanningSuccess(ctx, candidate.ScheduleID, candidate.DueAt, run.ID); markErr != nil {
-			return nil, markErr
+			_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, "stale due handling returned empty run")
+			return nil
 		}
 
 		result.CreatedRuns++
+		result.FailedRuns++
 		result.Created = append(result.Created, ScheduleDispatchCreatedRun{
 			PortfolioProfileID: candidate.PortfolioProfileID,
 			ScheduleID:         candidate.ScheduleID,
 			DueAt:              candidate.DueAt.UTC(),
 			RunID:              run.ID,
 		})
+		_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, reason)
+		return nil
 	}
 
-	return result, nil
+	run, enqueueErr := s.planner.EnqueueDraftPlanning(ctx, ownerID, candidate.PortfolioProfileID, request)
+	if enqueueErr != nil {
+		result.FailedRuns++
+		_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, enqueueErr.Error())
+		return nil
+	}
+	if run == nil || run.ID <= 0 {
+		result.FailedRuns++
+		_ = s.schedulesRepo.MarkDispatchPlanningFailure(ctx, candidate.ScheduleID, "planning enqueue returned empty run")
+		return nil
+	}
+
+	if markErr := s.schedulesRepo.MarkDispatchPlanningSuccess(ctx, candidate.ScheduleID, candidate.DueAt, run.ID); markErr != nil {
+		return markErr
+	}
+
+	result.CreatedRuns++
+	result.Created = append(result.Created, ScheduleDispatchCreatedRun{
+		PortfolioProfileID: candidate.PortfolioProfileID,
+		ScheduleID:         candidate.ScheduleID,
+		DueAt:              candidate.DueAt.UTC(),
+		RunID:              run.ID,
+	})
+	return nil
 }
 
 func (s *ScheduleDispatchService) SelectDueCandidates(
-	ctx context.Context,
+	_ context.Context,
 	windowStart time.Time,
 	windowEnd time.Time,
 ) (*ScheduleDispatchSelection, error) {
@@ -230,23 +284,44 @@ func (s *ScheduleDispatchService) SelectDueCandidates(
 		WindowEnd:          windowEnd,
 		EvaluatedSchedules: len(rows),
 		Candidates:         make([]ScheduleDispatchCandidate, 0),
+		OverdueCandidates:  make([]ScheduleDispatchCandidate, 0),
 	}
 	for i := range rows {
 		schedule := rows[i]
-		result, ok, calcErr := s.calculateScheduleCandidates(ctx, schedule, windowStart, windowEnd)
-		if calcErr != nil {
-			return nil, calcErr
-		}
-		if !ok {
-			selection.InvalidSchedules++
+		if schedule.NextRunAt == nil {
 			continue
 		}
-		selection.Candidates = append(selection.Candidates, result...)
+
+		dueAt := schedule.NextRunAt.UTC()
+		if dueAt.After(windowEnd) {
+			continue
+		}
+		if dueAt.Before(windowStart) {
+			selection.OverdueCandidates = append(selection.OverdueCandidates, ScheduleDispatchCandidate{
+				PortfolioProfileID: schedule.PortfolioProfileID,
+				ScheduleID:         schedule.ID,
+				DueAt:              dueAt,
+			})
+			continue
+		}
+
+		selection.Candidates = append(selection.Candidates, ScheduleDispatchCandidate{
+			PortfolioProfileID: schedule.PortfolioProfileID,
+			ScheduleID:         schedule.ID,
+			DueAt:              dueAt,
+		})
 	}
 
-	sort.Slice(selection.Candidates, func(i, j int) bool {
-		left := selection.Candidates[i]
-		right := selection.Candidates[j]
+	sortScheduleDispatchCandidates(selection.Candidates)
+	sortScheduleDispatchCandidates(selection.OverdueCandidates)
+
+	return selection, nil
+}
+
+func sortScheduleDispatchCandidates(candidates []ScheduleDispatchCandidate) {
+	sort.Slice(candidates, func(i, j int) bool {
+		left := candidates[i]
+		right := candidates[j]
 		if left.DueAt.Equal(right.DueAt) {
 			if left.PortfolioProfileID == right.PortfolioProfileID {
 				return left.ScheduleID < right.ScheduleID
@@ -255,46 +330,6 @@ func (s *ScheduleDispatchService) SelectDueCandidates(
 		}
 		return left.DueAt.Before(right.DueAt)
 	})
-
-	return selection, nil
-}
-
-func (s *ScheduleDispatchService) calculateScheduleCandidates(
-	ctx context.Context,
-	schedule models.PortfolioRebalanceSchedule,
-	windowStart time.Time,
-	windowEnd time.Time,
-) ([]ScheduleDispatchCandidate, bool, error) {
-	from := windowStart.Add(time.Nanosecond)
-	to := windowEnd
-	limit := maximumSchedulePreviewLimit
-	req := &dto.PortfolioRebalanceSchedulePreviewRequest{
-		DtStart:               schedule.DtStart,
-		RRule:                 schedule.RRule,
-		BusinessDayAdjustment: schedule.BusinessDayAdjustment,
-		From:                  &from,
-		To:                    &to,
-		Limit:                 &limit,
-	}
-
-	plan, err := prepareSchedulePreviewPlan(req, time.Now, s.engine.location)
-	if err != nil {
-		return nil, false, nil
-	}
-	preview, err := s.engine.Calculate(ctx, *plan)
-	if err != nil {
-		return nil, false, err
-	}
-
-	candidates := make([]ScheduleDispatchCandidate, 0, len(preview.Events))
-	for _, event := range preview.Events {
-		candidates = append(candidates, ScheduleDispatchCandidate{
-			PortfolioProfileID: schedule.PortfolioProfileID,
-			ScheduleID:         schedule.ID,
-			DueAt:              event.UTC(),
-		})
-	}
-	return candidates, true, nil
 }
 
 func (s *ScheduleDispatchService) nextRunAtAfterDue(

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -19,6 +20,13 @@ import (
 
 type plannerService interface {
 	Plan(input planner.Input) (planner.Output, error)
+}
+
+type preparedPlanningRun struct {
+	runModel       *models.PortfolioRebalanceRun
+	benchmarkSecid string
+	executionMode  string
+	asOfDate       time.Time
 }
 
 func (s *Service) EnqueueDraftPlanning(
@@ -40,12 +48,91 @@ func (s *Service) EnqueueDraftPlanning(
 		return nil, ErrPlanningUnavailable
 	}
 
+	prepared, err := s.preparePlanningRun(ctx, userID, portfolioID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	savedRun, err := s.runsRepo.CreateRun(prepared.runModel)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.executor.StartRebalancePlanning(ctx, userID, portfolioID, savedRun.ID); err != nil {
+		endedAt := time.Now().UTC()
+		_ = s.runsRepo.MarkRunPlanningFailed(userID, portfolioID, savedRun.ID, endedAt)
+		s.logPlanningFailed(userID, portfolioID, prepared.executionMode, prepared.asOfDate.Format("2006-01-02"), err)
+		return nil, err
+	}
+
+	_ = s.audit.LogUserAction(userID, models.ActionPortfolioRebalanceCreated, userID, map[string]interface{}{
+		"portfolio_id":          portfolioID,
+		"rebalance_run_id":      savedRun.ID,
+		"provider":              savedRun.Provider,
+		"benchmark_secid":       prepared.benchmarkSecid,
+		"replication_mode_key":  savedRun.ReplicationModeKeySnapshot,
+		"execution_mode":        savedRun.ExecutionMode,
+		"confirmation_required": savedRun.ConfirmationRequired,
+		"status":                savedRun.Status,
+		"items_total":           0,
+	})
+
+	return savedRun, nil
+}
+
+func (s *Service) CreateFailedPlanningRun(
+	ctx context.Context,
+	userID int,
+	portfolioID int,
+	req *dto.PortfolioRebalanceCreateRequest,
+	reason string,
+) (*models.PortfolioRebalanceRun, error) {
+	if req == nil {
+		return nil, ErrInvalidRequest
+	}
+	if portfolioID <= 0 {
+		return nil, ErrInvalidProfileID
+	}
+	if s.snapshotLoader == nil || s.snapshotLoader.replicationRepo == nil {
+		return nil, ErrPlanningUnavailable
+	}
+
+	prepared, err := s.preparePlanningRun(ctx, userID, portfolioID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		reason = "planning skipped by dispatcher"
+	}
+
+	now := time.Now().UTC()
+	prepared.runModel.Status = models.PortfolioRebalanceRunStatusPlanningFailed
+	prepared.runModel.StartedAt = &now
+	prepared.runModel.EndedAt = &now
+
+	savedRun, err := s.runsRepo.CreateRun(prepared.runModel)
+	if err != nil {
+		return nil, err
+	}
+
+	s.logPlanningFailed(userID, portfolioID, prepared.executionMode, prepared.asOfDate.Format("2006-01-02"), errors.New(reason))
+	return savedRun, nil
+}
+
+func (s *Service) preparePlanningRun(
+	_ context.Context,
+	userID int,
+	portfolioID int,
+	req *dto.PortfolioRebalanceCreateRequest,
+) (*preparedPlanningRun, error) {
 	executionMode, err := normalizeExecutionMode(req.ExecutionMode)
 	if err != nil {
 		return nil, err
 	}
 	_, planningParamsSnapshot := normalizePlanningParams(req.PlanningParams)
-	confirmationRequired := executionMode == models.PortfolioRebalanceExecutionModeManual
+	confirmationRequired := true
 	if req.ConfirmationRequired != nil {
 		confirmationRequired = *req.ConfirmationRequired
 	}
@@ -116,31 +203,12 @@ func (s *Service) EnqueueDraftPlanning(
 		AsOfDate:                      asOfDate,
 	}
 
-	savedRun, err := s.runsRepo.CreateRun(runModel)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.executor.StartRebalancePlanning(ctx, userID, portfolioID, savedRun.ID); err != nil {
-		endedAt := time.Now().UTC()
-		_ = s.runsRepo.MarkRunPlanningFailed(userID, portfolioID, savedRun.ID, endedAt)
-		s.logPlanningFailed(userID, portfolioID, executionMode, asOfDate.Format("2006-01-02"), err)
-		return nil, err
-	}
-
-	_ = s.audit.LogUserAction(userID, models.ActionPortfolioRebalanceCreated, userID, map[string]interface{}{
-		"portfolio_id":          portfolioID,
-		"rebalance_run_id":      savedRun.ID,
-		"provider":              savedRun.Provider,
-		"benchmark_secid":       benchmarkSecid,
-		"replication_mode_key":  savedRun.ReplicationModeKeySnapshot,
-		"execution_mode":        savedRun.ExecutionMode,
-		"confirmation_required": savedRun.ConfirmationRequired,
-		"status":                savedRun.Status,
-		"items_total":           0,
-	})
-
-	return savedRun, nil
+	return &preparedPlanningRun{
+		runModel:       runModel,
+		benchmarkSecid: benchmarkSecid,
+		executionMode:  executionMode,
+		asOfDate:       asOfDate,
+	}, nil
 }
 
 func (s *Service) ProcessDraftPlanningRun(
@@ -357,6 +425,49 @@ func (s *Service) ProcessDraftPlanningRun(
 		models.PortfolioRebalanceRunStatusDraft,
 		planningProgressCompleted(endedAt),
 	)
+
+	if runModel.ExecutionMode == models.PortfolioRebalanceExecutionModeAutomatic {
+		if runModel.ConfirmationRequired {
+			if s.autoConfirm == nil {
+				log.Printf(
+					"rebalance planning: auto confirmation requester is not configured user_id=%d portfolio_id=%d run_id=%d",
+					userID,
+					portfolioID,
+					runID,
+				)
+			} else {
+				transactions := buildExecutionTransactions(planInputDTO, planOutputDTO)
+				if err := s.autoConfirm.RequestRebalanceExecutionConfirmation(
+					ctx,
+					AutoExecutionConfirmationRequest{
+						UserID:       userID,
+						PortfolioID:  portfolioID,
+						RunID:        runID,
+						AsOfDate:     snapshot.PlannerInput.AsOfAt.UTC().Format("2006-01-02"),
+						Transactions: transactions,
+					},
+				); err != nil {
+					log.Printf(
+						"rebalance planning: failed to request auto execution confirmation user_id=%d portfolio_id=%d run_id=%d err=%v",
+						userID,
+						portfolioID,
+						runID,
+						err,
+					)
+				}
+			}
+		} else {
+			if _, err := s.ExecuteRun(ctx, userID, portfolioID, runID); err != nil {
+				log.Printf(
+					"rebalance planning: failed to auto execute run without confirmation user_id=%d portfolio_id=%d run_id=%d err=%v",
+					userID,
+					portfolioID,
+					runID,
+					err,
+				)
+			}
+		}
+	}
 
 	return s.runsRepo.GetRunByID(userID, portfolioID, runID)
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os/signal"
 	"server/internal/config"
+	"server/internal/rebalance"
 	"server/internal/repository"
 	"server/internal/services"
 	"server/internal/telegram"
@@ -25,6 +26,15 @@ func main() {
 		auditService,
 		telegram.NewTelegramService(cfg),
 	)
+	rebalanceService := rebalance.NewService(
+		repoRegistry.PortfolioProfilesRepo,
+		repoRegistry.PortfolioRebalancesRepo,
+		nil,
+		nil,
+		auditService,
+		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
+	)
+	verificationService.SetRebalanceExecutionExecutor(rebalanceService)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()

@@ -33,11 +33,12 @@ func (a *RebalanceScheduleDispatchActivities) SelectDueCandidates(
 	params workflows.RebalanceScheduleDispatchActivityParams,
 ) (workflows.RebalanceScheduleDispatchResult, error) {
 	result := workflows.RebalanceScheduleDispatchResult{
-		Enabled:       a != nil && a.enabled,
-		WindowStart:   params.WindowStart.UTC(),
-		WindowEnd:     params.WindowEnd.UTC(),
-		DueCandidates: []workflows.RebalanceScheduleDispatchCandidate{},
-		Created:       []workflows.RebalanceScheduleDispatchCreatedRun{},
+		Enabled:           a != nil && a.enabled,
+		WindowStart:       params.WindowStart.UTC(),
+		WindowEnd:         params.WindowEnd.UTC(),
+		DueCandidates:     []workflows.RebalanceScheduleDispatchCandidate{},
+		OverdueCandidates: []workflows.RebalanceScheduleDispatchCandidate{},
+		Created:           []workflows.RebalanceScheduleDispatchCreatedRun{},
 	}
 	if a == nil || !a.enabled {
 		return result, nil
@@ -67,6 +68,17 @@ func (a *RebalanceScheduleDispatchActivities) SelectDueCandidates(
 		result.DueCandidates = make([]workflows.RebalanceScheduleDispatchCandidate, 0, len(dispatch.Candidates))
 		for _, candidate := range dispatch.Candidates {
 			result.DueCandidates = append(result.DueCandidates, workflows.RebalanceScheduleDispatchCandidate{
+				PortfolioProfileID: candidate.PortfolioProfileID,
+				ScheduleID:         candidate.ScheduleID,
+				DueAt:              candidate.DueAt.UTC(),
+			})
+		}
+	}
+
+	if len(dispatch.OverdueCandidates) > 0 {
+		result.OverdueCandidates = make([]workflows.RebalanceScheduleDispatchCandidate, 0, len(dispatch.OverdueCandidates))
+		for _, candidate := range dispatch.OverdueCandidates {
+			result.OverdueCandidates = append(result.OverdueCandidates, workflows.RebalanceScheduleDispatchCandidate{
 				PortfolioProfileID: candidate.PortfolioProfileID,
 				ScheduleID:         candidate.ScheduleID,
 				DueAt:              candidate.DueAt.UTC(),
