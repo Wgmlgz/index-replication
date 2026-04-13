@@ -170,6 +170,10 @@ func toScheduleConfigDTO(model *models.PortfolioRebalanceSchedule) *dto.Portfoli
 		DtStart:               model.DtStart,
 		RRule:                 model.RRule,
 		BusinessDayAdjustment: policy,
+		NextRunAt:             model.NextRunAt,
+		LastRunAt:             model.LastRunAt,
+		LastError:             model.LastError,
+		LastRunID:             model.LastRunID,
 		UpdatedAt:             model.UpdatedAt,
 	}
 }

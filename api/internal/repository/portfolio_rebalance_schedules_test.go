@@ -25,10 +25,26 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 		}
 	})
 
+	t.Run("runtime columns exist", func(t *testing.T) {
+		var count int64
+		if err := db.Raw(`
+			SELECT COUNT(*)
+			FROM information_schema.columns
+			WHERE table_schema = 'public'
+			  AND table_name = 'portfolio_rebalance_schedules'
+			  AND column_name IN ('next_run_at', 'last_run_at', 'last_error', 'last_run_id')
+		`).Scan(&count).Error; err != nil {
+			t.Fatalf("check runtime columns exist: %v", err)
+		}
+		if count != 4 {
+			t.Fatalf("expected 4 runtime columns, got %d", count)
+		}
+	})
+
 	t.Run("portfolio_profile_id is unique", func(t *testing.T) {
 		profileID := createPortfolioProfileRow(t, db, 3001)
 		dtStart := time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC)
-		insertRebalanceScheduleRow(t, db, profileID, true, dtStart, "FREQ=DAILY")
+		insertRebalanceScheduleRow(t, db, profileID, true, dtStart, "FREQ=DAILY", nil, nil, nil, nil)
 
 		err := db.Exec(
 			"INSERT INTO portfolio_rebalance_schedules (portfolio_profile_id, is_enabled, dtstart, rrule) VALUES (?, ?, ?, ?)",
@@ -64,6 +80,10 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 			true,
 			time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC),
 			"FREQ=DAILY",
+			nil,
+			nil,
+			nil,
+			nil,
 		)
 
 		if err := db.Delete(&models.PortfolioProfile{}, "id = ?", profileID).Error; err != nil {
@@ -140,6 +160,109 @@ func TestPortfolioRebalanceSchedulesRepository_UpsertAndDelete(t *testing.T) {
 	}
 }
 
+func TestPortfolioRebalanceSchedulesRepository_RuntimeStateUpdates(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	profileID := createPortfolioProfileRow(t, db, 3004)
+	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	created, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID:    profileID,
+		IsEnabled:             true,
+		DtStart:               time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC),
+		RRule:                 "FREQ=DAILY",
+		BusinessDayAdjustment: "strict",
+	})
+	if err != nil {
+		t.Fatalf("upsert create: %v", err)
+	}
+
+	nextRunAt := time.Date(2026, 4, 14, 10, 0, 0, 0, time.UTC)
+	lastRunAt := time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC)
+	lastError := "temporary failure"
+	lastRunID := 77
+
+	if err := repo.SetNextRunAtByPortfolioProfileID(profileID, &nextRunAt); err != nil {
+		t.Fatalf("set next run at: %v", err)
+	}
+	if err := repo.SetLastRunAtByPortfolioProfileID(profileID, &lastRunAt); err != nil {
+		t.Fatalf("set last run at: %v", err)
+	}
+	if err := repo.SetLastErrorByPortfolioProfileID(profileID, &lastError); err != nil {
+		t.Fatalf("set last error: %v", err)
+	}
+	if err := repo.SetLastRunIDByPortfolioProfileID(profileID, &lastRunID); err != nil {
+		t.Fatalf("set last run id: %v", err)
+	}
+
+	updated, err := repo.GetByPortfolioProfileID(profileID)
+	if err != nil {
+		t.Fatalf("get after runtime update: %v", err)
+	}
+	if updated.NextRunAt == nil || !updated.NextRunAt.Equal(nextRunAt) {
+		t.Fatalf("expected next_run_at=%s, got %v", nextRunAt.Format(time.RFC3339), updated.NextRunAt)
+	}
+	if updated.LastRunAt == nil || !updated.LastRunAt.Equal(lastRunAt) {
+		t.Fatalf("expected last_run_at=%s, got %v", lastRunAt.Format(time.RFC3339), updated.LastRunAt)
+	}
+	if updated.LastError == nil || *updated.LastError != lastError {
+		t.Fatalf("expected last_error=%q, got %v", lastError, updated.LastError)
+	}
+	if updated.LastRunID == nil || *updated.LastRunID != lastRunID {
+		t.Fatalf("expected last_run_id=%d, got %v", lastRunID, updated.LastRunID)
+	}
+
+	if err := repo.SetLastErrorByPortfolioProfileID(profileID, nil); err != nil {
+		t.Fatalf("clear last error: %v", err)
+	}
+	if err := repo.SetLastRunIDByPortfolioProfileID(profileID, nil); err != nil {
+		t.Fatalf("clear last run id: %v", err)
+	}
+
+	cleared, err := repo.GetByPortfolioProfileID(profileID)
+	if err != nil {
+		t.Fatalf("get after runtime clear: %v", err)
+	}
+	if cleared.LastError != nil {
+		t.Fatalf("expected last_error to be cleared, got %v", cleared.LastError)
+	}
+	if cleared.LastRunID != nil {
+		t.Fatalf("expected last_run_id to be cleared, got %v", cleared.LastRunID)
+	}
+
+	updatedStart := time.Date(2026, 4, 14, 10, 30, 0, 0, time.UTC)
+	if _, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID:    profileID,
+		IsEnabled:             false,
+		DtStart:               updatedStart,
+		RRule:                 "FREQ=WEEKLY;BYDAY=TU",
+		BusinessDayAdjustment: "modified_following",
+	}); err != nil {
+		t.Fatalf("upsert update with runtime state: %v", err)
+	}
+
+	preserved, err := repo.GetByPortfolioProfileID(profileID)
+	if err != nil {
+		t.Fatalf("get after upsert preserve: %v", err)
+	}
+	if preserved.NextRunAt == nil || !preserved.NextRunAt.Equal(nextRunAt) {
+		t.Fatalf("expected next_run_at to survive upsert, got %v", preserved.NextRunAt)
+	}
+	if preserved.LastRunAt == nil || !preserved.LastRunAt.Equal(lastRunAt) {
+		t.Fatalf("expected last_run_at to survive upsert, got %v", preserved.LastRunAt)
+	}
+	if preserved.LastError != nil {
+		t.Fatalf("expected last_error to survive upsert, got %v", preserved.LastError)
+	}
+	if preserved.LastRunID != nil {
+		t.Fatalf("expected last_run_id to survive upsert as null, got %v", preserved.LastRunID)
+	}
+	if preserved.ID != created.ID {
+		t.Fatalf("expected same id after upsert update, got %d and %d", created.ID, preserved.ID)
+	}
+}
+
 func insertRebalanceScheduleRow(
 	t *testing.T,
 	db *gorm.DB,
@@ -147,14 +270,22 @@ func insertRebalanceScheduleRow(
 	isEnabled bool,
 	dtStart time.Time,
 	rrule string,
+	nextRunAt *time.Time,
+	lastRunAt *time.Time,
+	lastError *string,
+	lastRunID *int,
 ) {
 	t.Helper()
 	if err := db.Exec(
-		"INSERT INTO portfolio_rebalance_schedules (portfolio_profile_id, is_enabled, dtstart, rrule) VALUES (?, ?, ?, ?)",
+		"INSERT INTO portfolio_rebalance_schedules (portfolio_profile_id, is_enabled, dtstart, rrule, next_run_at, last_run_at, last_error, last_run_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		profileID,
 		isEnabled,
 		dtStart.Format(time.RFC3339),
 		rrule,
+		nextRunAt,
+		lastRunAt,
+		lastError,
+		lastRunID,
 	).Error; err != nil {
 		t.Fatalf("insert rebalance schedule: %v", err)
 	}

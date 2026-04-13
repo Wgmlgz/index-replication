@@ -12,18 +12,27 @@ import {
   usePriceVisualizationData,
   type ChartsDataProvider,
 } from '@/components/charts-new/data';
-import { useChartsNewControls } from '@/components/charts-new/controls';
 import {
+  CompositionControlsPanel,
+  PriceControlsPanel,
+  useChartsNewControls,
+} from '@/components/charts-new/controls';
+import {
+  CompositionLegend,
   CompositionSnapshotVisualization,
   CompositionStackedVisualization,
   CompositionTrendVisualization,
+  PriceVisualization,
   type PriceVisualizationSeries,
 } from '@/components/charts-new/visualization';
 import type {
   CompositionDataControls,
   PriceDataControls,
 } from '@/components/charts-new/types/controls';
-import type { ButtonToggleGroupOption } from '@/components/ui/button-toggle-group';
+import {
+  ButtonToggleGroup,
+  type ButtonToggleGroupOption,
+} from '@/components/ui/button-toggle-group';
 import {
   Card,
   CardContent,
@@ -31,8 +40,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CompositionAnalyticsPanel } from '@/app/portfolio/components/analytics/composition-analytics-panel';
-import { PriceAnalyticsPanel } from '@/app/portfolio/components/analytics/price-analytics-panel';
 import type {
   CompositionDisplayTab,
   CompositionSourceMode,
@@ -61,6 +68,14 @@ const DEFAULT_COMPOSITION_CONTROLS: Partial<CompositionDataControls> = {
 };
 
 const TOP_COUNT_OPTIONS = [5, 10, 20, 50];
+
+const formatSignedNumber = (
+  formatter: Intl.NumberFormat,
+  value: number,
+): string => {
+  const prefix = value > 0 ? '+' : '';
+  return `${prefix}${formatter.format(value)}`;
+};
 
 const EMPTY_PROVIDER: ChartsDataProvider = {
   id: 'portfolio:none',
@@ -460,6 +475,123 @@ export default function PortfolioAnalyticsPage() {
       />
     );
 
+  const priceSettings = (
+    <>
+      {priceState.latestValue !== null && (
+        <div className='text-sm'>
+          <span className='font-medium'>
+            {priceState.numberFormatter.format(priceState.latestValue)}
+          </span>
+          {priceState.currency ? ` ${priceState.currency}` : ''}
+          {priceState.change !== null &&
+            priceState.changePercent !== null && (
+              <span
+                className={`ml-2 font-medium ${
+                  priceState.change > 0
+                    ? 'text-emerald-600'
+                    : priceState.change < 0
+                      ? 'text-red-600'
+                      : 'text-muted-foreground'
+                }`}
+              >
+                {formatSignedNumber(
+                  priceState.numberFormatter,
+                  priceState.change,
+                )}{' '}
+                ({priceState.change > 0 ? '+' : ''}
+                {priceState.changePercent.toFixed(2)}%)
+              </span>
+            )}
+        </div>
+      )}
+
+      <PriceControlsPanel
+        controls={controls.price}
+        actions={controls.priceActions}
+        translationKeyPrefix='portfolio.chart'
+        idPrefix='portfolio'
+        hideChartType
+      />
+
+      <div className='flex flex-wrap items-center gap-2'>
+        <span className='text-xs text-muted-foreground'>
+          {t('portfolio.chart.mode.label')}
+        </span>
+        <ButtonToggleGroup
+          value={priceMode}
+          options={priceModeOptions}
+          onValueChange={setPriceMode}
+        />
+      </div>
+    </>
+  );
+
+  const compositionConstituents = (
+    <>
+      <div className='space-y-1'>
+        <CardTitle>{t('portfolio.composition.title')}</CardTitle>
+        {activeCompositionState.snapshotDate && (
+          <div className='text-xs text-muted-foreground'>
+            {t('portfolio.composition.asOf', {
+              date: activeCompositionState.snapshotDate,
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
+        <CompositionLegend
+          rows={legendRows}
+          loading={trendLoading}
+          hasError={trendError}
+          errorMessage={t('portfolio.composition.error')}
+          noDataMessage={compositionNoSeriesMessage}
+          translationKeyPrefix='portfolio.composition'
+          showOther={showOtherLegend}
+          otherWeight={snapshotOtherWeight}
+          linkBuilder={() => undefined}
+        />
+      </div>
+    </>
+  );
+
+  const compositionSettings = (
+    <>
+      <div className='flex flex-wrap items-center gap-2'>
+        <span className='text-xs text-muted-foreground'>
+          {t('portfolio.composition.tabs.label')}
+        </span>
+        <ButtonToggleGroup
+          value={compositionDisplayTab}
+          options={compositionDisplayTabOptions}
+          onValueChange={setCompositionDisplayTab}
+        />
+      </div>
+
+      {hasBenchmark && (
+        <div className='flex flex-wrap items-center gap-2'>
+          <span className='text-xs text-muted-foreground'>
+            {t('portfolio.composition.source.label')}
+          </span>
+          <ButtonToggleGroup
+            value={compositionSourceMode}
+            options={compositionSourceOptions}
+            onValueChange={setCompositionSource}
+          />
+        </div>
+      )}
+
+      <CompositionControlsPanel
+        controls={controls.composition}
+        actions={controls.compositionActions}
+        translationKeyPrefix='portfolio.composition'
+        idPrefix='portfolio'
+        topCountOptions={TOP_COUNT_OPTIONS}
+        hideTabs
+      />
+    </>
+  );
+
   if (!portfolioID) {
     return (
       <Card>
@@ -482,40 +614,32 @@ export default function PortfolioAnalyticsPage() {
         <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
         <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
       </CardHeader>
-      <CardContent className='grid h-full min-h-0 gap-4 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]'>
-        <PriceAnalyticsPanel
-          priceState={priceState}
-          controls={controls.price}
-          actions={controls.priceActions}
-          priceMode={priceMode}
-          priceModeOptions={priceModeOptions}
-          onPriceModeChange={setPriceMode}
-          chartLoading={chartLoading}
-          chartHasError={chartHasError}
-          chartNoDataMessage={chartNoDataMessage}
-          priceSeries={priceSeries}
+      <CardContent className='flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]'>
+        <div className='flex min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-1'>
+          {priceSettings}
+        </div>
+
+        <PriceVisualization
+          loading={chartLoading}
+          hasError={chartHasError && priceSeries[0]?.data.length === 0}
+          errorMessage={t('portfolio.chart.error')}
+          noDataMessage={chartNoDataMessage}
+          series={priceSeries}
+          visibleRange={priceState.dateRange}
+          className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden lg:col-start-2 lg:row-start-1 lg:row-span-2'
         />
 
-        <CompositionAnalyticsPanel
-          snapshotDate={activeCompositionState.snapshotDate}
-          hasBenchmark={hasBenchmark}
-          compositionDisplayTab={compositionDisplayTab}
-          compositionDisplayTabOptions={compositionDisplayTabOptions}
-          onCompositionDisplayTabChange={setCompositionDisplayTab}
-          compositionSourceMode={compositionSourceMode}
-          compositionSourceOptions={compositionSourceOptions}
-          onCompositionSourceChange={setCompositionSource}
-          controls={controls.composition}
-          actions={controls.compositionActions}
-          topCountOptions={TOP_COUNT_OPTIONS}
-          legendRows={legendRows}
-          trendLoading={trendLoading}
-          trendError={trendError}
-          compositionNoSeriesMessage={compositionNoSeriesMessage}
-          showOtherLegend={showOtherLegend}
-          snapshotOtherWeight={snapshotOtherWeight}
-          compositionChart={compositionChart}
-        />
+        <div className='flex min-h-0 min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-2 lg:row-span-3'>
+          {compositionConstituents}
+        </div>
+
+        <div className='flex min-w-0 flex-col gap-3 lg:col-start-2 lg:row-start-3'>
+          {compositionSettings}
+        </div>
+
+        <div className='flex min-h-[200px] min-w-0 flex-1 flex-col lg:col-start-2 lg:row-start-4'>
+          {compositionChart}
+        </div>
       </CardContent>
     </Card>
   );

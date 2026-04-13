@@ -18,7 +18,10 @@ All URIs are relative to *http://localhost:8080/api*
 |[**mePortfoliosIdRebalancesRebalanceIdExecutePost**](#meportfoliosidrebalancesrebalanceidexecutepost) | **POST** /me/portfolios/{id}/rebalances/{rebalanceId}/execute | Execute rebalance draft|
 |[**mePortfoliosIdRebalancesRebalanceIdGet**](#meportfoliosidrebalancesrebalanceidget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId} | Get rebalance draft detail|
 |[**mePortfoliosIdRebalancesRebalanceIdStatusGet**](#meportfoliosidrebalancesrebalanceidstatusget) | **GET** /me/portfolios/{id}/rebalances/{rebalanceId}/status | Get rebalance status|
+|[**mePortfoliosIdRebalancesScheduleDelete**](#meportfoliosidrebalancesscheduledelete) | **DELETE** /me/portfolios/{id}/rebalances/schedule | Delete rebalance schedule config|
+|[**mePortfoliosIdRebalancesScheduleGet**](#meportfoliosidrebalancesscheduleget) | **GET** /me/portfolios/{id}/rebalances/schedule | Get rebalance schedule config|
 |[**mePortfoliosIdRebalancesSchedulePreviewPost**](#meportfoliosidrebalancesschedulepreviewpost) | **POST** /me/portfolios/{id}/rebalances/schedule/preview | Preview rebalance schedule|
+|[**mePortfoliosIdRebalancesSchedulePut**](#meportfoliosidrebalancesscheduleput) | **PUT** /me/portfolios/{id}/rebalances/schedule | Upsert rebalance schedule config|
 |[**mePortfoliosIdReplicationDelete**](#meportfoliosidreplicationdelete) | **DELETE** /me/portfolios/{id}/replication | Delete portfolio replication config|
 |[**mePortfoliosIdReplicationPut**](#meportfoliosidreplicationput) | **PUT** /me/portfolios/{id}/replication | Upsert portfolio replication config|
 |[**mePortfoliosIdSummaryGet**](#meportfoliosidsummaryget) | **GET** /me/portfolios/{id}/summary | Get portfolio summary|
@@ -840,10 +843,120 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **mePortfoliosIdRebalancesScheduleDelete**
+> mePortfoliosIdRebalancesScheduleDelete()
+
+Deletes persisted rebalance schedule config for selected portfolio profile
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesScheduleDelete(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+|**503** | Service Unavailable |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesScheduleGet**
+> PortfolioRebalanceScheduleConfigResponse mePortfoliosIdRebalancesScheduleGet()
+
+Returns persisted rebalance schedule config for selected portfolio profile
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesScheduleGet(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceScheduleConfigResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+|**503** | Service Unavailable |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **mePortfoliosIdRebalancesSchedulePreviewPost**
 > PortfolioRebalanceSchedulePreviewResponse mePortfoliosIdRebalancesSchedulePreviewPost(payload)
 
-Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by isdayoff workdays and trading session window
 
 ### Example
 
@@ -877,6 +990,65 @@ const { status, data } = await apiInstance.mePortfoliosIdRebalancesSchedulePrevi
 ### Return type
 
 **PortfolioRebalanceSchedulePreviewResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**400** | Bad Request |  -  |
+|**404** | Not Found |  -  |
+|**500** | Internal Server Error |  -  |
+|**503** | Service Unavailable |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **mePortfoliosIdRebalancesSchedulePut**
+> PortfolioRebalanceScheduleConfigResponse mePortfoliosIdRebalancesSchedulePut(payload)
+
+Creates or updates persisted rebalance schedule config for selected portfolio profile
+
+### Example
+
+```typescript
+import {
+    PortfolioApi,
+    Configuration,
+    PortfolioRebalanceScheduleConfigUpsertRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PortfolioApi(configuration);
+
+let id: number; //Portfolio profile id (default to undefined)
+let payload: PortfolioRebalanceScheduleConfigUpsertRequest; //Schedule config payload
+
+const { status, data } = await apiInstance.mePortfoliosIdRebalancesSchedulePut(
+    id,
+    payload
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **payload** | **PortfolioRebalanceScheduleConfigUpsertRequest**| Schedule config payload | |
+| **id** | [**number**] | Portfolio profile id | defaults to undefined|
+
+
+### Return type
+
+**PortfolioRebalanceScheduleConfigResponse**
 
 ### Authorization
 

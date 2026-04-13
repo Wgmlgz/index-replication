@@ -255,72 +255,72 @@ export function MoexIndexesChartsPanel() {
       />
     );
 
-  return (
-    <div
-      className={`grid h-full min-h-0 gap-4 ${
-        showComposition ? 'grid-rows-2' : 'grid-rows-1'
-      }`}
-    >
-      <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-        <div className='flex flex-col gap-3 lg:w-[320px]'>
-          {latestValueLine}
-          {priceState.loading && !latestValueLine && (
-            <div className='flex items-center gap-2'>
-              <Skeleton className='h-5 w-20' />
-              <Skeleton className='h-5 w-16' />
-            </div>
-          )}
-          <PriceControlsPanel
-            controls={controls.price}
-            actions={controls.priceActions}
-            translationKeyPrefix='moex.chart'
-            idPrefix='moex'
-          />
-          {selectedIndex && (
-            <>
-              <div className='flex flex-wrap gap-2'>
-                {selectedIndex.currency && (
-                  <Badge variant='secondary'>{selectedIndex.currency}</Badge>
-                )}
-                {selectedIndex.boardId && (
-                  <Badge variant='secondary'>
-                    {t('moex.chart.board', { board: selectedIndex.boardId })}
-                  </Badge>
-                )}
-                {selectedIndex.calcMode && (
-                  <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
-                )}
-                {isInactive && selectedIndex.lastActiveDate && (
-                  <Badge
-                    variant='outline'
-                    className='border-amber-300/80 text-amber-700'
-                  >
-                    {t('moex.status.inactiveSince', {
-                      date: selectedIndex.lastActiveDate,
-                    })}
-                  </Badge>
-                )}
-                {selectedIndex.annualHigh != null && (
-                  <Badge variant='outline'>
-                    {t('moex.chart.max', {
-                      value: priceState.numberFormatter.format(selectedIndex.annualHigh),
-                    })}
-                  </Badge>
-                )}
-                {selectedIndex.annualLow != null && (
-                  <Badge variant='outline'>
-                    {t('moex.chart.min', {
-                      value: priceState.numberFormatter.format(selectedIndex.annualLow),
-                    })}
-                  </Badge>
-                )}
-              </div>
-              {groupsLabel && (
-                <div className='text-xs text-muted-foreground'>{groupsLabel}</div>
-              )}
-            </>
-          )}
+  const priceSettings = (
+    <>
+      {latestValueLine}
+      {priceState.loading && !latestValueLine && (
+        <div className='flex items-center gap-2'>
+          <Skeleton className='h-5 w-20' />
+          <Skeleton className='h-5 w-16' />
         </div>
+      )}
+      <PriceControlsPanel
+        controls={controls.price}
+        actions={controls.priceActions}
+        translationKeyPrefix='moex.chart'
+        idPrefix='moex'
+      />
+      {selectedIndex && (
+        <>
+          <div className='flex flex-wrap gap-2'>
+            {selectedIndex.currency && (
+              <Badge variant='secondary'>{selectedIndex.currency}</Badge>
+            )}
+            {selectedIndex.boardId && (
+              <Badge variant='secondary'>
+                {t('moex.chart.board', { board: selectedIndex.boardId })}
+              </Badge>
+            )}
+            {selectedIndex.calcMode && (
+              <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
+            )}
+            {isInactive && selectedIndex.lastActiveDate && (
+              <Badge
+                variant='outline'
+                className='border-amber-300/80 text-amber-700'
+              >
+                {t('moex.status.inactiveSince', {
+                  date: selectedIndex.lastActiveDate,
+                })}
+              </Badge>
+            )}
+            {selectedIndex.annualHigh != null && (
+              <Badge variant='outline'>
+                {t('moex.chart.max', {
+                  value: priceState.numberFormatter.format(selectedIndex.annualHigh),
+                })}
+              </Badge>
+            )}
+            {selectedIndex.annualLow != null && (
+              <Badge variant='outline'>
+                {t('moex.chart.min', {
+                  value: priceState.numberFormatter.format(selectedIndex.annualLow),
+                })}
+              </Badge>
+            )}
+          </div>
+          {groupsLabel && (
+            <div className='text-xs text-muted-foreground'>{groupsLabel}</div>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  if (!showComposition) {
+    return (
+      <div className='flex h-full min-h-0 flex-col gap-4 lg:flex-row'>
+        <div className='flex flex-col gap-3 lg:w-[320px]'>{priceSettings}</div>
         <PriceVisualization
           loading={priceState.loading}
           hasError={priceState.error}
@@ -331,61 +331,80 @@ export function MoexIndexesChartsPanel() {
           className='flex min-h-[200px] flex-1 items-stretch'
         />
       </div>
+    );
+  }
 
-      {showComposition && (
-        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-          <div className='flex min-h-0 flex-col gap-3 lg:w-[320px]'>
-            <div className='flex items-start justify-between gap-2'>
-              <div className='space-y-1'>
-                <CardTitle>{t('moex.composition.title')}</CardTitle>
-                {shouldShowAsOf && compositionState.snapshotDate && (
-                  <div className='text-xs text-muted-foreground'>
-                    {t('moex.composition.asOf', {
-                      date: compositionState.snapshotDate,
-                    })}
-                  </div>
-                )}
+  return (
+    <div className='flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]'>
+      <div className='flex flex-col gap-3 lg:col-start-1 lg:row-start-1'>
+        {priceSettings}
+      </div>
+
+      <PriceVisualization
+        loading={priceState.loading}
+        hasError={priceState.error}
+        errorMessage={t('moex.errors.history')}
+        noDataMessage={t('moex.chart.noData')}
+        series={priceSeries}
+        visibleRange={priceState.dateRange}
+        className='flex min-h-[200px] flex-1 items-stretch lg:col-start-2 lg:row-start-1 lg:row-span-2'
+      />
+
+      <div className='flex min-h-0 flex-col gap-3 lg:col-start-1 lg:row-start-2 lg:row-span-3'>
+        <div className='flex items-start justify-between gap-2'>
+          <div className='space-y-1'>
+            <CardTitle>{t('moex.composition.title')}</CardTitle>
+            {shouldShowAsOf && compositionState.snapshotDate && (
+              <div className='text-xs text-muted-foreground'>
+                {t('moex.composition.asOf', {
+                  date: compositionState.snapshotDate,
+                })}
               </div>
-              <MoexSourceButton
-                href={compositionHref}
-                label={compositionSourceLabel}
-                tooltip={compositionSourceLabel}
-                disabledTooltip={t('moex.sources.selectIndex')}
-                className='shrink-0'
-              />
-            </div>
-
-            <CompositionControlsPanel
-              controls={controls.composition}
-              actions={controls.compositionActions}
-              translationKeyPrefix='moex.composition'
-              idPrefix='moex'
-              selectionDateMax={latestTradeDate ?? undefined}
-            />
-
-            <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
-              {selectedIndex && <Badge variant='outline'>{selectedIndex.secid}</Badge>}
-              <Badge variant='outline'>
-                {t('moex.composition.topCount', { count: snapshotItems.length })}
-              </Badge>
-            </div>
-
-            <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
-              <CompositionLegend
-                rows={legendRows}
-                loading={trendLoading}
-                hasError={trendError}
-                errorMessage={t('moex.composition.error')}
-                noDataMessage={t('moex.composition.noSeries')}
-                translationKeyPrefix='moex.composition'
-                showOther={showOtherLegend}
-                otherWeight={snapshotOtherWeight}
-              />
-            </div>
+            )}
           </div>
-          <div className='flex min-h-[200px] flex-1 flex-col'>{compositionChart}</div>
+          <MoexSourceButton
+            href={compositionHref}
+            label={compositionSourceLabel}
+            tooltip={compositionSourceLabel}
+            disabledTooltip={t('moex.sources.selectIndex')}
+            className='shrink-0'
+          />
         </div>
-      )}
+
+        <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
+          {selectedIndex && <Badge variant='outline'>{selectedIndex.secid}</Badge>}
+          <Badge variant='outline'>
+            {t('moex.composition.topCount', { count: snapshotItems.length })}
+          </Badge>
+        </div>
+
+        <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
+          <CompositionLegend
+            rows={legendRows}
+            loading={trendLoading}
+            hasError={trendError}
+            errorMessage={t('moex.composition.error')}
+            noDataMessage={t('moex.composition.noSeries')}
+            translationKeyPrefix='moex.composition'
+            showOther={showOtherLegend}
+            otherWeight={snapshotOtherWeight}
+          />
+        </div>
+      </div>
+
+      <div className='flex flex-col gap-3 lg:col-start-2 lg:row-start-3'>
+        <CompositionControlsPanel
+          controls={controls.composition}
+          actions={controls.compositionActions}
+          translationKeyPrefix='moex.composition'
+          idPrefix='moex'
+          selectionDateMax={latestTradeDate ?? undefined}
+        />
+      </div>
+
+      <div className='flex min-h-[200px] flex-1 flex-col lg:col-start-2 lg:row-start-4'>
+        {compositionChart}
+      </div>
     </div>
   );
 }

@@ -255,7 +255,8 @@ Action payload requirement:
 
 Rebalance planning and execution:
 - `GET /api/me/portfolios/:id/rebalances/schedule` returns persisted per-portfolio rebalance schedule config
-  (`is_enabled`, `dtstart`, `rrule`, `updated_at`).
+  (`is_enabled`, `dtstart`, `rrule`, `business_day_adjustment`, `next_run_at`, `last_run_at`, `last_error`,
+  `last_run_id`, `updated_at`).
 - `PUT /api/me/portfolios/:id/rebalances/schedule` upserts persisted per-portfolio rebalance schedule config.
 - `DELETE /api/me/portfolios/:id/rebalances/schedule` removes persisted per-portfolio rebalance schedule config.
 - `POST /api/me/portfolios/:id/rebalances/schedule/preview` accepts RFC5545 recurrence rule input
