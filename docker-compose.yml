@@ -312,6 +312,7 @@ services:
       - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
       - TEMPORAL_TASK_QUEUE=${TEMPORAL_TASK_QUEUE:-moex-sync}
       - TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=${TEMPORAL_ENABLE_SEARCH_ATTRIBUTES:-false}
+      - WEB_APP_URL=${WEB_APP_URL:-http://${WEB_HOST}:${TRAEFIK_PORT}}
     depends_on:
       postgres:
         condition: service_healthy
@@ -334,6 +335,7 @@ services:
       - TELEGRAM_SOCKS5_PROXY=${TELEGRAM_SOCKS5_PROXY:-}
       - TELEGRAM_POLL_TIMEOUT_SEC=${TELEGRAM_POLL_TIMEOUT_SEC:-30}
       - LOGIN_VERIFICATION_TTL_SECONDS=${LOGIN_VERIFICATION_TTL_SECONDS:-300}
+      - WEB_APP_URL=${WEB_APP_URL:-http://${WEB_HOST}:${TRAEFIK_PORT}}
     depends_on:
       postgres:
         condition: service_healthy

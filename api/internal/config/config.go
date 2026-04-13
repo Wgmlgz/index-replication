@@ -109,7 +109,7 @@ func resolveWebAppURL() string {
 	host := strings.TrimSpace(getEnv("WEB_HOST", ""))
 	port := strings.TrimSpace(getEnv("TRAEFIK_PORT", ""))
 	if host == "" || port == "" {
-		return ""
+		return "http://localhost:30000"
 	}
 	return fmt.Sprintf("http://%s:%s", host, port)
 }

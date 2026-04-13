@@ -12,6 +12,7 @@ type AutoExecutionConfirmationRequest struct {
 	RunID        int
 	AsOfDate     string
 	Transactions []dto.PortfolioRebalanceTransaction
+	Money        []dto.PortfolioRebalanceMoney
 }
 
 type autoExecutionConfirmationRequester interface {

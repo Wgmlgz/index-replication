@@ -445,6 +445,7 @@ func (s *Service) ProcessDraftPlanningRun(
 						RunID:        runID,
 						AsOfDate:     snapshot.PlannerInput.AsOfAt.UTC().Format("2006-01-02"),
 						Transactions: transactions,
+						Money:        planOutputDTO.Money,
 					},
 				); err != nil {
 					log.Printf(

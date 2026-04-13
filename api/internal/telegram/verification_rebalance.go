@@ -15,6 +15,7 @@ import (
 	"server/internal/models"
 	"server/internal/rebalance"
 
+	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 )
 
@@ -143,26 +144,27 @@ func (s *VerificationService) buildRebalanceConfirmationMessage(
 	req rebalance.AutoExecutionConfirmationRequest,
 	expiresAt time.Time,
 ) string {
+	timeLeft := humanize.RelTime(time.Now().UTC(), expiresAt.UTC(), "left", "ago")
 	lines := []string{
-		fmt.Sprintf("Rebalance draft #%d is ready.", req.RunID),
-		fmt.Sprintf("Portfolio ID: %d", req.PortfolioID),
+		fmt.Sprintf("Rebalance ready: run #%d", req.RunID),
+		fmt.Sprintf("Portfolio #%d", req.PortfolioID),
 	}
 	asOfDate := strings.TrimSpace(req.AsOfDate)
 	if asOfDate != "" {
-		lines = append(lines, fmt.Sprintf("As of date: %s", asOfDate))
+		lines = append(lines, fmt.Sprintf("As-of %s", asOfDate))
 	}
 	lines = append(
 		lines,
-		fmt.Sprintf("Expires at: %s UTC", expiresAt.UTC().Format("2006-01-02 15:04:05")),
+		fmt.Sprintf("Expires %s UTC (%s)", expiresAt.UTC().Format("2006-01-02 15:04:05"), timeLeft),
 		"",
-		fmt.Sprintf("Planned transactions (%d):", len(req.Transactions)),
+		fmt.Sprintf("Transactions %d:", len(req.Transactions)),
 	)
 
 	baseMessage := strings.Join(lines, "\n")
 	messageLen := len(baseMessage)
 	renderedCount := 0
 	for index := range req.Transactions {
-		line := formatRebalanceConfirmationTransactionLine(index+1, req.Transactions[index])
+		line := formatRebalanceConfirmationTransactionLine(req.Transactions[index])
 		if line == "" {
 			continue
 		}
@@ -181,6 +183,9 @@ func (s *VerificationService) buildRebalanceConfirmationMessage(
 	if renderedCount < len(req.Transactions) {
 		lines = append(lines, fmt.Sprintf("... and %d more", len(req.Transactions)-renderedCount))
 	}
+
+	lines = append(lines, "")
+	lines = append(lines, formatMoneySummaryLines(req.Money)...)
 
 	if link := s.buildRebalanceWebLink(req.PortfolioID, req.RunID); link != "" {
 		lines = append(lines, "", "Review full draft in web:", link)
@@ -207,16 +212,18 @@ func (s *VerificationService) buildRebalanceWebLink(portfolioID int, runID int) 
 }
 
 func formatRebalanceConfirmationTransactionLine(
-	sequence int,
 	tx dto.PortfolioRebalanceTransaction,
 ) string {
-	if sequence <= 0 {
-		return ""
-	}
-
 	side := strings.ToUpper(strings.TrimSpace(tx.Side))
 	if side == "" {
 		side = "N/A"
+	}
+	sideMarker := "[?]"
+	switch side {
+	case "BUY":
+		sideMarker = "[B]"
+	case "SELL":
+		sideMarker = "[S]"
 	}
 
 	ticker := strings.TrimSpace(tx.Ticker)
@@ -233,15 +240,40 @@ func formatRebalanceConfirmationTransactionLine(
 		quantity = "0"
 	}
 
-	line := fmt.Sprintf("%d. %s %s qty=%s", sequence, side, ticker, quantity)
+	line := fmt.Sprintf("%s %s %s", sideMarker, ticker, quantity)
 	if tx.Price != nil {
-		line = fmt.Sprintf("%s price=%.6f", line, *tx.Price)
+		price := strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.6f", *tx.Price), "0"), ".")
+		line = fmt.Sprintf("%s @ %s", line, price)
 	}
 	if tx.Amount != nil {
-		line = fmt.Sprintf("%s amount=%.2f", line, *tx.Amount)
+		line = fmt.Sprintf("%s -> %.2f", line, *tx.Amount)
 	}
 	if strings.TrimSpace(tx.Currency) != "" {
 		line = fmt.Sprintf("%s %s", line, strings.TrimSpace(tx.Currency))
 	}
 	return line
+}
+
+func formatMoneySummaryLines(money []dto.PortfolioRebalanceMoney) []string {
+	if len(money) == 0 {
+		return []string{"Money after plan: no money rows"}
+	}
+
+	lines := []string{"Money after plan:"}
+	for _, row := range money {
+		currency := strings.TrimSpace(row.Currency)
+		if currency == "" {
+			currency = "N/A"
+		}
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"[%s] free %.2f | blocked %.2f",
+				currency,
+				row.Available,
+				row.Blocked,
+			),
+		)
+	}
+	return lines
 }
