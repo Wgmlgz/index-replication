@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**calendar** | [**Array&lt;PortfolioRebalanceSchedulePreviewCalendar&gt;**](PortfolioRebalanceSchedulePreviewCalendar.md) |  | [optional] [default to undefined]
 **events** | **Array&lt;string&gt;** | RFC3339 datetimes | [optional] [default to undefined]
-**moex** | [**PortfolioRebalanceSchedulePreviewMoexMetadata**](PortfolioRebalanceSchedulePreviewMoexMetadata.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -14,8 +14,8 @@ Name | Type | Description | Notes
 import { PortfolioRebalanceSchedulePreviewResponse } from './api';
 
 const instance: PortfolioRebalanceSchedulePreviewResponse = {
+    calendar,
     events,
-    moex,
 };
 ```
 

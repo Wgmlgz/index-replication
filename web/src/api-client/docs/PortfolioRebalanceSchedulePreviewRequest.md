@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**business_day_adjustment** | **string** |  | [optional] [default to undefined]
 **dtstart** | **string** | RFC3339 datetime | [default to undefined]
 **from** | **string** | optional lower bound (default now) | [optional] [default to undefined]
 **limit** | **number** | optional max event count | [optional] [default to undefined]
@@ -17,6 +18,7 @@ Name | Type | Description | Notes
 import { PortfolioRebalanceSchedulePreviewRequest } from './api';
 
 const instance: PortfolioRebalanceSchedulePreviewRequest = {
+    business_day_adjustment,
     dtstart,
     from,
     limit,

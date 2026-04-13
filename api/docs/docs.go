@@ -847,9 +847,170 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/portfolios/{id}/rebalances/schedule": {
+            "get": {
+                "description": "Returns persisted rebalance schedule config for selected portfolio profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Get rebalance schedule config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceScheduleConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Creates or updates persisted rebalance schedule config for selected portfolio profile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Upsert rebalance schedule config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Schedule config payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceScheduleConfigUpsertRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PortfolioRebalanceScheduleConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes persisted rebalance schedule config for selected portfolio profile",
+                "tags": [
+                    "portfolio"
+                ],
+                "summary": "Delete rebalance schedule config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Portfolio profile id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/portfolios/{id}/rebalances/schedule/preview": {
             "post": {
-                "description": "Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability",
+                "description": "Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by isdayoff workdays and trading session window",
                 "consumes": [
                     "application/json"
                 ],
@@ -1907,7 +2068,7 @@ const docTemplate = `{
         },
         "/moex/sync/coverage": {
             "get": {
-                "description": "Returns rows from moex_data_coverage with optional filters",
+                "description": "Returns rows from moex.data_coverage with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -1974,7 +2135,7 @@ const docTemplate = `{
         },
         "/moex/sync/runs": {
             "get": {
-                "description": "Returns rows from moex_sync_runs with optional filters",
+                "description": "Returns rows from moex.sync_runs with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -2029,7 +2190,7 @@ const docTemplate = `{
         },
         "/moex/sync/state": {
             "get": {
-                "description": "Returns rows from moex_sync_state with optional filters",
+                "description": "Returns rows from moex.sync_state with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -3382,41 +3543,92 @@ const docTemplate = `{
                 }
             }
         },
-        "PortfolioRebalanceSchedulePreviewMoexCalendar": {
+        "PortfolioRebalanceScheduleConfigResponse": {
+            "type": "object",
+            "properties": {
+                "business_day_adjustment": {
+                    "type": "string"
+                },
+                "dtstart": {
+                    "description": "RFC3339 datetime",
+                    "type": "string"
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "last_error": {
+                    "type": "string"
+                },
+                "last_run_at": {
+                    "type": "string"
+                },
+                "last_run_id": {
+                    "type": "integer"
+                },
+                "next_run_at": {
+                    "type": "string"
+                },
+                "rrule": {
+                    "description": "RFC5545 RRULE (without DTSTART)",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceScheduleConfigUpsertRequest": {
+            "type": "object",
+            "required": [
+                "dtstart",
+                "rrule"
+            ],
+            "properties": {
+                "business_day_adjustment": {
+                    "type": "string"
+                },
+                "dtstart": {
+                    "description": "RFC3339 datetime",
+                    "type": "string"
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "rrule": {
+                    "description": "RFC5545 RRULE (without DTSTART)",
+                    "type": "string"
+                }
+            }
+        },
+        "PortfolioRebalanceSchedulePreviewCalendar": {
             "type": "object",
             "properties": {
                 "date": {
                     "description": "YYYY-MM-DD",
                     "type": "string"
                 },
+                "day_code": {
+                    "description": "isdayoff code: 0|1|2|4|8",
+                    "type": "string"
+                },
+                "day_type": {
+                    "description": "workday|non_working_day|shortened_workday|special_workday|public_holiday",
+                    "type": "string"
+                },
                 "is_work_day": {
-                    "description": "nil for source=none",
+                    "description": "nil when date has no resolved status",
                     "type": "boolean"
                 },
                 "source": {
-                    "description": "dailytable|timetable|none",
+                    "description": "isdayoff",
                     "type": "string"
                 },
                 "start_time": {
-                    "description": "MOEX window start (HH:mm[:ss])",
+                    "description": "trading window start (HH:mm)",
                     "type": "string"
                 },
                 "stop_time": {
-                    "description": "MOEX window stop (HH:mm[:ss])",
-                    "type": "string"
-                }
-            }
-        },
-        "PortfolioRebalanceSchedulePreviewMoexMetadata": {
-            "type": "object",
-            "properties": {
-                "calendar": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewMoexCalendar"
-                    }
-                },
-                "engine": {
+                    "description": "trading window stop (HH:mm)",
                     "type": "string"
                 }
             }
@@ -3428,6 +3640,9 @@ const docTemplate = `{
                 "rrule"
             ],
             "properties": {
+                "business_day_adjustment": {
+                    "type": "string"
+                },
                 "dtstart": {
                     "description": "RFC3339 datetime",
                     "type": "string"
@@ -3453,15 +3668,18 @@ const docTemplate = `{
         "PortfolioRebalanceSchedulePreviewResponse": {
             "type": "object",
             "properties": {
+                "calendar": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewCalendar"
+                    }
+                },
                 "events": {
                     "description": "RFC3339 datetimes",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
-                },
-                "moex": {
-                    "$ref": "#/definitions/PortfolioRebalanceSchedulePreviewMoexMetadata"
                 }
             }
         },

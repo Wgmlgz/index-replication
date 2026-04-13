@@ -265,7 +265,7 @@ No authorization required
 # **moexSyncCoverageGet**
 > Array<MoexCoverageResponse> moexSyncCoverageGet()
 
-Returns rows from moex_data_coverage with optional filters
+Returns rows from moex.data_coverage with optional filters
 
 ### Example
 
@@ -330,7 +330,7 @@ No authorization required
 # **moexSyncRunsGet**
 > Array<MoexSyncRunResponse> moexSyncRunsGet()
 
-Returns rows from moex_sync_runs with optional filters
+Returns rows from moex.sync_runs with optional filters
 
 ### Example
 
@@ -391,7 +391,7 @@ No authorization required
 # **moexSyncStateGet**
 > Array<MoexSyncStateResponse> moexSyncStateGet()
 
-Returns rows from moex_sync_state with optional filters
+Returns rows from moex.sync_state with optional filters
 
 ### Example
 

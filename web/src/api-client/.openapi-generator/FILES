@@ -48,8 +48,9 @@ docs/PortfolioRebalanceMoney.md
 docs/PortfolioRebalanceOutput.md
 docs/PortfolioRebalancePlanningParams.md
 docs/PortfolioRebalanceRun.md
-docs/PortfolioRebalanceSchedulePreviewMoexCalendar.md
-docs/PortfolioRebalanceSchedulePreviewMoexMetadata.md
+docs/PortfolioRebalanceScheduleConfigResponse.md
+docs/PortfolioRebalanceScheduleConfigUpsertRequest.md
+docs/PortfolioRebalanceSchedulePreviewCalendar.md
 docs/PortfolioRebalanceSchedulePreviewRequest.md
 docs/PortfolioRebalanceSchedulePreviewResponse.md
 docs/PortfolioRebalanceStatusItem.md

@@ -603,35 +603,73 @@ definitions:
       updated_at:
         type: string
     type: object
-  PortfolioRebalanceSchedulePreviewMoexCalendar:
+  PortfolioRebalanceScheduleConfigResponse:
+    properties:
+      business_day_adjustment:
+        type: string
+      dtstart:
+        description: RFC3339 datetime
+        type: string
+      is_enabled:
+        type: boolean
+      last_error:
+        type: string
+      last_run_at:
+        type: string
+      last_run_id:
+        type: integer
+      next_run_at:
+        type: string
+      rrule:
+        description: RFC5545 RRULE (without DTSTART)
+        type: string
+      updated_at:
+        type: string
+    type: object
+  PortfolioRebalanceScheduleConfigUpsertRequest:
+    properties:
+      business_day_adjustment:
+        type: string
+      dtstart:
+        description: RFC3339 datetime
+        type: string
+      is_enabled:
+        type: boolean
+      rrule:
+        description: RFC5545 RRULE (without DTSTART)
+        type: string
+    required:
+    - dtstart
+    - rrule
+    type: object
+  PortfolioRebalanceSchedulePreviewCalendar:
     properties:
       date:
         description: YYYY-MM-DD
         type: string
+      day_code:
+        description: 'isdayoff code: 0|1|2|4|8'
+        type: string
+      day_type:
+        description: workday|non_working_day|shortened_workday|special_workday|public_holiday
+        type: string
       is_work_day:
-        description: nil for source=none
+        description: nil when date has no resolved status
         type: boolean
       source:
-        description: dailytable|timetable|none
+        description: isdayoff
         type: string
       start_time:
-        description: MOEX window start (HH:mm[:ss])
+        description: trading window start (HH:mm)
         type: string
       stop_time:
-        description: MOEX window stop (HH:mm[:ss])
-        type: string
-    type: object
-  PortfolioRebalanceSchedulePreviewMoexMetadata:
-    properties:
-      calendar:
-        items:
-          $ref: '#/definitions/PortfolioRebalanceSchedulePreviewMoexCalendar'
-        type: array
-      engine:
+        description: trading window stop (HH:mm)
         type: string
     type: object
   PortfolioRebalanceSchedulePreviewRequest:
     properties:
+      business_day_adjustment:
+        type: string
       dtstart:
         description: RFC3339 datetime
         type: string
@@ -653,13 +691,15 @@ definitions:
     type: object
   PortfolioRebalanceSchedulePreviewResponse:
     properties:
+      calendar:
+        items:
+          $ref: '#/definitions/PortfolioRebalanceSchedulePreviewCalendar'
+        type: array
       events:
         description: RFC3339 datetimes
         items:
           type: string
         type: array
-      moex:
-        $ref: '#/definitions/PortfolioRebalanceSchedulePreviewMoexMetadata'
     type: object
   PortfolioRebalanceStatusItem:
     properties:
@@ -1807,12 +1847,122 @@ paths:
       summary: Get rebalance status
       tags:
       - portfolio
+  /me/portfolios/{id}/rebalances/schedule:
+    delete:
+      description: Deletes persisted rebalance schedule config for selected portfolio
+        profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete rebalance schedule config
+      tags:
+      - portfolio
+    get:
+      description: Returns persisted rebalance schedule config for selected portfolio
+        profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioRebalanceScheduleConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get rebalance schedule config
+      tags:
+      - portfolio
+    put:
+      consumes:
+      - application/json
+      description: Creates or updates persisted rebalance schedule config for selected
+        portfolio profile
+      parameters:
+      - description: Portfolio profile id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Schedule config payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/PortfolioRebalanceScheduleConfigUpsertRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PortfolioRebalanceScheduleConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Upsert rebalance schedule config
+      tags:
+      - portfolio
   /me/portfolios/{id}/rebalances/schedule/preview:
     post:
       consumes:
       - application/json
       description: Generates upcoming rebalance timestamps from RFC5545 RRULE and
-        filters by MOEX trading availability
+        filters by isdayoff workdays and trading session window
       parameters:
       - description: Portfolio profile id
         in: path
@@ -2378,7 +2528,7 @@ paths:
       - moex
   /moex/sync/coverage:
     get:
-      description: Returns rows from moex_data_coverage with optional filters
+      description: Returns rows from moex.data_coverage with optional filters
       parameters:
       - description: Dataset filter
         in: query
@@ -2422,7 +2572,7 @@ paths:
       - moex
   /moex/sync/runs:
     get:
-      description: Returns rows from moex_sync_runs with optional filters
+      description: Returns rows from moex.sync_runs with optional filters
       parameters:
       - description: Dataset filter
         in: query
@@ -2458,7 +2608,7 @@ paths:
       - moex
   /moex/sync/state:
     get:
-      description: Returns rows from moex_sync_state with optional filters
+      description: Returns rows from moex.sync_state with optional filters
       parameters:
       - description: Dataset filter
         in: query

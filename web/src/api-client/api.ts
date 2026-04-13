@@ -316,7 +316,40 @@ export interface PortfolioRebalanceRun {
     'status'?: string;
     'updated_at'?: string;
 }
+export interface PortfolioRebalanceScheduleConfigResponse {
+    'business_day_adjustment'?: string;
+    /**
+     * RFC3339 datetime
+     */
+    'dtstart'?: string;
+    'is_enabled'?: boolean;
+    'last_error'?: string;
+    'last_run_at'?: string;
+    'last_run_id'?: number;
+    'next_run_at'?: string;
+    /**
+     * RFC5545 RRULE (without DTSTART)
+     */
+    'rrule'?: string;
+    'updated_at'?: string;
+}
+export interface PortfolioRebalanceScheduleConfigUpsertRequest {
+    'business_day_adjustment'?: string;
+    /**
+     * RFC3339 datetime
+     */
+    'dtstart': string;
+    'is_enabled'?: boolean;
+    /**
+     * RFC5545 RRULE (without DTSTART)
+     */
+    'rrule': string;
+}
 export interface PortfolioRebalanceSchedulePreviewCalendar {
+    /**
+     * YYYY-MM-DD
+     */
+    'date'?: string;
     /**
      * isdayoff code: 0|1|2|4|8
      */
@@ -325,10 +358,6 @@ export interface PortfolioRebalanceSchedulePreviewCalendar {
      * workday|non_working_day|shortened_workday|special_workday|public_holiday
      */
     'day_type'?: string;
-    /**
-     * YYYY-MM-DD
-     */
-    'date'?: string;
     /**
      * nil when date has no resolved status
      */
@@ -347,6 +376,7 @@ export interface PortfolioRebalanceSchedulePreviewCalendar {
     'stop_time'?: string;
 }
 export interface PortfolioRebalanceSchedulePreviewRequest {
+    'business_day_adjustment'?: string;
     /**
      * RFC3339 datetime
      */
@@ -1291,7 +1321,7 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * Returns rows from moex_data_coverage with optional filters
+         * Returns rows from moex.data_coverage with optional filters
          * @summary Get MOEX coverage rows
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1346,7 +1376,7 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * Returns rows from moex_sync_runs with optional filters
+         * Returns rows from moex.sync_runs with optional filters
          * @summary Get MOEX sync run history
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1396,7 +1426,7 @@ export const MoexApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * Returns rows from moex_sync_state with optional filters
+         * Returns rows from moex.sync_state with optional filters
          * @summary Get MOEX sync state rows
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1515,7 +1545,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns rows from moex_data_coverage with optional filters
+         * Returns rows from moex.data_coverage with optional filters
          * @summary Get MOEX coverage rows
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1532,7 +1562,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns rows from moex_sync_runs with optional filters
+         * Returns rows from moex.sync_runs with optional filters
          * @summary Get MOEX sync run history
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1548,7 +1578,7 @@ export const MoexApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns rows from moex_sync_state with optional filters
+         * Returns rows from moex.sync_state with optional filters
          * @summary Get MOEX sync state rows
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1625,7 +1655,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.moexIndexesSecidHistoryGet(secid, from, till, intervalDays, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns rows from moex_data_coverage with optional filters
+         * Returns rows from moex.data_coverage with optional filters
          * @summary Get MOEX coverage rows
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1639,7 +1669,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.moexSyncCoverageGet(dataset, entityKey, from, till, limit, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns rows from moex_sync_runs with optional filters
+         * Returns rows from moex.sync_runs with optional filters
          * @summary Get MOEX sync run history
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1652,7 +1682,7 @@ export const MoexApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.moexSyncRunsGet(dataset, entityKey, status, limit, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns rows from moex_sync_state with optional filters
+         * Returns rows from moex.sync_state with optional filters
          * @summary Get MOEX sync state rows
          * @param {string} [dataset] Dataset filter
          * @param {string} [entityKey] Entity key filter
@@ -1728,7 +1758,7 @@ export class MoexApi extends BaseAPI {
     }
 
     /**
-     * Returns rows from moex_data_coverage with optional filters
+     * Returns rows from moex.data_coverage with optional filters
      * @summary Get MOEX coverage rows
      * @param {string} [dataset] Dataset filter
      * @param {string} [entityKey] Entity key filter
@@ -1743,7 +1773,7 @@ export class MoexApi extends BaseAPI {
     }
 
     /**
-     * Returns rows from moex_sync_runs with optional filters
+     * Returns rows from moex.sync_runs with optional filters
      * @summary Get MOEX sync run history
      * @param {string} [dataset] Dataset filter
      * @param {string} [entityKey] Entity key filter
@@ -1757,7 +1787,7 @@ export class MoexApi extends BaseAPI {
     }
 
     /**
-     * Returns rows from moex_sync_state with optional filters
+     * Returns rows from moex.sync_state with optional filters
      * @summary Get MOEX sync state rows
      * @param {string} [dataset] Dataset filter
      * @param {string} [entityKey] Entity key filter
@@ -2353,7 +2383,75 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+         * Deletes persisted rebalance schedule config for selected portfolio profile
+         * @summary Delete rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesScheduleDelete: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesScheduleDelete', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/rebalances/schedule`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = '*/*';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns persisted rebalance schedule config for selected portfolio profile
+         * @summary Get rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesScheduleGet: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesScheduleGet', 'id', id)
+            const localVarPath = `/me/portfolios/{id}/rebalances/schedule`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by isdayoff workdays and trading session window
          * @summary Preview rebalance schedule
          * @param {number} id Portfolio profile id
          * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
@@ -2375,6 +2473,45 @@ export const PortfolioApiAxiosParamCreator = function (configuration?: Configura
             }
 
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates or updates persisted rebalance schedule config for selected portfolio profile
+         * @summary Upsert rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioRebalanceScheduleConfigUpsertRequest} payload Schedule config payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesSchedulePut: async (id: number, payload: PortfolioRebalanceScheduleConfigUpsertRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesSchedulePut', 'id', id)
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('mePortfoliosIdRebalancesSchedulePut', 'payload', payload)
+            const localVarPath = `/me/portfolios/{id}/rebalances/schedule`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -2746,7 +2883,33 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+         * Deletes persisted rebalance schedule config for selected portfolio profile
+         * @summary Delete rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesScheduleDelete(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesScheduleDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesScheduleDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns persisted rebalance schedule config for selected portfolio profile
+         * @summary Get rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesScheduleGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceScheduleConfigResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesScheduleGet(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesScheduleGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by isdayoff workdays and trading session window
          * @summary Preview rebalance schedule
          * @param {number} id Portfolio profile id
          * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
@@ -2757,6 +2920,20 @@ export const PortfolioApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesSchedulePreviewPost(id, payload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesSchedulePreviewPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates or updates persisted rebalance schedule config for selected portfolio profile
+         * @summary Upsert rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioRebalanceScheduleConfigUpsertRequest} payload Schedule config payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mePortfoliosIdRebalancesSchedulePut(id: number, payload: PortfolioRebalanceScheduleConfigUpsertRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PortfolioRebalanceScheduleConfigResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mePortfoliosIdRebalancesSchedulePut(id, payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PortfolioApi.mePortfoliosIdRebalancesSchedulePut']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2983,7 +3160,27 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
             return localVarFp.mePortfoliosIdRebalancesRebalanceIdStatusGet(id, rebalanceId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+         * Deletes persisted rebalance schedule config for selected portfolio profile
+         * @summary Delete rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesScheduleDelete(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.mePortfoliosIdRebalancesScheduleDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns persisted rebalance schedule config for selected portfolio profile
+         * @summary Get rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesScheduleGet(id: number, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceScheduleConfigResponse> {
+            return localVarFp.mePortfoliosIdRebalancesScheduleGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by isdayoff workdays and trading session window
          * @summary Preview rebalance schedule
          * @param {number} id Portfolio profile id
          * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
@@ -2992,6 +3189,17 @@ export const PortfolioApiFactory = function (configuration?: Configuration, base
          */
         mePortfoliosIdRebalancesSchedulePreviewPost(id: number, payload: PortfolioRebalanceSchedulePreviewRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceSchedulePreviewResponse> {
             return localVarFp.mePortfoliosIdRebalancesSchedulePreviewPost(id, payload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates or updates persisted rebalance schedule config for selected portfolio profile
+         * @summary Upsert rebalance schedule config
+         * @param {number} id Portfolio profile id
+         * @param {PortfolioRebalanceScheduleConfigUpsertRequest} payload Schedule config payload
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mePortfoliosIdRebalancesSchedulePut(id: number, payload: PortfolioRebalanceScheduleConfigUpsertRequest, options?: RawAxiosRequestConfig): AxiosPromise<PortfolioRebalanceScheduleConfigResponse> {
+            return localVarFp.mePortfoliosIdRebalancesSchedulePut(id, payload, options).then((request) => request(axios, basePath));
         },
         /**
          * Deletes replication config for selected portfolio profile
@@ -3217,7 +3425,29 @@ export class PortfolioApi extends BaseAPI {
     }
 
     /**
-     * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by MOEX trading availability
+     * Deletes persisted rebalance schedule config for selected portfolio profile
+     * @summary Delete rebalance schedule config
+     * @param {number} id Portfolio profile id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesScheduleDelete(id: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesScheduleDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns persisted rebalance schedule config for selected portfolio profile
+     * @summary Get rebalance schedule config
+     * @param {number} id Portfolio profile id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesScheduleGet(id: number, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesScheduleGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Generates upcoming rebalance timestamps from RFC5545 RRULE and filters by isdayoff workdays and trading session window
      * @summary Preview rebalance schedule
      * @param {number} id Portfolio profile id
      * @param {PortfolioRebalanceSchedulePreviewRequest} payload Schedule preview payload
@@ -3226,6 +3456,18 @@ export class PortfolioApi extends BaseAPI {
      */
     public mePortfoliosIdRebalancesSchedulePreviewPost(id: number, payload: PortfolioRebalanceSchedulePreviewRequest, options?: RawAxiosRequestConfig) {
         return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesSchedulePreviewPost(id, payload, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates or updates persisted rebalance schedule config for selected portfolio profile
+     * @summary Upsert rebalance schedule config
+     * @param {number} id Portfolio profile id
+     * @param {PortfolioRebalanceScheduleConfigUpsertRequest} payload Schedule config payload
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mePortfoliosIdRebalancesSchedulePut(id: number, payload: PortfolioRebalanceScheduleConfigUpsertRequest, options?: RawAxiosRequestConfig) {
+        return PortfolioApiFp(this.configuration).mePortfoliosIdRebalancesSchedulePut(id, payload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4705,5 +4947,6 @@ export class VerificationApi extends BaseAPI {
         return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 
