@@ -596,6 +596,8 @@ definitions:
         type: integer
       provider:
         type: string
+      run_index:
+        type: integer
       started_at:
         type: string
       status:

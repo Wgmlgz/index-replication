@@ -108,6 +108,18 @@ function runSortTimestamp(run: PortfolioRebalanceRun): number {
   return Number.isFinite(timestamp) ? timestamp : -1;
 }
 
+function runDisplayIndex(run: PortfolioRebalanceRun | null | undefined): number | null {
+  const index = run?.run_index;
+  if (typeof index === 'number' && index > 0) {
+    return index;
+  }
+  const id = run?.id;
+  if (typeof id === 'number' && id > 0) {
+    return id;
+  }
+  return null;
+}
+
 function executeButtonLabel(status: string | undefined, t: TFunction): string {
   if (status === 'failed') {
     return t('portfolio.replication.rebalances.executeDraftRetry');
@@ -449,6 +461,10 @@ export default function PortfolioReplicationDraftsPage() {
     }
     return rebalanceRuns.find(run => run.id === selectedRebalanceID) ?? null;
   }, [rebalanceDetail?.run, rebalanceRuns, selectedRebalanceID, status?.run]);
+  const selectedRunDisplayIndex = useMemo(
+    () => runDisplayIndex(selectedRun),
+    [selectedRun],
+  );
   const selectedLiveStatus = status?.run?.id === selectedRebalanceID ? status : null;
   const selectedLiveStatusLoading = status?.run?.id === selectedRebalanceID
     ? statusLoading
@@ -767,6 +783,7 @@ export default function PortfolioReplicationDraftsPage() {
 
             {rebalanceRuns.map(run => {
               const runID = typeof run.id === 'number' ? run.id : 0;
+              const displayIndex = runDisplayIndex(run);
               const isDraftRun = run.status === 'draft';
               const runDisplayTime = run.started_at || run.created_at;
               const entityLabel = isDraftRun
@@ -811,7 +828,7 @@ export default function PortfolioReplicationDraftsPage() {
                     >
                       <div className='grid flex-1 gap-1'>
                         <div className='flex w-full items-center gap-2'>
-                          <span className='font-medium'>#{runID || '-'}</span>
+                          <span className='font-medium'>#{displayIndex || '-'}</span>
                           <Badge variant='outline' className='inline-flex items-center gap-1'>
                             {renderRunStatusIcon(run.status)}
                             {t(runStatusBadgeLabelKey(run.status))}
@@ -849,7 +866,7 @@ export default function PortfolioReplicationDraftsPage() {
                           )}
                           title={t('portfolio.replication.rebalances.deleteConfirmTitle', {
                             entity: entityLabel,
-                            id: runID || '-',
+                            id: displayIndex || '-',
                           })}
                           description={t(deleteDescriptionKey)}
                           cancelLabel={t('portfolio.replication.modeDialog.cancelButton')}
@@ -966,7 +983,7 @@ export default function PortfolioReplicationDraftsPage() {
               <div className='flex flex-wrap items-center gap-2'>
                 {t('portfolio.replication.rebalances.detailTitle', {
                   entity: selectedEntityLabel,
-                  id: selectedRun.id ?? '-',
+                  id: selectedRunDisplayIndex ?? '-',
                 })}
                 <Badge className='inline-flex items-center gap-1'>
                   {renderRunStatusIcon(selectedRun.status)}

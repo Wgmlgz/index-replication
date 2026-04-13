@@ -203,6 +203,7 @@ func toRunDTO(model *models.PortfolioRebalanceRun) dto.PortfolioRebalanceRun {
 
 	return dto.PortfolioRebalanceRun{
 		ID:                   model.ID,
+		RunIndex:             model.RunIndex,
 		PortfolioID:          model.PortfolioProfileID,
 		Provider:             model.Provider,
 		BenchmarkSecid:       model.BenchmarkSecidSnapshot,

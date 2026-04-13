@@ -103,7 +103,7 @@ export default function PortfolioReplicationSettingsPage() {
 
             <div className='col-span-2 grid content-start gap-2'>
               <div className='flex flex-wrap items-start justify-between gap-3'>
-                <div className='grid gap-1'>
+                <div className='grid gap-2'>
                   <CardTitle>{t('portfolio.replication.schedule.title')}</CardTitle>
                   <CardDescription>{t('portfolio.replication.schedule.description')}</CardDescription>
                 </div>

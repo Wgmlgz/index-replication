@@ -3532,6 +3532,9 @@ const docTemplate = `{
                 "provider": {
                     "type": "string"
                 },
+                "run_index": {
+                    "type": "integer"
+                },
                 "started_at": {
                     "type": "string"
                 },

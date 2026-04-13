@@ -17,6 +17,7 @@ Name | Type | Description | Notes
 **planning_params** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
 **portfolio_id** | **number** |  | [optional] [default to undefined]
 **provider** | **string** |  | [optional] [default to undefined]
+**run_index** | **number** |  | [optional] [default to undefined]
 **started_at** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [optional] [default to undefined]
 **updated_at** | **string** |  | [optional] [default to undefined]
@@ -39,6 +40,7 @@ const instance: PortfolioRebalanceRun = {
     planning_params,
     portfolio_id,
     provider,
+    run_index,
     started_at,
     status,
     updated_at,

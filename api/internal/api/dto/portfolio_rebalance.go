@@ -11,6 +11,7 @@ type PortfolioRebalanceCreateRequest struct {
 
 type PortfolioRebalanceRun struct {
 	ID                   int                    `json:"id"`
+	RunIndex             int                    `json:"run_index"`
 	PortfolioID          int                    `json:"portfolio_id"`
 	Provider             string                 `json:"provider"`
 	BenchmarkSecid       *string                `json:"benchmark_secid"`

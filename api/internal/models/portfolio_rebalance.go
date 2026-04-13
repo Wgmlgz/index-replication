@@ -32,6 +32,7 @@ const (
 
 type PortfolioRebalanceRun struct {
 	ID                            int               `gorm:"primaryKey;autoIncrement"`
+	RunIndex                      int               `gorm:"column:run_index;not null"`
 	UserID                        int               `gorm:"column:user_id;not null;index:idx_portfolio_rebalance_runs_user_profile_created,priority:1"`
 	PortfolioProfileID            int               `gorm:"column:portfolio_profile_id;not null;index:idx_portfolio_rebalance_runs_user_profile_created,priority:2"`
 	Provider                      string            `gorm:"column:provider;size:64;not null"`

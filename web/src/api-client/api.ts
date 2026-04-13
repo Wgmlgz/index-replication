@@ -312,6 +312,7 @@ export interface PortfolioRebalanceRun {
     'planning_params'?: { [key: string]: any; };
     'portfolio_id'?: number;
     'provider'?: string;
+    'run_index'?: number;
     'started_at'?: string;
     'status'?: string;
     'updated_at'?: string;

@@ -68,6 +68,9 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 	if run.ID <= 0 {
 		t.Fatalf("expected run id > 0")
 	}
+	if run.RunIndex != 1 {
+		t.Fatalf("expected first run index to be 1, got %d", run.RunIndex)
+	}
 	if run.InputJSON["mode_key"] != "full" {
 		t.Fatalf("expected input json payload")
 	}
@@ -87,7 +90,53 @@ func TestPortfolioRebalancesRepository_CreateAndRead(t *testing.T) {
 	if detail.ExecutionMode != models.PortfolioRebalanceExecutionModeManual {
 		t.Fatalf("unexpected execution mode: %s", detail.ExecutionMode)
 	}
+	if detail.RunIndex != 1 {
+		t.Fatalf("expected detail run index 1, got %d", detail.RunIndex)
+	}
 
+}
+
+func TestPortfolioRebalancesRepository_RunIndexPerPortfolio(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	profileA := createPortfolioProfileForRebalance(t, db, 2001)
+	profileB := createPortfolioProfileForRebalance(t, db, 2002)
+	repo := NewPortfolioRebalancesRepository(db)
+
+	asOfDate, err := time.Parse("2006-01-02", "2025-03-01")
+	if err != nil {
+		t.Fatalf("parse as-of date: %v", err)
+	}
+
+	create := func(userID int, profileID int) *models.PortfolioRebalanceRun {
+		row, createErr := repo.CreateRun(&models.PortfolioRebalanceRun{
+			UserID:                     userID,
+			PortfolioProfileID:         profileID,
+			Provider:                   "virtual",
+			ReplicationModeKeySnapshot: "full",
+			ExecutionMode:              models.PortfolioRebalanceExecutionModeManual,
+			ConfirmationRequired:       true,
+			Status:                     models.PortfolioRebalanceRunStatusDraft,
+			AsOfDate:                   asOfDate,
+		})
+		if createErr != nil {
+			t.Fatalf("create run for profile %d: %v", profileID, createErr)
+		}
+		return row
+	}
+
+	a1 := create(2001, profileA)
+	a2 := create(2001, profileA)
+	b1 := create(2002, profileB)
+	a3 := create(2001, profileA)
+
+	if a1.RunIndex != 1 || a2.RunIndex != 2 || a3.RunIndex != 3 {
+		t.Fatalf("unexpected run indexes for profile A: got [%d,%d,%d], want [1,2,3]", a1.RunIndex, a2.RunIndex, a3.RunIndex)
+	}
+	if b1.RunIndex != 1 {
+		t.Fatalf("expected first run index for profile B to be 1, got %d", b1.RunIndex)
+	}
 }
 
 func TestPortfolioRebalancesRepository_CascadeDelete(t *testing.T) {

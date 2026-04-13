@@ -53,6 +53,9 @@ func TestPortfolioRebalanceAPI_CreateDraftSuccess(t *testing.T) {
 	if resp.Run.ID <= 0 {
 		t.Fatalf("expected run id > 0")
 	}
+	if resp.Run.RunIndex != 1 {
+		t.Fatalf("expected run_index 1, got %d", resp.Run.RunIndex)
+	}
 	if resp.Run.Status != models.PortfolioRebalanceRunStatusPlanningQueued {
 		t.Fatalf("expected planning_queued status, got %q", resp.Run.Status)
 	}
@@ -141,6 +144,9 @@ func TestPortfolioRebalanceAPI_DetailAndListContract(t *testing.T) {
 	}
 	if detailResp.Run.ID != created.Run.ID {
 		t.Fatalf("expected detail run id %d, got %d", created.Run.ID, detailResp.Run.ID)
+	}
+	if detailResp.Run.RunIndex != created.Run.RunIndex {
+		t.Fatalf("expected detail run_index %d, got %d", created.Run.RunIndex, detailResp.Run.RunIndex)
 	}
 }
 
