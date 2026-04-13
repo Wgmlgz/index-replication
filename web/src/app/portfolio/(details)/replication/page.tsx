@@ -9,6 +9,8 @@ import { ConfirmActionDialog } from '@/components/confirm-action-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
 import { RebalanceSchedulePreviewForm } from './components/rebalance-schedule-preview-form';
@@ -21,6 +23,7 @@ export default function PortfolioReplicationSettingsPage() {
   const isReplicationEnabled = selectedProfile?.replication?.is_enabled === true;
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(true);
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
@@ -98,9 +101,24 @@ export default function PortfolioReplicationSettingsPage() {
               ) : null}
             </div>
 
-            <div className='grid content-start gap-1 col-span-2'>
-              <CardTitle>{t('portfolio.replication.schedule.title')}</CardTitle>
-              <CardDescription>{t('portfolio.replication.schedule.description')}</CardDescription>
+            <div className='col-span-2 grid content-start gap-2'>
+              <div className='flex flex-wrap items-start justify-between gap-3'>
+                <div className='grid gap-1'>
+                  <CardTitle>{t('portfolio.replication.schedule.title')}</CardTitle>
+                  <CardDescription>{t('portfolio.replication.schedule.description')}</CardDescription>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Label htmlFor='schedule-header-enabled' className='text-xs text-muted-foreground'>
+                    {t('portfolio.replication.schedule.enableLabel')}
+                  </Label>
+                  <Switch
+                    id='schedule-header-enabled'
+                    checked={scheduleEnabled}
+                    onCheckedChange={setScheduleEnabled}
+                    aria-label={t('portfolio.replication.schedule.enableLabel')}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -122,7 +140,11 @@ export default function PortfolioReplicationSettingsPage() {
               />
             </div>
             <div className='min-h-0 overflow-y-auto col-span-2'>
-              <RebalanceSchedulePreviewForm portfolioID={portfolioID} />
+              <RebalanceSchedulePreviewForm
+                portfolioID={portfolioID}
+                scheduleEnabled={scheduleEnabled}
+                onScheduleEnabledChange={setScheduleEnabled}
+              />
             </div>
           </div>
         </CardContent>

@@ -29,6 +29,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatNumber, formatPercent } from "@/app/portfolio/components/portfolio-formatting";
 import {
+  SortHeader,
+  SortableDataTable,
+} from "@/app/portfolio/components/sortable-data-table";
+import {
   Table,
   TableBody,
   TableCell,
@@ -49,7 +53,6 @@ export default function PortfolioOverviewSummaryPage() {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [error, setError] = useState("");
   const [moneySorting, setMoneySorting] = useState<SortingState>([]);
-  const [positionsSorting, setPositionsSorting] = useState<SortingState>([]);
 
   const signedValueClassName = (value: number): string => {
     if (value > 0) return "text-emerald-600 dark:text-emerald-400";
@@ -148,15 +151,10 @@ export default function PortfolioOverviewSummaryPage() {
       {
         accessorKey: "ticker",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("portfolio.card.positionTicker")}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t("portfolio.card.positionTicker")}
+          />
         ),
         cell: ({ row }) => (
           <TickerWithLogo
@@ -168,45 +166,32 @@ export default function PortfolioOverviewSummaryPage() {
       {
         accessorKey: "instrument_id",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("portfolio.card.positionInstrumentID")}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t("portfolio.card.positionInstrumentID")}
+          />
         ),
         cell: ({ row }) => row.original.instrument_id || "-",
       },
       {
         accessorKey: "quantity",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("portfolio.card.positionQuantity")}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t("portfolio.card.positionQuantity")}
+            alignRight
+          />
         ),
         cell: ({ row }) => formatNumber(row.original.quantity ?? 0),
       },
       {
         accessorKey: "current_price",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("portfolio.card.positionCurrentPrice")}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t("portfolio.card.positionCurrentPrice")}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <>
@@ -217,15 +202,11 @@ export default function PortfolioOverviewSummaryPage() {
       {
         accessorKey: "current_value",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("portfolio.card.positionCurrentValue")}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t("portfolio.card.positionCurrentValue")}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <>
@@ -236,15 +217,11 @@ export default function PortfolioOverviewSummaryPage() {
       {
         accessorKey: "expected_yield",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("portfolio.card.positionExpectedYield")}
-            {renderSortIcon(column.getIsSorted())}
-          </Button>
+          <SortHeader
+            column={column}
+            label={t("portfolio.card.positionExpectedYield")}
+            alignRight
+          />
         ),
         cell: ({ row }) => (
           <span className={cn("font-medium", signedValueClassName(row.original.expected_yield ?? 0))}>
@@ -274,18 +251,6 @@ export default function PortfolioOverviewSummaryPage() {
     state: { sorting: moneySorting },
     autoResetAll: false,
     getRowId: (row, index) => row.currency || `currency-${index}`,
-  });
-
-  const positionsTable = useReactTable({
-    data: positionsData,
-    columns: positionsColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setPositionsSorting,
-    state: { sorting: positionsSorting },
-    autoResetAll: false,
-    getRowId: (row, index) =>
-      `${row.instrument_id || "-"}:${row.ticker || "-"}:${index}`,
   });
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
@@ -358,7 +323,7 @@ export default function PortfolioOverviewSummaryPage() {
           {t("portfolio.overview.summaryDescription")}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-sm">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden text-sm">
         {error ? (
           <Alert variant="destructive">
             <AlertTitle>{t("common.error")}</AlertTitle>
@@ -371,8 +336,8 @@ export default function PortfolioOverviewSummaryPage() {
             {t("portfolio.card.loading")}
           </div>
         ) : summary ? (
-          <>
-            <div className="space-y-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="space-y-2 shrink-0">
               <div className="font-medium">
                 {t("portfolio.overview.balancesTitle")}
               </div>
@@ -441,53 +406,27 @@ export default function PortfolioOverviewSummaryPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-2">
               <div className="font-medium">
                 {t("portfolio.card.positionsTitle", {
                   count: (summary.positions ?? []).length,
                 })}
               </div>
-              <div className="overflow-auto rounded-md border">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    {positionsTable.getHeaderGroups().map(headerGroup => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map(header => (
-                          <TableHead key={header.id}>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableHeader>
-                  <TableBody>
-                    {positionsTable.getRowModel().rows.length === 0 ? (
-                      <TableRow>
-                        <TableCell className="text-muted-foreground" colSpan={6}>
-                          {t("portfolio.card.positionsEmpty")}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      positionsTable.getRowModel().rows.map(row => (
-                        <TableRow key={row.id}>
-                          {row.getVisibleCells().map(cell => (
-                            <TableCell key={cell.id}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+              <div className="relative h-full">
+                <div className="absolute inset-0">
+                  <SortableDataTable
+                    data={positionsData}
+                    columns={positionsColumns}
+                    emptyLabel={t("portfolio.card.positionsEmpty")}
+                    getRowKey={(row, index) =>
+                      `${row.instrument_id || "-"}:${row.ticker || "-"}:${index}`
+                    }
+                    className="h-full rounded border overflow-auto"
+                  />
+                </div>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <div className="text-muted-foreground">
             {t("portfolio.card.empty")}

@@ -410,6 +410,8 @@
       "schedule": {
         "title": "Schedule config",
         "description": "Configure rebalancing schedule and parameters.",
+        "enableLabel": "Enable schedule",
+        "enableHint": "When disabled, the schedule is saved but no next run is planned.",
         "frequencyLabel": "Frequency",
         "frequency": {
           "daily": "Daily",
@@ -424,7 +426,7 @@
           "tooltipLabel": "Explain business-day adjustment policies",
           "tooltip": {
             "title": "Policy behavior",
-            "strict": "Strict: keep the original date/time only. If it falls on a non-trading day, that event is skipped.",
+            "strict": "Strict: keep the original date. If time is outside trading session it is clamped to session bounds; non-trading days are skipped.",
             "following": "Following: move to the next trading day.",
             "preceding": "Preceding: move to the previous trading day.",
             "modifiedFollowing": "Modified following: move to the next trading day, but if that changes month, move to the previous trading day.",
@@ -796,7 +798,6 @@
     "details": {
       "profileNameFallback": "Not selected",
       "editNameAriaLabel": "Edit profile name",
-      "description": "Overview, actions, analytics, and operations for the selected profile.",
       "backAriaLabel": "Back to profiles",
       "editNameTitle": "Edit profile name",
       "editNameDescription": "Update the display name for this profile.",
@@ -895,31 +896,11 @@
     }
   },
   "tbankTest": {
-    "menu": {
-      "title": "T-Bank test buy",
-      "button": "Open T-Bank tester"
-    },
     "errors": {
       "status": "Failed to load T-Bank integration status.",
       "connect": "Failed to connect T-Bank account.",
       "disconnect": "Failed to disconnect T-Bank account.",
-      "defaultAccount": "Failed to update default account.",
-      "lookup": "Failed to resolve instrument id by ticker."
-    },
-    "lookup": {
-      "title": "Instrument id lookup",
-      "description": "Get T-Bank instrument ids (UID/FIGI) by MOEX ticker and optional class code.",
-      "tickerLabel": "MOEX ticker",
-      "tickerPlaceholder": "SBER",
-      "classCodeLabel": "Class code (optional)",
-      "classCodePlaceholder": "TQBR",
-      "searchButton": "Find instrument id",
-      "loading": "Searching instruments...",
-      "resultCount_one": "tbankTest.lookup.resultCount",
-      "resultCount_other": "tbankTest.lookup.resultCount",
-      "empty": "No matching instruments.",
-      "noName": "Unnamed instrument",
-      "instrumentIdLabel": "Instrument ID:"
+      "defaultAccount": "Failed to update default account."
     },
     "connect": {
       "title": "T-Bank integration",
@@ -941,9 +922,7 @@
       "disconnectButton": "Disconnect",
       "refreshButton": "Refresh status"
     },
-    "loading": "Loading integration status...",
-    "title": "T-Bank trading workspace",
-    "description": "Run test orders and resolve instrument ids. Configure token and account in Integrations."
+    "loading": "Loading integration status..."
   },
   "common": {
     "error": "Error",

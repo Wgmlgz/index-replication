@@ -1,11 +1,15 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
+  CircleHelp,
+  FlaskConical,
+  Monitor,
   Pencil,
   PlayCircle,
   SlidersHorizontal,
@@ -113,6 +117,31 @@ export default function PortfolioDetailsRouteLayout({
     () => resolveActiveSection(pathname),
     [pathname],
   );
+  const providerDetails = useMemo(
+    () => ({
+      virtual: {
+        label: t('portfolio.profiles.providerVirtual'),
+        icon: Monitor,
+      },
+      mock: {
+        label: t('portfolio.profiles.providerMock'),
+        icon: FlaskConical,
+      },
+      tbank: {
+        label: t('portfolio.profiles.providerTbank'),
+        icon: null,
+      },
+    }),
+    [t],
+  );
+  const providerKey = selectedProfile?.provider?.toLowerCase() ?? '';
+  const providerConfig =
+    providerKey in providerDetails
+      ? providerDetails[providerKey as keyof typeof providerDetails]
+      : null;
+  const ProviderIcon = providerConfig?.icon ?? CircleHelp;
+  const providerName = providerConfig?.label ?? selectedProfile?.provider ?? '';
+  const isTbankProvider = providerKey === 'tbank';
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
@@ -269,7 +298,25 @@ export default function PortfolioDetailsRouteLayout({
                     </Button>
                   </div>
                   <p className='text-muted-foreground text-sm'>
-                    {t('portfolio.details.description')}
+                    {selectedProfile ? (
+                      <span className='inline-flex items-center gap-2'>
+                        {isTbankProvider ? (
+                          <Image
+                            src='/tbank-logo-32x32.png'
+                            alt={providerName}
+                            width={16}
+                            height={16}
+                            unoptimized
+                            className='size-4 rounded-[3px]'
+                          />
+                        ) : (
+                          <ProviderIcon className='size-4' />
+                        )}
+                        <span>{t('portfolio.profiles.providerSummary', { provider: providerName })}</span>
+                      </span>
+                    ) : (
+                      t('common.loading')
+                    )}
                   </p>
                 </div>
                 <Button asChild variant='outline' size='icon'>

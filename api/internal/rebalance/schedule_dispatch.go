@@ -360,6 +360,14 @@ func (s *ScheduleDispatchService) nextRunAtAfterDue(
 	if err != nil {
 		return nil, err
 	}
+	if len(preview.Events) == 0 && plan.policy == businessDayAdjustmentStrict {
+		fallbackPlan := *plan
+		fallbackPlan.policy = businessDayAdjustmentFollowing
+		preview, err = s.engine.Calculate(ctx, fallbackPlan)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if len(preview.Events) == 0 {
 		return nil, nil
 	}

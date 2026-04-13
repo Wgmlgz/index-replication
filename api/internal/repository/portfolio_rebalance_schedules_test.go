@@ -42,6 +42,21 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 		}
 	})
 
+	t.Run("enabled/next_run_at consistency check exists", func(t *testing.T) {
+		var count int64
+		if err := db.Raw(`
+			SELECT COUNT(*)
+			FROM information_schema.check_constraints
+			WHERE constraint_schema = 'public'
+			  AND constraint_name = 'portfolio_rebalance_schedules_enabled_next_run_consistency_chk'
+		`).Scan(&count).Error; err != nil {
+			t.Fatalf("check enabled/next_run_at consistency constraint exists: %v", err)
+		}
+		if count != 1 {
+			t.Fatalf("expected enabled/next_run_at consistency constraint to exist")
+		}
+	})
+
 	t.Run("portfolio_profile_id is unique", func(t *testing.T) {
 		profileID := createPortfolioProfileRow(t, db, 3001)
 		dtStart := time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC)
@@ -74,6 +89,7 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 
 	t.Run("cascade delete from portfolio_profiles", func(t *testing.T) {
 		profileID := createPortfolioProfileRow(t, db, 3002)
+		nextRunAt := time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC)
 		insertRebalanceScheduleRow(
 			t,
 			db,
@@ -81,7 +97,7 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 			true,
 			time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC),
 			"FREQ=DAILY",
-			nil,
+			&nextRunAt,
 			nil,
 			nil,
 			nil,
@@ -97,6 +113,36 @@ func TestPortfolioRebalanceSchedules_MigrationAndConstraints(t *testing.T) {
 		}
 		if count != 0 {
 			t.Fatalf("expected schedule to be deleted by cascade")
+		}
+	})
+
+	t.Run("enabled schedule rejects null next_run_at", func(t *testing.T) {
+		profileID := createPortfolioProfileRow(t, db, 3005)
+		err := db.Exec(
+			"INSERT INTO portfolio_rebalance_schedules (portfolio_profile_id, is_enabled, dtstart, rrule, next_run_at) VALUES (?, ?, ?, ?, ?)",
+			profileID,
+			true,
+			time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC).Format(time.RFC3339),
+			"FREQ=DAILY",
+			nil,
+		).Error
+		if err == nil {
+			t.Fatalf("expected check violation for enabled schedule with null next_run_at")
+		}
+	})
+
+	t.Run("disabled schedule rejects non-null next_run_at", func(t *testing.T) {
+		profileID := createPortfolioProfileRow(t, db, 3006)
+		err := db.Exec(
+			"INSERT INTO portfolio_rebalance_schedules (portfolio_profile_id, is_enabled, dtstart, rrule, next_run_at) VALUES (?, ?, ?, ?, ?)",
+			profileID,
+			false,
+			time.Date(2026, 4, 13, 9, 30, 0, 0, time.UTC).Format(time.RFC3339),
+			"FREQ=DAILY",
+			time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		).Error
+		if err == nil {
+			t.Fatalf("expected check violation for disabled schedule with non-null next_run_at")
 		}
 	})
 }
@@ -247,8 +293,8 @@ func TestPortfolioRebalanceSchedulesRepository_RuntimeStateUpdates(t *testing.T)
 	if err != nil {
 		t.Fatalf("get after upsert preserve: %v", err)
 	}
-	if preserved.NextRunAt == nil || !preserved.NextRunAt.Equal(nextRunAt) {
-		t.Fatalf("expected next_run_at to survive upsert, got %v", preserved.NextRunAt)
+	if preserved.NextRunAt != nil {
+		t.Fatalf("expected next_run_at=nil for disabled schedule, got %v", preserved.NextRunAt)
 	}
 	if preserved.LastRunAt == nil || !preserved.LastRunAt.Equal(lastRunAt) {
 		t.Fatalf("expected last_run_at to survive upsert, got %v", preserved.LastRunAt)
@@ -323,7 +369,18 @@ func TestPortfolioRebalanceSchedulesRepository_ListEnabled(t *testing.T) {
 
 	enabledProfileID := createPortfolioProfileRow(t, db, 3020)
 	disabledProfileID := createPortfolioProfileRow(t, db, 3021)
+	missingReplicationProfileID := createPortfolioProfileRow(t, db, 3022)
 	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	insertReplicationConfigRow(t, db, enabledProfileID, nil)
+	insertReplicationConfigRow(t, db, disabledProfileID, nil)
+	if err := db.Exec(
+		"UPDATE portfolio_replication_configs SET is_enabled = ? WHERE portfolio_profile_id = ?",
+		false,
+		disabledProfileID,
+	).Error; err != nil {
+		t.Fatalf("disable replication config: %v", err)
+	}
 
 	_, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
 		PortfolioProfileID: enabledProfileID,
@@ -342,6 +399,15 @@ func TestPortfolioRebalanceSchedulesRepository_ListEnabled(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("seed disabled schedule: %v", err)
+	}
+	_, err = repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: missingReplicationProfileID,
+		IsEnabled:          true,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("seed enabled schedule without replication config: %v", err)
 	}
 
 	rows, err := repo.ListEnabled()
@@ -400,6 +466,47 @@ func TestPortfolioRebalanceSchedulesRepository_ClaimDueAndAdvanceNextRunIdempote
 	}
 	if claimedAgain {
 		t.Fatalf("expected second claim=false for same due_at")
+	}
+}
+
+func TestPortfolioRebalanceSchedulesRepository_ClaimDueWithoutNextRunDisablesSchedule(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	profileID := createPortfolioProfileRow(t, db, 3032)
+	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	schedule, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: profileID,
+		IsEnabled:          true,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY;COUNT=1",
+	})
+	if err != nil {
+		t.Fatalf("seed schedule: %v", err)
+	}
+	dueAt := time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC)
+	if err := repo.SetNextRunAtByPortfolioProfileID(profileID, &dueAt); err != nil {
+		t.Fatalf("seed next_run_at: %v", err)
+	}
+
+	claimed, err := repo.ClaimDueAndAdvanceNextRun(context.Background(), schedule.ID, profileID, dueAt, nil)
+	if err != nil {
+		t.Fatalf("claim terminal due: %v", err)
+	}
+	if !claimed {
+		t.Fatalf("expected claim=true")
+	}
+
+	updated, err := repo.GetByID(schedule.ID)
+	if err != nil {
+		t.Fatalf("get updated schedule: %v", err)
+	}
+	if updated.IsEnabled {
+		t.Fatalf("expected schedule to be disabled when next_run_at is nil")
+	}
+	if updated.NextRunAt != nil {
+		t.Fatalf("expected next_run_at=nil after disabling, got %v", updated.NextRunAt)
 	}
 }
 
@@ -480,13 +587,21 @@ func insertRebalanceScheduleRow(
 	lastRunID *int,
 ) {
 	t.Helper()
+	nextRunAtValue := nextRunAt
+	if isEnabled && nextRunAtValue == nil {
+		dtStartUTC := dtStart.UTC()
+		nextRunAtValue = &dtStartUTC
+	}
+	if !isEnabled {
+		nextRunAtValue = nil
+	}
 	if err := db.Exec(
 		"INSERT INTO portfolio_rebalance_schedules (portfolio_profile_id, is_enabled, dtstart, rrule, next_run_at, last_run_at, last_error, last_run_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		profileID,
 		isEnabled,
 		dtStart.Format(time.RFC3339),
 		rrule,
-		nextRunAt,
+		nextRunAtValue,
 		lastRunAt,
 		lastError,
 		lastRunID,

@@ -156,7 +156,12 @@ func maskToken(token string) string {
 	if len(token) <= 8 {
 		return strings.Repeat("*", len(token))
 	}
-	return token[:4] + strings.Repeat("*", len(token)-8) + token[len(token)-4:]
+	const maxMaskedChars = 8
+	maskedChars := len(token) - 8
+	if maskedChars > maxMaskedChars {
+		maskedChars = maxMaskedChars
+	}
+	return token[:4] + strings.Repeat("*", maskedChars) + token[len(token)-4:]
 }
 
 func containsAccount(accounts []dto.TBankAccount, accountID string) bool {

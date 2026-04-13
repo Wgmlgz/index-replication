@@ -76,15 +76,6 @@ export const DashboardCards: DashboardCard[] = [
     permission: null,
   },
   {
-    title: 'T-Bank test buy',
-    titleKey: 'tbankTest.menu.title',
-    icon: Wallet,
-    buttonText: 'Open T-Bank tester',
-    buttonTextKey: 'tbankTest.menu.button',
-    href: '/tbank-test',
-    permission: null,
-  },
-  {
     title: 'Portfolio',
     titleKey: 'navigation.cards.portfolio.title',
     icon: Wallet,

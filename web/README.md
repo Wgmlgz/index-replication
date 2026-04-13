@@ -82,7 +82,6 @@ Feature routes (App Router):
 - `web/src/app/integrations/page.tsx`
 - `web/src/app/dashboard/page.tsx`
 - `web/src/app/moex-indexes/page.tsx`
-- `web/src/app/tbank-test/page.tsx`
 - `web/src/app/portfolio/page.tsx`
 
 Telegram verification user flow is available in the Settings page. Backend/setup details are in:

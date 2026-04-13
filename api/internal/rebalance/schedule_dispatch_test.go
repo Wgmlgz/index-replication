@@ -451,5 +451,15 @@ func createDispatchTestProfile(t *testing.T, db *gorm.DB, userID int, name strin
 	if err := db.Create(row).Error; err != nil {
 		t.Fatalf("create profile: %v", err)
 	}
+	if err := db.Exec(
+		"INSERT INTO portfolio_replication_configs (portfolio_profile_id, is_enabled, benchmark_secid, mode_key, mode_params) VALUES (?, ?, ?, ?, ?)",
+		row.ID,
+		true,
+		nil,
+		"full",
+		"{}",
+	).Error; err != nil {
+		t.Fatalf("create replication config: %v", err)
+	}
 	return row
 }

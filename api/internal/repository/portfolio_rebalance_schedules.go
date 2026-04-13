@@ -40,8 +40,12 @@ func (r *PortfolioRebalanceSchedulesRepository) GetByID(scheduleID int) (*models
 func (r *PortfolioRebalanceSchedulesRepository) ListEnabled() ([]models.PortfolioRebalanceSchedule, error) {
 	rows := make([]models.PortfolioRebalanceSchedule, 0)
 	if err := r.db.
-		Where("is_enabled = ?", true).
-		Order("id ASC").
+		Table("portfolio_rebalance_schedules AS prs").
+		Select("prs.*").
+		Joins("JOIN portfolio_replication_configs AS prc ON prc.portfolio_profile_id = prs.portfolio_profile_id").
+		Where("prs.is_enabled = ?", true).
+		Where("prc.is_enabled = ?", true).
+		Order("prs.id ASC").
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -64,6 +68,15 @@ func (r *PortfolioRebalanceSchedulesRepository) Upsert(
 		return nil, gorm.ErrInvalidData
 	}
 
+	nextRunAt := normalizeUTCTimePtr(schedule.NextRunAt)
+	if schedule.IsEnabled && nextRunAt == nil {
+		dtStart := schedule.DtStart.UTC()
+		nextRunAt = &dtStart
+	}
+	if !schedule.IsEnabled {
+		nextRunAt = nil
+	}
+
 	now := time.Now().UTC()
 	insertValues := map[string]interface{}{
 		"portfolio_profile_id":    schedule.PortfolioProfileID,
@@ -71,6 +84,11 @@ func (r *PortfolioRebalanceSchedulesRepository) Upsert(
 		"dtstart":                 schedule.DtStart,
 		"rrule":                   schedule.RRule,
 		"business_day_adjustment": schedule.BusinessDayAdjustment,
+		"next_run_at":             nextRunAt,
+	}
+	updatedNextRunAt := interface{}(nextRunAt)
+	if schedule.IsEnabled && schedule.NextRunAt == nil {
+		updatedNextRunAt = gorm.Expr("COALESCE(portfolio_rebalance_schedules.next_run_at, EXCLUDED.dtstart)")
 	}
 	err := r.db.Model(&models.PortfolioRebalanceSchedule{}).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "portfolio_profile_id"}},
@@ -79,6 +97,7 @@ func (r *PortfolioRebalanceSchedulesRepository) Upsert(
 			"dtstart":                 schedule.DtStart,
 			"rrule":                   schedule.RRule,
 			"business_day_adjustment": schedule.BusinessDayAdjustment,
+			"next_run_at":             updatedNextRunAt,
 			"updated_at":              now,
 		}),
 	}).Create(insertValues).Error
@@ -133,6 +152,10 @@ func (r *PortfolioRebalanceSchedulesRepository) ClaimDueAndAdvanceNextRun(
 	claimed := false
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		nextEnabled := true
+		if nextRunAt == nil {
+			nextEnabled = false
+		}
 		updateTx := tx.Model(&models.PortfolioRebalanceSchedule{}).
 			Where(
 				"id = ? AND portfolio_profile_id = ? AND is_enabled = ? AND (next_run_at = ? OR next_run_at IS NULL)",
@@ -143,6 +166,7 @@ func (r *PortfolioRebalanceSchedulesRepository) ClaimDueAndAdvanceNextRun(
 			).
 			Updates(map[string]interface{}{
 				"next_run_at": nextRunAt,
+				"is_enabled":  nextEnabled,
 				"updated_at":  time.Now().UTC(),
 			})
 		if updateTx.Error != nil {

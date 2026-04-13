@@ -338,7 +338,7 @@ func (s *Service) UpsertReplicationConfig(
 		return nil, err
 	}
 
-	// Replication enablement controls whether scheduled rebalances are effectively runnable.
+	// Replication config changes can affect effective schedule execution.
 	// Reconcile runtime state by touching next_run_at only (last_* remains untouched).
 	if s.rebalanceScheduleSyncer != nil {
 		if err := s.rebalanceScheduleSyncer.SyncByPortfolioProfileID(context.Background(), id); err != nil {
@@ -369,8 +369,8 @@ func (s *Service) DeleteReplicationConfig(userID int, id int) error {
 		return err
 	}
 
-	// Missing replication config also makes scheduled rebalances inactive.
-	// Clear/recompute runtime state through next_run_at only.
+	// Keep runtime schedule state consistent after replication config removal.
+	// Reconcile through next_run_at only.
 	if s.rebalanceScheduleSyncer != nil {
 		if err := s.rebalanceScheduleSyncer.SyncByPortfolioProfileID(context.Background(), id); err != nil {
 			return err

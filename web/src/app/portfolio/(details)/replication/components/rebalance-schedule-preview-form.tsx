@@ -80,6 +80,7 @@ const DEFAULT_MONTHLY_DAY_INPUT = '1';
 const DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT = '14';
 
 type ScheduleFormSnapshot = {
+  isEnabled: boolean;
   frequency: ScheduleFrequency;
   preferredTime: string;
   weeklyDayOfWeek: number;
@@ -90,6 +91,7 @@ type ScheduleFormSnapshot = {
 };
 
 type ScheduleFormState = {
+  isEnabled: boolean;
   frequency: ScheduleFrequency;
   preferredTime: string;
   weeklyDayOfWeek: number;
@@ -118,7 +120,8 @@ function normalizeBusinessDayAdjustment(value: string | undefined): BusinessDayA
 }
 
 function isSameScheduleFormSnapshot(a: ScheduleFormSnapshot, b: ScheduleFormSnapshot): boolean {
-  return a.frequency === b.frequency
+  return a.isEnabled === b.isEnabled
+    && a.frequency === b.frequency
     && a.preferredTime === b.preferredTime
     && a.weeklyDayOfWeek === b.weeklyDayOfWeek
     && a.monthlyDayInput === b.monthlyDayInput
@@ -209,10 +212,14 @@ function resolveMonthlyDay(parts: Record<string, string>): number {
 
 type RebalanceSchedulePreviewFormProps = {
   portfolioID: number;
+  scheduleEnabled: boolean;
+  onScheduleEnabledChange: (value: boolean) => void;
 };
 
 export function RebalanceSchedulePreviewForm({
   portfolioID,
+  scheduleEnabled,
+  onScheduleEnabledChange,
 }: RebalanceSchedulePreviewFormProps) {
   const { t, i18n } = useTranslation();
   const [frequency, setFrequency] = useState<ScheduleFrequency>('DAILY');
@@ -263,6 +270,7 @@ export function RebalanceSchedulePreviewForm({
     },
   ], [t]);
   const toSnapshot = useCallback((state: ScheduleFormState): ScheduleFormSnapshot => ({
+    isEnabled: state.isEnabled,
     frequency: state.frequency,
     preferredTime: state.preferredTime,
     weeklyDayOfWeek: state.weeklyDayOfWeek,
@@ -272,6 +280,7 @@ export function RebalanceSchedulePreviewForm({
     businessDayAdjustment: state.businessDayAdjustment,
   }), []);
   const toState = useCallback((snapshot: ScheduleFormSnapshot): ScheduleFormState => ({
+    isEnabled: snapshot.isEnabled,
     frequency: snapshot.frequency,
     preferredTime: snapshot.preferredTime,
     weeklyDayOfWeek: snapshot.weeklyDayOfWeek,
@@ -281,6 +290,7 @@ export function RebalanceSchedulePreviewForm({
     businessDayAdjustment: snapshot.businessDayAdjustment,
   }), []);
   const applyScheduleState = useCallback((nextState: ScheduleFormState) => {
+    onScheduleEnabledChange(nextState.isEnabled);
     setFrequency(nextState.frequency);
     setPreferredTime(nextState.preferredTime);
     setWeeklyDayOfWeek(nextState.weeklyDayOfWeek);
@@ -290,10 +300,11 @@ export function RebalanceSchedulePreviewForm({
     setBusinessDayAdjustment(nextState.businessDayAdjustment);
     setCalendarMonth(nextState.customAnchorAt);
     setCalendarSelected(nextState.customAnchorAt);
-  }, []);
+  }, [onScheduleEnabledChange]);
   const buildDefaultScheduleState = useCallback((baseDate: Date): ScheduleFormState => {
     const anchor = withTime(baseDate, DEFAULT_PREFERRED_TIME);
     return {
+      isEnabled: true,
       frequency: 'DAILY',
       preferredTime: DEFAULT_PREFERRED_TIME,
       weeklyDayOfWeek: DEFAULT_WEEKLY_DAY_OF_WEEK,
@@ -325,6 +336,7 @@ export function RebalanceSchedulePreviewForm({
     }
 
     return {
+      isEnabled: schedule.is_enabled ?? true,
       frequency: nextFrequency,
       preferredTime: formatLocalClock(dtStart),
       weeklyDayOfWeek: clampInt(WEEKDAY_FROM_RRULE[weeklyToken] ?? 1, 1, 5),
@@ -335,6 +347,7 @@ export function RebalanceSchedulePreviewForm({
     };
   }, []);
   const currentSnapshot = useMemo<ScheduleFormSnapshot>(() => toSnapshot({
+    isEnabled: scheduleEnabled,
     frequency,
     preferredTime,
     weeklyDayOfWeek,
@@ -349,6 +362,7 @@ export function RebalanceSchedulePreviewForm({
     frequency,
     monthlyDayInput,
     preferredTime,
+    scheduleEnabled,
     toSnapshot,
     weeklyDayOfWeek,
   ]);
@@ -491,7 +505,7 @@ export function RebalanceSchedulePreviewForm({
     }
 
     return {
-      is_enabled: true,
+      is_enabled: scheduleEnabled,
       dtstart: dtStart.toISOString(),
       rrule,
       business_day_adjustment: businessDayAdjustment,
@@ -504,6 +518,7 @@ export function RebalanceSchedulePreviewForm({
     monthlyDayInput,
     monthlyRRulePart,
     preferredTime,
+    scheduleEnabled,
     t,
     weeklyDayOfWeek,
   ]);

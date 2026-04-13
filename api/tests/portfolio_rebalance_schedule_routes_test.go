@@ -92,8 +92,8 @@ func TestPortfolioRebalanceScheduleRuntimeStateTransitions(t *testing.T) {
 	}
 
 	afterDisable := getScheduleConfig(t, ts, adminToken, profile.ID)
-	if afterDisable.NextRunAt != nil {
-		t.Fatalf("expected next_run_at=nil after replication disable, got %v", afterDisable.NextRunAt)
+	if afterDisable.NextRunAt == nil {
+		t.Fatalf("expected next_run_at to stay set after replication disable")
 	}
 	assertScheduleLastRuntimeFields(t, afterDisable, lastRunAt, lastError, lastRunID)
 
@@ -114,8 +114,8 @@ func TestPortfolioRebalanceScheduleRuntimeStateTransitions(t *testing.T) {
 	}
 
 	afterDelete := getScheduleConfig(t, ts, adminToken, profile.ID)
-	if afterDelete.NextRunAt != nil {
-		t.Fatalf("expected next_run_at=nil after replication delete, got %v", afterDelete.NextRunAt)
+	if afterDelete.NextRunAt == nil {
+		t.Fatalf("expected next_run_at to stay set after replication delete")
 	}
 	assertScheduleLastRuntimeFields(t, afterDelete, lastRunAt, lastError, lastRunID)
 

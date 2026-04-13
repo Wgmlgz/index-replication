@@ -3,6 +3,7 @@ package rebalance
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"server/internal/api/dto"
@@ -70,11 +71,13 @@ func (s *ScheduleRuntimeStateService) ApplyScheduleUpsertState(
 	if err != nil {
 		return err
 	}
+	if schedule.IsEnabled && nextRunAt == nil {
+		return fmt.Errorf("%w: enabled schedule has no future trading events", ErrInvalidRequest)
+	}
 	return s.schedulesRepo.SetNextRunAtByPortfolioProfileID(schedule.PortfolioProfileID, nextRunAt)
 }
 
-// SyncByPortfolioProfileID reconciles next_run_at when external config changes
-// (for example replication config disable/delete can make schedule effectively inactive).
+// SyncByPortfolioProfileID reconciles next_run_at when external config changes.
 // It intentionally updates only next_run_at.
 func (s *ScheduleRuntimeStateService) SyncByPortfolioProfileID(ctx context.Context, portfolioID int) error {
 	if portfolioID <= 0 {
@@ -99,18 +102,21 @@ func (s *ScheduleRuntimeStateService) SyncByPortfolioProfileID(ctx context.Conte
 		replication, replicationErr := s.replicationRepo.GetByPortfolioProfileID(portfolioID)
 		if replicationErr != nil {
 			if errors.Is(replicationErr, gorm.ErrRecordNotFound) {
-				return s.schedulesRepo.SetNextRunAtByPortfolioProfileID(portfolioID, nil)
+				return nil
 			}
 			return replicationErr
 		}
 		if !replication.IsEnabled {
-			return s.schedulesRepo.SetNextRunAtByPortfolioProfileID(portfolioID, nil)
+			return nil
 		}
 	}
 
 	nextRunAt, err := s.nextRunAtForSchedule(ctx, schedule)
 	if err != nil {
 		return err
+	}
+	if nextRunAt == nil {
+		return fmt.Errorf("%w: enabled schedule has no future trading events", ErrInvalidRequest)
 	}
 	return s.schedulesRepo.SetNextRunAtByPortfolioProfileID(portfolioID, nextRunAt)
 }
@@ -146,6 +152,14 @@ func (s *ScheduleRuntimeStateService) nextRunAtForSchedule(
 	result, err := s.engine.Calculate(ctx, *plan)
 	if err != nil {
 		return nil, err
+	}
+	if len(result.Events) == 0 && plan.policy == businessDayAdjustmentStrict {
+		fallbackPlan := *plan
+		fallbackPlan.policy = businessDayAdjustmentFollowing
+		result, err = s.engine.Calculate(ctx, fallbackPlan)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if len(result.Events) == 0 {
 		return nil, nil

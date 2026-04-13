@@ -654,7 +654,7 @@ export default function PortfolioReplicationDraftsPage() {
       setScheduleConfig({
         ...scheduleConfig,
         ...nextConfig,
-        next_run_at: nextConfig.next_run_at ?? scheduledRunAtDraft.toISOString(),
+        next_run_at: nextConfig.next_run_at ?? undefined,
       });
       setScheduledRunDialogOpen(false);
     } catch (err) {
