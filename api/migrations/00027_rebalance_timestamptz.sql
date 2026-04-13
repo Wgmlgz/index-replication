@@ -1,0 +1,27 @@
+-- +goose Up
+ALTER TABLE portfolio_rebalance_runs
+  ALTER COLUMN started_at TYPE TIMESTAMPTZ USING started_at AT TIME ZONE 'UTC',
+  ALTER COLUMN ended_at TYPE TIMESTAMPTZ USING ended_at AT TIME ZONE 'UTC',
+  ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC',
+  ALTER COLUMN updated_at TYPE TIMESTAMPTZ USING updated_at AT TIME ZONE 'UTC';
+
+ALTER TABLE portfolio_rebalance_schedules
+  ALTER COLUMN dtstart TYPE TIMESTAMPTZ USING dtstart AT TIME ZONE 'UTC',
+  ALTER COLUMN next_run_at TYPE TIMESTAMPTZ USING next_run_at AT TIME ZONE 'UTC',
+  ALTER COLUMN last_run_at TYPE TIMESTAMPTZ USING last_run_at AT TIME ZONE 'UTC',
+  ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC',
+  ALTER COLUMN updated_at TYPE TIMESTAMPTZ USING updated_at AT TIME ZONE 'UTC';
+
+-- +goose Down
+ALTER TABLE portfolio_rebalance_schedules
+  ALTER COLUMN updated_at TYPE TIMESTAMP USING updated_at AT TIME ZONE 'UTC',
+  ALTER COLUMN created_at TYPE TIMESTAMP USING created_at AT TIME ZONE 'UTC',
+  ALTER COLUMN last_run_at TYPE TIMESTAMP USING last_run_at AT TIME ZONE 'UTC',
+  ALTER COLUMN next_run_at TYPE TIMESTAMP USING next_run_at AT TIME ZONE 'UTC',
+  ALTER COLUMN dtstart TYPE TIMESTAMP USING dtstart AT TIME ZONE 'UTC';
+
+ALTER TABLE portfolio_rebalance_runs
+  ALTER COLUMN updated_at TYPE TIMESTAMP USING updated_at AT TIME ZONE 'UTC',
+  ALTER COLUMN created_at TYPE TIMESTAMP USING created_at AT TIME ZONE 'UTC',
+  ALTER COLUMN ended_at TYPE TIMESTAMP USING ended_at AT TIME ZONE 'UTC',
+  ALTER COLUMN started_at TYPE TIMESTAMP USING started_at AT TIME ZONE 'UTC';

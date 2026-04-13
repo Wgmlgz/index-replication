@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -119,6 +120,9 @@ func InitDB(cfg *Config) *gorm.DB {
 		cfg.PostgresHost, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB, cfg.PostgresPort)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		NowFunc: func() time.Time {
+			return time.Now().UTC()
+		},
 		// Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {

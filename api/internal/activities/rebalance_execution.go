@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	"server/internal/api/dto"
 	"server/internal/models"
+	"server/internal/notifications"
 	"server/internal/portfolio"
 	"server/internal/repository"
 	"server/internal/workflows"
@@ -25,18 +27,25 @@ type rebalanceActionRunner interface {
 	RunAction(ctx context.Context, userID int, id int, action string, payload map[string]interface{}) (*dto.PortfolioActionResponse, error)
 }
 
+type rebalanceNotificationSender interface {
+	Send(ctx context.Context, req notifications.SendRequest) error
+}
+
 type RebalanceExecutionActivities struct {
 	runsRepo         *repository.PortfolioRebalancesRepository
 	portfolioService rebalanceActionRunner
+	notifier         rebalanceNotificationSender
 }
 
 func NewRebalanceExecutionActivities(
 	runsRepo *repository.PortfolioRebalancesRepository,
 	portfolioService *portfolio.Service,
+	notifier rebalanceNotificationSender,
 ) *RebalanceExecutionActivities {
 	return &RebalanceExecutionActivities{
 		runsRepo:         runsRepo,
 		portfolioService: portfolioService,
+		notifier:         notifier,
 	}
 }
 
@@ -76,6 +85,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 	if err != nil {
 		return result, err
 	}
+	a.sendExecutionStartedNotification(ctx, params, run, len(items))
 	result.Items = items
 	setExecutionStage(
 		&result,
@@ -109,6 +119,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 			return result, markErr
 		}
 		recordExecutionHeartbeat(ctx, &result)
+		a.sendExecutionFinishedNotification(ctx, params, run, result)
 		return result, nil
 	}
 
@@ -134,6 +145,7 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 			return result, markErr
 		}
 		recordExecutionHeartbeat(ctx, &result)
+		a.sendExecutionFinishedNotification(ctx, params, run, result)
 		return result, nil
 	}
 
@@ -361,7 +373,109 @@ func (a *RebalanceExecutionActivities) ExecuteRun(
 		return result, err
 	}
 	recordExecutionHeartbeat(ctx, &result)
+	a.sendExecutionFinishedNotification(ctx, params, run, result)
 	return result, nil
+}
+
+func (a *RebalanceExecutionActivities) sendExecutionStartedNotification(
+	ctx context.Context,
+	params workflows.RebalanceExecutionParams,
+	run *models.PortfolioRebalanceRun,
+	totalItems int,
+) {
+	if a == nil || a.notifier == nil {
+		return
+	}
+	asOf := ""
+	if run != nil && !run.AsOfDate.IsZero() {
+		asOf = run.AsOfDate.UTC().Format("2006-01-02")
+	}
+	provider := ""
+	if run != nil {
+		provider = strings.TrimSpace(run.Provider)
+	}
+
+	lines := []string{
+		fmt.Sprintf("Portfolio #%d", params.PortfolioID),
+		fmt.Sprintf("Planned items: %d", totalItems),
+	}
+	if provider != "" {
+		lines = append(lines, fmt.Sprintf("Provider: %s", provider))
+	}
+	if asOf != "" {
+		lines = append(lines, fmt.Sprintf("As-of: %s", asOf))
+	}
+
+	if err := a.notifier.Send(ctx, notifications.SendRequest{
+		UserID: params.UserID,
+		Message: notifications.Message{
+			Subject: fmt.Sprintf("Rebalance execution started: run #%d", params.RunID),
+			Body:    strings.Join(lines, "\n"),
+		},
+	}); err != nil {
+		log.Printf(
+			"rebalance execution: failed to send start notification user_id=%d portfolio_id=%d run_id=%d err=%v",
+			params.UserID,
+			params.PortfolioID,
+			params.RunID,
+			err,
+		)
+	}
+}
+
+func (a *RebalanceExecutionActivities) sendExecutionFinishedNotification(
+	ctx context.Context,
+	params workflows.RebalanceExecutionParams,
+	run *models.PortfolioRebalanceRun,
+	result workflows.RebalanceExecutionResult,
+) {
+	if a == nil || a.notifier == nil {
+		return
+	}
+	status := strings.TrimSpace(result.RunStatus)
+	if status == "" {
+		status = models.PortfolioRebalanceRunStatusFailed
+	}
+	subject := fmt.Sprintf("Rebalance execution finished (%s): run #%d", status, params.RunID)
+
+	asOf := ""
+	if run != nil && !run.AsOfDate.IsZero() {
+		asOf = run.AsOfDate.UTC().Format("2006-01-02")
+	}
+	summary := buildExecutionNotificationSummary(result.Progress)
+	lines := []string{
+		fmt.Sprintf("Portfolio #%d", params.PortfolioID),
+		fmt.Sprintf("Summary: %s", summary),
+	}
+	if asOf != "" {
+		lines = append(lines, fmt.Sprintf("As-of: %s", asOf))
+	}
+
+	if err := a.notifier.Send(ctx, notifications.SendRequest{
+		UserID: params.UserID,
+		Message: notifications.Message{
+			Subject: subject,
+			Body:    strings.Join(lines, "\n"),
+		},
+	}); err != nil {
+		log.Printf(
+			"rebalance execution: failed to send completion notification user_id=%d portfolio_id=%d run_id=%d err=%v",
+			params.UserID,
+			params.PortfolioID,
+			params.RunID,
+			err,
+		)
+	}
+}
+
+func buildExecutionNotificationSummary(progress workflows.RebalanceExecutionProgress) string {
+	return fmt.Sprintf(
+		"total %d, completed %d, failed %d, unresolved %d",
+		progress.TotalItems,
+		progress.CompletedItems,
+		progress.FailedItems,
+		progress.UnresolvedItems,
+	)
 }
 
 func (a *RebalanceExecutionActivities) failItem(

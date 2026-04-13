@@ -213,11 +213,19 @@ func toRunDTO(model *models.PortfolioRebalanceRun) dto.PortfolioRebalanceRun {
 		ConfirmationRequired: model.ConfirmationRequired,
 		Status:               model.Status,
 		AsOfDate:             model.AsOfDate.UTC().Format("2006-01-02"),
-		StartedAt:            model.StartedAt,
-		EndedAt:              model.EndedAt,
-		CreatedAt:            model.CreatedAt,
-		UpdatedAt:            model.UpdatedAt,
+		StartedAt:            utcTimePtr(model.StartedAt),
+		EndedAt:              utcTimePtr(model.EndedAt),
+		CreatedAt:            model.CreatedAt.UTC(),
+		UpdatedAt:            model.UpdatedAt.UTC(),
 	}
+}
+
+func utcTimePtr(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	next := value.UTC()
+	return &next
 }
 
 func strPtr(value string) *string {

@@ -170,6 +170,9 @@ func openGormDB(dbName string) (*gorm.DB, *sql.DB, error) {
 	)
 
 	gormDB, err := gorm.Open(gormpostgres.Open(dsn), &gorm.Config{
+		NowFunc: func() time.Time {
+			return time.Now().UTC()
+		},
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

@@ -186,13 +186,13 @@ func toScheduleConfigDTO(model *models.PortfolioRebalanceSchedule) *dto.Portfoli
 	}
 	return &dto.PortfolioRebalanceScheduleConfigResponse{
 		IsEnabled:             model.IsEnabled,
-		DtStart:               model.DtStart,
+		DtStart:               model.DtStart.UTC(),
 		RRule:                 model.RRule,
 		BusinessDayAdjustment: policy,
-		NextRunAt:             model.NextRunAt,
-		LastRunAt:             model.LastRunAt,
+		NextRunAt:             utcTimePtr(model.NextRunAt),
+		LastRunAt:             utcTimePtr(model.LastRunAt),
 		LastError:             model.LastError,
 		LastRunID:             model.LastRunID,
-		UpdatedAt:             model.UpdatedAt,
+		UpdatedAt:             model.UpdatedAt.UTC(),
 	}
 }

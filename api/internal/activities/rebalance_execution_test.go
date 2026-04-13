@@ -1,6 +1,10 @@
 package activities
 
-import "testing"
+import (
+	"testing"
+
+	"server/internal/workflows"
+)
 
 func TestConvertShareQuantityToLots(t *testing.T) {
 	tests := []struct {
@@ -97,5 +101,19 @@ func TestParseLotSizeMap(t *testing.T) {
 	}
 	if _, exists := got["uid-zero"]; exists {
 		t.Fatalf("expected zero lot size entry to be omitted")
+	}
+}
+
+func TestBuildExecutionNotificationSummary(t *testing.T) {
+	summary := buildExecutionNotificationSummary(workflows.RebalanceExecutionProgress{
+		TotalItems:      7,
+		CompletedItems:  4,
+		FailedItems:     2,
+		UnresolvedItems: 1,
+	})
+
+	const want = "total 7, completed 4, failed 2, unresolved 1"
+	if summary != want {
+		t.Fatalf("unexpected summary, want %q got %q", want, summary)
 	}
 }

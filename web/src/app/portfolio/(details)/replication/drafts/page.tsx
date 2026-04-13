@@ -725,6 +725,7 @@ export default function PortfolioReplicationDraftsPage() {
             {rebalanceRuns.map(run => {
               const runID = typeof run.id === 'number' ? run.id : 0;
               const isDraftRun = run.status === 'draft';
+              const runDisplayTime = run.started_at || run.created_at;
               const entityLabel = isDraftRun
                 ? t('portfolio.replication.rebalances.entity.draft')
                 : t('portfolio.replication.rebalances.entity.run');
@@ -774,7 +775,7 @@ export default function PortfolioReplicationDraftsPage() {
                           </Badge>
                         </div>
                         <span className='text-muted-foreground'>
-                          {formatDateTime(run.created_at, i18n.language || 'en')} | {run.execution_mode || '-'}
+                          {formatDateTime(runDisplayTime, i18n.language || 'en')} | {run.execution_mode || '-'}
                         </span>
                       </div>
 

@@ -30,6 +30,9 @@ func main() {
 	repos := repository.NewRepositoryRegistry(db)
 	auditService := services.NewAuditService(db)
 	telegramService := telegram.NewTelegramService(cfg)
+	notificationService := notifications.NewService(
+		telegram.NewNotificationChannel(repos.UserSettingsRepo, telegramService),
+	)
 	verificationService := telegram.NewVerificationService(
 		cfg,
 		repos.UserSettingsRepo,
@@ -37,9 +40,7 @@ func main() {
 		auditService,
 		telegramService,
 		approvals.NewService(repos.VerificationRepo, repos.UserRepo),
-		notifications.NewService(
-			telegram.NewNotificationChannel(repos.UserSettingsRepo, telegramService),
-		),
+		notificationService,
 	)
 
 	temporalClient, err := client.Dial(client.Options{
@@ -117,6 +118,7 @@ func main() {
 	rebalanceActs := activities.NewRebalanceExecutionActivities(
 		repos.PortfolioRebalancesRepo,
 		portfolioService,
+		notificationService,
 	)
 	rebalanceScheduleDispatchService := rebalance.NewScheduleDispatchService(
 		repos.PortfolioRebalanceSchedulesRepo,

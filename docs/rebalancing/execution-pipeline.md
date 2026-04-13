@@ -46,6 +46,7 @@ This document describes the end-to-end rebalance flow in general phases, from us
 7. Temporal execution workflow run
 - Workflow `rebalance.execute` runs activity `rebalance.execute_run_activity`.
 - Activity marks run execution start and initializes in-memory execution state from planned items.
+- Activity sends a notification that execution has started.
 
 8. Item execution loop
 - For each actionable item:
@@ -60,6 +61,7 @@ This document describes the end-to-end rebalance flow in general phases, from us
   - `partially_completed`
   - `failed`
 - Mark run execution finished in DB with terminal status and `ended_at`.
+- Send a completion notification with a brief item summary (total/completed/failed/unresolved).
 
 10. Pollable run status
 - UI polls `GET /api/me/portfolios/:id/rebalances/:rebalanceId/status`.
