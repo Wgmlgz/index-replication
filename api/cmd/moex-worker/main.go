@@ -4,6 +4,7 @@ import (
 	"log"
 	"server/internal/activities"
 	"server/internal/config"
+	"server/internal/isdayoff"
 	"server/internal/marketprice"
 	"server/internal/moex"
 	"server/internal/portfolio"
@@ -58,9 +59,17 @@ func main() {
 	tbankProvider := portfolio.NewTBankProvider(tbankService)
 	mockProvider := portfolio.NewMockProvider()
 	virtualProvider := portfolio.NewVirtualProvider(repos.VirtualPortfolioTransactionsRepo, marketPriceService)
+	dayOffService := isdayoff.NewService(cfg.IsDayOffBaseURL)
+	rebalanceScheduleRuntimeStateService := rebalance.NewScheduleRuntimeStateService(
+		repos.PortfolioRebalanceSchedulesRepo,
+		repos.PortfolioReplicationConfigsRepo,
+		dayOffService,
+		cfg.MoexScheduleTimezone,
+	)
 	portfolioService := portfolio.NewService(
 		repos.PortfolioProfilesRepo,
 		repos.PortfolioReplicationConfigsRepo,
+		rebalanceScheduleRuntimeStateService,
 		auditService,
 		tbankProvider,
 		mockProvider,
@@ -86,12 +95,22 @@ func main() {
 		rebalanceSnapshotLoader,
 		rebalancePlanner,
 		auditService,
-		nil,
+		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
 	rebalancePlanningActs := activities.NewRebalancePlanningActivities(rebalanceService)
 	rebalanceActs := activities.NewRebalanceExecutionActivities(
 		repos.PortfolioRebalancesRepo,
 		portfolioService,
+	)
+	rebalanceScheduleDispatchService := rebalance.NewScheduleDispatchService(
+		repos.PortfolioRebalanceSchedulesRepo,
+		rebalanceService,
+		dayOffService,
+		cfg.MoexScheduleTimezone,
+	)
+	rebalanceScheduleDispatchActs := activities.NewRebalanceScheduleDispatchActivities(
+		rebalanceScheduleDispatchService,
+		cfg.RebalanceSchedulerEnabled,
 	)
 
 	w.RegisterWorkflowWithOptions(workflows.MetaRefreshWorkflow, workflow.RegisterOptions{Name: workflows.MetaRefreshWorkflowName})
@@ -99,6 +118,7 @@ func main() {
 	w.RegisterWorkflowWithOptions(workflows.DailySyncWorkflow, workflow.RegisterOptions{Name: "DailySyncWorkflow"})
 	w.RegisterWorkflowWithOptions(workflows.RebalancePlanningWorkflow, workflow.RegisterOptions{Name: workflows.RebalancePlanningWorkflowName})
 	w.RegisterWorkflowWithOptions(workflows.RebalanceExecutionWorkflow, workflow.RegisterOptions{Name: workflows.RebalanceExecutionWorkflowName})
+	w.RegisterWorkflowWithOptions(workflows.RebalanceScheduleDispatchWorkflow, workflow.RegisterOptions{Name: workflows.RebalanceScheduleDispatchWorkflowName})
 
 	w.RegisterActivityWithOptions(acts.MetaRefresh, activity.RegisterOptions{Name: workflows.MetaRefreshActivityName})
 	w.RegisterActivityWithOptions(acts.DailySync, activity.RegisterOptions{Name: workflows.DailySyncActivityName})
@@ -107,6 +127,7 @@ func main() {
 	w.RegisterActivityWithOptions(acts.DailySync, activity.RegisterOptions{Name: "moex.daily_sync_legacy_activity"})
 	w.RegisterActivityWithOptions(rebalancePlanningActs.PlanRun, activity.RegisterOptions{Name: workflows.RebalancePlanRunActivityName})
 	w.RegisterActivityWithOptions(rebalanceActs.ExecuteRun, activity.RegisterOptions{Name: workflows.RebalanceExecuteRunActivityName})
+	w.RegisterActivityWithOptions(rebalanceScheduleDispatchActs.SelectDueCandidates, activity.RegisterOptions{Name: workflows.RebalanceScheduleDispatchSelectDueActivityName})
 
 	log.Printf("Temporal worker started address=%s namespace=%s taskQueue=%s", cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue)
 	if err := w.Run(worker.InterruptCh()); err != nil {

@@ -20,18 +20,25 @@ type scheduleConfigRepository interface {
 	DeleteByPortfolioProfileID(profileID int) (bool, error)
 }
 
+type scheduleRuntimeStateUpdater interface {
+	ApplyScheduleUpsertState(ctx context.Context, schedule *models.PortfolioRebalanceSchedule) error
+}
+
 type ScheduleConfigService struct {
-	profilesRepo  profileRepository
-	schedulesRepo scheduleConfigRepository
+	profilesRepo   profileRepository
+	schedulesRepo  scheduleConfigRepository
+	runtimeUpdater scheduleRuntimeStateUpdater
 }
 
 func NewScheduleConfigService(
 	profilesRepo profileRepository,
 	schedulesRepo scheduleConfigRepository,
+	runtimeUpdater scheduleRuntimeStateUpdater,
 ) *ScheduleConfigService {
 	return &ScheduleConfigService{
-		profilesRepo:  profilesRepo,
-		schedulesRepo: schedulesRepo,
+		profilesRepo:   profilesRepo,
+		schedulesRepo:  schedulesRepo,
+		runtimeUpdater: runtimeUpdater,
 	}
 }
 
@@ -61,7 +68,7 @@ func (s *ScheduleConfigService) Get(
 }
 
 func (s *ScheduleConfigService) Upsert(
-	_ context.Context,
+	ctx context.Context,
 	userID int,
 	portfolioID int,
 	req *dto.PortfolioRebalanceScheduleConfigUpsertRequest,
@@ -72,7 +79,7 @@ func (s *ScheduleConfigService) Upsert(
 	if portfolioID <= 0 {
 		return nil, ErrInvalidProfileID
 	}
-	if s.profilesRepo == nil || s.schedulesRepo == nil {
+	if s.profilesRepo == nil || s.schedulesRepo == nil || s.runtimeUpdater == nil {
 		return nil, ErrScheduleConfigUnavailable
 	}
 	if err := s.ensureProfileExists(userID, portfolioID); err != nil {
@@ -105,7 +112,19 @@ func (s *ScheduleConfigService) Upsert(
 		}
 		return nil, err
 	}
-	return toScheduleConfigDTO(saved), nil
+
+	// Runtime scheduling state for schedule upsert touches only next_run_at.
+	// last_* fields are preserved as-is and handled by execution flows.
+	if err := s.runtimeUpdater.ApplyScheduleUpsertState(ctx, saved); err != nil {
+		return nil, err
+	}
+
+	withRuntime, err := s.schedulesRepo.GetByPortfolioProfileID(portfolioID)
+	if err != nil {
+		return nil, err
+	}
+
+	return toScheduleConfigDTO(withRuntime), nil
 }
 
 func (s *ScheduleConfigService) Delete(

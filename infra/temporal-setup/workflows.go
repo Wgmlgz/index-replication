@@ -1,8 +1,9 @@
 package main
 
 const (
-	metaRefreshWorkflowName = "moex.meta_refresh"
-	dailySyncWorkflowName   = "moex.daily_sync"
+	metaRefreshWorkflowName               = "moex.meta_refresh"
+	dailySyncWorkflowName                 = "moex.daily_sync"
+	rebalanceScheduleDispatchWorkflowName = "rebalance.schedule.dispatch"
 )
 
 type metaRefreshParams struct {
@@ -20,4 +21,8 @@ type dailySyncParams struct {
 	RetrySecids            []string `json:"retrySecids,omitempty"`
 	RetryPass              int      `json:"retryPass,omitempty"`
 	EnableSearchAttributes bool     `json:"enableSearchAttributes,omitempty"`
+}
+
+type rebalanceScheduleDispatchParams struct {
+	WindowSeconds int `json:"windowSeconds,omitempty"`
 }

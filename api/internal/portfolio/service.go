@@ -39,16 +39,22 @@ type ReplicationConfigsRepository interface {
 	BenchmarkExists(secid string) (bool, error)
 }
 
+type RebalanceScheduleRuntimeSyncer interface {
+	SyncByPortfolioProfileID(ctx context.Context, portfolioID int) error
+}
+
 type Service struct {
-	repo            ProfilesRepository
-	replicationRepo ReplicationConfigsRepository
-	audit           AuditLogger
-	providers       map[string]Provider
+	repo                    ProfilesRepository
+	replicationRepo         ReplicationConfigsRepository
+	rebalanceScheduleSyncer RebalanceScheduleRuntimeSyncer
+	audit                   AuditLogger
+	providers               map[string]Provider
 }
 
 func NewService(
 	repo ProfilesRepository,
 	replicationRepo ReplicationConfigsRepository,
+	rebalanceScheduleSyncer RebalanceScheduleRuntimeSyncer,
 	audit AuditLogger,
 	providers ...Provider,
 ) *Service {
@@ -57,10 +63,11 @@ func NewService(
 		registry[strings.ToLower(strings.TrimSpace(provider.Name()))] = provider
 	}
 	return &Service{
-		repo:            repo,
-		replicationRepo: replicationRepo,
-		audit:           audit,
-		providers:       registry,
+		repo:                    repo,
+		replicationRepo:         replicationRepo,
+		rebalanceScheduleSyncer: rebalanceScheduleSyncer,
+		audit:                   audit,
+		providers:               registry,
 	}
 }
 
@@ -330,6 +337,15 @@ func (s *Service) UpsertReplicationConfig(
 	if err != nil {
 		return nil, err
 	}
+
+	// Replication enablement controls whether scheduled rebalances are effectively runnable.
+	// Reconcile runtime state by touching next_run_at only (last_* remains untouched).
+	if s.rebalanceScheduleSyncer != nil {
+		if err := s.rebalanceScheduleSyncer.SyncByPortfolioProfileID(context.Background(), id); err != nil {
+			return nil, err
+		}
+	}
+
 	resp := s.toReplicationDTO(saved)
 	return resp, nil
 }
@@ -349,8 +365,19 @@ func (s *Service) DeleteReplicationConfig(userID int, id int) error {
 		return err
 	}
 
-	_, err := s.replicationRepo.DeleteByPortfolioProfileID(id)
-	return err
+	if _, err := s.replicationRepo.DeleteByPortfolioProfileID(id); err != nil {
+		return err
+	}
+
+	// Missing replication config also makes scheduled rebalances inactive.
+	// Clear/recompute runtime state through next_run_at only.
+	if s.rebalanceScheduleSyncer != nil {
+		if err := s.rebalanceScheduleSyncer.SyncByPortfolioProfileID(context.Background(), id); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) GetSummary(ctx context.Context, userID int, id int) (*dto.PortfolioSummaryResponse, error) {

@@ -127,6 +127,7 @@ Environment variables live in `.env`. Key settings:
 - `TEMPORAL_NAMESPACE` (default `moex-sync`)
 - `TEMPORAL_TASK_QUEUE` (default `moex-sync`)
 - `TEMPORAL_ENABLE_SEARCH_ATTRIBUTES` (default `false`, enable only if cluster supports custom search attrs)
+- `REBALANCE_SCHEDULER_ENABLED` (default `false`, dispatch workflow no-op when disabled)
 
 ## Tests
 

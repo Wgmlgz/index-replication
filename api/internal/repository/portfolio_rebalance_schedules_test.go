@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -260,6 +261,209 @@ func TestPortfolioRebalanceSchedulesRepository_RuntimeStateUpdates(t *testing.T)
 	}
 	if preserved.ID != created.ID {
 		t.Fatalf("expected same id after upsert update, got %d and %d", created.ID, preserved.ID)
+	}
+}
+
+func TestPortfolioRebalanceSchedulesRepository_SetNextRunAtUpdatesOnlyNextRunAt(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	profileID := createPortfolioProfileRow(t, db, 3010)
+	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	_, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: profileID,
+		IsEnabled:          true,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("seed schedule: %v", err)
+	}
+
+	lastRunAt := time.Date(2026, 4, 12, 10, 0, 0, 0, time.UTC)
+	lastError := "seeded error"
+	lastRunID := 101
+	if err := repo.SetLastRunAtByPortfolioProfileID(profileID, &lastRunAt); err != nil {
+		t.Fatalf("seed last_run_at: %v", err)
+	}
+	if err := repo.SetLastErrorByPortfolioProfileID(profileID, &lastError); err != nil {
+		t.Fatalf("seed last_error: %v", err)
+	}
+	if err := repo.SetLastRunIDByPortfolioProfileID(profileID, &lastRunID); err != nil {
+		t.Fatalf("seed last_run_id: %v", err)
+	}
+
+	nextRunAt := time.Date(2026, 4, 15, 10, 0, 0, 0, time.UTC)
+	if err := repo.SetNextRunAtByPortfolioProfileID(profileID, &nextRunAt); err != nil {
+		t.Fatalf("set next_run_at: %v", err)
+	}
+
+	updated, err := repo.GetByPortfolioProfileID(profileID)
+	if err != nil {
+		t.Fatalf("get updated schedule: %v", err)
+	}
+	if updated.NextRunAt == nil || !updated.NextRunAt.Equal(nextRunAt) {
+		t.Fatalf("expected next_run_at=%s, got %v", nextRunAt.Format(time.RFC3339), updated.NextRunAt)
+	}
+	if updated.LastRunAt == nil || !updated.LastRunAt.Equal(lastRunAt) {
+		t.Fatalf("expected last_run_at unchanged, got %v", updated.LastRunAt)
+	}
+	if updated.LastError == nil || *updated.LastError != lastError {
+		t.Fatalf("expected last_error unchanged, got %v", updated.LastError)
+	}
+	if updated.LastRunID == nil || *updated.LastRunID != lastRunID {
+		t.Fatalf("expected last_run_id unchanged, got %v", updated.LastRunID)
+	}
+}
+
+func TestPortfolioRebalanceSchedulesRepository_ListEnabled(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	enabledProfileID := createPortfolioProfileRow(t, db, 3020)
+	disabledProfileID := createPortfolioProfileRow(t, db, 3021)
+	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	_, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: enabledProfileID,
+		IsEnabled:          true,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("seed enabled schedule: %v", err)
+	}
+	_, err = repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: disabledProfileID,
+		IsEnabled:          false,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("seed disabled schedule: %v", err)
+	}
+
+	rows, err := repo.ListEnabled()
+	if err != nil {
+		t.Fatalf("list enabled schedules: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 enabled schedule, got %d", len(rows))
+	}
+	if rows[0].PortfolioProfileID != enabledProfileID {
+		t.Fatalf("expected enabled profile id %d, got %d", enabledProfileID, rows[0].PortfolioProfileID)
+	}
+}
+
+func TestPortfolioRebalanceSchedulesRepository_ClaimDueAndAdvanceNextRunIdempotent(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	profileID := createPortfolioProfileRow(t, db, 3030)
+	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	schedule, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: profileID,
+		IsEnabled:          true,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY;COUNT=2",
+	})
+	if err != nil {
+		t.Fatalf("seed schedule: %v", err)
+	}
+	dueAt := time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC)
+	nextDueAt := time.Date(2026, 4, 14, 10, 0, 0, 0, time.UTC)
+	if err := repo.SetNextRunAtByPortfolioProfileID(profileID, &dueAt); err != nil {
+		t.Fatalf("seed next_run_at: %v", err)
+	}
+
+	claimed, err := repo.ClaimDueAndAdvanceNextRun(context.Background(), schedule.ID, profileID, dueAt, &nextDueAt)
+	if err != nil {
+		t.Fatalf("claim due: %v", err)
+	}
+	if !claimed {
+		t.Fatalf("expected first claim=true")
+	}
+
+	updated, err := repo.GetByID(schedule.ID)
+	if err != nil {
+		t.Fatalf("get after claim: %v", err)
+	}
+	if updated.NextRunAt == nil || !updated.NextRunAt.Equal(nextDueAt) {
+		t.Fatalf("expected next_run_at advanced to %s, got %v", nextDueAt.Format(time.RFC3339), updated.NextRunAt)
+	}
+
+	claimedAgain, err := repo.ClaimDueAndAdvanceNextRun(context.Background(), schedule.ID, profileID, dueAt, nil)
+	if err != nil {
+		t.Fatalf("second claim due: %v", err)
+	}
+	if claimedAgain {
+		t.Fatalf("expected second claim=false for same due_at")
+	}
+}
+
+func TestPortfolioRebalanceSchedulesRepository_MarkDispatchPlanningRuntimeFields(t *testing.T) {
+	db, cleanup := testutil.NewTestDB(t)
+	defer cleanup()
+
+	profileID := createPortfolioProfileRow(t, db, 3031)
+	repo := NewPortfolioRebalanceSchedulesRepository(db)
+
+	schedule, err := repo.Upsert(&models.PortfolioRebalanceSchedule{
+		PortfolioProfileID: profileID,
+		IsEnabled:          true,
+		DtStart:            time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC),
+		RRule:              "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("seed schedule: %v", err)
+	}
+
+	seedLastRunAt := time.Date(2026, 4, 10, 10, 0, 0, 0, time.UTC)
+	seedLastRunID := 91
+	if err := repo.SetLastRunAtByPortfolioProfileID(profileID, &seedLastRunAt); err != nil {
+		t.Fatalf("seed last_run_at: %v", err)
+	}
+	if err := repo.SetLastRunIDByPortfolioProfileID(profileID, &seedLastRunID); err != nil {
+		t.Fatalf("seed last_run_id: %v", err)
+	}
+
+	if err := repo.MarkDispatchPlanningFailure(context.Background(), schedule.ID, "planning enqueue failed"); err != nil {
+		t.Fatalf("mark dispatch failure: %v", err)
+	}
+
+	failed, err := repo.GetByID(schedule.ID)
+	if err != nil {
+		t.Fatalf("get after failure: %v", err)
+	}
+	if failed.LastRunAt == nil || !failed.LastRunAt.Equal(seedLastRunAt) {
+		t.Fatalf("expected last_run_at unchanged on failure, got %v", failed.LastRunAt)
+	}
+	if failed.LastRunID == nil || *failed.LastRunID != seedLastRunID {
+		t.Fatalf("expected last_run_id unchanged on failure, got %v", failed.LastRunID)
+	}
+	if failed.LastError == nil || *failed.LastError != "planning enqueue failed" {
+		t.Fatalf("expected last_error to be set, got %v", failed.LastError)
+	}
+
+	dueAt := time.Date(2026, 4, 13, 10, 0, 0, 0, time.UTC)
+	if err := repo.MarkDispatchPlanningSuccess(context.Background(), schedule.ID, dueAt, 777); err != nil {
+		t.Fatalf("mark dispatch success: %v", err)
+	}
+
+	succeeded, err := repo.GetByID(schedule.ID)
+	if err != nil {
+		t.Fatalf("get after success: %v", err)
+	}
+	if succeeded.LastRunAt == nil || !succeeded.LastRunAt.Equal(dueAt) {
+		t.Fatalf("expected last_run_at=%s, got %v", dueAt.Format(time.RFC3339), succeeded.LastRunAt)
+	}
+	if succeeded.LastRunID == nil || *succeeded.LastRunID != 777 {
+		t.Fatalf("expected last_run_id=777, got %v", succeeded.LastRunID)
+	}
+	if succeeded.LastError != nil {
+		t.Fatalf("expected last_error cleared on success, got %v", succeeded.LastError)
 	}
 }
 

@@ -37,6 +37,7 @@ type Config struct {
 	MoexLiveCurrentDayEnabled      bool
 	MoexScheduleTimezone           string
 	MoexEnableMonthlyDeepResync    bool
+	RebalanceSchedulerEnabled      bool
 	TBankInvestGrpcEndpoint        string
 	TBankInvestSandboxGrpcEndpoint string
 	TBankCACertFile                string
@@ -84,6 +85,7 @@ func LoadConfig() *Config {
 		MoexLiveCurrentDayEnabled:      getEnvBool("MOEX_LIVE_CURRENT_DAY_ENABLED", false),
 		MoexScheduleTimezone:           getEnv("MOEX_SCHEDULE_TIMEZONE", "Europe/Moscow"),
 		MoexEnableMonthlyDeepResync:    getEnvBool("MOEX_ENABLE_MONTHLY_DEEP_RESYNC", false),
+		RebalanceSchedulerEnabled:      getEnvBool("REBALANCE_SCHEDULER_ENABLED", false),
 		TBankInvestGrpcEndpoint:        getEnv("TBANK_INVEST_GRPC_ENDPOINT", "invest-public-api.tbank.ru:443"),
 		TBankInvestSandboxGrpcEndpoint: getEnv("TBANK_INVEST_SANDBOX_GRPC_ENDPOINT", "sandbox-invest-public-api.tbank.ru:443"),
 		TBankCACertFile:                getEnvNonEmpty("TBANK_CA_CERT_FILE", defaultTBankCACertFile()),

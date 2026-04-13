@@ -283,7 +283,7 @@ func TestService_RoutesToProvider(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()
 	provider := &fakeProvider{}
-	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+	service := NewService(repo, replicationRepo, nil, &fakeAudit{}, provider)
 
 	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "mock",
@@ -308,7 +308,7 @@ func TestService_RoutesToProvider(t *testing.T) {
 func TestService_ProviderSelectionErrors(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()
-	service := NewService(repo, replicationRepo, &fakeAudit{}, &fakeProvider{})
+	service := NewService(repo, replicationRepo, nil, &fakeAudit{}, &fakeProvider{})
 
 	_, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "unknown",
@@ -327,7 +327,7 @@ func TestService_ProviderSelectionErrors(t *testing.T) {
 func TestService_PatchProfileCanUnsetDefault(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()
-	service := NewService(repo, replicationRepo, &fakeAudit{}, &fakeProvider{})
+	service := NewService(repo, replicationRepo, nil, &fakeAudit{}, &fakeProvider{})
 
 	first, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "mock",
@@ -380,7 +380,7 @@ func TestService_CreateProfileCallsProviderPreparer(t *testing.T) {
 	provider := &fakeCreatePreparerProvider{
 		fakeProvider: &fakeProvider{},
 	}
-	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+	service := NewService(repo, replicationRepo, nil, &fakeAudit{}, provider)
 
 	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "mock",
@@ -401,7 +401,7 @@ func TestService_RunActionRequiresActionID(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()
 	provider := &fakeActionProvider{}
-	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+	service := NewService(repo, replicationRepo, nil, &fakeAudit{}, provider)
 
 	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "mock",
@@ -428,7 +428,7 @@ func TestService_RunActionPassesActionIDToProvider(t *testing.T) {
 	repo := newFakeRepo()
 	replicationRepo := newFakeReplicationRepo()
 	provider := &fakeActionProvider{}
-	service := NewService(repo, replicationRepo, &fakeAudit{}, provider)
+	service := NewService(repo, replicationRepo, nil, &fakeAudit{}, provider)
 
 	created, err := service.CreateProfile(context.Background(), 9, &dto.PortfolioProfileCreateRequest{
 		Provider: "mock",

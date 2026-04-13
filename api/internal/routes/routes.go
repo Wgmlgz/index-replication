@@ -102,9 +102,17 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	tbankProvider := portfolio.NewTBankProvider(tbankService)
 	mockProvider := portfolio.NewMockProvider()
 	virtualProvider := portfolio.NewVirtualProvider(repoRegistry.VirtualPortfolioTransactionsRepo, marketPriceService)
+	dayOffService := isdayoff.NewService(cfg.IsDayOffBaseURL)
+	rebalanceScheduleRuntimeStateService := rebalance.NewScheduleRuntimeStateService(
+		repoRegistry.PortfolioRebalanceSchedulesRepo,
+		repoRegistry.PortfolioReplicationConfigsRepo,
+		dayOffService,
+		cfg.MoexScheduleTimezone,
+	)
 	portfolioService := portfolio.NewService(
 		repoRegistry.PortfolioProfilesRepo,
 		repoRegistry.PortfolioReplicationConfigsRepo,
+		rebalanceScheduleRuntimeStateService,
 		auditService,
 		tbankProvider,
 		mockProvider,
@@ -133,7 +141,6 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		auditService,
 		rebalance.NewTemporalExecutionStarter(cfg.TemporalAddr, cfg.TemporalNS, cfg.TemporalQueue),
 	)
-	dayOffService := isdayoff.NewService(cfg.IsDayOffBaseURL)
 	rebalanceSchedulePreviewService := rebalance.NewSchedulePreviewService(
 		repoRegistry.PortfolioProfilesRepo,
 		dayOffService,
@@ -142,6 +149,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	rebalanceScheduleConfigService := rebalance.NewScheduleConfigService(
 		repoRegistry.PortfolioProfilesRepo,
 		repoRegistry.PortfolioRebalanceSchedulesRepo,
+		rebalanceScheduleRuntimeStateService,
 	)
 	portfolioRebalanceHandler := h.NewPortfolioRebalanceHandler(
 		rebalanceService,

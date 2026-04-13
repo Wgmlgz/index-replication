@@ -25,6 +25,9 @@ func applySchedules(ctx context.Context, temporalClient client.Client, options s
 	if err := upsertDailySyncSchedule(ctx, scheduleClient, options.taskQueue, options.timeZone, options.enableSearchAttributes); err != nil {
 		return fmt.Errorf("failed to upsert daily sync schedule: %w", err)
 	}
+	if err := upsertRebalanceDispatchSchedule(ctx, scheduleClient, options.taskQueue, options.timeZone); err != nil {
+		return fmt.Errorf("failed to upsert rebalance dispatch schedule: %w", err)
+	}
 	if options.enableMonthlyDeepResync {
 		if err := upsertMonthlyDeepResyncSchedule(ctx, scheduleClient, options.taskQueue, options.timeZone, options.enableSearchAttributes); err != nil {
 			return fmt.Errorf("failed to upsert monthly deep resync schedule: %w", err)
@@ -88,6 +91,26 @@ func upsertMonthlyDeepResyncSchedule(ctx context.Context, sc client.ScheduleClie
 			Workflow:  dailySyncWorkflowName,
 			Args: []any{
 				dailySyncParams{Mode: "full", EnableSearchAttributes: enableSearchAttrs},
+			},
+		},
+	})
+	return err
+}
+
+func upsertRebalanceDispatchSchedule(ctx context.Context, sc client.ScheduleClient, taskQueue, timezone string) error {
+	const scheduleID = "rebalance-dispatch-1m"
+	_, err := upsertSchedule(ctx, sc, scheduleID, client.ScheduleOptions{
+		ID: scheduleID,
+		Spec: client.ScheduleSpec{
+			CronExpressions: []string{"* * * * *"},
+			TimeZoneName:    timezone,
+		},
+		Action: &client.ScheduleWorkflowAction{
+			ID:        "rebalance-schedule-dispatch-workflow",
+			TaskQueue: taskQueue,
+			Workflow:  rebalanceScheduleDispatchWorkflowName,
+			Args: []any{
+				rebalanceScheduleDispatchParams{},
 			},
 		},
 	})

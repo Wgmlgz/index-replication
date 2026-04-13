@@ -5,7 +5,7 @@ This runbook explains what happens, when it happens, and where to check state fo
 ## Scope
 
 - Services: `temporal`, `temporal-admin-tools`, `temporal-setup`, `moex-worker`
-- Workflows: `moex.meta_refresh`, `moex.daily_sync`
+- Workflows: `moex.meta_refresh`, `moex.daily_sync`, `rebalance.schedule.dispatch`
 - Storage: `moex_sync_state`, `moex_data_coverage`, `moex_sync_runs`, plus MOEX data tables
 - Setup implementation location: `infra/temporal-setup` (separate compose build context, independent from `api`)
 
@@ -49,12 +49,14 @@ Cron expressions are interpreted in `MOEX_SCHEDULE_TIMEZONE` (default `Europe/Mo
 | `moex-meta-refresh-6h` | `0 */6 * * *` | `moex.meta_refresh` | Refresh index metadata (index list + memberships) |
 | `moex-daily-sync` | `15 20 * * 1-5` | `moex.daily_sync` | Metadata refresh + sync all indexes history/composition |
 | `moex-monthly-deep-resync` | `30 21 1 * *` | `moex.daily_sync` | Optional deep resync of mutable horizon only (`MOEX_ENABLE_MONTHLY_DEEP_RESYNC=true`) |
+| `rebalance-dispatch-1m` | `* * * * *` | `rebalance.schedule.dispatch` | Select due rebalance schedules and enqueue rebalance planning runs (idempotent) |
 
 Expected behavior:
 
 - Seeing schedules without immediate runs is normal.
 - No explicit "run-now-on-create" step is configured.
 - Schedules run in `MOEX_SCHEDULE_TIMEZONE` (default `Europe/Moscow`).
+- Rebalance dispatch scheduling is gated by `REBALANCE_SCHEDULER_ENABLED` (default `false`).
 
 ## Runtime Flow
 
@@ -170,6 +172,7 @@ Trigger schedules now:
 ```bash
 docker compose run --rm --entrypoint temporal temporal-admin-tools schedule trigger --address temporal:7233 --namespace moex-sync --schedule-id moex-meta-refresh-6h
 docker compose run --rm --entrypoint temporal temporal-admin-tools schedule trigger --address temporal:7233 --namespace moex-sync --schedule-id moex-daily-sync
+docker compose run --rm --entrypoint temporal temporal-admin-tools schedule trigger --address temporal:7233 --namespace moex-sync --schedule-id rebalance-dispatch-1m
 ```
 
 List open workflows:
