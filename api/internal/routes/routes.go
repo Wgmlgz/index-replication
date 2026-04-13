@@ -3,6 +3,7 @@ package routes
 import (
 	"fmt"
 	"log"
+	"server/internal/approvals"
 	keycloakauth "server/internal/auth"
 	"server/internal/config"
 	h "server/internal/handlers"
@@ -10,6 +11,7 @@ import (
 	"server/internal/marketprice"
 	m "server/internal/middleware"
 	"server/internal/moex"
+	"server/internal/notifications"
 	"server/internal/portfolio"
 	"server/internal/rebalance"
 	rebalanceplanner "server/internal/rebalance/planner"
@@ -56,11 +58,14 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 	)
 	verificationService := telegram.NewVerificationService(
 		cfg,
-		repoRegistry.UserRepo,
 		repoRegistry.UserSettingsRepo,
 		repoRegistry.VerificationRepo,
 		auditService,
 		telegramService,
+		approvals.NewService(repoRegistry.VerificationRepo, repoRegistry.UserRepo),
+		notifications.NewService(
+			telegram.NewNotificationChannel(repoRegistry.UserSettingsRepo, telegramService),
+		),
 	)
 
 	keycloakAuth := keycloakauth.NewKeycloakAuthenticator(cfg)
@@ -195,10 +200,10 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, repoRegistry *repository.Repos
 		a.GET("/me/portfolios/:id/composition/series", m.RPM(cs, config.SelfView), portfolioHandler.GetCompositionSeries)
 		a.GET("/me/portfolios/:id/operations", m.RPM(cs, config.SelfView), portfolioHandler.GetOperations)
 		a.POST("/me/portfolios/:id/actions/:action", m.RPM(cs, config.SelfUpdateSettings), portfolioHandler.RunAction)
-		a.GET("/me/verification/telegram", m.RPM(cs, config.SelfView), verificationHandler.GetTelegramStatus)
-		a.POST("/me/verification/telegram/connect", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.CreateTelegramConnectLink)
-		a.PATCH("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.PatchTelegramSettings)
-		a.DELETE("/me/verification/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.UnlinkTelegram)
+		a.GET("/me/channels/telegram", m.RPM(cs, config.SelfView), verificationHandler.GetTelegramStatus)
+		a.POST("/me/channels/telegram/connect", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.CreateTelegramConnectLink)
+		a.PATCH("/me/channels/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.PatchTelegramSettings)
+		a.DELETE("/me/channels/telegram", m.RPM(cs, config.SelfUpdateSettings), verificationHandler.UnlinkTelegram)
 		a.GET("/users", m.RPM(cs, config.UsersView), userHandler.ListUsers)
 		a.POST("/users", m.RPM(cs, config.UsersCreate), userHandler.CreateUser)
 		a.PUT("/users/:id", m.RPM(cs, config.UsersEdit), userHandler.UpdateUser)

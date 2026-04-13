@@ -1,5 +1,6 @@
 .gitignore
 .npmignore
+.openapi-generator-ignore
 api.ts
 base.ts
 common.ts
@@ -9,6 +10,7 @@ docs/AuditLogResponse.md
 docs/AuditLogsApi.md
 docs/AuthApi.md
 docs/BrandingApi.md
+docs/ChannelsApi.md
 docs/CreateUserRequest.md
 docs/DtoTickerLogoResolveResponse.md
 docs/ErrorResponse.md
@@ -82,6 +84,5 @@ docs/UserSettingsPatchRequest.md
 docs/UserSettingsResponse.md
 docs/UserShort.md
 docs/UsersApi.md
-docs/VerificationApi.md
 git_push.sh
 index.ts

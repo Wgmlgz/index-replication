@@ -1,31 +1,31 @@
-# VerificationApi
+# ChannelsApi
 
 All URIs are relative to *http://localhost:8080/api*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**meVerificationTelegramConnectPost**](#meverificationtelegramconnectpost) | **POST** /me/verification/telegram/connect | Create Telegram connect link|
-|[**meVerificationTelegramDelete**](#meverificationtelegramdelete) | **DELETE** /me/verification/telegram | Unlink Telegram verification|
-|[**meVerificationTelegramGet**](#meverificationtelegramget) | **GET** /me/verification/telegram | Get Telegram verification status|
-|[**meVerificationTelegramPatch**](#meverificationtelegrampatch) | **PATCH** /me/verification/telegram | Update Telegram verification settings|
+|[**meChannelsTelegramConnectPost**](#mechannelstelegramconnectpost) | **POST** /me/channels/telegram/connect | Create Telegram channel connect link|
+|[**meChannelsTelegramDelete**](#mechannelstelegramdelete) | **DELETE** /me/channels/telegram | Unlink Telegram channel|
+|[**meChannelsTelegramGet**](#mechannelstelegramget) | **GET** /me/channels/telegram | Get Telegram channel status|
+|[**meChannelsTelegramPatch**](#mechannelstelegrampatch) | **PATCH** /me/channels/telegram | Update Telegram channel settings|
 
-# **meVerificationTelegramConnectPost**
-> TelegramConnectResponse meVerificationTelegramConnectPost()
+# **meChannelsTelegramConnectPost**
+> TelegramConnectResponse meChannelsTelegramConnectPost()
 
-Generates a one-time Telegram connect link for the current user
+Generates a one-time Telegram channel connect link for the current user
 
 ### Example
 
 ```typescript
 import {
-    VerificationApi,
+    ChannelsApi,
     Configuration
 } from './api';
 
 const configuration = new Configuration();
-const apiInstance = new VerificationApi(configuration);
+const apiInstance = new ChannelsApi(configuration);
 
-const { status, data } = await apiInstance.meVerificationTelegramConnectPost();
+const { status, data } = await apiInstance.meChannelsTelegramConnectPost();
 ```
 
 ### Parameters
@@ -55,23 +55,23 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **meVerificationTelegramDelete**
-> TelegramStatusResponse meVerificationTelegramDelete()
+# **meChannelsTelegramDelete**
+> TelegramStatusResponse meChannelsTelegramDelete()
 
-Removes Telegram connection and disables Telegram login verification for the current user
+Removes Telegram channel connection and disables Telegram login approval for the current user
 
 ### Example
 
 ```typescript
 import {
-    VerificationApi,
+    ChannelsApi,
     Configuration
 } from './api';
 
 const configuration = new Configuration();
-const apiInstance = new VerificationApi(configuration);
+const apiInstance = new ChannelsApi(configuration);
 
-const { status, data } = await apiInstance.meVerificationTelegramDelete();
+const { status, data } = await apiInstance.meChannelsTelegramDelete();
 ```
 
 ### Parameters
@@ -100,23 +100,23 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **meVerificationTelegramGet**
-> TelegramStatusResponse meVerificationTelegramGet()
+# **meChannelsTelegramGet**
+> TelegramStatusResponse meChannelsTelegramGet()
 
-Returns Telegram connection status and whether login verification is enabled
+Returns Telegram channel connection status and whether login approval is enabled
 
 ### Example
 
 ```typescript
 import {
-    VerificationApi,
+    ChannelsApi,
     Configuration
 } from './api';
 
 const configuration = new Configuration();
-const apiInstance = new VerificationApi(configuration);
+const apiInstance = new ChannelsApi(configuration);
 
-const { status, data } = await apiInstance.meVerificationTelegramGet();
+const { status, data } = await apiInstance.meChannelsTelegramGet();
 ```
 
 ### Parameters
@@ -145,26 +145,26 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **meVerificationTelegramPatch**
-> TelegramStatusResponse meVerificationTelegramPatch(payload)
+# **meChannelsTelegramPatch**
+> TelegramStatusResponse meChannelsTelegramPatch(payload)
 
-Updates Telegram login verification settings for the current user
+Updates Telegram login approval settings for the current user
 
 ### Example
 
 ```typescript
 import {
-    VerificationApi,
+    ChannelsApi,
     Configuration,
     TelegramPatchRequest
 } from './api';
 
 const configuration = new Configuration();
-const apiInstance = new VerificationApi(configuration);
+const apiInstance = new ChannelsApi(configuration);
 
-let payload: TelegramPatchRequest; //Telegram verification settings
+let payload: TelegramPatchRequest; //Telegram channel settings
 
-const { status, data } = await apiInstance.meVerificationTelegramPatch(
+const { status, data } = await apiInstance.meChannelsTelegramPatch(
     payload
 );
 ```
@@ -173,7 +173,7 @@ const { status, data } = await apiInstance.meVerificationTelegramPatch(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **payload** | **TelegramPatchRequest**| Telegram verification settings | |
+| **payload** | **TelegramPatchRequest**| Telegram channel settings | |
 
 
 ### Return type

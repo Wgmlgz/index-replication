@@ -2,21 +2,21 @@ package telegram
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"server/internal/approvals"
 	"server/internal/models"
-
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 func (s *VerificationService) CreateLoginChallengeIfEnabled(user *models.User, rememberMe bool) (*models.VerificationChallenge, error) {
 	if user == nil {
 		return nil, errors.New("user is required")
+	}
+	if s.approvalsService == nil {
+		return nil, errors.New("approvals service is not configured")
 	}
 
 	enabled, chatID, _, err := s.readTelegramStatus(user.ID)
@@ -35,22 +35,16 @@ func (s *VerificationService) CreateLoginChallengeIfEnabled(user *models.User, r
 
 	now := time.Now().UTC()
 	expiresAt := now.Add(s.loginChallengeTTL())
-	detailsBytes, _ := json.Marshal(map[string]interface{}{
-		"username": user.Username,
-	})
-
-	challenge := &models.VerificationChallenge{
-		ID:         uuid.NewString(),
+	challenge, err := s.approvalsService.CreateChallenge(approvals.CreateChallengeInput{
 		UserID:     user.ID,
 		Purpose:    models.VerificationPurposeLogin,
-		Status:     models.VerificationStatusPending,
 		RememberMe: rememberMe,
-		Details:    string(detailsBytes),
-		ExpiresAt:  expiresAt,
-		CreatedAt:  now,
-		UpdatedAt:  now,
-	}
-	if err := s.verificationRepo.CreateChallenge(challenge); err != nil {
+		Details: map[string]interface{}{
+			"username": user.Username,
+		},
+		ExpiresAt: expiresAt,
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -75,9 +69,7 @@ func (s *VerificationService) CreateLoginChallengeIfEnabled(user *models.User, r
 		expiresAt.Format("2006-01-02 15:04:05"),
 	)
 	if _, err := s.telegramService.SendMessage(context.Background(), chatID, text, keyboard); err != nil {
-		challenge.Status = models.VerificationStatusExpired
-		challenge.UpdatedAt = time.Now().UTC()
-		_ = s.verificationRepo.SaveChallenge(challenge)
+		_ = s.approvalsService.MarkExpired(challenge, time.Now().UTC())
 		log.Printf("verification: failed to send login challenge to telegram user_id=%d chat_id=%d challenge_id=%s err=%v", user.ID, chatID, challenge.ID, err)
 		return nil, fmt.Errorf("failed to deliver telegram verification message: %w", err)
 	}
@@ -96,52 +88,29 @@ func (s *VerificationService) CreateLoginChallengeIfEnabled(user *models.User, r
 }
 
 func (s *VerificationService) ConsumeApprovedLoginChallenge(challengeID string) (*models.User, bool, error) {
-	now := time.Now().UTC()
-	_ = s.verificationRepo.ExpirePendingChallenges(now, models.VerificationPurposeLogin)
-
-	challenge, err := s.verificationRepo.GetChallengeByID(challengeID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, false, ErrVerificationNotFound
-		}
-		return nil, false, err
+	if s.approvalsService == nil {
+		return nil, false, errors.New("approvals service is not configured")
 	}
-	if challenge.Purpose != models.VerificationPurposeLogin {
+	user, rememberMe, err := s.approvalsService.ConsumeApprovedLoginChallenge(challengeID)
+	if errors.Is(err, approvals.ErrVerificationNotFound) {
+		return nil, false, ErrVerificationNotFound
+	}
+	if errors.Is(err, approvals.ErrVerificationNotSupported) {
 		return nil, false, ErrVerificationNotSupported
 	}
-
-	if now.After(challenge.ExpiresAt) && challenge.Status == models.VerificationStatusPending {
-		challenge.Status = models.VerificationStatusExpired
-		challenge.UpdatedAt = now
-		_ = s.verificationRepo.SaveChallenge(challenge)
-	}
-
-	switch challenge.Status {
-	case models.VerificationStatusPending:
+	if errors.Is(err, approvals.ErrVerificationPending) {
 		return nil, false, ErrVerificationPending
-	case models.VerificationStatusDenied:
+	}
+	if errors.Is(err, approvals.ErrVerificationDenied) {
 		return nil, false, ErrVerificationDenied
-	case models.VerificationStatusExpired:
+	}
+	if errors.Is(err, approvals.ErrVerificationExpired) {
 		return nil, false, ErrVerificationExpired
-	case models.VerificationStatusConsumed:
+	}
+	if errors.Is(err, approvals.ErrVerificationConsumed) {
 		return nil, false, ErrVerificationConsumed
-	case models.VerificationStatusApproved:
-	default:
-		return nil, false, ErrVerificationNotSupported
 	}
-
-	challenge.Status = models.VerificationStatusConsumed
-	challenge.ConsumedAt = &now
-	challenge.UpdatedAt = now
-	if err := s.verificationRepo.SaveChallenge(challenge); err != nil {
-		return nil, false, err
-	}
-
-	user, err := s.userRepo.GetCurrentUser(challenge.UserID)
-	if err != nil {
-		return nil, false, err
-	}
-	return user, challenge.RememberMe, nil
+	return user, rememberMe, err
 }
 
 func (s *VerificationService) loginChallengeTTL() time.Duration {

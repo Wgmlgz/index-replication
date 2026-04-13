@@ -3,10 +3,12 @@ package main
 import (
 	"log"
 	"server/internal/activities"
+	"server/internal/approvals"
 	"server/internal/config"
 	"server/internal/isdayoff"
 	"server/internal/marketprice"
 	"server/internal/moex"
+	"server/internal/notifications"
 	"server/internal/portfolio"
 	"server/internal/rebalance"
 	rebalanceplanner "server/internal/rebalance/planner"
@@ -30,11 +32,14 @@ func main() {
 	telegramService := telegram.NewTelegramService(cfg)
 	verificationService := telegram.NewVerificationService(
 		cfg,
-		repos.UserRepo,
 		repos.UserSettingsRepo,
 		repos.VerificationRepo,
 		auditService,
 		telegramService,
+		approvals.NewService(repos.VerificationRepo, repos.UserRepo),
+		notifications.NewService(
+			telegram.NewNotificationChannel(repos.UserSettingsRepo, telegramService),
+		),
 	)
 
 	temporalClient, err := client.Dial(client.Options{

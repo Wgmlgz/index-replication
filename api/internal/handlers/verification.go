@@ -13,22 +13,29 @@ import (
 )
 
 type VerificationHandler struct {
-	verificationService *telegram.VerificationService
+	verificationService telegramChannelService
 }
 
-func NewVerificationHandler(verificationService *telegram.VerificationService) *VerificationHandler {
+type telegramChannelService interface {
+	GetTelegramStatus(userID int) (*dto.TelegramStatusResponse, error)
+	CreateTelegramConnectLink(userID int) (*dto.TelegramConnectResponse, error)
+	UpdateTelegramLogin2FA(userID int, enabled bool) error
+	UnlinkTelegram(userID int) error
+}
+
+func NewVerificationHandler(verificationService telegramChannelService) *VerificationHandler {
 	return &VerificationHandler{verificationService: verificationService}
 }
 
 // GetTelegramStatus godoc
 //
-//	@Summary		Get Telegram verification status
-//	@Description	Returns Telegram connection status and whether login verification is enabled
-//	@Tags			verification
+//	@Summary		Get Telegram channel status
+//	@Description	Returns Telegram channel connection status and whether login approval is enabled
+//	@Tags			channels
 //	@Produce		json
 //	@Success		200	{object}	dto.TelegramStatusResponse
 //	@Failure		500	{object}	dto.ErrorResponse
-//	@Router			/me/verification/telegram [get]
+//	@Router			/me/channels/telegram [get]
 func (h *VerificationHandler) GetTelegramStatus(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 	status, err := h.verificationService.GetTelegramStatus(userID)
@@ -42,14 +49,14 @@ func (h *VerificationHandler) GetTelegramStatus(c *gin.Context) {
 
 // CreateTelegramConnectLink godoc
 //
-//	@Summary		Create Telegram connect link
-//	@Description	Generates a one-time Telegram connect link for the current user
-//	@Tags			verification
+//	@Summary		Create Telegram channel connect link
+//	@Description	Generates a one-time Telegram channel connect link for the current user
+//	@Tags			channels
 //	@Produce		json
 //	@Success		200	{object}	dto.TelegramConnectResponse
 //	@Failure		503	{object}	dto.ErrorResponse
 //	@Failure		500	{object}	dto.ErrorResponse
-//	@Router			/me/verification/telegram/connect [post]
+//	@Router			/me/channels/telegram/connect [post]
 func (h *VerificationHandler) CreateTelegramConnectLink(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 	resp, err := h.verificationService.CreateTelegramConnectLink(userID)
@@ -67,16 +74,16 @@ func (h *VerificationHandler) CreateTelegramConnectLink(c *gin.Context) {
 
 // PatchTelegramSettings godoc
 //
-//	@Summary		Update Telegram verification settings
-//	@Description	Updates Telegram login verification settings for the current user
-//	@Tags			verification
+//	@Summary		Update Telegram channel settings
+//	@Description	Updates Telegram login approval settings for the current user
+//	@Tags			channels
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		dto.TelegramPatchRequest	true	"Telegram verification settings"
+//	@Param			payload	body		dto.TelegramPatchRequest	true	"Telegram channel settings"
 //	@Success		200		{object}	dto.TelegramStatusResponse
 //	@Failure		400		{object}	dto.ErrorResponse
 //	@Failure		500		{object}	dto.ErrorResponse
-//	@Router			/me/verification/telegram [patch]
+//	@Router			/me/channels/telegram [patch]
 func (h *VerificationHandler) PatchTelegramSettings(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 
@@ -109,13 +116,13 @@ func (h *VerificationHandler) PatchTelegramSettings(c *gin.Context) {
 
 // UnlinkTelegram godoc
 //
-//	@Summary		Unlink Telegram verification
-//	@Description	Removes Telegram connection and disables Telegram login verification for the current user
-//	@Tags			verification
+//	@Summary		Unlink Telegram channel
+//	@Description	Removes Telegram channel connection and disables Telegram login approval for the current user
+//	@Tags			channels
 //	@Produce		json
 //	@Success		200	{object}	dto.TelegramStatusResponse
 //	@Failure		500	{object}	dto.ErrorResponse
-//	@Router			/me/verification/telegram [delete]
+//	@Router			/me/channels/telegram [delete]
 func (h *VerificationHandler) UnlinkTelegram(c *gin.Context) {
 	userID := utils.GetRequestContext(c).UserID
 	if err := h.verificationService.UnlinkTelegram(userID); err != nil {

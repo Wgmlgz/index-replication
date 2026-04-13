@@ -3,13 +3,13 @@
 import {
   AuditLogsApi,
   AuthApi,
+  ChannelsApi,
   Configuration,
   MoexApi,
   PortfolioApi,
   SettingsApi,
   TbankApi,
   UsersApi,
-  VerificationApi
 } from "@/api-client";
 import axios, { AxiosHeaders } from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -185,9 +185,9 @@ const config = new Configuration({
 
 export const auditLogsApi = new AuditLogsApi(config, config.basePath, axiosClient);
 export const authApi = new AuthApi(config, config.basePath, axiosClient);
+export const channelsApi = new ChannelsApi(config, config.basePath, axiosClient);
 export const settingsApi = new SettingsApi(config, config.basePath, axiosClient);
 export const usersApi = new UsersApi(config, config.basePath, axiosClient);
 export const moexApi = new MoexApi(config, config.basePath, axiosClient);
 export const portfolioApi = new PortfolioApi(config, config.basePath, axiosClient);
 export const tbankApi = new TbankApi(config, config.basePath, axiosClient);
-export const verificationApi = new VerificationApi(config, config.basePath, axiosClient);

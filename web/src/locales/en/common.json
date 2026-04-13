@@ -665,10 +665,22 @@
         "detailTitle": "{{entity}} #{{id}}",
         "selectPrompt": "Select a run to see details.",
         "loadingDetail": "Loading run details...",
-        "closeButton": "Close"
+        "closeButton": "Close",
+        "scheduledRun": {
+          "idLabel": "#auto",
+          "badge": "Scheduled",
+          "settingsButton": "Settings",
+          "dialogTitle": "Edit scheduled run time",
+          "dialogHint": "The scheduled run time is normally computed automatically. Change it manually only when required.",
+          "timeLabel": "Scheduled run time",
+          "saveButton": "Save time",
+          "saveWorking": "Saving...",
+          "missingRRule": "Cannot save schedule time because saved schedule rule is missing."
+        }
       },
       "errors": {
         "loadRebalances": "Failed to load rebalance runs.",
+        "loadSchedule": "Failed to load rebalance schedule.",
         "loadRebalanceDetail": "Failed to load rebalance run detail.",
         "loadStatus": "Failed to load rebalance status.",
         "createDraft": "Failed to create rebalance draft.",

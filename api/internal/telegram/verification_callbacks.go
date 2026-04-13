@@ -2,10 +2,12 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"log"
 	"strings"
 	"time"
 
+	"server/internal/approvals"
 	"server/internal/models"
 )
 
@@ -54,7 +56,7 @@ func (s *VerificationService) handleTelegramCallback(ctx context.Context, callba
 
 	var (
 		challengeID     string
-		newStatus       string
+		approved        bool
 		action          string
 		callbackText    string
 		expectedPurpose string
@@ -62,25 +64,25 @@ func (s *VerificationService) handleTelegramCallback(ctx context.Context, callba
 	switch {
 	case strings.HasPrefix(callback.Data, callbackPrefixLoginApprove):
 		challengeID = strings.TrimPrefix(callback.Data, callbackPrefixLoginApprove)
-		newStatus = models.VerificationStatusApproved
+		approved = true
 		action = models.ActionLoginVerificationApproved
 		callbackText = "Login approved."
 		expectedPurpose = models.VerificationPurposeLogin
 	case strings.HasPrefix(callback.Data, callbackPrefixLoginDeny):
 		challengeID = strings.TrimPrefix(callback.Data, callbackPrefixLoginDeny)
-		newStatus = models.VerificationStatusDenied
+		approved = false
 		action = models.ActionLoginVerificationDenied
 		callbackText = "Login denied."
 		expectedPurpose = models.VerificationPurposeLogin
 	case strings.HasPrefix(callback.Data, callbackPrefixRebalanceApprove):
 		challengeID = strings.TrimPrefix(callback.Data, callbackPrefixRebalanceApprove)
-		newStatus = models.VerificationStatusApproved
+		approved = true
 		action = models.ActionRebalanceConfirmationYes
 		callbackText = "Rebalance execution queued."
 		expectedPurpose = models.VerificationPurposeRebalanceExecution
 	case strings.HasPrefix(callback.Data, callbackPrefixRebalanceDeny):
 		challengeID = strings.TrimPrefix(callback.Data, callbackPrefixRebalanceDeny)
-		newStatus = models.VerificationStatusDenied
+		approved = false
 		action = models.ActionRebalanceConfirmationNo
 		callbackText = "Rebalance execution aborted."
 		expectedPurpose = models.VerificationPurposeRebalanceExecution
@@ -100,48 +102,37 @@ func (s *VerificationService) handleTelegramCallback(ctx context.Context, callba
 		return
 	}
 
-	challenge, err := s.verificationRepo.GetChallengeByID(challengeID)
-	if err != nil {
+	if s.approvalsService == nil {
+		_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, "Approvals service is unavailable.", true)
+		return
+	}
+
+	challenge, err := s.approvalsService.ApplyDecision(
+		challengeID,
+		expectedPurpose,
+		approved,
+		time.Now().UTC(),
+	)
+	if errors.Is(err, approvals.ErrVerificationNotFound) {
 		_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, "Request was not found.", true)
 		return
 	}
-	if challenge.Purpose != models.VerificationPurposeLogin &&
-		challenge.Purpose != models.VerificationPurposeRebalanceExecution {
-		_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, "Unsupported verification request.", true)
-		return
-	}
-	if expectedPurpose != "" && challenge.Purpose != expectedPurpose {
+	if errors.Is(err, approvals.ErrVerificationNotSupported) {
 		_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, "Request type mismatch.", true)
 		return
 	}
-
-	now := time.Now().UTC()
-	if now.After(challenge.ExpiresAt) && challenge.Status == models.VerificationStatusPending {
-		challenge.Status = models.VerificationStatusExpired
-		challenge.UpdatedAt = now
-		_ = s.verificationRepo.SaveChallenge(challenge)
-	}
-
-	if challenge.Status != models.VerificationStatusPending {
+	if errors.Is(err, approvals.ErrVerificationClosed) {
 		_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, "This request is already closed.", false)
 		return
 	}
-
-	challenge.Status = newStatus
-	challenge.UpdatedAt = now
-	if newStatus == models.VerificationStatusApproved {
-		challenge.ApprovedAt = &now
-	} else {
-		challenge.DeniedAt = &now
-	}
-	if err := s.verificationRepo.SaveChallenge(challenge); err != nil {
+	if err != nil {
 		_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, "Failed to process response.", true)
 		return
 	}
 
-	if newStatus == models.VerificationStatusApproved &&
+	if approved &&
 		challenge.Purpose == models.VerificationPurposeRebalanceExecution {
-		if err := s.executeApprovedRebalanceConfirmation(ctx, challenge); err != nil {
+		if err := s.approvalsService.ExecuteApprovedRebalanceConfirmation(ctx, challenge); err != nil {
 			log.Printf(
 				"verification: failed to execute approved rebalance confirmation user_id=%d challenge_id=%s err=%v",
 				challenge.UserID,

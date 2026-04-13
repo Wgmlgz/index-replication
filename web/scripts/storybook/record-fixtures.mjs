@@ -12,7 +12,7 @@ const fixturesDir = path.join(rootDir, 'src', 'mocks', 'storybook', 'fixtures');
 
 const endpoints = [
   { name: 'me.json', path: '/api/me' },
-  { name: 'telegram-status.json', path: '/api/me/verification/telegram' },
+  { name: 'telegram-status.json', path: '/api/me/channels/telegram' },
   { name: 'tbank-status.json', path: '/api/me/tbank' },
   { name: 'users-page-1.json', path: '/api/users?page=1&pageSize=20&search=' },
 ];

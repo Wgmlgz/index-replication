@@ -11,6 +11,7 @@ import {
   CircleHelp,
   FileCheck2,
   LoaderCircle,
+  Settings,
   Play,
   XCircle,
   Plus,
@@ -21,6 +22,8 @@ import type {
   PortfolioRebalanceCreateRequest,
   PortfolioRebalanceDetailResponse,
   PortfolioRebalanceRun,
+  PortfolioRebalanceScheduleConfigResponse,
+  PortfolioRebalanceScheduleConfigUpsertRequest,
 } from '@/api-client';
 import { usePortfolioDetailsContext } from '@/app/portfolio/components/portfolio-details-context';
 import { ConfirmActionDialog } from '@/components/confirm-action-dialog';
@@ -43,6 +46,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import {
   Tooltip,
   TooltipContent,
@@ -86,6 +90,17 @@ function formatDateTime(value: string | undefined, language: string): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
+}
+
+function parseDateTime(value: string | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed;
 }
 
 function executeButtonLabel(status: string | undefined, t: TFunction): string {
@@ -152,6 +167,11 @@ export default function PortfolioReplicationDraftsPage() {
   const [rebalanceWorking, setRebalanceWorking] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [scheduledRunDialogOpen, setScheduledRunDialogOpen] = useState(false);
+  const [scheduledRunWorking, setScheduledRunWorking] = useState(false);
+  const [scheduledRunError, setScheduledRunError] = useState('');
+  const [scheduleConfig, setScheduleConfig] = useState<PortfolioRebalanceScheduleConfigResponse | null>(null);
+  const [scheduledRunAtDraft, setScheduledRunAtDraft] = useState(() => new Date());
   const syncedDetailRunStatusRef = useRef('');
 
   const selectedRebalanceID = useMemo(
@@ -243,6 +263,34 @@ export default function PortfolioReplicationDraftsPage() {
   useEffect(() => {
     void loadRebalanceRuns();
   }, [loadRebalanceRuns]);
+
+  const loadScheduleConfig = useCallback(async () => {
+    if (!portfolioID) {
+      setScheduleConfig(null);
+      return;
+    }
+
+    try {
+      const response = await portfolioApi.mePortfoliosIdRebalancesScheduleGet(portfolioID);
+      setScheduleConfig(response.data ?? null);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        setScheduleConfig(null);
+        return;
+      }
+      setScheduleConfig(null);
+      setRebalanceError(
+        parseErrorMessage(
+          err,
+          t('portfolio.replication.errors.loadSchedule'),
+        ),
+      );
+    }
+  }, [parseErrorMessage, portfolioID, t]);
+
+  useEffect(() => {
+    void loadScheduleConfig();
+  }, [loadScheduleConfig]);
 
   const loadRebalanceDetail = useCallback(async (
     runID: number,
@@ -523,6 +571,67 @@ export default function PortfolioReplicationDraftsPage() {
     ],
   );
 
+  const scheduledRunAt = scheduleConfig?.next_run_at;
+  const hasScheduledRun = typeof scheduledRunAt === 'string' && scheduledRunAt.length > 0;
+  const scheduledRunAtLabel = hasScheduledRun
+    ? formatDateTime(scheduledRunAt, i18n.language || 'en')
+    : '-';
+
+  const onOpenScheduledRunDialog = useCallback(() => {
+    if (!hasScheduledRun) {
+      return;
+    }
+    const parsed = parseDateTime(scheduledRunAt);
+    setScheduledRunAtDraft(parsed ?? new Date());
+    setScheduledRunError('');
+    setScheduledRunDialogOpen(true);
+  }, [hasScheduledRun, scheduledRunAt]);
+
+  const onSaveScheduledRun = useCallback(async () => {
+    if (!portfolioID) {
+      return;
+    }
+    if (!scheduleConfig?.rrule) {
+      setScheduledRunError(t('portfolio.replication.rebalances.scheduledRun.missingRRule'));
+      return;
+    }
+
+    setScheduledRunWorking(true);
+    setScheduledRunError('');
+    setRebalanceError('');
+    try {
+      const payload: PortfolioRebalanceScheduleConfigUpsertRequest = {
+        is_enabled: scheduleConfig.is_enabled ?? true,
+        dtstart: scheduledRunAtDraft.toISOString(),
+        rrule: scheduleConfig.rrule,
+        business_day_adjustment: scheduleConfig.business_day_adjustment,
+      };
+      const response = await portfolioApi.mePortfoliosIdRebalancesSchedulePut(portfolioID, payload);
+      const nextConfig = response.data ?? {};
+      setScheduleConfig({
+        ...scheduleConfig,
+        ...nextConfig,
+        next_run_at: nextConfig.next_run_at ?? scheduledRunAtDraft.toISOString(),
+      });
+      setScheduledRunDialogOpen(false);
+    } catch (err) {
+      setScheduledRunError(
+        parseErrorMessage(
+          err,
+          t('portfolio.replication.schedule.errors.save'),
+        ),
+      );
+    } finally {
+      setScheduledRunWorking(false);
+    }
+  }, [
+    parseErrorMessage,
+    portfolioID,
+    scheduleConfig,
+    scheduledRunAtDraft,
+    t,
+  ]);
+
   if (!portfolioID) {
     return (
       <Card>
@@ -587,6 +696,32 @@ export default function PortfolioReplicationDraftsPage() {
               </p>
             ) : null}
 
+            {hasScheduledRun ? (
+              <div className={`-mt-px flex items-center justify-between gap-3 border border-dashed bg-muted/20 p-2 text-xs first:mt-0 first:rounded-t-md ${rebalanceRuns.length === 0 ? 'rounded-b-md' : ''}`}>
+                <div className='grid flex-1 gap-1'>
+                  <div className='flex w-full items-center gap-2'>
+                    <span className='font-medium'>{t('portfolio.replication.rebalances.scheduledRun.idLabel')}</span>
+                    <Badge variant='outline'>
+                      {t('portfolio.replication.rebalances.scheduledRun.badge')}
+                    </Badge>
+                  </div>
+                  <span className='text-muted-foreground'>
+                    {scheduledRunAtLabel}
+                  </span>
+                </div>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={onOpenScheduledRunDialog}
+                  disabled={rebalanceWorking || scheduledRunWorking}
+                >
+                  <Settings className='size-4' />
+                  {t('portfolio.replication.rebalances.scheduledRun.settingsButton')}
+                </Button>
+              </div>
+            ) : null}
+
             {rebalanceRuns.map(run => {
               const runID = typeof run.id === 'number' ? run.id : 0;
               const isDraftRun = run.status === 'draft';
@@ -624,7 +759,7 @@ export default function PortfolioReplicationDraftsPage() {
                           onOpenDraftDetail(runID || null);
                         }
                       }}
-                      className={`-mt-px flex items-center justify-between gap-3 border p-2 text-xs transition-colors first:mt-0 first:rounded-t-md last:rounded-b-md ${
+                      className={`-mt-px flex items-center justify-between gap-3 border p-2 text-xs transition-colors first:mt-0 ${!hasScheduledRun ? 'first:rounded-t-md' : ''} last:rounded-b-md ${
                         isOpenDisabled
                           ? 'cursor-not-allowed opacity-70'
                           : 'cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
@@ -709,6 +844,64 @@ export default function PortfolioReplicationDraftsPage() {
               void onSubmitCreateDraft();
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={scheduledRunDialogOpen}
+        onOpenChange={open => {
+          setScheduledRunDialogOpen(open);
+          if (!open) {
+            setScheduledRunError('');
+          }
+        }}
+      >
+        <DialogContent className='sm:max-w-lg'>
+          <DialogHeader>
+            <DialogTitle>
+              {t('portfolio.replication.rebalances.scheduledRun.dialogTitle')}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className='grid gap-3'>
+            <p className='text-sm text-muted-foreground'>
+              {t('portfolio.replication.rebalances.scheduledRun.dialogHint')}
+            </p>
+            <DateTimePicker
+              idPrefix='scheduled-run-at'
+              label={t('portfolio.replication.rebalances.scheduledRun.timeLabel')}
+              value={scheduledRunAtDraft}
+              dateLabel={t('portfolio.replication.schedule.datePlaceholder')}
+              timeLabel={t('portfolio.replication.schedule.timeLabel')}
+              onChange={setScheduledRunAtDraft}
+            />
+            {scheduledRunError ? (
+              <Alert variant='destructive'>
+                <AlertTitle>{t('common.error')}</AlertTitle>
+                <AlertDescription>{scheduledRunError}</AlertDescription>
+              </Alert>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setScheduledRunDialogOpen(false)}
+              disabled={scheduledRunWorking}
+            >
+              {t('portfolio.replication.modeDialog.cancelButton')}
+            </Button>
+            <Button
+              type='button'
+              onClick={() => void onSaveScheduledRun()}
+              disabled={scheduledRunWorking}
+            >
+              {scheduledRunWorking
+                ? t('portfolio.replication.rebalances.scheduledRun.saveWorking')
+                : t('portfolio.replication.rebalances.scheduledRun.saveButton')}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

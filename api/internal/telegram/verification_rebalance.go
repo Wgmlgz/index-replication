@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,11 +11,11 @@ import (
 	"time"
 
 	"server/internal/api/dto"
+	"server/internal/approvals"
 	"server/internal/models"
 	"server/internal/rebalance"
 
 	"github.com/dustin/go-humanize"
-	"github.com/google/uuid"
 )
 
 func (s *VerificationService) RequestRebalanceExecutionConfirmation(
@@ -25,6 +24,9 @@ func (s *VerificationService) RequestRebalanceExecutionConfirmation(
 ) error {
 	if req.UserID <= 0 || req.PortfolioID <= 0 || req.RunID <= 0 {
 		return errors.New("invalid rebalance confirmation request")
+	}
+	if s.approvalsService == nil {
+		return errors.New("approvals service is not configured")
 	}
 	if s.telegramService == nil || !s.telegramService.Enabled() {
 		return fmt.Errorf("%w: TELEGRAM_BOT_TOKEN is empty", ErrTelegramUnavailable)
@@ -40,24 +42,18 @@ func (s *VerificationService) RequestRebalanceExecutionConfirmation(
 
 	now := time.Now().UTC()
 	expiresAt := now.Add(s.rebalanceChallengeTTL())
-	detailsBytes, _ := json.Marshal(map[string]interface{}{
-		"portfolio_id": req.PortfolioID,
-		"run_id":       req.RunID,
-		"as_of_date":   strings.TrimSpace(req.AsOfDate),
-	})
-
-	challenge := &models.VerificationChallenge{
-		ID:         uuid.NewString(),
+	challenge, err := s.approvalsService.CreateChallenge(approvals.CreateChallengeInput{
 		UserID:     req.UserID,
 		Purpose:    models.VerificationPurposeRebalanceExecution,
-		Status:     models.VerificationStatusPending,
 		RememberMe: false,
-		Details:    string(detailsBytes),
-		ExpiresAt:  expiresAt,
-		CreatedAt:  now,
-		UpdatedAt:  now,
-	}
-	if err := s.verificationRepo.CreateChallenge(challenge); err != nil {
+		Details: map[string]interface{}{
+			"portfolio_id": req.PortfolioID,
+			"run_id":       req.RunID,
+			"as_of_date":   strings.TrimSpace(req.AsOfDate),
+		},
+		ExpiresAt: expiresAt,
+	})
+	if err != nil {
 		return err
 	}
 
@@ -78,9 +74,7 @@ func (s *VerificationService) RequestRebalanceExecutionConfirmation(
 	text := s.buildRebalanceConfirmationMessage(req, expiresAt)
 
 	if _, err := s.telegramService.SendMessage(ctx, chatID, text, keyboard); err != nil {
-		challenge.Status = models.VerificationStatusExpired
-		challenge.UpdatedAt = time.Now().UTC()
-		_ = s.verificationRepo.SaveChallenge(challenge)
+		_ = s.approvalsService.MarkExpired(challenge, time.Now().UTC())
 		log.Printf(
 			"verification: failed to send rebalance confirmation user_id=%d chat_id=%d run_id=%d err=%v",
 			req.UserID,
@@ -103,37 +97,6 @@ func (s *VerificationService) RequestRebalanceExecutionConfirmation(
 		},
 	)
 	return nil
-}
-
-func (s *VerificationService) executeApprovedRebalanceConfirmation(
-	ctx context.Context,
-	challenge *models.VerificationChallenge,
-) error {
-	if challenge == nil {
-		return errors.New("rebalance challenge is nil")
-	}
-	if s.rebalanceExecutor == nil {
-		return errors.New("rebalance executor is not configured")
-	}
-
-	var details struct {
-		PortfolioID int `json:"portfolio_id"`
-		RunID       int `json:"run_id"`
-	}
-	if err := json.Unmarshal([]byte(challenge.Details), &details); err != nil {
-		return fmt.Errorf("decode rebalance challenge details: %w", err)
-	}
-	if details.PortfolioID <= 0 || details.RunID <= 0 {
-		return errors.New("invalid rebalance challenge details")
-	}
-
-	_, err := s.rebalanceExecutor.ExecuteRun(
-		ctx,
-		challenge.UserID,
-		details.PortfolioID,
-		details.RunID,
-	)
-	return err
 }
 
 func (s *VerificationService) rebalanceChallengeTTL() time.Duration {

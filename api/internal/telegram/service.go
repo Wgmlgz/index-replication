@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"server/internal/api/dto"
+	"server/internal/approvals"
 	"server/internal/config"
+	"server/internal/notifications"
 	"server/internal/repository"
 )
 
@@ -33,33 +34,24 @@ const (
 )
 
 var (
-	ErrVerificationPending      = errors.New("verification pending")
-	ErrVerificationDenied       = errors.New("verification denied")
-	ErrVerificationExpired      = errors.New("verification expired")
-	ErrVerificationConsumed     = errors.New("verification already consumed")
-	ErrVerificationNotFound     = errors.New("verification challenge not found")
+	ErrVerificationPending      = approvals.ErrVerificationPending
+	ErrVerificationDenied       = approvals.ErrVerificationDenied
+	ErrVerificationExpired      = approvals.ErrVerificationExpired
+	ErrVerificationConsumed     = approvals.ErrVerificationConsumed
+	ErrVerificationNotFound     = approvals.ErrVerificationNotFound
+	ErrVerificationNotSupported = approvals.ErrVerificationNotSupported
 	ErrTelegramNotConnected     = errors.New("telegram account is not connected")
 	ErrTelegramUnavailable      = errors.New("telegram bot is not available")
-	ErrVerificationNotSupported = errors.New("verification challenge is not supported")
 )
 
 type VerificationService struct {
-	cfg               *config.Config
-	userRepo          *repository.UserRepository
-	userSettingsRepo  *repository.UserSettingsRepository
-	verificationRepo  *repository.VerificationRepository
-	auditLogger       AuditLogger
-	telegramService   *TelegramService
-	rebalanceExecutor rebalanceExecutionService
-}
-
-type rebalanceExecutionService interface {
-	ExecuteRun(
-		ctx context.Context,
-		userID int,
-		portfolioID int,
-		runID int,
-	) (*dto.PortfolioRebalanceRun, error)
+	cfg              *config.Config
+	userSettingsRepo *repository.UserSettingsRepository
+	verificationRepo *repository.VerificationRepository
+	auditLogger      AuditLogger
+	telegramService  *TelegramService
+	approvalsService *approvals.Service
+	notifications    *notifications.Service
 }
 
 type AuditLogger interface {
@@ -68,27 +60,29 @@ type AuditLogger interface {
 
 func NewVerificationService(
 	cfg *config.Config,
-	userRepo *repository.UserRepository,
 	userSettingsRepo *repository.UserSettingsRepository,
 	verificationRepo *repository.VerificationRepository,
 	auditLogger AuditLogger,
 	telegramService *TelegramService,
+	approvalsService *approvals.Service,
+	notificationsService *notifications.Service,
 ) *VerificationService {
 	return &VerificationService{
 		cfg:              cfg,
-		userRepo:         userRepo,
 		userSettingsRepo: userSettingsRepo,
 		verificationRepo: verificationRepo,
 		auditLogger:      auditLogger,
 		telegramService:  telegramService,
+		approvalsService: approvalsService,
+		notifications:    notificationsService,
 	}
 }
 
-func (s *VerificationService) SetRebalanceExecutionExecutor(executor rebalanceExecutionService) {
-	if s == nil {
+func (s *VerificationService) SetRebalanceExecutionExecutor(executor approvals.RebalanceExecutionExecutor) {
+	if s == nil || s.approvalsService == nil {
 		return
 	}
-	s.rebalanceExecutor = executor
+	s.approvalsService.SetRebalanceExecutionExecutor(executor)
 }
 
 func (s *VerificationService) StartTelegramPolling(ctx context.Context) {

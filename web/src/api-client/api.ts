@@ -1114,6 +1114,291 @@ export class BrandingApi extends BaseAPI {
 
 
 /**
+ * ChannelsApi - axios parameter creator
+ */
+export const ChannelsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Generates a one-time Telegram channel connect link for the current user
+         * @summary Create Telegram channel connect link
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramConnectPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/channels/telegram/connect`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Removes Telegram channel connection and disables Telegram login approval for the current user
+         * @summary Unlink Telegram channel
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramDelete: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/channels/telegram`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns Telegram channel connection status and whether login approval is enabled
+         * @summary Get Telegram channel status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/me/channels/telegram`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Updates Telegram login approval settings for the current user
+         * @summary Update Telegram channel settings
+         * @param {TelegramPatchRequest} payload Telegram channel settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramPatch: async (payload: TelegramPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payload' is not null or undefined
+            assertParamExists('meChannelsTelegramPatch', 'payload', payload)
+            const localVarPath = `/me/channels/telegram`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * ChannelsApi - functional programming interface
+ */
+export const ChannelsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ChannelsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Generates a one-time Telegram channel connect link for the current user
+         * @summary Create Telegram channel connect link
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meChannelsTelegramConnectPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramConnectResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meChannelsTelegramConnectPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChannelsApi.meChannelsTelegramConnectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Removes Telegram channel connection and disables Telegram login approval for the current user
+         * @summary Unlink Telegram channel
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meChannelsTelegramDelete(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meChannelsTelegramDelete(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChannelsApi.meChannelsTelegramDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns Telegram channel connection status and whether login approval is enabled
+         * @summary Get Telegram channel status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meChannelsTelegramGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meChannelsTelegramGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChannelsApi.meChannelsTelegramGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Updates Telegram login approval settings for the current user
+         * @summary Update Telegram channel settings
+         * @param {TelegramPatchRequest} payload Telegram channel settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async meChannelsTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.meChannelsTelegramPatch(payload, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChannelsApi.meChannelsTelegramPatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * ChannelsApi - factory interface
+ */
+export const ChannelsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = ChannelsApiFp(configuration)
+    return {
+        /**
+         * Generates a one-time Telegram channel connect link for the current user
+         * @summary Create Telegram channel connect link
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramConnectPost(options?: RawAxiosRequestConfig): AxiosPromise<TelegramConnectResponse> {
+            return localVarFp.meChannelsTelegramConnectPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Removes Telegram channel connection and disables Telegram login approval for the current user
+         * @summary Unlink Telegram channel
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramDelete(options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
+            return localVarFp.meChannelsTelegramDelete(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns Telegram channel connection status and whether login approval is enabled
+         * @summary Get Telegram channel status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramGet(options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
+            return localVarFp.meChannelsTelegramGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates Telegram login approval settings for the current user
+         * @summary Update Telegram channel settings
+         * @param {TelegramPatchRequest} payload Telegram channel settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        meChannelsTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
+            return localVarFp.meChannelsTelegramPatch(payload, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * ChannelsApi - object-oriented interface
+ */
+export class ChannelsApi extends BaseAPI {
+    /**
+     * Generates a one-time Telegram channel connect link for the current user
+     * @summary Create Telegram channel connect link
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meChannelsTelegramConnectPost(options?: RawAxiosRequestConfig) {
+        return ChannelsApiFp(this.configuration).meChannelsTelegramConnectPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Removes Telegram channel connection and disables Telegram login approval for the current user
+     * @summary Unlink Telegram channel
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meChannelsTelegramDelete(options?: RawAxiosRequestConfig) {
+        return ChannelsApiFp(this.configuration).meChannelsTelegramDelete(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns Telegram channel connection status and whether login approval is enabled
+     * @summary Get Telegram channel status
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meChannelsTelegramGet(options?: RawAxiosRequestConfig) {
+        return ChannelsApiFp(this.configuration).meChannelsTelegramGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates Telegram login approval settings for the current user
+     * @summary Update Telegram channel settings
+     * @param {TelegramPatchRequest} payload Telegram channel settings
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public meChannelsTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig) {
+        return ChannelsApiFp(this.configuration).meChannelsTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * MoexApi - axios parameter creator
  */
 export const MoexApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -4660,291 +4945,6 @@ export class UsersApi extends BaseAPI {
      */
     public usersPost(body: CreateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).usersPost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
- * VerificationApi - axios parameter creator
- */
-export const VerificationApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * Generates a one-time Telegram connect link for the current user
-         * @summary Create Telegram connect link
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramConnectPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/verification/telegram/connect`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Removes Telegram connection and disables Telegram login verification for the current user
-         * @summary Unlink Telegram verification
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramDelete: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/verification/telegram`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns Telegram connection status and whether login verification is enabled
-         * @summary Get Telegram verification status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/me/verification/telegram`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Updates Telegram login verification settings for the current user
-         * @summary Update Telegram verification settings
-         * @param {TelegramPatchRequest} payload Telegram verification settings
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramPatch: async (payload: TelegramPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'payload' is not null or undefined
-            assertParamExists('meVerificationTelegramPatch', 'payload', payload)
-            const localVarPath = `/me/verification/telegram`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(payload, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * VerificationApi - functional programming interface
- */
-export const VerificationApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = VerificationApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * Generates a one-time Telegram connect link for the current user
-         * @summary Create Telegram connect link
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramConnectResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramConnectPost(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramConnectPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Removes Telegram connection and disables Telegram login verification for the current user
-         * @summary Unlink Telegram verification
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meVerificationTelegramDelete(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramDelete(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramDelete']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns Telegram connection status and whether login verification is enabled
-         * @summary Get Telegram verification status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meVerificationTelegramGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Updates Telegram login verification settings for the current user
-         * @summary Update Telegram verification settings
-         * @param {TelegramPatchRequest} payload Telegram verification settings
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async meVerificationTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TelegramStatusResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.meVerificationTelegramPatch(payload, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['VerificationApi.meVerificationTelegramPatch']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * VerificationApi - factory interface
- */
-export const VerificationApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = VerificationApiFp(configuration)
-    return {
-        /**
-         * Generates a one-time Telegram connect link for the current user
-         * @summary Create Telegram connect link
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig): AxiosPromise<TelegramConnectResponse> {
-            return localVarFp.meVerificationTelegramConnectPost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Removes Telegram connection and disables Telegram login verification for the current user
-         * @summary Unlink Telegram verification
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramDelete(options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
-            return localVarFp.meVerificationTelegramDelete(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns Telegram connection status and whether login verification is enabled
-         * @summary Get Telegram verification status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramGet(options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
-            return localVarFp.meVerificationTelegramGet(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Updates Telegram login verification settings for the current user
-         * @summary Update Telegram verification settings
-         * @param {TelegramPatchRequest} payload Telegram verification settings
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        meVerificationTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig): AxiosPromise<TelegramStatusResponse> {
-            return localVarFp.meVerificationTelegramPatch(payload, options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * VerificationApi - object-oriented interface
- */
-export class VerificationApi extends BaseAPI {
-    /**
-     * Generates a one-time Telegram connect link for the current user
-     * @summary Create Telegram connect link
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meVerificationTelegramConnectPost(options?: RawAxiosRequestConfig) {
-        return VerificationApiFp(this.configuration).meVerificationTelegramConnectPost(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Removes Telegram connection and disables Telegram login verification for the current user
-     * @summary Unlink Telegram verification
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meVerificationTelegramDelete(options?: RawAxiosRequestConfig) {
-        return VerificationApiFp(this.configuration).meVerificationTelegramDelete(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns Telegram connection status and whether login verification is enabled
-     * @summary Get Telegram verification status
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meVerificationTelegramGet(options?: RawAxiosRequestConfig) {
-        return VerificationApiFp(this.configuration).meVerificationTelegramGet(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Updates Telegram login verification settings for the current user
-     * @summary Update Telegram verification settings
-     * @param {TelegramPatchRequest} payload Telegram verification settings
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public meVerificationTelegramPatch(payload: TelegramPatchRequest, options?: RawAxiosRequestConfig) {
-        return VerificationApiFp(this.configuration).meVerificationTelegramPatch(payload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

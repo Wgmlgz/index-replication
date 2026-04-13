@@ -10,6 +10,7 @@ import (
 
 	"server/internal/api/dto"
 	"server/internal/models"
+	"server/internal/notifications"
 )
 
 func (s *VerificationService) GetTelegramStatus(userID int) (*dto.TelegramStatusResponse, error) {
@@ -165,11 +166,19 @@ func (s *VerificationService) linkTelegramWithToken(ctx context.Context, token s
 		},
 	)
 
-	_, _ = s.telegramService.SendMessage(
-		ctx,
-		chatID,
-		"Your account is linked. You can enable Telegram login verification in app settings.",
-		nil,
-	)
+	linkedMessage := "Your account is linked. You can enable Telegram login approval in app settings."
+	if s.notifications != nil {
+		if err := s.notifications.Send(ctx, notifications.SendRequest{
+			UserID: connectToken.UserID,
+			Message: notifications.Message{
+				Body: linkedMessage,
+			},
+			Channels: []string{channelKeyTelegram},
+		}); err == nil {
+			return nil
+		}
+	}
+
+	_, _ = s.telegramService.SendMessage(ctx, chatID, linkedMessage, nil)
 	return nil
 }

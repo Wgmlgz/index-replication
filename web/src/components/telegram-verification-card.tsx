@@ -14,7 +14,7 @@ import {
 import { MarkdownArticle } from '@/components/content/markdown-article';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { verificationApi } from '@/lib/api';
+import { channelsApi } from '@/lib/api';
 
 export function TelegramVerificationCard() {
   const { t } = useTranslation();
@@ -34,7 +34,7 @@ export function TelegramVerificationCard() {
 
   const loadStatus = useCallback(async () => {
     try {
-      const response = await verificationApi.meVerificationTelegramGet();
+      const response = await channelsApi.meChannelsTelegramGet();
       const data = response.data;
       setStatus(data);
     } catch (err) {
@@ -52,7 +52,7 @@ export function TelegramVerificationCard() {
     setWorking(true);
     setError('');
     try {
-      const response = await verificationApi.meVerificationTelegramConnectPost();
+      const response = await channelsApi.meChannelsTelegramConnectPost();
       const data = response.data;
       setConnectInfo(data);
       await loadStatus();
@@ -67,7 +67,7 @@ export function TelegramVerificationCard() {
     setWorking(true);
     setError('');
     try {
-      const response = await verificationApi.meVerificationTelegramPatch({
+      const response = await channelsApi.meChannelsTelegramPatch({
         login_2fa_enabled: enabled,
       });
       const data = response.data;
@@ -86,7 +86,7 @@ export function TelegramVerificationCard() {
     setWorking(true);
     setError('');
     try {
-      const response = await verificationApi.meVerificationTelegramDelete();
+      const response = await channelsApi.meChannelsTelegramDelete();
       const data = response.data;
       setStatus(data);
       setConnectInfo(null);

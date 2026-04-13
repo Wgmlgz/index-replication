@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"os/signal"
+	"server/internal/approvals"
 	"server/internal/config"
+	"server/internal/notifications"
 	"server/internal/rebalance"
 	"server/internal/repository"
 	"server/internal/services"
@@ -17,14 +19,18 @@ func main() {
 	db := config.InitDB(cfg)
 	repoRegistry := repository.NewRepositoryRegistry(db)
 	auditService := services.NewAuditService(db)
+	telegramService := telegram.NewTelegramService(cfg)
 
 	verificationService := telegram.NewVerificationService(
 		cfg,
-		repoRegistry.UserRepo,
 		repoRegistry.UserSettingsRepo,
 		repoRegistry.VerificationRepo,
 		auditService,
-		telegram.NewTelegramService(cfg),
+		telegramService,
+		approvals.NewService(repoRegistry.VerificationRepo, repoRegistry.UserRepo),
+		notifications.NewService(
+			telegram.NewNotificationChannel(repoRegistry.UserSettingsRepo, telegramService),
+		),
 	)
 	rebalanceService := rebalance.NewService(
 		repoRegistry.PortfolioProfilesRepo,
