@@ -22,9 +22,11 @@ func (r *AuditLogRepository) ListAuditLogs(
 	search, action, entityType, entityId, performedBy string,
 	start, end *time.Time,
 	sortBy, sortDir string,
+	viewerUserID *int,
 ) ([]models.AuditLog, int64, error) {
 	dbQuery := r.db.Model(&models.AuditLog{}).
 		Preload("PerformedByUser")
+	dbQuery = scopeAuditLogsByViewer(dbQuery, viewerUserID)
 
 	// Apply filters
 	if search != "" {
@@ -91,22 +93,35 @@ func (r *AuditLogRepository) ListAuditLogs(
 	return auditLogs, total, nil
 }
 
-func (r *AuditLogRepository) GetAuditLogByID(id string) (*models.AuditLog, error) {
+func (r *AuditLogRepository) GetAuditLogByID(id string, viewerUserID *int) (*models.AuditLog, error) {
 	var log models.AuditLog
-	if err := r.db.Preload("PerformedByUser").First(&log, id).Error; err != nil {
+	dbQuery := r.db.Preload("PerformedByUser")
+	dbQuery = scopeAuditLogsByViewer(dbQuery, viewerUserID)
+	if err := dbQuery.First(&log, id).Error; err != nil {
 		return nil, err
 	}
 	return &log, nil
 }
 
-func (r *AuditLogRepository) GetAuditLogActions() ([]string, error) {
+func (r *AuditLogRepository) GetAuditLogActions(viewerUserID *int) ([]string, error) {
 	var actions []string
-	err := r.db.Model(&models.AuditLog{}).Distinct().Pluck("action", &actions).Error
+	dbQuery := r.db.Model(&models.AuditLog{})
+	dbQuery = scopeAuditLogsByViewer(dbQuery, viewerUserID)
+	err := dbQuery.Distinct().Pluck("action", &actions).Error
 	return actions, err
 }
 
-func (r *AuditLogRepository) GetAuditLogEntityTypes() ([]string, error) {
+func (r *AuditLogRepository) GetAuditLogEntityTypes(viewerUserID *int) ([]string, error) {
 	var entityTypes []string
-	err := r.db.Model(&models.AuditLog{}).Distinct().Pluck("entity_type", &entityTypes).Error
+	dbQuery := r.db.Model(&models.AuditLog{})
+	dbQuery = scopeAuditLogsByViewer(dbQuery, viewerUserID)
+	err := dbQuery.Distinct().Pluck("entity_type", &entityTypes).Error
 	return entityTypes, err
+}
+
+func scopeAuditLogsByViewer(dbQuery *gorm.DB, viewerUserID *int) *gorm.DB {
+	if viewerUserID == nil {
+		return dbQuery
+	}
+	return dbQuery.Where("performed_by = ?", *viewerUserID)
 }

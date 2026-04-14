@@ -35,7 +35,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { portfolioApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/error-utils';
-import { PORTFOLIO_V2_ROUTES, writeLastSelectedPortfolio } from '@/lib/portfolio';
+import {
+  parsePortfolioID,
+  PORTFOLIO_ID_QUERY_KEY,
+  PORTFOLIO_V2_ROUTES,
+} from '@/lib/portfolio';
 
 type PortfolioDetailsSection = 'overview' | 'actions' | 'replication';
 
@@ -112,6 +116,7 @@ export default function PortfolioDetailsRouteLayout({
   } = usePortfolio();
   const [editOpen, setEditOpen] = useState(false);
   const [profileNameDraft, setProfileNameDraft] = useState('');
+  const selectedPortfolioIDFromUrl = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
 
   const activeSection = useMemo(
     () => resolveActiveSection(pathname),
@@ -228,6 +233,14 @@ export default function PortfolioDetailsRouteLayout({
   );
 
   useEffect(() => {
+    if (selectedPortfolioIDFromUrl) {
+      return;
+    }
+
+    router.replace(PORTFOLIO_V2_ROUTES.profiles, { scroll: false });
+  }, [router, selectedPortfolioIDFromUrl]);
+
+  useEffect(() => {
     const legacyTab = searchParams.get('tab');
     const legacyOverviewTab = searchParams.get('overview_tab');
     if (!legacyTab && !legacyOverviewTab) {
@@ -252,16 +265,9 @@ export default function PortfolioDetailsRouteLayout({
     }
   }, [pathname, router, searchParams]);
 
-  useEffect(() => {
-    if (!selectedPortfolioID) {
-      return;
-    }
-
-    writeLastSelectedPortfolio({
-      id: selectedPortfolioID,
-      name: selectedProfile?.name || '',
-    });
-  }, [selectedPortfolioID, selectedProfile?.name]);
+  if (!selectedPortfolioIDFromUrl) {
+    return null;
+  }
 
   return (
     <PortfolioDetailsProvider

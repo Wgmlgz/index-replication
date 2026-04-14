@@ -1,10 +1,27 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useMemo, type ComponentType } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { LogIn, LogOut, Package, PanelLeftIcon, Settings, Wallet } from 'lucide-react';
+import {
+  BarChart3,
+  CircleHelp,
+  ClipboardList,
+  Clock3,
+  FlaskConical,
+  LineChart,
+  LogIn,
+  LogOut,
+  Monitor,
+  Package,
+  PanelLeftIcon,
+  PlayCircle,
+  Settings,
+  SlidersHorizontal,
+  Wallet,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { PortfolioProfile } from '@/api-client';
@@ -21,15 +38,11 @@ import {
 } from '@/lib/menu';
 import { portfolioApi } from '@/lib/api';
 import {
-  LAST_SELECTED_PORTFOLIO_EVENT,
-  LAST_SELECTED_PORTFOLIO_STORAGE_KEY,
-  type LastSelectedPortfolio,
   buildPortfolioHref,
   parsePortfolioID,
   PORTFOLIO_ID_QUERY_KEY,
   PORTFOLIO_V2_PROFILES_QUERY_KEY,
   PORTFOLIO_V2_ROUTES,
-  readLastSelectedPortfolio,
 } from '@/lib/portfolio';
 import {
   Sidebar,
@@ -48,6 +61,19 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
+const portfolioSubItemIcons: Record<string, ComponentType<{ className?: string }>> = {
+  'navigation.portfolio.profiles': Wallet,
+  'navigation.portfolio.overview': Wallet,
+  'portfolio.overview.tabs.summary': Wallet,
+  'portfolio.overview.tabs.operations': ClipboardList,
+  'portfolio.overview.tabs.compare': BarChart3,
+  'portfolio.overview.tabs.analytics': LineChart,
+  'navigation.portfolio.actions': PlayCircle,
+  'navigation.portfolio.replication': SlidersHorizontal,
+  'portfolio.replication.tabs.drafts': Clock3,
+  'portfolio.replication.tabs.settings': Settings,
+};
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -55,15 +81,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, hasPermission, logoutUser } = useUser();
   const { state, toggleSidebar } = useSidebar();
   const selectedPortfolioID = parsePortfolioID(searchParams.get(PORTFOLIO_ID_QUERY_KEY));
-  const [lastSelectedPortfolio, setLastSelectedPortfolio] = useState<LastSelectedPortfolio | null>(null);
-  const resolvedPortfolioID = selectedPortfolioID ?? lastSelectedPortfolio?.id ?? null;
+  const resolvedPortfolioID = selectedPortfolioID;
   const actionTabParam = searchParams.get('action_tab')?.trim() ?? '';
   const isPortfolioSectionActive = pathname.startsWith('/portfolio');
-  const detailsLabelText = useMemo(() => {
-    const detailsLabel = t('navigation.portfolio.details');
-    const portfolioName = lastSelectedPortfolio?.name.trim();
-    return portfolioName ? `${detailsLabel}: ${portfolioName}` : detailsLabel;
-  }, [lastSelectedPortfolio?.name, t]);
+  const shouldShowPortfolioSubItems = isPortfolioSectionActive;
+  const shouldShowSelectedPortfolioSubItems = Boolean(resolvedPortfolioID);
   const profilesQuery = useQuery<PortfolioProfile[]>({
     queryKey: PORTFOLIO_V2_PROFILES_QUERY_KEY,
     queryFn: async () => (await portfolioApi.mePortfoliosGet()).data ?? [],
@@ -71,17 +93,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     refetchOnWindowFocus: false,
     retry: 1,
   });
+  const availableProfiles = useMemo(
+    () =>
+      (profilesQuery.data ?? []).flatMap(profile => {
+        if (typeof profile.id !== 'number' || profile.id <= 0) {
+          return [];
+        }
+
+        const name = typeof profile.name === 'string' && profile.name.trim()
+          ? profile.name.trim()
+          : `#${profile.id}`;
+        const providerKey = typeof profile.provider === 'string'
+          ? profile.provider.trim().toLowerCase()
+          : '';
+
+        return [{
+          id: profile.id,
+          name,
+          providerKey,
+        }];
+      }),
+    [profilesQuery.data],
+  );
+  const selectedProfile = useMemo(
+    () => (profilesQuery.data ?? []).find(profile => profile.id === resolvedPortfolioID),
+    [profilesQuery.data, resolvedPortfolioID],
+  );
+  const selectedPortfolioName = typeof selectedProfile?.name === 'string'
+    ? selectedProfile.name.trim()
+    : '';
+  const selectedProviderKey = selectedProfile?.provider?.trim().toLowerCase() ?? '';
+  const SelectedProviderIcon =
+    selectedProviderKey === 'virtual'
+      ? Monitor
+      : selectedProviderKey === 'mock'
+        ? FlaskConical
+        : CircleHelp;
+  const isTbankProvider = selectedProviderKey === 'tbank';
   const actionSidebarItems = useMemo(() => {
     if (!resolvedPortfolioID) {
       return [];
     }
 
-    const selectedProfile = (profilesQuery.data ?? []).find(profile => profile.id === resolvedPortfolioID);
     return buildPortfolioActionTabs(
       selectedProfile?.capabilities?.actions ?? [],
       t('portfolio.card.runAction'),
     );
-  }, [profilesQuery.data, resolvedPortfolioID, t]);
+  }, [resolvedPortfolioID, selectedProfile?.capabilities?.actions, t]);
   const resolvedActionTab = useMemo(
     () => resolvePortfolioActionTabValue(actionSidebarItems, actionTabParam),
     [actionSidebarItems, actionTabParam],
@@ -90,30 +148,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleLogout = async () => {
     await logoutUser();
   };
-
-  useEffect(() => {
-    const syncLastSelectedPortfolio = () => {
-      setLastSelectedPortfolio(readLastSelectedPortfolio());
-    };
-
-    syncLastSelectedPortfolio();
-
-    const onStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === LAST_SELECTED_PORTFOLIO_STORAGE_KEY) {
-        syncLastSelectedPortfolio();
-      }
-    };
-    const onLastSelectedPortfolioUpdated = () => {
-      syncLastSelectedPortfolio();
-    };
-
-    window.addEventListener('storage', onStorage);
-    window.addEventListener(LAST_SELECTED_PORTFOLIO_EVENT, onLastSelectedPortfolioUpdated);
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener(LAST_SELECTED_PORTFOLIO_EVENT, onLastSelectedPortfolioUpdated);
-    };
-  }, []);
 
   const isPortfolioSubItemActive = (item: SidebarSubItem): boolean => {
     const itemPathname = item.activePathname ?? item.href.split('?')[0];
@@ -187,79 +221,156 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuButton
                   asChild
                   isActive={isPortfolioSectionActive}
-                  tooltip={t('navigation.cards.portfolio.title')}
+                  tooltip={t('navigation.portfolio.profiles')}
                 >
                   <Link href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.profiles, resolvedPortfolioID)}>
                     <Wallet className='size-4' />
-                    <span>{t('navigation.cards.portfolio.title')}</span>
+                    <span>{t('navigation.portfolio.profiles')}</span>
                   </Link>
                 </SidebarMenuButton>
-                <SidebarMenuSub>
-                  {PortfolioSidebarSubItems.map(item => {
-                    if (item.kind === 'label') {
-                      const isDetailsLabel = item.titleKey === 'navigation.portfolio.details';
-                      const isActionsLabel = item.titleKey === 'navigation.portfolio.actions';
-                      if (isActionsLabel) {
-                        return (
-                          <Fragment key={item.titleKey}>
-                            <SidebarMenuSubItem>
-                              <div className='px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                {shouldShowPortfolioSubItems ? (
+                  <SidebarMenuSub>
+                    {shouldShowSelectedPortfolioSubItems
+                      ? PortfolioSidebarSubItems.map(item => {
+                        if (item.kind === 'item' && item.titleKey === 'navigation.portfolio.profiles') {
+                          return null;
+                        }
+
+                        const SubItemIcon = portfolioSubItemIcons[item.titleKey];
+                        if (item.kind === 'label') {
+                          const isDetailsLabel = item.titleKey === 'navigation.portfolio.details';
+                          const isActionsLabel = item.titleKey === 'navigation.portfolio.actions';
+                          if (isDetailsLabel) {
+                            return (
+                              <SidebarMenuSubItem key={item.titleKey}>
+                                <div className='inline-flex items-center gap-1.5 px-2 pt-2 text-[11px] font-medium text-muted-foreground'>
+                                  {isTbankProvider ? (
+                                    <Image
+                                      src='/tbank-logo-32x32.png'
+                                      alt='T-Bank'
+                                      width={14}
+                                      height={14}
+                                      unoptimized
+                                      className='size-3.5 rounded-[3px]'
+                                    />
+                                  ) : (
+                                    <SelectedProviderIcon className='size-3.5' />
+                                  )}
+                                  <span>{selectedPortfolioName || t('common.loading')}</span>
+                                </div>
+                              </SidebarMenuSubItem>
+                            );
+                          }
+
+                          if (isActionsLabel) {
+                            return (
+                              <Fragment key={item.titleKey}>
+                                <SidebarMenuSubItem>
+                                  <div className='inline-flex items-center gap-1.5 px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                                    {SubItemIcon ? <SubItemIcon className='size-3.5' /> : null}
+                                    {t(item.titleKey)}
+                                  </div>
+                                </SidebarMenuSubItem>
+                                {actionSidebarItems.map(actionItem => (
+                                  <SidebarMenuSubItem key={`${item.titleKey}:${actionItem.value}`}>
+                                    <SidebarMenuSubButton
+                                      asChild
+                                      isActive={
+                                        pathname === PORTFOLIO_V2_ROUTES.actions
+                                        && resolvedActionTab === actionItem.value
+                                      }
+                                    >
+                                      <Link
+                                        href={buildPortfolioHref(
+                                          `${PORTFOLIO_V2_ROUTES.actions}?action_tab=${encodeURIComponent(actionItem.value)}`,
+                                          resolvedPortfolioID,
+                                        )}
+                                      >
+                                        <span>{actionItem.label}</span>
+                                      </Link>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))}
+                              </Fragment>
+                            );
+                          }
+
+                          return (
+                            <SidebarMenuSubItem key={item.titleKey}>
+                              <div className='inline-flex items-center gap-1.5 px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'
+                              >
+                                {SubItemIcon ? <SubItemIcon className='size-3.5' /> : null}
                                 {t(item.titleKey)}
                               </div>
                             </SidebarMenuSubItem>
-                            {actionSidebarItems.map(actionItem => (
-                              <SidebarMenuSubItem key={`${item.titleKey}:${actionItem.value}`}>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={
-                                    pathname === PORTFOLIO_V2_ROUTES.actions
-                                    && resolvedActionTab === actionItem.value
-                                  }
-                                >
-                                  <Link
-                                    href={buildPortfolioHref(
-                                      `${PORTFOLIO_V2_ROUTES.actions}?action_tab=${encodeURIComponent(actionItem.value)}`,
-                                      resolvedPortfolioID,
+                          );
+                        }
+
+                        const isVisible = !item.permission || hasPermission(item.permission);
+                        if (!isVisible) return null;
+
+                        return (
+                          <SidebarMenuSubItem key={item.href}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={isPortfolioSubItemActive(item)}
+                            >
+                              <Link href={buildPortfolioHref(item.href, resolvedPortfolioID)}>
+                                {SubItemIcon ? <SubItemIcon className='size-4' /> : null}
+                                <span>{t(item.titleKey)}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })
+                      : (
+                        <>
+                          <SidebarMenuSubItem>
+                            <div className='inline-flex items-center gap-1.5 px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                              <Wallet className='size-3.5' />
+                              {t('navigation.portfolio.profiles')}
+                            </div>
+                          </SidebarMenuSubItem>
+                          {availableProfiles.length > 0 ? availableProfiles.map(profile => {
+                            const ProfileProviderIcon =
+                              profile.providerKey === 'virtual'
+                                ? Monitor
+                                : profile.providerKey === 'mock'
+                                  ? FlaskConical
+                                  : CircleHelp;
+                            const isProfileTbank = profile.providerKey === 'tbank';
+                            return (
+                              <SidebarMenuSubItem key={`profile:${profile.id}`}>
+                                <SidebarMenuSubButton asChild>
+                                  <Link href={buildPortfolioHref(PORTFOLIO_V2_ROUTES.overview, profile.id)}>
+                                    {isProfileTbank ? (
+                                      <Image
+                                        src='/tbank-logo-32x32.png'
+                                        alt='T-Bank'
+                                        width={16}
+                                        height={16}
+                                        unoptimized
+                                        className='size-4 rounded-[3px]'
+                                      />
+                                    ) : (
+                                      <ProfileProviderIcon className='size-4' />
                                     )}
-                                  >
-                                    <span>{actionItem.label}</span>
+                                    <span>{profile.name}</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
-                            ))}
-                          </Fragment>
-                        );
-                      }
-
-                      return (
-                        <SidebarMenuSubItem key={item.titleKey}>
-                          <div className={isDetailsLabel
-                            ? 'px-2 pt-2 text-[11px] font-medium text-muted-foreground'
-                            : 'px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'}
-                          >
-                            {isDetailsLabel ? detailsLabelText : t(item.titleKey)}
-                          </div>
-                        </SidebarMenuSubItem>
-                      );
-                    }
-
-                    const isVisible = !item.permission || hasPermission(item.permission);
-                    if (!isVisible) return null;
-
-                    return (
-                      <SidebarMenuSubItem key={item.href}>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={isPortfolioSubItemActive(item)}
-                        >
-                          <Link href={buildPortfolioHref(item.href, resolvedPortfolioID)}>
-                            <span>{t(item.titleKey)}</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    );
-                  })}
-                </SidebarMenuSub>
+                            );
+                          }) : (
+                            <SidebarMenuSubItem>
+                              <div className='px-2 py-1 text-xs text-muted-foreground'>
+                                {profilesQuery.isLoading ? t('common.loading') : t('portfolio.selector.noProfiles')}
+                              </div>
+                            </SidebarMenuSubItem>
+                          )}
+                        </>
+                      )}
+                  </SidebarMenuSub>
+                ) : null}
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
@@ -281,7 +392,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               asChild
               isActive={pathname === '/settings'}
-              tooltip={t('navigation.cards.settings.title')}
+              tooltip={{
+                children: t('navigation.cards.settings.title'),
+                hidden: false,
+              }}
               className='justify-center'
             >
               <Link href='/settings' aria-label={t('navigation.cards.settings.title')}>
@@ -294,7 +408,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuItem className='flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
               <SidebarMenuButton
                 onClick={() => void handleLogout()}
-                tooltip={t('navigation.signOut')}
+                tooltip={{
+                  children: t('navigation.signOut'),
+                  hidden: false,
+                }}
                 className='justify-center'
                 aria-label={t('navigation.signOut')}
               >
@@ -307,7 +424,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === '/login'}
-                tooltip={t('navigation.signIn')}
+                tooltip={{
+                  children: t('navigation.signIn'),
+                  hidden: false,
+                }}
                 className='justify-center'
               >
                 <Link href='/login' aria-label={t('navigation.signIn')}>

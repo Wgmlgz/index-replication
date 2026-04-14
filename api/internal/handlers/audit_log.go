@@ -7,6 +7,7 @@ import (
 	"server/internal/config"
 	"server/internal/repository"
 	"server/internal/services"
+	"server/internal/utils"
 	"strings"
 	"time"
 
@@ -79,9 +80,10 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 
 	startDate := parseAuditFilterDate(c.Query("start_date"), false)
 	endDate := parseAuditFilterDate(c.Query("end_date"), true)
+	viewerUserID := h.viewerAuditScopeUserID(c)
 
 	auditLogs, total, err := h.repo.ListAuditLogs(
-		page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, sortBy, sortDir,
+		page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, sortBy, sortDir, viewerUserID,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
@@ -100,12 +102,13 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 //	@Success		200	{object}	map[string]interface{}
 //	@Router			/audit-logs/actions [get]
 func (h *AuditLogHandler) GetAuditLogActions(c *gin.Context) {
-	actions, err := h.repo.GetAuditLogActions()
+	viewerUserID := h.viewerAuditScopeUserID(c)
+	actions, err := h.repo.GetAuditLogActions(viewerUserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
 	}
-	entityTypes, err := h.repo.GetAuditLogEntityTypes()
+	entityTypes, err := h.repo.GetAuditLogEntityTypes(viewerUserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Database error"})
 		return
@@ -128,12 +131,21 @@ func (h *AuditLogHandler) GetAuditLogActions(c *gin.Context) {
 // @Router       /audit-logs/{id} [get]
 func (h *AuditLogHandler) GetAuditLog(c *gin.Context) {
 	id := c.Param("id")
-	log, err := h.repo.GetAuditLogByID(id)
+	log, err := h.repo.GetAuditLogByID(id, h.viewerAuditScopeUserID(c))
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Audit log not found"})
 		return
 	}
 	c.JSON(http.StatusOK, dto.NewAuditLogResponse(log))
+}
+
+func (h *AuditLogHandler) viewerAuditScopeUserID(c *gin.Context) *int {
+	reqCtx := utils.GetRequestContext(c)
+	if h.cs.CheckPermission(reqCtx.RoleKey, config.UsersView) {
+		return nil
+	}
+	userID := reqCtx.UserID
+	return &userID
 }
 
 func parseAuditFilterDate(value string, dateOnlyEndExclusive bool) *time.Time {

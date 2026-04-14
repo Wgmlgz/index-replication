@@ -36,7 +36,10 @@ export function ModeToggle({ className, labelClassName }: ModeToggleProps) {
       <DropdownMenuTrigger asChild>
         <SidebarMenuButton
           isActive={false}
-          tooltip={t('navigation.themeToggle')}
+          tooltip={{
+            children: t('navigation.themeToggle'),
+            hidden: false,
+          }}
           className={className}
           aria-label={t('navigation.themeToggle')}
         >

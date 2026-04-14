@@ -115,19 +115,7 @@ export function usePortfolio() {
     [profilesQuery.data],
   );
 
-  const effectiveSelectedPortfolioID = useMemo(() => {
-    if (profiles.length === 0) {
-      return null;
-    }
-
-    const selectedExists = profiles.some(profile => profile.id === selectedPortfolioID);
-    if (selectedExists) {
-      return selectedPortfolioID;
-    }
-
-    const fallbackProfile = profiles.find(profile => profile.is_default) ?? profiles[0];
-    return fallbackProfile?.id ?? null;
-  }, [profiles, selectedPortfolioID]);
+  const effectiveSelectedPortfolioID = selectedPortfolioID;
 
   const selectedProfile = useMemo(
     () => profiles.find(profile => profile.id === effectiveSelectedPortfolioID) ?? null,
