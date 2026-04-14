@@ -416,7 +416,7 @@ export default function PortfolioProfilesPage() {
           ) : null}
 
           {profiles.length > 0 ? (
-            <div className='grid gap-0 pl-px pt-px sm:grid-cols-2 xl:grid-cols-3'>
+            <div className='grid gap-0 overflow-hidden rounded-lg border sm:grid-cols-2 xl:grid-cols-3'>
               {profiles.map(profile => {
                 const providerKey = profile.provider.toLowerCase() as keyof typeof providerDetails;
                 const providerConfig = providerDetails[providerKey];

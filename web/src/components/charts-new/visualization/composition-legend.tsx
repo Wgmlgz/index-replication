@@ -64,44 +64,56 @@ export function CompositionLegend({
       )}
 
       {!showSkeleton && !hasError && (rows.length > 0 || showOther) && (
-        <div className='space-y-2'>
+        <div className='overflow-hidden rounded-md border'>
           {rows.map((item, index) => {
             const tickerHref = resolveTickerHref(item.ticker);
             return (
               <div
                 key={item.ticker}
-                className='rounded-md border p-2 text-xs text-muted-foreground'
+                className={cn(
+                  'p-2 text-xs text-muted-foreground',
+                  index > 0 && 'border-t'
+                )}
               >
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 items-center gap-2'>
                   <span
                     className='h-2.5 w-2.5 shrink-0 rounded-full'
                     style={{
                       backgroundColor: resolveCompositionSeriesColor(index),
                     }}
                   />
-                  {tickerHref ? (
-                    <a
-                      href={tickerHref}
-                      target='_blank'
-                      rel='noreferrer noopener'
-                      className='hover:underline'
-                      aria-label={t(`${translationKeyPrefix}.legend.openTicker`)}
-                    >
+                  <div className='flex min-w-0 flex-1 items-center gap-2 overflow-hidden'>
+                    {tickerHref ? (
+                      <a
+                        href={tickerHref}
+                        target='_blank'
+                        rel='noreferrer noopener'
+                        className='min-w-0 shrink-0 hover:underline'
+                        aria-label={t(`${translationKeyPrefix}.legend.openTicker`)}
+                      >
+                        <TickerWithLogo
+                          ticker={item.ticker}
+                          className='min-w-0'
+                          textClassName='font-medium text-foreground'
+                          iconClassName='size-4'
+                        />
+                      </a>
+                    ) : (
                       <TickerWithLogo
                         ticker={item.ticker}
+                        className='min-w-0 shrink-0'
                         textClassName='font-medium text-foreground'
                         iconClassName='size-4'
                       />
-                    </a>
-                  ) : (
-                    <TickerWithLogo
-                      ticker={item.ticker}
-                      textClassName='font-medium text-foreground'
-                      iconClassName='size-4'
-                    />
-                  )}
-                  {item.name !== item.ticker && (
-                    <span className='truncate'>{item.name}</span>
+                    )}
+                    {item.name !== item.ticker && (
+                      <span className='min-w-0 flex-1 truncate'>{item.name}</span>
+                    )}
+                  </div>
+                  {item.snapshotWeight !== null && (
+                    <span className='ml-auto shrink-0 font-medium text-foreground'>
+                      {item.snapshotWeight.toFixed(2)}%
+                    </span>
                   )}
                 </div>
                 {item.latestWeight !== null && (
@@ -111,26 +123,17 @@ export function CompositionLegend({
                     })}
                   </div>
                 )}
-                {item.latestDate && (
-                  <div>
-                    {t(`${translationKeyPrefix}.legend.asOf`, {
-                      date: item.latestDate,
-                    })}
-                  </div>
-                )}
-                {item.snapshotWeight !== null && (
-                  <div>
-                    {t(`${translationKeyPrefix}.legend.snapshotWeight`, {
-                      value: item.snapshotWeight.toFixed(2),
-                    })}
-                  </div>
-                )}
               </div>
             );
           })}
 
           {showOther && (
-            <div className='rounded-md border p-2 text-xs text-muted-foreground'>
+            <div
+              className={cn(
+                'p-2 text-xs text-muted-foreground',
+                rows.length > 0 && 'border-t'
+              )}
+            >
               <div className='flex items-center gap-2'>
                 <span
                   className='h-2.5 w-2.5 shrink-0 rounded-full'
@@ -139,11 +142,9 @@ export function CompositionLegend({
                 <span className='font-medium text-foreground'>
                   {t(`${translationKeyPrefix}.other`)}
                 </span>
-              </div>
-              <div>
-                {t(`${translationKeyPrefix}.legend.snapshotWeight`, {
-                  value: otherWeight.toFixed(2),
-                })}
+                <span className='ml-auto shrink-0 font-medium text-foreground'>
+                  {otherWeight.toFixed(2)}%
+                </span>
               </div>
             </div>
           )}
