@@ -73,11 +73,11 @@ type SchedulePreviewRequestPayload = PortfolioRebalanceSchedulePreviewRequest & 
   business_day_adjustment: BusinessDayAdjustment;
 };
 
-const DEFAULT_BUSINESS_DAY_ADJUSTMENT: BusinessDayAdjustment = 'strict';
-const DEFAULT_PREFERRED_TIME = '09:30';
-const DEFAULT_WEEKLY_DAY_OF_WEEK = 1;
-const DEFAULT_MONTHLY_DAY_INPUT = '1';
+const DEFAULT_BUSINESS_DAY_ADJUSTMENT: BusinessDayAdjustment = 'modified_following';
 const DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT = '14';
+const MOEX_TRADING_WINDOW_START = '10:00';
+const MOEX_TRADING_WINDOW_END = '18:40';
+const MOEX_MARKETS_INFO_URL = 'https://developer.tbank.ru/invest/intro/useful-info/markets';
 
 type ScheduleFormSnapshot = {
   isEnabled: boolean;
@@ -177,6 +177,52 @@ function formatLocalClock(value: Date): string {
   return `${hours}:${minutes}`;
 }
 
+function parseClockToMinutes(value: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(value)) {
+    return null;
+  }
+  const [hoursRaw, minutesRaw] = value.split(':');
+  const hours = Number.parseInt(hoursRaw ?? '', 10);
+  const minutes = Number.parseInt(minutesRaw ?? '', 10);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return null;
+  }
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+  return (hours * 60) + minutes;
+}
+
+function isWithinMoexTradingWindow(value: string): boolean {
+  const target = parseClockToMinutes(value);
+  const start = parseClockToMinutes(MOEX_TRADING_WINDOW_START);
+  const end = parseClockToMinutes(MOEX_TRADING_WINDOW_END);
+  if (target === null || start === null || end === null) {
+    return false;
+  }
+  return target >= start && target <= end;
+}
+
+type ScheduleDefaultSeed = {
+  preferredTime: string;
+  weeklyDayOfWeek: number;
+  monthlyDayInput: string;
+  customAnchorAt: Date;
+};
+
+function buildScheduleDefaultSeed(baseDate: Date): ScheduleDefaultSeed {
+  const anchor = new Date(baseDate);
+  anchor.setSeconds(0, 0);
+  anchor.setMinutes(anchor.getMinutes() + 2);
+
+  return {
+    preferredTime: formatLocalClock(anchor),
+    weeklyDayOfWeek: clampInt(anchor.getDay(), 1, 5),
+    monthlyDayInput: String(anchor.getDate()),
+    customAnchorAt: anchor,
+  };
+}
+
 function normalizeRuleText(value: string): string {
   const trimmed = value.trim();
   if (trimmed.toUpperCase().startsWith('RRULE:')) {
@@ -222,12 +268,13 @@ export function RebalanceSchedulePreviewForm({
   onScheduleEnabledChange,
 }: RebalanceSchedulePreviewFormProps) {
   const { t, i18n } = useTranslation();
+  const [initialDefaults] = useState<ScheduleDefaultSeed>(() => buildScheduleDefaultSeed(new Date()));
   const [frequency, setFrequency] = useState<ScheduleFrequency>('DAILY');
-  const [preferredTime, setPreferredTime] = useState(DEFAULT_PREFERRED_TIME);
-  const [weeklyDayOfWeek, setWeeklyDayOfWeek] = useState(DEFAULT_WEEKLY_DAY_OF_WEEK);
-  const [monthlyDayInput, setMonthlyDayInput] = useState(DEFAULT_MONTHLY_DAY_INPUT);
+  const [preferredTime, setPreferredTime] = useState(() => initialDefaults.preferredTime);
+  const [weeklyDayOfWeek, setWeeklyDayOfWeek] = useState(() => initialDefaults.weeklyDayOfWeek);
+  const [monthlyDayInput, setMonthlyDayInput] = useState(() => initialDefaults.monthlyDayInput);
   const [customIntervalDaysInput, setCustomIntervalDaysInput] = useState(DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT);
-  const [customAnchorAt, setCustomAnchorAt] = useState(() => withTime(new Date(), DEFAULT_PREFERRED_TIME));
+  const [customAnchorAt, setCustomAnchorAt] = useState(() => initialDefaults.customAnchorAt);
   const [businessDayAdjustment, setBusinessDayAdjustment] = useState<BusinessDayAdjustment>(
     DEFAULT_BUSINESS_DAY_ADJUSTMENT,
   );
@@ -302,15 +349,15 @@ export function RebalanceSchedulePreviewForm({
     setCalendarSelected(nextState.customAnchorAt);
   }, [onScheduleEnabledChange]);
   const buildDefaultScheduleState = useCallback((baseDate: Date): ScheduleFormState => {
-    const anchor = withTime(baseDate, DEFAULT_PREFERRED_TIME);
+    const defaults = buildScheduleDefaultSeed(baseDate);
     return {
-      isEnabled: true,
+      isEnabled: false,
       frequency: 'DAILY',
-      preferredTime: DEFAULT_PREFERRED_TIME,
-      weeklyDayOfWeek: DEFAULT_WEEKLY_DAY_OF_WEEK,
-      monthlyDayInput: DEFAULT_MONTHLY_DAY_INPUT,
+      preferredTime: defaults.preferredTime,
+      weeklyDayOfWeek: defaults.weeklyDayOfWeek,
+      monthlyDayInput: defaults.monthlyDayInput,
       customIntervalDaysInput: DEFAULT_CUSTOM_INTERVAL_DAYS_INPUT,
-      customAnchorAt: anchor,
+      customAnchorAt: defaults.customAnchorAt,
       businessDayAdjustment: DEFAULT_BUSINESS_DAY_ADJUSTMENT,
     };
   }, []);
@@ -372,6 +419,24 @@ export function RebalanceSchedulePreviewForm({
     }
     return !isSameScheduleFormSnapshot(currentSnapshot, baselineSnapshot);
   }, [baselineSnapshot, currentSnapshot]);
+  const effectiveScheduleTime = useMemo(
+    () => (frequency === 'CUSTOM_INTERVAL' ? formatLocalClock(customAnchorAt) : preferredTime.trim()),
+    [customAnchorAt, frequency, preferredTime],
+  );
+  const timeValidationError = useMemo(() => {
+    if (!/^\d{2}:\d{2}$/.test(effectiveScheduleTime)) {
+      return t('portfolio.replication.schedule.errors.preferredTime');
+    }
+    if (!isWithinMoexTradingWindow(effectiveScheduleTime)) {
+      return t('portfolio.replication.schedule.errors.preferredTimeWindow', {
+        from: MOEX_TRADING_WINDOW_START,
+        to: MOEX_TRADING_WINDOW_END,
+      });
+    }
+    return '';
+  }, [effectiveScheduleTime, t]);
+  const showPreferredTimeValidationError = timeValidationError.length > 0 && frequency !== 'CUSTOM_INTERVAL';
+  const showCustomAnchorValidationError = timeValidationError.length > 0 && frequency === 'CUSTOM_INTERVAL';
 
   const formatDateTime = useCallback((value: string) => {
     const date = new Date(value);
@@ -466,9 +531,6 @@ export function RebalanceSchedulePreviewForm({
 
   const buildSchedulePayload = useCallback((): ScheduleConfigUpsertRequest => {
     const trimmedTime = preferredTime.trim();
-    if (!/^\d{2}:\d{2}$/.test(trimmedTime)) {
-      throw new Error(t('portfolio.replication.schedule.errors.preferredTime'));
-    }
 
     const normalizedWeekDay = clampInt(weeklyDayOfWeek, 1, 5);
     const monthlyDay = parseIntStrict(monthlyDayInput);
@@ -559,9 +621,6 @@ export function RebalanceSchedulePreviewForm({
 
   const buildPreviewPayload = useCallback((): SchedulePreviewRequestPayload => {
     const trimmedTime = preferredTime.trim();
-    if (!/^\d{2}:\d{2}$/.test(trimmedTime)) {
-      throw new Error(t('portfolio.replication.schedule.errors.preferredTime'));
-    }
 
     const normalizedWeekDay = clampInt(weeklyDayOfWeek, 1, 5);
     const monthlyDay = parseIntStrict(monthlyDayInput);
@@ -624,6 +683,10 @@ export function RebalanceSchedulePreviewForm({
   ]);
 
   const onPreview = useCallback(async () => {
+    if (timeValidationError) {
+      return;
+    }
+
     setWorking(true);
     setError('');
     try {
@@ -660,9 +723,13 @@ export function RebalanceSchedulePreviewForm({
     } finally {
       setWorking(false);
     }
-  }, [buildPreviewPayload, portfolioID, t]);
+  }, [buildPreviewPayload, portfolioID, t, timeValidationError]);
 
   const onSaveSchedule = useCallback(async () => {
+    if (timeValidationError) {
+      return;
+    }
+
     setScheduleWorking(true);
     setError('');
     try {
@@ -690,7 +757,7 @@ export function RebalanceSchedulePreviewForm({
     } finally {
       setScheduleWorking(false);
     }
-  }, [applySavedSchedule, buildSchedulePayload, currentSnapshot, portfolioID, t]);
+  }, [applySavedSchedule, buildSchedulePayload, currentSnapshot, portfolioID, t, timeValidationError]);
 
   const onDeleteSchedule = useCallback(async () => {
     setScheduleWorking(true);
@@ -723,6 +790,11 @@ export function RebalanceSchedulePreviewForm({
   }, [applyScheduleState, baselineSnapshot, toState]);
 
   useEffect(() => {
+    if (!scheduleEnabled) {
+      setPreview(null);
+      return;
+    }
+
     const timer = window.setTimeout(() => {
       void onPreview();
     }, 300);
@@ -730,7 +802,7 @@ export function RebalanceSchedulePreviewForm({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [onPreview]);
+  }, [onPreview, scheduleEnabled]);
 
   const events = useMemo(() => preview?.events ?? [], [preview?.events]);
   const eventsInCurrentMonth = useMemo(
@@ -821,7 +893,9 @@ export function RebalanceSchedulePreviewForm({
       ) : null}
 
       <div className='grid gap-3'>
-        <div className='grid lg:grid-cols-3'>
+        {scheduleEnabled ? (
+          <>
+            <div className='grid lg:grid-cols-3'>
           <div className='grid gap-2 rounded-l-md border justify-items-center'>
             <div className='w-full border-b px-2 py-2 text-sm font-medium'>
               {t('portfolio.replication.schedule.calendarTitle')}
@@ -978,7 +1052,22 @@ export function RebalanceSchedulePreviewForm({
               value={preferredTime}
               onChange={event => setPreferredTime(event.target.value)}
               step={60}
+              aria-invalid={showPreferredTimeValidationError}
             />
+            {showPreferredTimeValidationError ? (
+              <p className='text-xs text-destructive'>
+                {timeValidationError}
+                {' '}
+                <a
+                  href={MOEX_MARKETS_INFO_URL}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='underline'
+                >
+                  {MOEX_MARKETS_INFO_URL}
+                </a>
+              </p>
+            ) : null}
           </div>
           <div className='grid gap-2 self-start'>
             <div className='flex items-center gap-1'>
@@ -1121,13 +1210,31 @@ export function RebalanceSchedulePreviewForm({
                   timeLabel={t('portfolio.replication.schedule.timeLabel')}
                   onChange={setCustomAnchorAt}
                 />
+                {showCustomAnchorValidationError ? (
+                  <p className='mt-2 text-xs text-destructive'>
+                    {timeValidationError}
+                    {' '}
+                    <a
+                      href={MOEX_MARKETS_INFO_URL}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='underline'
+                    >
+                      {MOEX_MARKETS_INFO_URL}
+                    </a>
+                  </p>
+                ) : null}
               </div>
             </>
           ) : null}
         </div>
 
         <div className='flex flex-wrap items-center gap-2'>
-          <Button type='button' onClick={() => void onPreview()} disabled={working || scheduleWorking}>
+          <Button
+            type='button'
+            onClick={() => void onPreview()}
+            disabled={working || scheduleWorking || Boolean(timeValidationError)}
+          >
             <CalendarClock className='size-4' />
             {t('portfolio.replication.schedule.previewButton')}
           </Button>
@@ -1148,14 +1255,16 @@ export function RebalanceSchedulePreviewForm({
               {t('portfolio.replication.schedule.previewWorking')}
             </span>
           ) : null}
-        </div>
+            </div>
+          </>
+        ) : null}
 
         <div className='flex flex-wrap items-center gap-2'>
           <Button
             type='button'
             variant='outline'
             onClick={() => void onSaveSchedule()}
-            disabled={working || scheduleWorking || !hasUnsavedChanges}
+            disabled={working || scheduleWorking || !hasUnsavedChanges || Boolean(timeValidationError)}
           >
             <Save className='size-4' />
             {scheduleWorking

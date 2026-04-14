@@ -23,7 +23,7 @@ export default function PortfolioReplicationSettingsPage() {
   const isReplicationEnabled = selectedProfile?.replication?.is_enabled === true;
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
-  const [scheduleEnabled, setScheduleEnabled] = useState(true);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {

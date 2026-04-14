@@ -749,7 +749,7 @@ export default function PortfolioReplicationDraftsPage() {
               </p>
             ) : null}
 
-            {!rebalanceListLoading && rebalanceRuns.length === 0 ? (
+            {!rebalanceListLoading && rebalanceRuns.length === 0 && !hasScheduledRun ? (
               <p className='px-2 text-xs text-muted-foreground'>
                 {t('portfolio.replication.rebalances.emptyList')}
               </p>

@@ -376,7 +376,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className='mb-16'>
+      <SidebarFooter>
         {/* {user && (
           <div className='px-2 py-1 text-xs text-muted-foreground'>
             <span className='font-semibold'>{user.username}</span>

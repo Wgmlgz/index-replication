@@ -503,7 +503,7 @@
         "no": "no",
         "errors": {
           "preferredTime": "Preferred time must be in HH:mm format.",
-          "preferredTimeWindow": "Preferred time must be within trading session {{from}}-{{to}}.",
+          "preferredTimeWindow": "MOEX is not working at this time. Choose a time between {{from}} and {{to}}.",
           "monthlyDay": "Monthly day must be from 1 to 31.",
           "customIntervalDays": "Custom interval days must be from 1 to 365.",
           "dtstart": "Failed to build start date for RRULE.",
