@@ -12,15 +12,16 @@ import { UserProvider, useUser } from '@/components/user-context';
 import { AppSidebar } from '@/components/app-sidebar';
 import { FullPageRedirectStatus } from '@/components/full-page-redirect-status';
 import { Toaster } from 'sonner';
-import { initI18n } from '@/lib/i18n';
+import { initI18n, setLanguage } from '@/lib/i18n';
+import { userSettingsClient } from '@/lib/user-settings-client';
 import {
   DEFAULT_AUTHENTICATED_ROUTE,
   getSafeNextPath,
   isPublicRoute,
 } from '@/lib/routes';
 
-moment.locale('ru');
 const i18n = initI18n();
+const USER_SETTING_LANGUAGE_KEY = 'preferences.language';
 
 function ProtectedPageSkeleton() {
   return (
@@ -35,7 +36,7 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { authState } = useUser();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isPublic = isPublicRoute(pathname);
   const searchParamsString = searchParams.toString();
   const nextPath = getSafeNextPath(searchParams.get('next'));
@@ -53,6 +54,29 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
       router.replace(nextPath ?? DEFAULT_AUTHENTICATED_ROUTE);
     }
   }, [authState, nextPath, pathname, router]);
+
+  useEffect(() => {
+    const lower = (i18n.language || 'en').toLowerCase();
+    moment.locale(lower.startsWith('ru') ? 'ru' : 'en');
+  }, [i18n.language]);
+
+  useEffect(() => {
+    if (authState !== 'authenticated') return;
+    let mounted = true;
+    const loadPreferredLanguage = async () => {
+      try {
+        const settings = await userSettingsClient.getSettings();
+        if (!mounted) return;
+        setLanguage(settings.values?.[USER_SETTING_LANGUAGE_KEY] ?? 'en');
+      } catch {
+        // Keep currently selected language when settings are unavailable.
+      }
+    };
+    void loadPreferredLanguage();
+    return () => {
+      mounted = false;
+    };
+  }, [authState]);
 
   if (isPublic) {
     if (pathname === '/login' && authState === 'authenticated') {

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { LogIn, LogOut, Package, PanelLeftIcon, Wallet } from 'lucide-react';
+import { LogIn, LogOut, Package, PanelLeftIcon, Settings, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { PortfolioProfile } from '@/api-client';
@@ -162,7 +162,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   !item.permission || hasPermission(item.permission);
                 if (!isVisible) return null;
                 const isPortfolioCard = item.titleKey === 'navigation.cards.portfolio.title';
-                if (isPortfolioCard) return null;
+                const isSettingsCard = item.titleKey === 'navigation.cards.settings.title';
+                if (isPortfolioCard || isSettingsCard) return null;
 
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -259,6 +260,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     );
                   })}
                 </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === '/settings'}
+                  tooltip={t('navigation.cards.settings.title')}
+                >
+                  <Link href='/settings'>
+                    <Settings className='size-4' />
+                    <span>{t('navigation.cards.settings.title')}</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

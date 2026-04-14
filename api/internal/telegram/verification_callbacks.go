@@ -144,11 +144,21 @@ func (s *VerificationService) handleTelegramCallback(ctx context.Context, callba
 		}
 	}
 
-	_ = s.auditLogger.LogUserAction(
-		challenge.UserID,
-		action,
-		challenge.UserID,
-		map[string]interface{}{"challenge_id": challenge.ID},
-	)
+	details := map[string]interface{}{"challenge_id": challenge.ID}
+	if !approved {
+		_ = s.auditLogger.LogUserErrorAction(
+			challenge.UserID,
+			action,
+			challenge.UserID,
+			details,
+		)
+	} else {
+		_ = s.auditLogger.LogUserAction(
+			challenge.UserID,
+			action,
+			challenge.UserID,
+			details,
+		)
+	}
 	_ = s.telegramService.AnswerCallbackQuery(ctx, callback.ID, callbackText, false)
 }

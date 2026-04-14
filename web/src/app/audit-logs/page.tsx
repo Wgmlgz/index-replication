@@ -17,18 +17,26 @@ export default function AuditLogsPage() {
     return (
       <div className='space-y-2'>
         <h1 className='text-3xl font-bold'>{t('auditLogs.page.title')}</h1>
-        <p className='text-muted-foreground'>{t('auditLogs.page.notAuthorized')}</p>
+        <p className='text-muted-foreground'>
+          {t('auditLogs.page.notAuthorized')}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className='space-y-6'>
+    <div className='flex h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-64px)] min-h-0 w-full flex-col gap-6 overflow-hidden'>
       <div className='space-y-2'>
         <h1 className='text-3xl font-bold'>{t('auditLogs.page.title')}</h1>
-        <p className='text-muted-foreground'>{t('auditLogs.page.description')}</p>
+        <p className='text-muted-foreground'>
+          {t('auditLogs.page.description')}
+        </p>
       </div>
-      <AuditLogsTable />
+      <div className='grow relative'>
+        <div className='absolute inset-0'>
+          <AuditLogsTable />
+        </div>
+      </div>
     </div>
   );
 }

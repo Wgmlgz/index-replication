@@ -30,7 +30,7 @@ func NewAuthHandler(auditService *services.AuditService) *AuthHandler {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	performedBy := utils.GetRequestContext(c).UserID
 
-	h.auditService.LogUserAction(
+	h.auditService.LogUserDebugAction(
 		performedBy,
 		models.ActionUserLogout,
 		performedBy,

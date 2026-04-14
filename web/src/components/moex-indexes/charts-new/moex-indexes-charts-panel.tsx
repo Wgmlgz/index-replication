@@ -2,12 +2,10 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
 import { CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoexSourceButton } from '@/components/moex-indexes/moex-source-button';
 import { moexSourceLinks } from '@/components/moex-indexes/moex-sources';
-import { isIndexInactive } from '@/components/moex-indexes/moex-indexes-activity';
 import { useMoexIndexDetailContext } from '@/components/moex-indexes/detail/moex-indexes-detail-context';
 import {
   buildCompositionLegendRows,
@@ -36,6 +34,10 @@ import type {
   CompositionDataControls,
   PriceDataControls,
 } from '@/components/charts-new/types/controls';
+import {
+  ButtonToggleGroup,
+  type ButtonToggleGroupOption,
+} from '@/components/ui/button-toggle-group';
 
 const DEFAULT_PRICE_CONTROLS: Partial<PriceDataControls> = {
   rangeKey: '1y',
@@ -91,7 +93,7 @@ const formatSignedNumber = (
 
 export function MoexIndexesChartsPanel() {
   const { t } = useTranslation();
-  const { selectedIndex, selectedIndexCollections } = useMoexIndexDetailContext();
+  const { selectedIndex } = useMoexIndexDetailContext();
   const dataProvider = useMemo(() => createMoexChartsDataProvider(), []);
 
   const controls = useChartsNewControls({
@@ -156,25 +158,6 @@ export function MoexIndexesChartsPanel() {
     (controls.composition.compositionTab === 'stacked' ||
       controls.composition.compositionTab === 'snapshot') &&
     snapshotOtherWeight > 0.01;
-
-  const collectionPreview = selectedIndexCollections.slice(0, 3);
-  const remainingCollections =
-    selectedIndexCollections.length > 3 ? selectedIndexCollections.length - 3 : 0;
-  const groupsLabel = selectedIndex
-    ? selectedIndexCollections.length > 0
-      ? remainingCollections > 0
-        ? t('moex.groups.more', {
-            groups: collectionPreview.join(', '),
-            count: remainingCollections,
-          })
-        : t('moex.groups.list', { groups: collectionPreview.join(', ') })
-      : t('moex.groups.none')
-    : '';
-
-  const isInactive =
-    selectedIndex && selectedIndex.lastActiveDate
-      ? isIndexInactive(selectedIndex.lastActiveDate)
-      : false;
 
   const shouldShowAsOf = useMemo(() => {
     if (!compositionState.snapshotDate) return false;
@@ -254,6 +237,28 @@ export function MoexIndexesChartsPanel() {
         className='min-h-[200px] h-full'
       />
     );
+  const compositionTabOptions = useMemo<
+    ButtonToggleGroupOption<CompositionDataControls['compositionTab']>[]
+  >(
+    () => [
+      {
+        value: 'snapshot',
+        label: t('moex.composition.tabs.snapshot'),
+        content: t('moex.composition.tabs.snapshot'),
+      },
+      {
+        value: 'trend',
+        label: t('moex.composition.tabs.trend'),
+        content: t('moex.composition.tabs.trend'),
+      },
+      {
+        value: 'stacked',
+        label: t('moex.composition.tabs.stacked'),
+        content: t('moex.composition.tabs.stacked'),
+      },
+    ],
+    [t]
+  );
 
   const priceSettings = (
     <>
@@ -270,50 +275,6 @@ export function MoexIndexesChartsPanel() {
         translationKeyPrefix='moex.chart'
         idPrefix='moex'
       />
-      {selectedIndex && (
-        <>
-          <div className='flex flex-wrap gap-2'>
-            {selectedIndex.currency && (
-              <Badge variant='secondary'>{selectedIndex.currency}</Badge>
-            )}
-            {selectedIndex.boardId && (
-              <Badge variant='secondary'>
-                {t('moex.chart.board', { board: selectedIndex.boardId })}
-              </Badge>
-            )}
-            {selectedIndex.calcMode && (
-              <Badge variant='secondary'>{selectedIndex.calcMode}</Badge>
-            )}
-            {isInactive && selectedIndex.lastActiveDate && (
-              <Badge
-                variant='outline'
-                className='border-amber-300/80 text-amber-700'
-              >
-                {t('moex.status.inactiveSince', {
-                  date: selectedIndex.lastActiveDate,
-                })}
-              </Badge>
-            )}
-            {selectedIndex.annualHigh != null && (
-              <Badge variant='outline'>
-                {t('moex.chart.max', {
-                  value: priceState.numberFormatter.format(selectedIndex.annualHigh),
-                })}
-              </Badge>
-            )}
-            {selectedIndex.annualLow != null && (
-              <Badge variant='outline'>
-                {t('moex.chart.min', {
-                  value: priceState.numberFormatter.format(selectedIndex.annualLow),
-                })}
-              </Badge>
-            )}
-          </div>
-          {groupsLabel && (
-            <div className='text-xs text-muted-foreground'>{groupsLabel}</div>
-          )}
-        </>
-      )}
     </>
   );
 
@@ -371,13 +332,6 @@ export function MoexIndexesChartsPanel() {
           />
         </div>
 
-        <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
-          {selectedIndex && <Badge variant='outline'>{selectedIndex.secid}</Badge>}
-          <Badge variant='outline'>
-            {t('moex.composition.topCount', { count: snapshotItems.length })}
-          </Badge>
-        </div>
-
         <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
           <CompositionLegend
             rows={legendRows}
@@ -393,13 +347,27 @@ export function MoexIndexesChartsPanel() {
       </div>
 
       <div className='flex flex-col gap-3 lg:col-start-2 lg:row-start-3'>
-        <CompositionControlsPanel
-          controls={controls.composition}
-          actions={controls.compositionActions}
-          translationKeyPrefix='moex.composition'
-          idPrefix='moex'
-          selectionDateMax={latestTradeDate ?? undefined}
-        />
+        <div className='flex flex-wrap items-start gap-x-4 gap-y-2'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-xs text-muted-foreground'>
+              {t('moex.composition.tabs.label')}
+            </span>
+            <ButtonToggleGroup
+              value={controls.composition.compositionTab}
+              options={compositionTabOptions}
+              onValueChange={controls.compositionActions.setCompositionTab}
+            />
+          </div>
+          <CompositionControlsPanel
+            controls={controls.composition}
+            actions={controls.compositionActions}
+            translationKeyPrefix='moex.composition'
+            idPrefix='moex'
+            selectionDateMax={latestTradeDate ?? undefined}
+            hideTabs
+            className='space-y-0'
+          />
+        </div>
       </div>
 
       <div className='flex min-h-[200px] flex-1 flex-col lg:col-start-2 lg:row-start-4'>

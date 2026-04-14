@@ -1,6 +1,10 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+import {
+  ButtonToggleGroup,
+  type ButtonToggleGroupOption,
+} from '@/components/ui/button-toggle-group';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
@@ -10,9 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { CompositionDataControls } from '@/components/charts-new/types/controls';
-import type { CompositionSelectionMode } from '@/lib/charting/chart-controls-url-state';
+import type {
+  CompositionSelectionMode,
+  CompositionTab,
+} from '@/lib/charting/chart-controls-url-state';
 import { cn } from '@/lib/utils';
 import type { CompositionControlActions } from './use-charts-new-controls';
 
@@ -40,29 +46,57 @@ export function CompositionControlsPanel({
   className,
 }: CompositionControlsPanelProps) {
   const { t } = useTranslation();
+  const compositionTabOptions: ButtonToggleGroupOption<CompositionTab>[] = [
+    {
+      value: 'snapshot',
+      label: t(`${translationKeyPrefix}.tabs.snapshot`),
+      content: t(`${translationKeyPrefix}.tabs.snapshot`),
+    },
+    {
+      value: 'trend',
+      label: t(`${translationKeyPrefix}.tabs.trend`),
+      content: t(`${translationKeyPrefix}.tabs.trend`),
+    },
+    {
+      value: 'stacked',
+      label: t(`${translationKeyPrefix}.tabs.stacked`),
+      content: t(`${translationKeyPrefix}.tabs.stacked`),
+    },
+  ];
+  const selectionDateControl =
+    controls.compositionSelectionMode === 'fixed' ? (
+      <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+        <Label
+          htmlFor={`${idPrefix}-composition-selection-date`}
+          className='text-xs text-muted-foreground'
+        >
+          {t(`${translationKeyPrefix}.selectionDate`)}
+        </Label>
+        <DatePicker
+          id={`${idPrefix}-composition-selection-date`}
+          value={controls.compositionSelectionDate}
+          placeholder={t(`${translationKeyPrefix}.selectionDate`)}
+          max={selectionDateMax}
+          onValueChange={actions.setSelectionDate}
+          size='sm'
+          className='w-32'
+        />
+      </div>
+    ) : null;
 
   return (
     <div className={cn('space-y-3', className)}>
       {!hideTabs && (
-        <Tabs
-          value={controls.compositionTab}
-          onValueChange={next =>
-            actions.setCompositionTab(next as typeof controls.compositionTab)
-          }
-          className='space-y-3'
-        >
-          <TabsList className='w-full justify-start'>
-            <TabsTrigger value='snapshot'>
-              {t(`${translationKeyPrefix}.tabs.snapshot`)}
-            </TabsTrigger>
-            <TabsTrigger value='trend'>
-              {t(`${translationKeyPrefix}.tabs.trend`)}
-            </TabsTrigger>
-            <TabsTrigger value='stacked'>
-              {t(`${translationKeyPrefix}.tabs.stacked`)}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className='flex flex-wrap items-center gap-2'>
+          <span className='text-xs text-muted-foreground'>
+            {t(`${translationKeyPrefix}.tabs.label`)}
+          </span>
+          <ButtonToggleGroup
+            value={controls.compositionTab}
+            options={compositionTabOptions}
+            onValueChange={actions.setCompositionTab}
+          />
+        </div>
       )}
 
       <div className='flex flex-wrap items-center gap-4'>
@@ -114,27 +148,9 @@ export function CompositionControlsPanel({
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      {controls.compositionSelectionMode === 'fixed' && (
-        <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-          <Label
-            htmlFor={`${idPrefix}-composition-selection-date`}
-            className='text-xs text-muted-foreground'
-          >
-            {t(`${translationKeyPrefix}.selectionDate`)}
-          </Label>
-          <DatePicker
-            id={`${idPrefix}-composition-selection-date`}
-            value={controls.compositionSelectionDate}
-            placeholder={t(`${translationKeyPrefix}.selectionDate`)}
-            max={selectionDateMax}
-            onValueChange={actions.setSelectionDate}
-            size='sm'
-            className='w-32'
-          />
-        </div>
-      )}
+        {selectionDateControl}
+      </div>
     </div>
   );
 }

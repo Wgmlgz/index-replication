@@ -298,7 +298,7 @@ func (h *UserHandler) BlockUser(c *gin.Context) {
 	}
 	// Audit log
 	performedBy := utils.GetRequestContext(c).UserID
-	h.auditService.LogUserAction(performedBy, models.ActionUserBlocked, user.ID, nil)
+	h.auditService.LogUserWarningAction(performedBy, models.ActionUserBlocked, user.ID, nil)
 	c.JSON(http.StatusOK, gin.H{"message": "User blocked"})
 }
 

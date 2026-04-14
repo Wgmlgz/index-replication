@@ -1,9 +1,6 @@
 package models
 
-import (
-	"strings"
-	"time"
-)
+import "time"
 
 type AuditLog struct {
 	ID          int    `gorm:"primaryKey;autoIncrement"`
@@ -69,29 +66,3 @@ const (
 	EntityTypeUser   = "user"
 	EntityTypeSystem = "system"
 )
-
-var auditSeverityByAction = map[string]string{
-	ActionUserLogin:                SeverityDebug,
-	ActionUserLogout:               SeverityDebug,
-	ActionUserBlocked:              SeverityWarning,
-	ActionPortfolioRebalanceQueued: SeverityWarning,
-	ActionLoginVerificationDenied:  SeverityError,
-	ActionRebalanceConfirmationNo:  SeverityError,
-	ActionPortfolioRebalanceFailed: SeverityError,
-}
-
-func ResolveAuditSeverity(action string) string {
-	if severity, ok := auditSeverityByAction[action]; ok {
-		return severity
-	}
-
-	normalized := strings.TrimSpace(strings.ToLower(action))
-	switch {
-	case strings.HasSuffix(normalized, "_failed"), strings.HasSuffix(normalized, "_denied"):
-		return SeverityError
-	case strings.HasSuffix(normalized, "_queued"), strings.HasSuffix(normalized, "_blocked"):
-		return SeverityWarning
-	default:
-		return SeverityInfo
-	}
-}

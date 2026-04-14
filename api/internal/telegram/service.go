@@ -56,6 +56,7 @@ type VerificationService struct {
 
 type AuditLogger interface {
 	LogUserAction(performedBy int, action string, userID int, details interface{}) error
+	LogUserErrorAction(performedBy int, action string, userID int, details interface{}) error
 }
 
 func NewVerificationService(

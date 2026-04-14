@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useMoexIndexListContext } from './moex-indexes-list-context';
 import type { LastActiveRange, SortKey } from './use-moex-indexes.types';
 import { FILTER_DEFS } from './use-moex-indexes.utils';
@@ -107,8 +106,6 @@ export function IndexListFilters() {
     sortOptions,
     lastActiveRange,
     setLastActiveRange,
-    compositionOnly,
-    setCompositionOnly,
     hasActiveFilters,
     clearFilters,
     indexesLoading,
@@ -152,15 +149,6 @@ export function IndexListFilters() {
               <SelectItem value='all'>{t('moex.filters.lastActiveAll')}</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className='flex items-center gap-2'>
-          <span className='text-xs text-muted-foreground'>
-            {t('moex.filters.compositionOnly')}
-          </span>
-          <Switch
-            checked={compositionOnly}
-            onCheckedChange={setCompositionOnly}
-          />
         </div>
         <div className='flex items-center gap-2'>
           <span className='text-xs text-muted-foreground'>

@@ -17,10 +17,6 @@
         "title": "Settings",
         "button": "Open settings"
       },
-      "integrations": {
-        "title": "Integrations",
-        "button": "Open integrations"
-      },
       "portfolio": {
         "title": "Portfolio",
         "button": "Open portfolio"
@@ -90,6 +86,8 @@
       "expiresAt": "Link expires at {{time}}"
     },
     "page": {
+      "title": "Settings",
+      "description": "Manage preferences, integrations and see account details.",
       "appSettingsTitle": "Application settings",
       "apiUrlLabel": "API base URL",
       "apiUrlPlaceholder": "http://localhost:8080",
@@ -97,10 +95,8 @@
       "oneThresholdLabel": "One threshold",
       "oneOtherThresholdLabel": "One other threshold",
       "languageTitle": "Language preferences",
-      "languageDescription": "Preferred language for notification templates.",
       "languageLabel": "Language",
       "languageEnglish": "English",
-      "languageEnglishOnlyHint": "Only English templates are available right now.",
       "languageLoading": "Loading language...",
       "languageSave": "Save language",
       "languageSaving": "Saving...",
@@ -200,6 +196,7 @@
       "title": "Composition",
       "asOf": "As of {{date}}",
       "tabs": {
+        "label": "Tab",
         "snapshot": "Snapshot",
         "trend": "Weight trend",
         "stacked": "Stacked area"
@@ -259,8 +256,8 @@
       "addFavorite": "Add to favorites",
       "title": "Index list",
       "searchPlaceholder": "Search by name or code",
-      "found_one": "moex.list.found",
-      "found_other": "moex.list.found",
+      "found_one": "Found: {{count}}",
+      "found_other": "Found: {{count}}",
       "onlyFavorites": "Only favorites",
       "empty": "Nothing found.",
       "noFavorites": "No favorites match your query."
@@ -950,12 +947,6 @@
       "redirectingToLoginTitle": "Redirecting to sign in",
       "redirectingToLoginDescription": "This page requires authentication."
     }
-  },
-  "integrations": {
-    "loading": "Loading integrations...",
-    "notAuthorized": "Not authenticated.",
-    "title": "Integrations",
-    "description": "Manage external connections and credentials in one place."
   },
   "auditLogs": {
     "actions": {

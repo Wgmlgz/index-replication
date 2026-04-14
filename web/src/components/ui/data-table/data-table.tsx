@@ -46,7 +46,7 @@ interface DataTableProps<TData, TValue> {
     pagination: PaginationState,
     sorting: SortingState,
     filter: string,
-    hideBlocked?: boolean
+    hideBlocked?: boolean,
   ) => Promise<{
     data: TData[];
     total: number;
@@ -86,7 +86,7 @@ export function DataTable<TData, TValue>({
       pagination,
       sorting,
       search,
-      hideBlocked
+      hideBlocked,
     );
     setData(data);
     setTotal(total);
@@ -178,16 +178,16 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   );
                 })}
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className={tableBodyClassName ?? ""}>
+          <TableBody className={tableBodyClassName ?? ''}>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
                 <TableRow
@@ -195,12 +195,10 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id}
-                      className={tableCellClassName}
-                    >
+                    <TableCell key={cell.id} className={tableCellClassName}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

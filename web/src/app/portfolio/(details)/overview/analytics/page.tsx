@@ -557,38 +557,41 @@ export default function PortfolioAnalyticsPage() {
 
   const compositionSettings = (
     <>
-      <div className='flex flex-wrap items-center gap-2'>
-        <span className='text-xs text-muted-foreground'>
-          {t('portfolio.composition.tabs.label')}
-        </span>
-        <ButtonToggleGroup
-          value={compositionDisplayTab}
-          options={compositionDisplayTabOptions}
-          onValueChange={setCompositionDisplayTab}
-        />
-      </div>
-
-      {hasBenchmark && (
+      <div className='flex flex-wrap items-start gap-x-4 gap-y-2'>
         <div className='flex flex-wrap items-center gap-2'>
           <span className='text-xs text-muted-foreground'>
-            {t('portfolio.composition.source.label')}
+            {t('portfolio.composition.tabs.label')}
           </span>
           <ButtonToggleGroup
-            value={compositionSourceMode}
-            options={compositionSourceOptions}
-            onValueChange={setCompositionSource}
+            value={compositionDisplayTab}
+            options={compositionDisplayTabOptions}
+            onValueChange={setCompositionDisplayTab}
           />
         </div>
-      )}
 
-      <CompositionControlsPanel
-        controls={controls.composition}
-        actions={controls.compositionActions}
-        translationKeyPrefix='portfolio.composition'
-        idPrefix='portfolio'
-        topCountOptions={TOP_COUNT_OPTIONS}
-        hideTabs
-      />
+        {hasBenchmark && (
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-xs text-muted-foreground'>
+              {t('portfolio.composition.source.label')}
+            </span>
+            <ButtonToggleGroup
+              value={compositionSourceMode}
+              options={compositionSourceOptions}
+              onValueChange={setCompositionSource}
+            />
+          </div>
+        )}
+
+        <CompositionControlsPanel
+          controls={controls.composition}
+          actions={controls.compositionActions}
+          translationKeyPrefix='portfolio.composition'
+          idPrefix='portfolio'
+          topCountOptions={TOP_COUNT_OPTIONS}
+          hideTabs
+          className='space-y-0'
+        />
+      </div>
     </>
   );
 

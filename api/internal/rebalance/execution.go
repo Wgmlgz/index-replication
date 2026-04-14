@@ -57,7 +57,7 @@ func (s *Service) ExecuteRun(
 	}
 
 	if s.audit != nil {
-		_ = s.audit.LogUserAction(userID, models.ActionPortfolioRebalanceQueued, userID, map[string]interface{}{
+		_ = s.audit.LogUserWarningAction(userID, models.ActionPortfolioRebalanceQueued, userID, map[string]interface{}{
 			"portfolio_id":     portfolioID,
 			"rebalance_run_id": runID,
 			"status":           models.PortfolioRebalanceRunStatusQueued,

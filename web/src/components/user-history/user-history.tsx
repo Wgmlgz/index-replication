@@ -22,6 +22,8 @@ const fetchUserHistory = async (
   search: string
 ) => {
   const sort = sorting[0];
+  const sortBy = sort?.id ?? 'timestamp';
+  const sortDir = (sort?.desc ?? true) ? 'desc' : 'asc';
   const response = await api.auditLogsGet(
     pagination.pageIndex + 1,
     pagination.pageSize,
@@ -32,8 +34,8 @@ const fetchUserHistory = async (
     undefined,
     undefined,
     undefined,
-    sort?.id,
-    sort?.desc ? 'desc' : 'asc',
+    sortBy,
+    sortDir,
   );
 
   if (response.status === 200 && response.data) {

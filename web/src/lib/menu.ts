@@ -1,5 +1,5 @@
 import { PermissionStr } from "@/components/user-context";
-import { History, Users, LineChart, Wallet, Plug } from "lucide-react";
+import { History, Users, LineChart, Wallet, Settings as SettingsIcon } from "lucide-react";
 import { PORTFOLIO_V2_ROUTES } from "@/lib/portfolio";
 
 export type DashboardCard = {
@@ -60,19 +60,10 @@ export const DashboardCards: DashboardCard[] = [
   {
     title: 'Settings',
     titleKey: 'navigation.cards.settings.title',
-    icon: History,
+    icon: SettingsIcon,
     buttonText: 'Open settings',
     buttonTextKey: 'navigation.cards.settings.button',
     href: '/settings',
-    permission: null,
-  },
-  {
-    title: 'Integrations',
-    titleKey: 'navigation.cards.integrations.title',
-    icon: Plug,
-    buttonText: 'Open integrations',
-    buttonTextKey: 'navigation.cards.integrations.button',
-    href: '/integrations',
     permission: null,
   },
   {

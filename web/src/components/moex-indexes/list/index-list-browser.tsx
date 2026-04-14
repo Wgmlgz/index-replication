@@ -22,6 +22,8 @@ export function IndexListBrowser({ footer }: IndexListBrowserProps) {
     indexesLoading,
     showFavoritesOnly,
     setShowFavoritesOnly,
+    compositionOnly,
+    setCompositionOnly,
     foundCount,
     isEmpty,
     showNoFavoritesMessage,
@@ -37,19 +39,28 @@ export function IndexListBrowser({ footer }: IndexListBrowserProps) {
         onChange={(event) => setQuery(event.target.value)}
         placeholder={t('moex.list.searchPlaceholder')}
       />
-      <div className='flex items-center justify-between text-xs text-muted-foreground'>
+      <div className='flex items-center justify-between gap-3 text-xs text-muted-foreground'>
         {showListSkeleton ? (
           <Skeleton className='h-4 w-28' />
         ) : (
           <span>{t('moex.list.found', { count: foundCount })}</span>
         )}
-        <label className='flex items-center gap-2'>
-          <span>{t('moex.list.onlyFavorites')}</span>
-          <Switch
-            checked={showFavoritesOnly}
-            onCheckedChange={setShowFavoritesOnly}
-          />
-        </label>
+        <div className='flex items-center gap-3'>
+          <label className='flex items-center gap-2'>
+            <span>{t('moex.list.onlyFavorites')}</span>
+            <Switch
+              checked={showFavoritesOnly}
+              onCheckedChange={setShowFavoritesOnly}
+            />
+          </label>
+          <label className='flex items-center gap-2'>
+            <span>{t('moex.filters.compositionOnly')}</span>
+            <Switch
+              checked={compositionOnly}
+              onCheckedChange={setCompositionOnly}
+            />
+          </label>
+        </div>
       </div>
       <IndexListFilters />
       <ScrollArea className='min-h-0 flex-1 pr-3'>

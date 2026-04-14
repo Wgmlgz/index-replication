@@ -72,12 +72,18 @@ function normalizeFilterOptions(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  return value.filter(
+    (item): item is string =>
+      typeof item === 'string' && item.trim().length > 0,
+  );
 }
 
 async function fetchAuditLogFilterOptions(): Promise<AuditLogFilterOptions> {
   const response = await api.auditLogsActionsGet();
-  const payload = response.data as { actions?: unknown; entity_types?: unknown };
+  const payload = response.data as {
+    actions?: unknown;
+    entity_types?: unknown;
+  };
   return {
     actions: normalizeFilterOptions(payload.actions),
     entityTypes: normalizeFilterOptions(payload.entity_types),
@@ -91,9 +97,11 @@ const fetchAuditLogs = async (
   pagination: PaginationState,
   sorting: SortingState,
   search: string,
-  filters: AuditLogFilters
+  filters: AuditLogFilters,
 ) => {
   const sort = sorting[0];
+  const sortBy = sort?.id ?? 'timestamp';
+  const sortDir = (sort?.desc ?? true) ? 'desc' : 'asc';
   const response = await api.auditLogsGet(
     pagination.pageIndex + 1,
     pagination.pageSize,
@@ -104,8 +112,8 @@ const fetchAuditLogs = async (
     filters.performedBy ? Number(filters.performedBy) : undefined,
     filters.startDate || undefined,
     filters.endDate || undefined,
-    sort?.id,
-    sort?.desc ? 'desc' : 'asc',
+    sortBy,
+    sortDir,
   );
 
   if (response.status === 200 && response.data) {
@@ -189,7 +197,9 @@ export function AuditLogsTable() {
   const [filters, setFilters] = useState<AuditLogFilters>(defaultFilters);
   const [filterKey, setFilterKey] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(
+    null,
+  );
   const [displayLogs, setDisplayLogs] = useState<AuditLogResponse[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -206,7 +216,7 @@ export function AuditLogsTable() {
         ...displayLogs.map(log => log.action),
         ...(filterOptionsQuery.data?.actions ?? []),
       ]),
-    [displayLogs, filterOptionsQuery.data?.actions]
+    [displayLogs, filterOptionsQuery.data?.actions],
   );
   const entityTypeFilterValues = useMemo(
     () =>
@@ -214,14 +224,14 @@ export function AuditLogsTable() {
         ...defaultAuditEntityTypes,
         ...(filterOptionsQuery.data?.entityTypes ?? []),
       ]),
-    [filterOptionsQuery.data?.entityTypes]
+    [filterOptionsQuery.data?.entityTypes],
   );
 
   const fetchAuditLogsWithFilters = useCallback(
     async (
       pagination: PaginationState,
       sorting: SortingState,
-      search: string
+      search: string,
     ) => {
       const result = await fetchAuditLogs(pagination, sorting, search, filters);
       setDisplayLogs(result.data);
@@ -237,7 +247,7 @@ export function AuditLogsTable() {
         data: mappedLogs,
       };
     },
-    [filters]
+    [filters],
   );
 
   const hasActiveFilters =
@@ -268,7 +278,7 @@ export function AuditLogsTable() {
   };
 
   return (
-    <div className='space-y-4'>
+    <div className='h-full space-y-4 flex flex-col'>
       <DetailsPopup
         auditLog={selectedAuditLog}
         open={detailsOpen}
@@ -313,7 +323,9 @@ export function AuditLogsTable() {
               onSubmit={handleSubmit}
             >
               <div className='space-y-2'>
-                <Label htmlFor='action-filter'>{t('auditLogs.filters.action')}</Label>
+                <Label htmlFor='action-filter'>
+                  {t('auditLogs.filters.action')}
+                </Label>
                 <Select
                   value={filters.action}
                   onValueChange={value =>
@@ -321,7 +333,9 @@ export function AuditLogsTable() {
                   }
                 >
                   <SelectTrigger id='action-filter'>
-                    <SelectValue placeholder={t('auditLogs.filters.allActions')} />
+                    <SelectValue
+                      placeholder={t('auditLogs.filters.allActions')}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_FILTER_VALUE}>
@@ -339,7 +353,9 @@ export function AuditLogsTable() {
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='entity-type-filter'>{t('auditLogs.filters.entityType')}</Label>
+                <Label htmlFor='entity-type-filter'>
+                  {t('auditLogs.filters.entityType')}
+                </Label>
                 <Select
                   value={filters.entityType}
                   onValueChange={value =>
@@ -347,7 +363,9 @@ export function AuditLogsTable() {
                   }
                 >
                   <SelectTrigger id='entity-type-filter'>
-                    <SelectValue placeholder={t('auditLogs.filters.allEntityTypes')} />
+                    <SelectValue
+                      placeholder={t('auditLogs.filters.allEntityTypes')}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_FILTER_VALUE}>
@@ -363,7 +381,9 @@ export function AuditLogsTable() {
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='entity-id'>{t('auditLogs.filters.entityId')}</Label>
+                <Label htmlFor='entity-id'>
+                  {t('auditLogs.filters.entityId')}
+                </Label>
                 <Input
                   id='entity-id'
                   name='entityId'
@@ -375,7 +395,9 @@ export function AuditLogsTable() {
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='performed-by'>{t('auditLogs.filters.user.label')}</Label>
+                <Label htmlFor='performed-by'>
+                  {t('auditLogs.filters.user.label')}
+                </Label>
                 <UserFilterInput
                   value={filters.performedBy}
                   onChange={user =>
@@ -388,7 +410,9 @@ export function AuditLogsTable() {
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='start-date'>{t('auditLogs.filters.startDate')}</Label>
+                <Label htmlFor='start-date'>
+                  {t('auditLogs.filters.startDate')}
+                </Label>
                 <DatePicker
                   id='start-date'
                   value={filters.startDate}
@@ -400,7 +424,9 @@ export function AuditLogsTable() {
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='end-date'>{t('auditLogs.filters.endDate')}</Label>
+                <Label htmlFor='end-date'>
+                  {t('auditLogs.filters.endDate')}
+                </Label>
                 <DatePicker
                   id='end-date'
                   value={filters.endDate}
@@ -421,23 +447,27 @@ export function AuditLogsTable() {
         )}
       </Card>
 
-      <DataTable
-        filterPlaceholder={t('auditLogs.table.searchPlaceholder')}
-        columns={columns}
-        fetchData={fetchAuditLogsWithFilters}
-        refetchKey={filterKey}
-        extraTableOptions={{
-          initialState: {
-            sorting: [{ id: 'timestamp', desc: true }],
-          },
-        }}
-        extraHeader={
-          <Button onClick={downloadLogs}>
-            <Download className='size-4' />
-            {t('auditLogs.table.exportButton')}
-          </Button>
-        }
-      />
+      <div className='grow relative'>
+        <div className='absolute inset-0 overflow-scroll'>
+          <DataTable
+            filterPlaceholder={t('auditLogs.table.searchPlaceholder')}
+            columns={columns}
+            fetchData={fetchAuditLogsWithFilters}
+            refetchKey={filterKey}
+            extraTableOptions={{
+              initialState: {
+                sorting: [{ id: 'timestamp', desc: true }],
+              },
+            }}
+            extraHeader={
+              <Button onClick={downloadLogs}>
+                <Download className='size-4' />
+                {t('auditLogs.table.exportButton')}
+              </Button>
+            }
+          />
+        </div>
+      </div>
     </div>
   );
 }

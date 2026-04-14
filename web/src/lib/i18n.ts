@@ -33,6 +33,9 @@ export const initI18n = () => {
 };
 
 export const setLanguage = (language: string) => {
+  const i18n = initI18n();
   const nextLanguage = normalizeLanguage(language);
-  void initI18n().changeLanguage(nextLanguage);
+  const currentLanguage = normalizeLanguage(i18n.resolvedLanguage || i18n.language || 'en');
+  if (currentLanguage === nextLanguage) return;
+  void i18n.changeLanguage(nextLanguage);
 };

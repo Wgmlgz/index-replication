@@ -416,7 +416,7 @@ export default function PortfolioProfilesPage() {
           ) : null}
 
           {profiles.length > 0 ? (
-            <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
+            <div className='grid gap-0 pl-px pt-px sm:grid-cols-2 xl:grid-cols-3'>
               {profiles.map(profile => {
                 const providerKey = profile.provider.toLowerCase() as keyof typeof providerDetails;
                 const providerConfig = providerDetails[providerKey];
@@ -427,7 +427,7 @@ export default function PortfolioProfilesPage() {
                 return (
                   <div
                     key={profile.id}
-                    className='flex min-h-40 flex-col gap-4 rounded-lg border p-4'
+                    className='-ml-px -mt-px flex min-h-40 flex-col gap-4 border p-4'
                   >
                     <div className='flex items-start justify-between gap-2'>
                       <p className='font-medium'>{profile.name}</p>

@@ -30,6 +30,8 @@ type runRepository interface {
 
 type auditLogger interface {
 	LogUserAction(performedBy int, action string, userID int, details interface{}) error
+	LogUserWarningAction(performedBy int, action string, userID int, details interface{}) error
+	LogUserErrorAction(performedBy int, action string, userID int, details interface{}) error
 }
 
 type Service struct {
@@ -183,7 +185,7 @@ func (s *Service) logPlanningFailed(userID int, portfolioID int, executionMode s
 	if s.audit == nil {
 		return
 	}
-	_ = s.audit.LogUserAction(userID, models.ActionPortfolioRebalanceFailed, userID, map[string]interface{}{
+	_ = s.audit.LogUserErrorAction(userID, models.ActionPortfolioRebalanceFailed, userID, map[string]interface{}{
 		"portfolio_id":   portfolioID,
 		"execution_mode": executionMode,
 		"as_of_date":     asOfDate,
