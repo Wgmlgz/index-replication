@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
 import { Time } from '../ui/time';
 import {
-  actionColors,
   getActionLabel,
   getEntityTypeLabel,
+  getSeverityColor,
 } from '@/lib/logs';
 import { AuditLogResponse } from '@/api-client';
 
@@ -34,8 +34,8 @@ export function useAuditLogColumns(): ColumnDef<AuditLog>[] {
         accessorKey: 'action',
         cell: ({ row }) => {
           const action = row.original.action;
-          const label = getActionLabel(action);
-          const color = actionColors[action] ?? 'bg-slate-100 text-slate-800';
+          const label = getActionLabel(action, t);
+          const color = getSeverityColor(row.original.severity);
 
           return <Badge className={color}>{label}</Badge>;
         },
@@ -52,8 +52,8 @@ export function useAuditLogColumns(): ColumnDef<AuditLog>[] {
           const entityType = row.original.entity_type;
           const entityID = row.original.entity_id;
           const label = entityID
-            ? `${getEntityTypeLabel(entityType)}, ${entityID}`
-            : getEntityTypeLabel(entityType);
+            ? `${getEntityTypeLabel(entityType, t)}, ${entityID}`
+            : getEntityTypeLabel(entityType, t);
           return <Badge variant='outline'>{label}</Badge>;
         },
       },

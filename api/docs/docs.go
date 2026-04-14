@@ -79,14 +79,26 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Start date (RFC3339)",
+                        "description": "Start date (RFC3339 or YYYY-MM-DD)",
                         "name": "start_date",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "End date (RFC3339)",
+                        "description": "End date (RFC3339 or YYYY-MM-DD)",
                         "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (id, action, severity, entity_type, performed_by, timestamp)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc, desc)",
+                        "name": "sort_dir",
                         "in": "query"
                     }
                 ],
@@ -2663,6 +2675,7 @@ const docTemplate = `{
                 "action",
                 "entity_type",
                 "id",
+                "severity",
                 "timestamp"
             ],
             "properties": {
@@ -2686,6 +2699,9 @@ const docTemplate = `{
                 },
                 "performed_by": {
                     "$ref": "#/definitions/UserShort"
+                },
+                "severity": {
+                    "type": "string"
                 },
                 "timestamp": {
                     "type": "string"

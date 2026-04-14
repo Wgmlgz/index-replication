@@ -1,6 +1,6 @@
 # Web App (Frontend)
 
-Next.js frontend for the index replication project. The UI includes auth, user management, audit logs, and an image recognition flow.
+Next.js frontend for the index replication project. The UI includes auth, user management, audit logs, integrations, and portfolio workflows.
 
 ## Tech & Libraries
 

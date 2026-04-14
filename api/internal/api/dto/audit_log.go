@@ -9,6 +9,7 @@ import (
 type AuditLogResponse struct {
 	ID          int        `json:"id" binding:"required"`
 	Action      string     `json:"action" binding:"required"`
+	Severity    string     `json:"severity" binding:"required"`
 	EntityType  string     `json:"entity_type" binding:"required"`
 	EntityID    *int       `json:"entity_id"`
 	Details     string     `json:"details"`
@@ -34,6 +35,7 @@ func NewAuditLogResponse(log *models.AuditLog) AuditLogResponse {
 	resp := AuditLogResponse{
 		ID:         log.ID,
 		Action:     log.Action,
+		Severity:   log.Severity,
 		EntityType: log.EntityType,
 		EntityID:   log.EntityID,
 		Details:    log.Details,

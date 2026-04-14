@@ -75,8 +75,10 @@ let action: string; //Action filter (optional) (default to undefined)
 let entityType: string; //Entity type filter (optional) (default to undefined)
 let entityId: string; //Entity id filter (optional) (default to undefined)
 let performedBy: number; //Performed by user ID filter (optional) (default to undefined)
-let startDate: string; //Start date (RFC3339) (optional) (default to undefined)
-let endDate: string; //End date (RFC3339) (optional) (default to undefined)
+let startDate: string; //Start date (RFC3339 or YYYY-MM-DD) (optional) (default to undefined)
+let endDate: string; //End date (RFC3339 or YYYY-MM-DD) (optional) (default to undefined)
+let sortBy: string; //Sort field (id, action, severity, entity_type, performed_by, timestamp) (optional) (default to undefined)
+let sortDir: string; //Sort direction (asc, desc) (optional) (default to undefined)
 
 const { status, data } = await apiInstance.auditLogsGet(
     page,
@@ -87,7 +89,9 @@ const { status, data } = await apiInstance.auditLogsGet(
     entityId,
     performedBy,
     startDate,
-    endDate
+    endDate,
+    sortBy,
+    sortDir
 );
 ```
 
@@ -102,8 +106,10 @@ const { status, data } = await apiInstance.auditLogsGet(
 | **entityType** | [**string**] | Entity type filter | (optional) defaults to undefined|
 | **entityId** | [**string**] | Entity id filter | (optional) defaults to undefined|
 | **performedBy** | [**number**] | Performed by user ID filter | (optional) defaults to undefined|
-| **startDate** | [**string**] | Start date (RFC3339) | (optional) defaults to undefined|
-| **endDate** | [**string**] | End date (RFC3339) | (optional) defaults to undefined|
+| **startDate** | [**string**] | Start date (RFC3339 or YYYY-MM-DD) | (optional) defaults to undefined|
+| **endDate** | [**string**] | End date (RFC3339 or YYYY-MM-DD) | (optional) defaults to undefined|
+| **sortBy** | [**string**] | Sort field (id, action, severity, entity_type, performed_by, timestamp) | (optional) defaults to undefined|
+| **sortDir** | [**string**] | Sort direction (asc, desc) | (optional) defaults to undefined|
 
 
 ### Return type

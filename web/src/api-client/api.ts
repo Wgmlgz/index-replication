@@ -37,6 +37,7 @@ export interface AuditLogResponse {
     'id': number;
     'log_image'?: string;
     'performed_by'?: UserShort;
+    'severity': string;
     'timestamp': string;
 }
 export interface CreateUserRequest {
@@ -666,12 +667,14 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
          * @param {string} [entityType] Entity type filter
          * @param {string} [entityId] Entity id filter
          * @param {number} [performedBy] Performed by user ID filter
-         * @param {string} [startDate] Start date (RFC3339)
-         * @param {string} [endDate] End date (RFC3339)
+         * @param {string} [startDate] Start date (RFC3339 or YYYY-MM-DD)
+         * @param {string} [endDate] End date (RFC3339 or YYYY-MM-DD)
+         * @param {string} [sortBy] Sort field (id, action, severity, entity_type, performed_by, timestamp)
+         * @param {string} [sortDir] Sort direction (asc, desc)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        auditLogsGet: async (page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        auditLogsGet: async (page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, sortBy?: string, sortDir?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/audit-logs`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -718,6 +721,14 @@ export const AuditLogsApiAxiosParamCreator = function (configuration?: Configura
 
             if (endDate !== undefined) {
                 localVarQueryParameter['end_date'] = endDate;
+            }
+
+            if (sortBy !== undefined) {
+                localVarQueryParameter['sort_by'] = sortBy;
+            }
+
+            if (sortDir !== undefined) {
+                localVarQueryParameter['sort_dir'] = sortDir;
             }
 
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -796,13 +807,15 @@ export const AuditLogsApiFp = function(configuration?: Configuration) {
          * @param {string} [entityType] Entity type filter
          * @param {string} [entityId] Entity id filter
          * @param {number} [performedBy] Performed by user ID filter
-         * @param {string} [startDate] Start date (RFC3339)
-         * @param {string} [endDate] End date (RFC3339)
+         * @param {string} [startDate] Start date (RFC3339 or YYYY-MM-DD)
+         * @param {string} [endDate] End date (RFC3339 or YYYY-MM-DD)
+         * @param {string} [sortBy] Sort field (id, action, severity, entity_type, performed_by, timestamp)
+         * @param {string} [sortDir] Sort direction (asc, desc)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AuditLogListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options);
+        async auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AuditLogListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, sortBy, sortDir, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuditLogsApi.auditLogsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -848,13 +861,15 @@ export const AuditLogsApiFactory = function (configuration?: Configuration, base
          * @param {string} [entityType] Entity type filter
          * @param {string} [entityId] Entity id filter
          * @param {number} [performedBy] Performed by user ID filter
-         * @param {string} [startDate] Start date (RFC3339)
-         * @param {string} [endDate] End date (RFC3339)
+         * @param {string} [startDate] Start date (RFC3339 or YYYY-MM-DD)
+         * @param {string} [endDate] End date (RFC3339 or YYYY-MM-DD)
+         * @param {string} [sortBy] Sort field (id, action, severity, entity_type, performed_by, timestamp)
+         * @param {string} [sortDir] Sort direction (asc, desc)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig): AxiosPromise<AuditLogListResponse> {
-            return localVarFp.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options).then((request) => request(axios, basePath));
+        auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig): AxiosPromise<AuditLogListResponse> {
+            return localVarFp.auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, sortBy, sortDir, options).then((request) => request(axios, basePath));
         },
         /**
          * Returns details of an audit log entry
@@ -893,13 +908,15 @@ export class AuditLogsApi extends BaseAPI {
      * @param {string} [entityType] Entity type filter
      * @param {string} [entityId] Entity id filter
      * @param {number} [performedBy] Performed by user ID filter
-     * @param {string} [startDate] Start date (RFC3339)
-     * @param {string} [endDate] End date (RFC3339)
+     * @param {string} [startDate] Start date (RFC3339 or YYYY-MM-DD)
+     * @param {string} [endDate] End date (RFC3339 or YYYY-MM-DD)
+     * @param {string} [sortBy] Sort field (id, action, severity, entity_type, performed_by, timestamp)
+     * @param {string} [sortDir] Sort direction (asc, desc)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, options?: RawAxiosRequestConfig) {
-        return AuditLogsApiFp(this.configuration).auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, options).then((request) => request(this.axios, this.basePath));
+    public auditLogsGet(page?: number, pageSize?: number, search?: string, action?: string, entityType?: string, entityId?: string, performedBy?: number, startDate?: string, endDate?: string, sortBy?: string, sortDir?: string, options?: RawAxiosRequestConfig) {
+        return AuditLogsApiFp(this.configuration).auditLogsGet(page, pageSize, search, action, entityType, entityId, performedBy, startDate, endDate, sortBy, sortDir, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

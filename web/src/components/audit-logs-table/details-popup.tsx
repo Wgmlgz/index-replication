@@ -16,9 +16,9 @@ import { Badge } from '@/components/ui/badge';
 import { Time } from '../ui/time';
 import { AuditLogResponse } from '@/api-client';
 import {
-  actionColors,
   getActionLabel,
   getEntityTypeLabel,
+  getSeverityColor,
 } from '@/lib/logs';
 
 interface DetailsPopupProps {
@@ -74,9 +74,9 @@ export function DetailsPopup({
   }
 
   const action = auditLog.action;
-  const label = getActionLabel(action);
-  const color = actionColors[action] ?? 'bg-slate-100 text-slate-800';
-  const entityTypeLabel = getEntityTypeLabel(auditLog.entity_type);
+  const label = getActionLabel(action, t);
+  const color = getSeverityColor(auditLog.severity);
+  const entityTypeLabel = getEntityTypeLabel(auditLog.entity_type, t);
   const entityID = auditLog.entity_id ?? t('auditLogs.common.notAvailableShort');
 
   return (

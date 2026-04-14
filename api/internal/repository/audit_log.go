@@ -30,8 +30,8 @@ func (r *AuditLogRepository) ListAuditLogs(
 	if search != "" {
 		like := "%" + search + "%"
 		dbQuery = dbQuery.Where(
-			"CAST(id AS CHAR) LIKE ? OR action LIKE ? OR entity_type LIKE ? OR details LIKE ?",
-			like, like, like, like,
+			"CAST(id AS CHAR) LIKE ? OR action LIKE ? OR severity LIKE ? OR entity_type LIKE ? OR details LIKE ?",
+			like, like, like, like, like,
 		)
 	}
 	if action != "" {
@@ -60,6 +60,7 @@ func (r *AuditLogRepository) ListAuditLogs(
 	allowedSortColumns := map[string]string{
 		"id":           "id",
 		"action":       "action",
+		"severity":     "severity",
 		"entity_type":  "entity_type",
 		"performed_by": "performed_by",
 		"timestamp":    "timestamp",

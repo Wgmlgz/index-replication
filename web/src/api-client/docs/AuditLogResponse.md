@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **id** | **number** |  | [default to undefined]
 **log_image** | **string** |  | [optional] [default to undefined]
 **performed_by** | [**UserShort**](UserShort.md) |  | [optional] [default to undefined]
+**severity** | **string** |  | [default to undefined]
 **timestamp** | **string** |  | [default to undefined]
 
 ## Example
@@ -27,6 +28,7 @@ const instance: AuditLogResponse = {
     id,
     log_image,
     performed_by,
+    severity,
     timestamp,
 };
 ```

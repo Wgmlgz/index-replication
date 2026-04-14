@@ -46,6 +46,7 @@ var RolePermissions = map[string][]Permission{
 		UsersCreateObserver,
 
 		// Basic roles
+		AuditLogsView,
 		SystemMetadataView,
 		MoexView,
 		SelfView,
@@ -60,6 +61,7 @@ var RolePermissions = map[string][]Permission{
 		UsersCreateObserver,
 
 		// Basic roles
+		AuditLogsView,
 		SystemMetadataView,
 		MoexView,
 		SelfView,
@@ -68,6 +70,7 @@ var RolePermissions = map[string][]Permission{
 
 	"operator": {
 		// Basic roles
+		AuditLogsView,
 		SystemMetadataView,
 		MoexView,
 		SelfView,
@@ -76,6 +79,7 @@ var RolePermissions = map[string][]Permission{
 
 	"observer": {
 		// Basic roles
+		AuditLogsView,
 		SystemMetadataView,
 		MoexView,
 		SelfView,

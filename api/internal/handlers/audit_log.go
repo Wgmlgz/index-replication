@@ -46,7 +46,7 @@ func NewAuditLogHandler(
 //	@Param			performed_by	query		int		false	"Performed by user ID filter"
 //	@Param			start_date		query		string	false	"Start date (RFC3339 or YYYY-MM-DD)"
 //	@Param			end_date		query		string	false	"End date (RFC3339 or YYYY-MM-DD)"
-//	@Param			sort_by			query		string	false	"Sort field (id, action, entity_type, performed_by, timestamp)"
+//	@Param			sort_by			query		string	false	"Sort field (id, action, severity, entity_type, performed_by, timestamp)"
 //	@Param			sort_dir		query		string	false	"Sort direction (asc, desc)"
 //	@Success		200				{object}	dto.AuditLogListResponse
 //	@Failure		500				{object}	dto.ErrorResponse

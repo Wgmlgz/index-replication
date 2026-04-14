@@ -10,8 +10,7 @@ import { AuditLogResponse } from '@/api-client';
 import { auditLogsApi as api } from '@/lib/api';
 import { downloadTextFile } from '@/lib/utils';
 import {
-  actionLabels,
-  entityTypeLabels,
+  defaultAuditEntityTypes,
   getActionLabel,
   getEntityTypeLabel,
 } from '@/lib/logs';
@@ -105,12 +104,8 @@ const fetchAuditLogs = async (
     filters.performedBy ? Number(filters.performedBy) : undefined,
     filters.startDate || undefined,
     filters.endDate || undefined,
-    {
-      params: {
-        sort_by: sort?.id,
-        sort_dir: sort?.desc ? 'desc' : 'asc',
-      },
-    }
+    sort?.id,
+    sort?.desc ? 'desc' : 'asc',
   );
 
   if (response.status === 200 && response.data) {
@@ -208,15 +203,15 @@ export function AuditLogsTable() {
   const actionFilterValues = useMemo(
     () =>
       uniqueSorted([
-        ...Object.keys(actionLabels),
+        ...displayLogs.map(log => log.action),
         ...(filterOptionsQuery.data?.actions ?? []),
       ]),
-    [filterOptionsQuery.data?.actions]
+    [displayLogs, filterOptionsQuery.data?.actions]
   );
   const entityTypeFilterValues = useMemo(
     () =>
       uniqueSorted([
-        ...Object.keys(entityTypeLabels),
+        ...defaultAuditEntityTypes,
         ...(filterOptionsQuery.data?.entityTypes ?? []),
       ]),
     [filterOptionsQuery.data?.entityTypes]
@@ -335,7 +330,7 @@ export function AuditLogsTable() {
                     {actionFilterValues.map(action => (
                       <SelectItem key={action} value={action}>
                         <Badge className='font-normal'>
-                          {getActionLabel(action)}
+                          {getActionLabel(action, t)}
                         </Badge>
                       </SelectItem>
                     ))}
@@ -360,7 +355,7 @@ export function AuditLogsTable() {
                     </SelectItem>
                     {entityTypeFilterValues.map(type => (
                       <SelectItem key={type} value={type}>
-                        {getEntityTypeLabel(type)}
+                        {getEntityTypeLabel(type, t)}
                       </SelectItem>
                     ))}
                   </SelectContent>

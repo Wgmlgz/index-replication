@@ -32,12 +32,8 @@ const fetchUserHistory = async (
     undefined,
     undefined,
     undefined,
-    {
-      params: {
-        sort_by: sort?.id,
-        sort_dir: sort?.desc ? 'desc' : 'asc',
-      },
-    }
+    sort?.id,
+    sort?.desc ? 'desc' : 'asc',
   );
 
   if (response.status === 200 && response.data) {

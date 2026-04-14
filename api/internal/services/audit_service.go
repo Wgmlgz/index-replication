@@ -29,6 +29,7 @@ func (s *AuditService) LogAction(performedBy int, action, entityType string, ent
 	auditLog := models.AuditLog{
 		PerformedBy: performedBy,
 		Action:      action,
+		Severity:    models.ResolveAuditSeverity(action),
 		EntityType:  entityType,
 		EntityID:    entityID,
 		Details:     detailsStr,

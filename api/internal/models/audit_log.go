@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"time"
 )
 
@@ -8,6 +9,7 @@ type AuditLog struct {
 	ID          int    `gorm:"primaryKey;autoIncrement"`
 	PerformedBy int    `gorm:"not null"`
 	Action      string `gorm:"not null;size:50"`
+	Severity    string `gorm:"not null;size:16;default:info"`
 	EntityType  string `gorm:"not null;size:50"`
 	EntityID    *int
 	Details     string    `gorm:"type:text"`
@@ -16,6 +18,15 @@ type AuditLog struct {
 	// Relations
 	PerformedByUser *User `gorm:"foreignKey:PerformedBy"`
 }
+
+// Audit severity constants.
+const (
+	SeverityDebug    = "debug"
+	SeverityInfo     = "info"
+	SeverityWarning  = "warning"
+	SeverityError    = "error"
+	SeverityCritical = "critical"
+)
 
 // AuditLogAction constants
 const (
@@ -58,3 +69,29 @@ const (
 	EntityTypeUser   = "user"
 	EntityTypeSystem = "system"
 )
+
+var auditSeverityByAction = map[string]string{
+	ActionUserLogin:                SeverityDebug,
+	ActionUserLogout:               SeverityDebug,
+	ActionUserBlocked:              SeverityWarning,
+	ActionPortfolioRebalanceQueued: SeverityWarning,
+	ActionLoginVerificationDenied:  SeverityError,
+	ActionRebalanceConfirmationNo:  SeverityError,
+	ActionPortfolioRebalanceFailed: SeverityError,
+}
+
+func ResolveAuditSeverity(action string) string {
+	if severity, ok := auditSeverityByAction[action]; ok {
+		return severity
+	}
+
+	normalized := strings.TrimSpace(strings.ToLower(action))
+	switch {
+	case strings.HasSuffix(normalized, "_failed"), strings.HasSuffix(normalized, "_denied"):
+		return SeverityError
+	case strings.HasSuffix(normalized, "_queued"), strings.HasSuffix(normalized, "_blocked"):
+		return SeverityWarning
+	default:
+		return SeverityInfo
+	}
+}
