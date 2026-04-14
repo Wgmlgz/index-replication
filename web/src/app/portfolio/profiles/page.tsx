@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { FormEvent, useCallback, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowUpRight,
@@ -57,6 +57,39 @@ type NormalizedPortfolioProfile = PortfolioProfile & {
   provider: string;
 };
 
+function profileCardCornerClasses(index: number, total: number, columns: number): string {
+  const safeColumns = Math.max(columns, 1);
+  const rowIndex = Math.floor(index / safeColumns);
+  const columnIndex = index % safeColumns;
+  const isOccupied = (row: number, column: number): boolean => {
+    if (row < 0 || column < 0 || column >= safeColumns) {
+      return false;
+    }
+    const cellIndex = (row * safeColumns) + column;
+    return cellIndex >= 0 && cellIndex < total;
+  };
+  const hasUp = isOccupied(rowIndex - 1, columnIndex);
+  const hasRight = isOccupied(rowIndex, columnIndex + 1);
+  const hasDown = isOccupied(rowIndex + 1, columnIndex);
+  const hasLeft = isOccupied(rowIndex, columnIndex - 1);
+  const classes: string[] = [];
+
+  if (!hasUp && !hasLeft) {
+    classes.push('rounded-tl-lg');
+  }
+  if (!hasUp && !hasRight) {
+    classes.push('rounded-tr-lg');
+  }
+  if (!hasDown && !hasLeft) {
+    classes.push('rounded-bl-lg');
+  }
+  if (!hasDown && !hasRight) {
+    classes.push('rounded-br-lg');
+  }
+
+  return classes.join(' ');
+}
+
 export default function PortfolioProfilesPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -68,6 +101,27 @@ export default function PortfolioProfilesPage() {
   const [createTbankSandboxAccount, setCreateTbankSandboxAccount] = useState(true);
   const [createAccountID, setCreateAccountID] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<NormalizedPortfolioProfile | null>(null);
+  const [profileGridColumns, setProfileGridColumns] = useState(1);
+
+  useEffect(() => {
+    const syncGridColumns = () => {
+      if (window.innerWidth >= 1280) {
+        setProfileGridColumns(3);
+        return;
+      }
+      if (window.innerWidth >= 640) {
+        setProfileGridColumns(2);
+        return;
+      }
+      setProfileGridColumns(1);
+    };
+
+    syncGridColumns();
+    window.addEventListener('resize', syncGridColumns);
+    return () => {
+      window.removeEventListener('resize', syncGridColumns);
+    };
+  }, []);
 
   const parseErrorMessage = useCallback((err: unknown, fallback: string) => {
     if (axios.isAxiosError(err)) {
@@ -416,18 +470,19 @@ export default function PortfolioProfilesPage() {
           ) : null}
 
           {profiles.length > 0 ? (
-            <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
-              {profiles.map(profile => {
+            <div className='grid gap-0 sm:grid-cols-2 xl:grid-cols-3'>
+              {profiles.map((profile, index) => {
                 const providerKey = profile.provider.toLowerCase() as keyof typeof providerDetails;
                 const providerConfig = providerDetails[providerKey];
                 const ProviderIcon = providerConfig?.icon ?? CircleHelp;
                 const providerName = providerConfig?.label ?? profile.provider;
                 const isTbank = providerKey === 'tbank';
+                const cornerClasses = profileCardCornerClasses(index, profiles.length, profileGridColumns);
 
                 return (
                   <div
                     key={profile.id}
-                    className='flex min-h-40 flex-col gap-4 rounded-lg border p-4'
+                    className={`-ml-px -mt-px flex min-h-40 flex-col gap-4 border p-4 ${cornerClasses}`}
                   >
                     <div className='flex items-start justify-between gap-2'>
                       <p className='font-medium'>{profile.name}</p>
