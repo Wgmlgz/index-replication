@@ -213,7 +213,9 @@ export default function PortfolioAnalyticsPage() {
     [t],
   );
 
-  const priceModeOptions = useMemo<ButtonToggleGroupOption<PortfolioPriceMode>[]>(
+  const priceModeOptions = useMemo<
+    ButtonToggleGroupOption<PortfolioPriceMode>[]
+  >(
     () => [
       {
         value: 'portfolio',
@@ -300,12 +302,7 @@ export default function PortfolioAnalyticsPage() {
         data: normalizedBenchmark,
       },
     ];
-  }, [
-    benchmarkPriceState.data,
-    priceMode,
-    priceState.data,
-    selectedBenchmark,
-  ]);
+  }, [benchmarkPriceState.data, priceMode, priceState.data, selectedBenchmark]);
 
   const chartNoDataMessage = useMemo(() => {
     if ((priceMode === 'index' || priceMode === 'compare') && !hasBenchmark) {
@@ -418,7 +415,8 @@ export default function PortfolioAnalyticsPage() {
   );
 
   const trendLoading =
-    activeCompositionState.snapshotLoading || activeCompositionState.seriesLoading;
+    activeCompositionState.snapshotLoading ||
+    activeCompositionState.seriesLoading;
   const trendError =
     activeCompositionState.snapshotError || activeCompositionState.seriesError;
 
@@ -483,25 +481,24 @@ export default function PortfolioAnalyticsPage() {
             {priceState.numberFormatter.format(priceState.latestValue)}
           </span>
           {priceState.currency ? ` ${priceState.currency}` : ''}
-          {priceState.change !== null &&
-            priceState.changePercent !== null && (
-              <span
-                className={`ml-2 font-medium ${
-                  priceState.change > 0
-                    ? 'text-emerald-600'
-                    : priceState.change < 0
-                      ? 'text-red-600'
-                      : 'text-muted-foreground'
-                }`}
-              >
-                {formatSignedNumber(
-                  priceState.numberFormatter,
-                  priceState.change,
-                )}{' '}
-                ({priceState.change > 0 ? '+' : ''}
-                {priceState.changePercent.toFixed(2)}%)
-              </span>
-            )}
+          {priceState.change !== null && priceState.changePercent !== null && (
+            <span
+              className={`ml-2 font-medium ${
+                priceState.change > 0
+                  ? 'text-emerald-600'
+                  : priceState.change < 0
+                    ? 'text-red-600'
+                    : 'text-muted-foreground'
+              }`}
+            >
+              {formatSignedNumber(
+                priceState.numberFormatter,
+                priceState.change,
+              )}{' '}
+              ({priceState.change > 0 ? '+' : ''}
+              {priceState.changePercent.toFixed(2)}%)
+            </span>
+          )}
         </div>
       )}
 
@@ -615,33 +612,40 @@ export default function PortfolioAnalyticsPage() {
     <Card className='h-full min-h-0'>
       <CardHeader>
         <CardTitle>{t('portfolio.analytics.title')}</CardTitle>
-        <CardDescription>{t('portfolio.analytics.description')}</CardDescription>
+        <CardDescription>
+          {t('portfolio.analytics.description')}
+        </CardDescription>
       </CardHeader>
-      <CardContent className='flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]'>
-        <div className='flex min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-1'>
-          {priceSettings}
-        </div>
+      <CardContent className='grow flex flex-col'>
+        <div className='grow relative'>
+          <div className='absolute inset-0 flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)]'>
+            <div className='flex min-h-0 min-w-0 flex-col gap-3'>
+              <div className='flex min-w-0 flex-col gap-3'>{priceSettings}</div>
+              <div className='flex min-h-0 min-w-0 flex-col gap-3'>
+                {compositionConstituents}
+              </div>
+            </div>
 
-        <PriceVisualization
-          loading={chartLoading}
-          hasError={chartHasError && priceSeries[0]?.data.length === 0}
-          errorMessage={t('portfolio.chart.error')}
-          noDataMessage={chartNoDataMessage}
-          series={priceSeries}
-          visibleRange={priceState.dateRange}
-          className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden lg:col-start-2 lg:row-start-1 lg:row-span-2'
-        />
+            <div className='flex min-h-0 min-w-0 flex-col gap-3'>
+              <PriceVisualization
+                loading={chartLoading}
+                hasError={chartHasError && priceSeries[0]?.data.length === 0}
+                errorMessage={t('portfolio.chart.error')}
+                noDataMessage={chartNoDataMessage}
+                series={priceSeries}
+                visibleRange={priceState.dateRange}
+                className='flex min-h-[200px] min-w-0 flex-1 items-stretch overflow-hidden'
+              />
 
-        <div className='flex min-h-0 min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-2 lg:row-span-3'>
-          {compositionConstituents}
-        </div>
+              <div className='flex min-w-0 flex-col gap-3'>
+                {compositionSettings}
+              </div>
 
-        <div className='flex min-w-0 flex-col gap-3 lg:col-start-2 lg:row-start-3'>
-          {compositionSettings}
-        </div>
-
-        <div className='flex min-h-[200px] min-w-0 flex-1 flex-col lg:col-start-2 lg:row-start-4'>
-          {compositionChart}
+              <div className='flex min-h-[200px] min-w-0 flex-1 flex-col'>
+                {compositionChart}
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

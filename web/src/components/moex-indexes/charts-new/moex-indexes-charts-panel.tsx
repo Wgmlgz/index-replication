@@ -296,82 +296,84 @@ export function MoexIndexesChartsPanel() {
   }
 
   return (
-    <div className='flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]'>
-      <div className='flex flex-col gap-3 lg:col-start-1 lg:row-start-1'>
-        {priceSettings}
-      </div>
+    <div className='flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)]'>
+      <div className='flex min-h-0 min-w-0 flex-col gap-3'>
+        <div className='flex flex-col gap-3'>{priceSettings}</div>
 
-      <PriceVisualization
-        loading={priceState.loading}
-        hasError={priceState.error}
-        errorMessage={t('moex.errors.history')}
-        noDataMessage={t('moex.chart.noData')}
-        series={priceSeries}
-        visibleRange={priceState.dateRange}
-        className='flex min-h-[200px] flex-1 items-stretch lg:col-start-2 lg:row-start-1 lg:row-span-2'
-      />
-
-      <div className='flex min-h-0 flex-col gap-3 lg:col-start-1 lg:row-start-2 lg:row-span-3'>
-        <div className='flex items-start justify-between gap-2'>
-          <div className='space-y-1'>
-            <CardTitle>{t('moex.composition.title')}</CardTitle>
-            {shouldShowAsOf && compositionState.snapshotDate && (
-              <div className='text-xs text-muted-foreground'>
-                {t('moex.composition.asOf', {
-                  date: compositionState.snapshotDate,
-                })}
-              </div>
-            )}
-          </div>
-          <MoexSourceButton
-            href={compositionHref}
-            label={compositionSourceLabel}
-            tooltip={compositionSourceLabel}
-            disabledTooltip={t('moex.sources.selectIndex')}
-            className='shrink-0'
-          />
-        </div>
-
-        <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
-          <CompositionLegend
-            rows={legendRows}
-            loading={trendLoading}
-            hasError={trendError}
-            errorMessage={t('moex.composition.error')}
-            noDataMessage={t('moex.composition.noSeries')}
-            translationKeyPrefix='moex.composition'
-            showOther={showOtherLegend}
-            otherWeight={snapshotOtherWeight}
-          />
-        </div>
-      </div>
-
-      <div className='flex flex-col gap-3 lg:col-start-2 lg:row-start-3'>
-        <div className='flex flex-wrap items-start gap-x-4 gap-y-2'>
-          <div className='flex flex-wrap items-center gap-2'>
-            <span className='text-xs text-muted-foreground'>
-              {t('moex.composition.tabs.label')}
-            </span>
-            <ButtonToggleGroup
-              value={controls.composition.compositionTab}
-              options={compositionTabOptions}
-              onValueChange={controls.compositionActions.setCompositionTab}
+        <div className='flex min-h-0 flex-col gap-3'>
+          <div className='flex items-start justify-between gap-2'>
+            <div className='space-y-1'>
+              <CardTitle>{t('moex.composition.title')}</CardTitle>
+              {shouldShowAsOf && compositionState.snapshotDate && (
+                <div className='text-xs text-muted-foreground'>
+                  {t('moex.composition.asOf', {
+                    date: compositionState.snapshotDate,
+                  })}
+                </div>
+              )}
+            </div>
+            <MoexSourceButton
+              href={compositionHref}
+              label={compositionSourceLabel}
+              tooltip={compositionSourceLabel}
+              disabledTooltip={t('moex.sources.selectIndex')}
+              className='shrink-0'
             />
           </div>
-          <CompositionControlsPanel
-            controls={controls.composition}
-            actions={controls.compositionActions}
-            translationKeyPrefix='moex.composition'
-            idPrefix='moex'
-            selectionDateMax={latestTradeDate ?? undefined}
-            hideTabs
-            className='space-y-0'
-          />
+
+          <div className='min-h-0 flex-1 overflow-y-auto pr-2'>
+            <CompositionLegend
+              rows={legendRows}
+              loading={trendLoading}
+              hasError={trendError}
+              errorMessage={t('moex.composition.error')}
+              noDataMessage={t('moex.composition.noSeries')}
+              translationKeyPrefix='moex.composition'
+              showOther={showOtherLegend}
+              otherWeight={snapshotOtherWeight}
+            />
+          </div>
         </div>
       </div>
 
-      <div className='flex min-h-[200px] flex-1 flex-col lg:col-start-2 lg:row-start-4'>
-        {compositionChart}
+      <div className='flex min-h-0 min-w-0 flex-col gap-3'>
+        <PriceVisualization
+          loading={priceState.loading}
+          hasError={priceState.error}
+          errorMessage={t('moex.errors.history')}
+          noDataMessage={t('moex.chart.noData')}
+          series={priceSeries}
+          visibleRange={priceState.dateRange}
+          className='flex min-h-[200px] min-w-0 flex-1 items-stretch'
+        />
+
+        <div className='flex flex-col gap-3'>
+          <div className='flex flex-wrap items-start gap-x-4 gap-y-2'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <span className='text-xs text-muted-foreground'>
+                {t('moex.composition.tabs.label')}
+              </span>
+              <ButtonToggleGroup
+                value={controls.composition.compositionTab}
+                options={compositionTabOptions}
+                onValueChange={controls.compositionActions.setCompositionTab}
+              />
+            </div>
+            <CompositionControlsPanel
+              controls={controls.composition}
+              actions={controls.compositionActions}
+              translationKeyPrefix='moex.composition'
+              idPrefix='moex'
+              selectionDateMax={latestTradeDate ?? undefined}
+              hideTabs
+              className='space-y-0'
+            />
+          </div>
+        </div>
+
+        <div className='flex min-h-[200px] min-w-0 flex-1 flex-col'>
+          {compositionChart}
+        </div>
       </div>
     </div>
   );

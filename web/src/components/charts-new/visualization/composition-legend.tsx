@@ -116,13 +116,6 @@ export function CompositionLegend({
                     </span>
                   )}
                 </div>
-                {item.latestWeight !== null && (
-                  <div>
-                    {t(`${translationKeyPrefix}.legend.latestWeight`, {
-                      value: item.latestWeight.toFixed(2),
-                    })}
-                  </div>
-                )}
               </div>
             );
           })}
