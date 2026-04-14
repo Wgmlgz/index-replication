@@ -31,6 +31,11 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_keycloak_admin_proxy_client_id: admin-proxy
   TF_VAR_keycloak_admin_proxy_client_secret: ${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
   TF_VAR_keycloak_admin_proxy_redirect_uris: ${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback}
+  TF_VAR_keycloak_google_client_id: "${KEYCLOAK_GOOGLE_CLIENT_ID:-}"
+  TF_VAR_keycloak_google_client_secret: "${KEYCLOAK_GOOGLE_CLIENT_SECRET:-}"
+  TF_VAR_keycloak_google_trust_email: ${KEYCLOAK_GOOGLE_TRUST_EMAIL:-true}
+  TF_VAR_keycloak_google_sync_mode: "${KEYCLOAK_GOOGLE_SYNC_MODE:-IMPORT}"
+  TF_VAR_keycloak_google_hide_on_login_page: ${KEYCLOAK_GOOGLE_HIDE_ON_LOGIN_PAGE:-false}
   TF_VAR_keycloak_bootstrap_user: "${KEYCLOAK_BOOTSTRAP_USER:-}"
   TF_VAR_keycloak_bootstrap_user_password: "${KEYCLOAK_BOOTSTRAP_USER_PASSWORD:-}"
   TF_VAR_keycloak_bootstrap_user_email: "${KEYCLOAK_BOOTSTRAP_USER_EMAIL:-}"

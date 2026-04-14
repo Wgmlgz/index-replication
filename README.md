@@ -107,6 +107,12 @@ Docker compose includes Keycloak with no manual UI setup:
 - Terraform also provisions a confidential OIDC client for `oauth2-proxy` (fixed client ID `admin-proxy` +
   configurable secret `KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET`) in fixed admin realm `index-replication-admin` used to protect
   Adminer/Temporal routes in Traefik.
+- Optional Google login broker is auto-enabled when both
+  `KEYCLOAK_GOOGLE_CLIENT_ID` and `KEYCLOAK_GOOGLE_CLIENT_SECRET` are set
+  (additional Google broker settings use compose defaults unless overridden).
+  Google OAuth redirect URI format is:
+  `https://<public-keycloak-host>/auth/realms/index-replication/broker/google/endpoint`
+  (local Traefik example: `http://localhost:30000/auth/realms/index-replication/broker/google/endpoint`).
 - Realm user profile is managed by Terraform so end-user profile fields (`email`, `firstName`, `lastName`) are not required or editable by users.
 - Terraform config is baked into a tiny image built from `infra/terraform/keycloak` (no host bind mount required for remote deploys).
 - Terraform provider binaries are also baked into that image from GitHub releases and wired through a local filesystem mirror (`terraformrc`), so runtime `terraform init` can run without `registry.terraform.io`.

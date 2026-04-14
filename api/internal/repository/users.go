@@ -135,7 +135,7 @@ func (r *UserRepository) BlockUser(id string) (*models.User, error) {
 		return nil, err
 	}
 	if user.BlockedAt == nil {
-		now := time.Now()
+		now := time.Now().UTC()
 		user.BlockedAt = &now
 		if err := r.db.Save(&user).Error; err != nil {
 			return nil, err
@@ -249,7 +249,7 @@ func (r *UserRepository) EnsureUserByKeycloakSub(input EnsureKeycloakUserInput) 
 }
 
 func (r *UserRepository) UpdateLastActive(user *models.User) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	return r.db.Model(user).Update("last_active", &now).Error
 }
 

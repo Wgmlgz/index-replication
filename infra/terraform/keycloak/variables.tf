@@ -128,6 +128,37 @@ variable "keycloak_admin_proxy_redirect_uris" {
   default     = "http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback"
 }
 
+variable "keycloak_google_client_id" {
+  description = "Google OAuth client ID used by Keycloak Google IdP."
+  type        = string
+  default     = ""
+}
+
+variable "keycloak_google_client_secret" {
+  description = "Google OAuth client secret used by Keycloak Google IdP."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "keycloak_google_trust_email" {
+  description = "Trust email from Google IdP and mark it as verified."
+  type        = bool
+  default     = true
+}
+
+variable "keycloak_google_sync_mode" {
+  description = "Google IdP sync mode for imported users."
+  type        = string
+  default     = "IMPORT"
+}
+
+variable "keycloak_google_hide_on_login_page" {
+  description = "Hide Google IdP button on Keycloak login page."
+  type        = bool
+  default     = false
+}
+
 variable "keycloak_bootstrap_user" {
   description = "Optional bootstrap username. Leave empty to skip user creation."
   type        = string

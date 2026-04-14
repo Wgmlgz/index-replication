@@ -4,11 +4,11 @@ terraform {
   required_providers {
     postgresql = {
       source  = "cyrilgdn/postgresql"
-      version = ">= 1.23.0, < 2.0.0"
+      version = "= 1.26.0"
     }
     keycloak = {
       source  = "keycloak/keycloak"
-      version = ">= 5.0.0, < 6.0.0"
+      version = "= 5.3.0"
     }
   }
 }
@@ -34,6 +34,7 @@ provider "keycloak" {
 
 locals {
   bootstrap_user_enabled    = trimspace(var.keycloak_bootstrap_user) != ""
+  google_idp_enabled        = trimspace(var.keycloak_google_client_id) != ""
   web_redirect_uris         = [for uri in split(",", var.keycloak_web_redirect_uris) : trimspace(uri) if trimspace(uri) != ""]
   web_origins               = [for origin in split(",", var.keycloak_web_origins) : trimspace(origin) if trimspace(origin) != ""]
   admin_proxy_redirect_uris = [for uri in split(",", var.keycloak_admin_proxy_redirect_uris) : trimspace(uri) if trimspace(uri) != ""]
@@ -162,15 +163,15 @@ resource "keycloak_realm_user_profile" "app" {
 }
 
 resource "keycloak_openid_client" "web" {
-  realm_id                     = keycloak_realm.app.id
-  client_id                    = var.keycloak_web_client_id
-  name                         = "Index Replication Web"
-  enabled                      = true
-  access_type                  = var.keycloak_web_public_client ? "PUBLIC" : "CONFIDENTIAL"
-  standard_flow_enabled        = true
-  implicit_flow_enabled        = false
-  direct_access_grants_enabled = false
-  service_accounts_enabled     = false
+  realm_id                        = keycloak_realm.app.id
+  client_id                       = var.keycloak_web_client_id
+  name                            = "Index Replication Web"
+  enabled                         = true
+  access_type                     = var.keycloak_web_public_client ? "PUBLIC" : "CONFIDENTIAL"
+  standard_flow_enabled           = true
+  implicit_flow_enabled           = false
+  direct_access_grants_enabled    = false
+  service_accounts_enabled        = false
   valid_redirect_uris             = local.web_redirect_uris
   valid_post_logout_redirect_uris = ["+"]
   web_origins                     = local.web_origins
@@ -191,6 +192,30 @@ resource "keycloak_openid_client" "admin_proxy" {
   valid_post_logout_redirect_uris = ["+"]
   web_origins                     = ["+"]
   client_secret                   = var.keycloak_admin_proxy_client_secret
+}
+
+resource "keycloak_oidc_google_identity_provider" "google" {
+  count = local.google_idp_enabled ? 1 : 0
+
+  realm         = keycloak_realm.app.id
+  alias         = "google"
+  display_name  = "Google"
+  enabled       = true
+  client_id     = var.keycloak_google_client_id
+  client_secret = var.keycloak_google_client_secret
+
+  default_scopes        = "openid profile email"
+  trust_email           = var.keycloak_google_trust_email
+  sync_mode             = var.keycloak_google_sync_mode
+  hide_on_login_page    = var.keycloak_google_hide_on_login_page
+  request_refresh_token = true
+
+  lifecycle {
+    precondition {
+      condition     = trimspace(var.keycloak_google_client_secret) != ""
+      error_message = "KEYCLOAK_GOOGLE_CLIENT_SECRET is required when KEYCLOAK_GOOGLE_CLIENT_ID is set."
+    }
+  }
 }
 
 resource "keycloak_user" "bootstrap" {

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
@@ -15,6 +14,27 @@ import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 
 type LoginKcContext = Extract<KcContext, { pageId: "login.ftl" }>;
+
+const getProviderIconClasses = (provider: unknown): string => {
+  if (typeof provider !== "object" || provider === null) {
+    return "";
+  }
+
+  const iconClasses = (provider as { iconClasses?: unknown }).iconClasses;
+  if (typeof iconClasses !== "string") {
+    return "";
+  }
+
+  return iconClasses.trim();
+};
+
+const getProviderFallbackInitial = (alias: string): string => {
+  const trimmed = alias.trim();
+  if (trimmed === "") {
+    return "?";
+  }
+  return trimmed[0].toUpperCase();
+};
 
 export default function LoginPage(
   props: PageProps<LoginKcContext, I18n>
@@ -75,7 +95,6 @@ export default function LoginPage(
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>{msg("loginAccountTitle")}</CardTitle>
-            <CardDescription>{msg("doLogIn")}</CardDescription>
           </CardHeader>
           <CardContent>
             {showGlobalMessage && (
@@ -178,22 +197,41 @@ export default function LoginPage(
                   {msg("identity-provider-login-label")}
                 </div>
                 <div className="grid gap-2">
-                  {social.providers.map((provider) => (
-                    <Button
-                      key={provider.alias}
-                      variant="outline"
-                      className="w-full justify-center"
-                      asChild
-                    >
-                      <a id={`social-${provider.alias}`} href={provider.loginUrl}>
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: kcSanitize(provider.displayName)
-                          }}
-                        />
-                      </a>
-                    </Button>
-                  ))}
+                  {social.providers.map((provider) => {
+                    const iconClasses = getProviderIconClasses(provider);
+                    const fallbackInitial = getProviderFallbackInitial(provider.alias);
+
+                    return (
+                      <Button
+                        key={provider.alias}
+                        variant="outline"
+                        className="w-full"
+                        asChild
+                      >
+                        <a
+                          id={`social-${provider.alias}`}
+                          href={provider.loginUrl}
+                          className="flex items-center gap-3"
+                        >
+                          <span className="inline-flex size-5 shrink-0 items-center justify-center">
+                            {iconClasses !== "" ? (
+                              <i className={iconClasses} aria-hidden="true" />
+                            ) : (
+                              <span className="inline-flex size-5 items-center justify-center rounded-full border text-[11px] font-semibold">
+                                {fallbackInitial}
+                              </span>
+                            )}
+                          </span>
+                          <span
+                            className="min-w-0 flex-1 text-left"
+                            dangerouslySetInnerHTML={{
+                              __html: kcSanitize(provider.displayName)
+                            }}
+                          />
+                        </a>
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             )}

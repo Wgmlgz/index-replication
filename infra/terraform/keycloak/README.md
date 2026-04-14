@@ -9,6 +9,7 @@ This Terraform root manages:
 - Keycloak realm user profile (`keycloak_realm_user_profile`) with only username editable for end users
 - Keycloak OIDC web client (`keycloak_openid_client`)
 - Keycloak OIDC confidential client for admin proxy (`keycloak_openid_client.admin_proxy`)
+- Optional Keycloak Google OIDC identity provider broker in app realm (`keycloak_oidc_google_identity_provider.google`)
 - Optional bootstrap user in both app/admin realms (`keycloak_user.bootstrap`, `keycloak_user.admin_bootstrap`)
 
 Compose executes this root in two phases:

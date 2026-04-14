@@ -22,7 +22,7 @@ type User struct {
 // BeforeCreate is a GORM hook that will be called before creating a record
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.CreatedAt.IsZero() {
-		u.CreatedAt = time.Now()
+		u.CreatedAt = time.Now().UTC()
 	}
 	return nil
 }
