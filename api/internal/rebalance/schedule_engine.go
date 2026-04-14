@@ -77,13 +77,12 @@ func (e *scheduleEventEngine) Calculate(
 			break
 		}
 
-		normalizedNext := calendar.NormalizeToSession(next)
 		shouldAdjustByPolicy := plan.policy != businessDayAdjustmentStrict
-		candidate, included := normalizedNext, false
+		candidate, included := next, false
 		if shouldAdjustByPolicy {
 			candidate, included = calendar.AdjustByPolicy(next, plan.policy)
 		} else {
-			included = calendar.Evaluate(normalizedNext).Included
+			included = calendar.Evaluate(next).Included
 		}
 		if included && !candidate.Before(displayFrom) && !candidate.After(displayTo) {
 			key := candidate.UTC().Format(time.RFC3339Nano)
@@ -178,36 +177,6 @@ type tradingDecision struct {
 	Included bool
 }
 
-func (c tradingCalendar) NormalizeToSession(at time.Time) time.Time {
-	atLocal := at.In(c.loc)
-	seconds := atLocal.Hour()*3600 + atLocal.Minute()*60 + atLocal.Second()
-	if seconds < sessionStartSec {
-		return time.Date(
-			atLocal.Year(),
-			atLocal.Month(),
-			atLocal.Day(),
-			sessionStartSec/3600,
-			(sessionStartSec%3600)/60,
-			0,
-			0,
-			c.loc,
-		)
-	}
-	if seconds > sessionStopSec {
-		return time.Date(
-			atLocal.Year(),
-			atLocal.Month(),
-			atLocal.Day(),
-			sessionStopSec/3600,
-			(sessionStopSec%3600)/60,
-			0,
-			0,
-			c.loc,
-		)
-	}
-	return atLocal
-}
-
 func (c tradingCalendar) Evaluate(at time.Time) tradingDecision {
 	atLocal := at.In(c.loc)
 	dateKey := atLocal.Format("2006-01-02")
@@ -255,12 +224,11 @@ func (c tradingCalendar) RowsInRange(from time.Time, to time.Time) []dto.Portfol
 }
 
 func (c tradingCalendar) AdjustByPolicy(at time.Time, policy businessDayAdjustmentPolicy) (time.Time, bool) {
-	normalized := c.NormalizeToSession(at)
-	if c.Evaluate(normalized).Included {
-		return normalized, true
+	if c.Evaluate(at).Included {
+		return at, true
 	}
 
-	atLocal := normalized
+	atLocal := at.In(c.loc)
 	switch policy {
 	case businessDayAdjustmentFollowing:
 		return c.findNearestTradingDay(atLocal, 1, false)

@@ -423,7 +423,7 @@
           "tooltipLabel": "Explain business-day adjustment policies",
           "tooltip": {
             "title": "Policy behavior",
-            "strict": "Strict: keep the original date. If time is outside trading session it is clamped to session bounds; non-trading days are skipped.",
+            "strict": "Strict: keep the original date/time only. If it falls on a non-trading day, that event is skipped.",
             "following": "Following: move to the next trading day.",
             "preceding": "Preceding: move to the previous trading day.",
             "modifiedFollowing": "Modified following: move to the next trading day, but if that changes month, move to the previous trading day.",
