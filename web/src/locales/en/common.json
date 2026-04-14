@@ -37,7 +37,11 @@
     "expandSidebar": "Expand sidebar",
     "section": "Navigation",
     "signOut": "Sign out",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "themeToggle": "Toggle theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
   },
   "landing": {
     "features": {

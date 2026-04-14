@@ -261,18 +261,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   })}
                 </SidebarMenuSub>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === '/settings'}
-                  tooltip={t('navigation.cards.settings.title')}
-                >
-                  <Link href='/settings'>
-                    <Settings className='size-4' />
-                    <span>{t('navigation.cards.settings.title')}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -285,23 +273,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             (<span>{user.role_key}</span>)
           </div>
         )} */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <ModeToggle />
+        <SidebarMenu className='flex-row items-center gap-1 group-data-[collapsible=icon]:flex-col'>
+          <SidebarMenuItem className='flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
+            <ModeToggle className='justify-center' labelClassName='sr-only' />
+          </SidebarMenuItem>
+          <SidebarMenuItem className='flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === '/settings'}
+              tooltip={t('navigation.cards.settings.title')}
+              className='justify-center'
+            >
+              <Link href='/settings' aria-label={t('navigation.cards.settings.title')}>
+                <Settings className='size-4' />
+                <span className='sr-only'>{t('navigation.cards.settings.title')}</span>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
           {user ? (
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => void handleLogout()}>
+            <SidebarMenuItem className='flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
+              <SidebarMenuButton
+                onClick={() => void handleLogout()}
+                tooltip={t('navigation.signOut')}
+                className='justify-center'
+                aria-label={t('navigation.signOut')}
+              >
                 <LogOut />
-                <span>{t('navigation.signOut')}</span>
+                <span className='sr-only'>{t('navigation.signOut')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ) : (
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/login'}>
-                <Link href='/login'>
+            <SidebarMenuItem className='flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === '/login'}
+                tooltip={t('navigation.signIn')}
+                className='justify-center'
+              >
+                <Link href='/login' aria-label={t('navigation.signIn')}>
                   <LogIn />
-                  <span>{t('navigation.signIn')}</span>
+                  <span className='sr-only'>{t('navigation.signIn')}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

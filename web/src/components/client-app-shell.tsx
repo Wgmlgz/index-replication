@@ -107,7 +107,7 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
       className='min-h-svh'
       style={
         {
-          '--sidebar-width': '20rem',
+          '--sidebar-width': '10rem',
           '--sidebar-width-mobile': '20rem',
         } as CSSProperties
       }

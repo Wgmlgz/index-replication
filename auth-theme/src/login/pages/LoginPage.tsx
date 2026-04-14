@@ -16,24 +16,9 @@ import type { I18n } from "../i18n";
 type LoginKcContext = Extract<KcContext, { pageId: "login.ftl" }>;
 
 const getProviderIconClasses = (provider: unknown): string => {
-  if (typeof provider !== "object" || provider === null) {
-    return "";
-  }
-
-  const iconClasses = (provider as { iconClasses?: unknown }).iconClasses;
-  if (typeof iconClasses !== "string") {
-    return "";
-  }
-
-  return iconClasses.trim();
-};
-
-const getProviderFallbackInitial = (alias: string): string => {
-  const trimmed = alias.trim();
-  if (trimmed === "") {
-    return "?";
-  }
-  return trimmed[0].toUpperCase();
+  if (typeof provider !== "object" || provider === null) return "";
+  const raw = (provider as { iconClasses?: unknown }).iconClasses;
+  return typeof raw === "string" ? raw.trim() : "";
 };
 
 export default function LoginPage(
@@ -199,31 +184,19 @@ export default function LoginPage(
                 <div className="grid gap-2">
                   {social.providers.map((provider) => {
                     const iconClasses = getProviderIconClasses(provider);
-                    const fallbackInitial = getProviderFallbackInitial(provider.alias);
 
                     return (
                       <Button
                         key={provider.alias}
                         variant="outline"
-                        className="w-full"
+                        className="w-full justify-center gap-2"
                         asChild
                       >
-                        <a
-                          id={`social-${provider.alias}`}
-                          href={provider.loginUrl}
-                          className="flex items-center gap-3"
-                        >
-                          <span className="inline-flex size-5 shrink-0 items-center justify-center">
-                            {iconClasses !== "" ? (
-                              <i className={iconClasses} aria-hidden="true" />
-                            ) : (
-                              <span className="inline-flex size-5 items-center justify-center rounded-full border text-[11px] font-semibold">
-                                {fallbackInitial}
-                              </span>
-                            )}
-                          </span>
+                        <a id={`social-${provider.alias}`} href={provider.loginUrl} className="gap-2">
+                          {iconClasses !== "" && (
+                            <i className={`${iconClasses} text-[14px] leading-none`} aria-hidden="true" />
+                          )}
                           <span
-                            className="min-w-0 flex-1 text-left"
                             dangerouslySetInnerHTML={{
                               __html: kcSanitize(provider.displayName)
                             }}
