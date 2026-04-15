@@ -44,6 +44,17 @@ variable "keycloak_url" {
   default     = "http://keycloak:8080/auth"
 }
 
+variable "keycloak_ssl_required" {
+  description = "Realm SSL requirement. none for local HTTP dev, external/all for HTTPS deployments."
+  type        = string
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "external", "all"], lower(trimspace(var.keycloak_ssl_required)))
+    error_message = "keycloak_ssl_required must be one of: none, external, all."
+  }
+}
+
 variable "keycloak_admin_user" {
   description = "Keycloak admin username (master realm)."
   type        = string

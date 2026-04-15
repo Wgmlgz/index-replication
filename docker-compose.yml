@@ -18,6 +18,7 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_postgres_user: ${POSTGRES_USER}
   TF_VAR_postgres_password: ${POSTGRES_PASSWORD}
   TF_VAR_keycloak_url: ${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
+  TF_VAR_keycloak_ssl_required: "${KEYCLOAK_SSL_REQUIRED:-none}"
   TF_VAR_keycloak_login_theme: index-replication
   TF_VAR_keycloak_db_schema: keycloak
   TF_VAR_keycloak_admin_user: ${KEYCLOAK_ADMIN_USER:-admin}
@@ -115,7 +116,6 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:${TRAEFIK_PORT:-30000}"
-      - "--entrypoints.web.forwardedHeaders.insecure=true"
     ports:
       - "${TRAEFIK_PORT:-30000}:${TRAEFIK_PORT:-30000}"
     volumes:

@@ -125,6 +125,8 @@ Docker compose includes Keycloak with no manual UI setup:
 - Keycloak is exposed by Traefik on the same app port under `/auth`.
 - Leave `KEYCLOAK_HOSTNAME` empty for local `task devx`.
   Set it explicitly only when Keycloak must advertise a specific public URL (for example external HTTPS proxy setups).
+- `KEYCLOAK_SSL_REQUIRED` controls realm SSL policy (`none`, `external`, `all`).
+  For local HTTP through Traefik use `none`; for real HTTPS deployments keep `external`.
 - Keycloak image build includes a custom login theme jar from `auth-theme/` (Keycloakify).
 - Realm login theme is fixed to `index-replication` in compose (Terraform + Keycloak image build).
 - `keycloak` is also reachable directly on `127.0.0.1:${KEYCLOAK_PORT}` for local debugging.

@@ -29,5 +29,7 @@ Most static values (DB host/port, Keycloak internal URL including relative path 
 defined in `variables.tf` defaults. Compose passes only values that typically vary
 per environment (DB credentials, admin credentials, realm/schema names, optional bootstrap user).
 
+Realm SSL mode is controlled by `keycloak_ssl_required` (`none`, `external`, `all`).
+
 `keycloak_login_theme` default is `index-replication` and is typically driven from compose env
 (`TF_VAR_keycloak_login_theme` mapped from `KEYCLOAK_THEME_NAME`).

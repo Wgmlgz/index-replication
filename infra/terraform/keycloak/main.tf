@@ -50,6 +50,7 @@ resource "keycloak_realm" "app" {
   enabled      = true
   display_name = var.keycloak_realm_display_name
   login_theme  = var.keycloak_login_theme
+  ssl_required = lower(trimspace(var.keycloak_ssl_required))
 }
 
 resource "keycloak_realm" "admin" {
@@ -57,6 +58,7 @@ resource "keycloak_realm" "admin" {
   enabled      = true
   display_name = var.keycloak_admin_realm_display_name
   login_theme  = var.keycloak_login_theme
+  ssl_required = lower(trimspace(var.keycloak_ssl_required))
 }
 
 resource "keycloak_realm_user_profile" "app" {
