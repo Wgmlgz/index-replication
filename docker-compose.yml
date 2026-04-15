@@ -116,6 +116,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:${TRAEFIK_PORT:-30000}"
+      - "--entrypoints.web.forwardedHeaders.insecure=true"
     ports:
       - "${TRAEFIK_PORT:-30000}:${TRAEFIK_PORT:-30000}"
     volumes:
