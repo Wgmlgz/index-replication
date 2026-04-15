@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -103,16 +104,41 @@ func LoadConfig() *Config {
 }
 
 func resolveWebAppURL() string {
-	if explicit := strings.TrimSpace(getEnv("WEB_APP_URL", "")); explicit != "" {
-		return strings.TrimRight(explicit, "/")
+	if rawBase := strings.TrimSpace(getEnv("PUBLIC_BASE_URL", "")); rawBase != "" {
+		if !hasMalformedTemplate(rawBase) {
+			expandedBase := strings.TrimSpace(os.ExpandEnv(rawBase))
+			if normalizedBase := normalizeAbsoluteURL(expandedBase); normalizedBase != "" {
+				return normalizedBase
+			}
+		}
 	}
 
-	host := strings.TrimSpace(getEnv("WEB_HOST", ""))
 	port := strings.TrimSpace(getEnv("TRAEFIK_PORT", ""))
-	if host == "" || port == "" {
-		return "http://localhost:30000"
+	if port != "" {
+		return fmt.Sprintf("http://localhost:%s", port)
 	}
-	return fmt.Sprintf("http://%s:%s", host, port)
+	return "http://localhost:30000"
+}
+
+func hasMalformedTemplate(raw string) bool {
+	openCount := strings.Count(raw, "${")
+	if openCount == 0 {
+		return false
+	}
+	return strings.Count(raw, "}") < openCount
+}
+
+func normalizeAbsoluteURL(raw string) string {
+	trimmed := strings.TrimSpace(strings.TrimRight(raw, "/"))
+	if trimmed == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return ""
+	}
+	return trimmed
 }
 
 func InitDB(cfg *Config) *gorm.DB {

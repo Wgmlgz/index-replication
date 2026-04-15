@@ -26,11 +26,11 @@ x-keycloak-terraform-env: &keycloak_terraform_env
   TF_VAR_keycloak_realm_display_name: "Index Replication"
   TF_VAR_keycloak_admin_realm: index-replication-admin
   TF_VAR_keycloak_admin_realm_display_name: "Index Replication Admin"
-  TF_VAR_keycloak_web_redirect_uris: ${KEYCLOAK_WEB_REDIRECT_URIS:-http://localhost:3000/login*,http://localhost:30000/login*,http://localhost:3000/auth/silent-callback,http://localhost:30000/auth/silent-callback}
-  TF_VAR_keycloak_web_origins: ${KEYCLOAK_WEB_ORIGINS:-http://localhost:3000,http://localhost:30000}
+  TF_VAR_keycloak_web_redirect_uris: http://localhost:3000/login*,http://localhost:${TRAEFIK_PORT:-30000}/login*,http://localhost:3000/auth/silent-callback,http://localhost:${TRAEFIK_PORT:-30000}/auth/silent-callback${PUBLIC_BASE_URL:+,${PUBLIC_BASE_URL}/login*,${PUBLIC_BASE_URL}/auth/silent-callback},${KEYCLOAK_WEB_REDIRECT_URIS:-}
+  TF_VAR_keycloak_web_origins: http://localhost:3000,http://localhost:${TRAEFIK_PORT:-30000}${PUBLIC_BASE_URL:+,${PUBLIC_BASE_URL}},${KEYCLOAK_WEB_ORIGINS:-}
   TF_VAR_keycloak_admin_proxy_client_id: admin-proxy
   TF_VAR_keycloak_admin_proxy_client_secret: ${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
-  TF_VAR_keycloak_admin_proxy_redirect_uris: ${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback}
+  TF_VAR_keycloak_admin_proxy_redirect_uris: http://localhost:${TRAEFIK_PORT:-30000}/oauth2/callback${PUBLIC_BASE_URL:+,${PUBLIC_BASE_URL}/oauth2/callback},${KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS:-}
   TF_VAR_keycloak_google_client_id: "${KEYCLOAK_GOOGLE_CLIENT_ID:-}"
   TF_VAR_keycloak_google_client_secret: "${KEYCLOAK_GOOGLE_CLIENT_SECRET:-}"
   TF_VAR_keycloak_google_trust_email: ${KEYCLOAK_GOOGLE_TRUST_EMAIL:-true}
@@ -114,9 +114,10 @@ services:
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:${TRAEFIK_PORT}"
+      - "--entrypoints.web.address=:${TRAEFIK_PORT:-30000}"
+      - "--entrypoints.web.forwardedHeaders.insecure=true"
     ports:
-      - "${TRAEFIK_PORT}:${TRAEFIK_PORT}"
+      - "${TRAEFIK_PORT:-30000}:${TRAEFIK_PORT:-30000}"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     restart: on-failure
@@ -223,32 +224,32 @@ services:
     volumes:
       - keycloak_terraform_state:/workspace/terraform-state
 
-  oauth2-proxy:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    restart: on-failure
-    environment:
-      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}/realms/index-replication-admin
-      - OAUTH2_PROXY_CLIENT_ID=admin-proxy
-      - OAUTH2_PROXY_CLIENT_SECRET=${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
-      - OAUTH2_PROXY_COOKIE_SECRET=${ADMIN_AUTH_COOKIE_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
-      - OAUTH2_PROXY_REDIRECT_URL=${OAUTH2_PROXY_REDIRECT_URL:-http://${WEB_HOST}:${TRAEFIK_PORT}/oauth2/callback}
-      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
-      - OAUTH2_PROXY_EMAIL_DOMAINS=*
-      - OAUTH2_PROXY_UPSTREAMS=file:///dev/null
-      - OAUTH2_PROXY_REVERSE_PROXY=true
-      - OAUTH2_PROXY_SET_XAUTHREQUEST=true
-      - OAUTH2_PROXY_COOKIE_SECURE=${OAUTH2_PROXY_COOKIE_SECURE:-false}
-      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.oauth2.rule=PathPrefix(`/oauth2`)"
-      - "traefik.http.routers.oauth2.entrypoints=web"
-      - "traefik.http.routers.oauth2.priority=140"
-      - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
+  # oauth2-proxy:
+  #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
+  #   depends_on:
+  #     keycloak:
+  #       condition: service_healthy
+  #   restart: on-failure
+  #   environment:
+  #     - OAUTH2_PROXY_PROVIDER=keycloak-oidc
+  #     - OAUTH2_PROXY_OIDC_ISSUER_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}/realms/index-replication-admin
+  #     - OAUTH2_PROXY_CLIENT_ID=admin-proxy
+  #     - OAUTH2_PROXY_CLIENT_SECRET=${KEYCLOAK_ADMIN_PROXY_CLIENT_SECRET:-change-me}
+  #     - OAUTH2_PROXY_COOKIE_SECRET=${ADMIN_AUTH_COOKIE_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+  #     - OAUTH2_PROXY_REDIRECT_URL=${OAUTH2_PROXY_REDIRECT_URL:-${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}/oauth2/callback}
+  #     - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+  #     - OAUTH2_PROXY_EMAIL_DOMAINS=*
+  #     - OAUTH2_PROXY_UPSTREAMS=file:///dev/null
+  #     - OAUTH2_PROXY_REVERSE_PROXY=true
+  #     - OAUTH2_PROXY_SET_XAUTHREQUEST=true
+  #     - OAUTH2_PROXY_COOKIE_SECURE=${OAUTH2_PROXY_COOKIE_SECURE:-false}
+  #     - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.oauth2.rule=PathPrefix(`/oauth2`)"
+  #     - "traefik.http.routers.oauth2.entrypoints=web"
+  #     - "traefik.http.routers.oauth2.priority=140"
+  #     - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
 
   api:
     build:
@@ -267,7 +268,8 @@ services:
       - REFRESH_TOKEN_TTL=168h
       - COOKIE_SECURE=false
       - COOKIE_DOMAIN=${COOKIE_DOMAIN}
-      - CORS_ORIGINS=http://${WEB_HOST}
+      - CORS_ORIGINS=${CORS_ORIGINS:-${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}
       - RUN_MIGRATIONS=true
       - KEYCLOAK_BASE_URL=${KEYCLOAK_API_BASE_URL:-http://keycloak:8080/auth}
       - KEYCLOAK_REALM=index-replication
@@ -317,7 +319,7 @@ services:
       - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE:-moex-sync}
       - TEMPORAL_TASK_QUEUE=${TEMPORAL_TASK_QUEUE:-moex-sync}
       - TEMPORAL_ENABLE_SEARCH_ATTRIBUTES=${TEMPORAL_ENABLE_SEARCH_ATTRIBUTES:-false}
-      - WEB_APP_URL=${WEB_APP_URL:-http://${WEB_HOST}:${TRAEFIK_PORT}}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}
     depends_on:
       postgres:
         condition: service_healthy
@@ -340,7 +342,7 @@ services:
       - TELEGRAM_SOCKS5_PROXY=${TELEGRAM_SOCKS5_PROXY:-}
       - TELEGRAM_POLL_TIMEOUT_SEC=${TELEGRAM_POLL_TIMEOUT_SEC:-30}
       - LOGIN_VERIFICATION_TTL_SECONDS=${LOGIN_VERIFICATION_TTL_SECONDS:-300}
-      - WEB_APP_URL=${WEB_APP_URL:-http://${WEB_HOST}:${TRAEFIK_PORT}}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}
     depends_on:
       postgres:
         condition: service_healthy

@@ -54,15 +54,20 @@ Fixed mappings:
 - Temporal UI: tailnet HTTPS `9443` -> `127.0.0.1:8233`
 
 Authenticated admin access via Traefik + Keycloak:
-- Adminer: `http://${WEB_HOST}:${TRAEFIK_PORT}/adminer`
-- Temporal UI: `http://${WEB_HOST}:${TRAEFIK_PORT}/temporal`
+- Adminer: `${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}/adminer`
+- Temporal UI: `${PUBLIC_BASE_URL:-http://localhost:${TRAEFIK_PORT:-30000}}/temporal`
 - Requests to `http://localhost:${TRAEFIK_PORT}/adminer` and `http://localhost:${TRAEFIK_PORT}/temporal` bypass auth.
 - Direct localhost ports also remain open with no auth: `http://localhost:8081`, `http://localhost:8233`.
 - These admin routes authenticate against fixed admin realm `index-replication-admin`, not the app realm.
-- If you expose a different hostname/port, update `KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS` accordingly.
-  Use a comma-separated list such as `http://localhost:30000/oauth2/callback,http://app123.localhost:30000/oauth2/callback`.
-- Behind a TLS-terminating proxy, set `OAUTH2_PROXY_REDIRECT_URL` to the public HTTPS callback URL
-  (for example `https://replicant.amogos.pro/oauth2/callback`) and set `OAUTH2_PROXY_COOKIE_SECURE=true`.
+- For remote deployments, set `PUBLIC_BASE_URL` once (for example `https://replicant.amogos.pro`).
+  Compose keeps local defaults (`localhost:3000`, `localhost:30000`) and appends `${PUBLIC_BASE_URL}` plus optional extras from
+  `KEYCLOAK_WEB_REDIRECT_URIS`, `KEYCLOAK_WEB_ORIGINS`, and `KEYCLOAK_ADMIN_PROXY_REDIRECT_URIS`.
+- If Keycloak shows `Invalid parameter: redirect_uri`, re-check `PUBLIC_BASE_URL` and ensure
+  the `keycloak-terraform` apply step completed on the latest deployment (it updates client redirect URIs).
+- If Keycloak shows `HTTPS required` behind an external TLS terminator (for example Coolify proxy -> app Traefik),
+  ensure Traefik trusts forwarded headers so downstream services receive `X-Forwarded-Proto=https`
+  (compose sets `--entrypoints.web.forwardedHeaders.insecure=true` for this).
+- Behind a TLS-terminating proxy, keep `OAUTH2_PROXY_COOKIE_SECURE=true`.
 
 ## Quick Start (Local)
 
@@ -118,8 +123,8 @@ Docker compose includes Keycloak with no manual UI setup:
 - Terraform provider binaries are also baked into that image from GitHub releases and wired through a local filesystem mirror (`terraformrc`), so runtime `terraform init` can run without `registry.terraform.io`.
 - Terraform local state is persisted in compose named volume `keycloak_terraform_state` so re-deploys stay idempotent.
 - Keycloak is exposed by Traefik on the same app port under `/auth`.
-- For TLS-terminating external proxies, set `KEYCLOAK_HOSTNAME` to the public HTTPS base URL
-  (for example `https://replicant.amogos.pro/auth`) so Keycloak generates HTTPS absolute URLs.
+- Leave `KEYCLOAK_HOSTNAME` empty for local `task devx`.
+  Set it explicitly only when Keycloak must advertise a specific public URL (for example external HTTPS proxy setups).
 - Keycloak image build includes a custom login theme jar from `auth-theme/` (Keycloakify).
 - Realm login theme is fixed to `index-replication` in compose (Terraform + Keycloak image build).
 - `keycloak` is also reachable directly on `127.0.0.1:${KEYCLOAK_PORT}` for local debugging.

@@ -6,6 +6,7 @@ dotenv:
 vars:
   GOOSE_VERSION: v3.26.0
   MIGRATIONS_DIR: ./migrations
+  DEV_PUBLIC_BASE_URL: '{{.DEV_PUBLIC_BASE_URL | default "http://localhost:3000"}}'
   POSTGRES_USER: '{{.POSTGRES_USER | default "app"}}'
   POSTGRES_PASSWORD: '{{.POSTGRES_PASSWORD | default "app"}}'
   POSTGRES_HOST: '{{.POSTGRES_HOST | default "localhost"}}'
@@ -61,16 +62,21 @@ tasks:
     env:
       GIN_LOG_FORMAT: short
       SERVER_PORT: 18080
+      PUBLIC_BASE_URL: '{{.DEV_PUBLIC_BASE_URL}}'
     cmds:
       - go run github.com/air-verse/air@latest
 
   worker:dev:
     desc: Run MOEX Temporal worker locally with hot reload
+    env:
+      PUBLIC_BASE_URL: '{{.DEV_PUBLIC_BASE_URL}}'
     cmds:
       - go run github.com/air-verse/air@latest --build.cmd "go build -o {{.WORKER_BIN}} ./cmd/moex-worker" --build.entrypoint "{{.WORKER_BIN}}"
 
   telegram:dev:
     desc: Run Telegram polling bot locally with hot reload
+    env:
+      PUBLIC_BASE_URL: '{{.DEV_PUBLIC_BASE_URL}}'
     cmds:
       - go run github.com/air-verse/air@latest --build.cmd "go build -o {{.TELEGRAM_BOT_BIN}} ./cmd/telegram-bot" --build.entrypoint "{{.TELEGRAM_BOT_BIN}}"
 

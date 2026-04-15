@@ -103,7 +103,8 @@ Environment variables live in `.env`. Key settings:
 - `POSTGRES_DB` (default `postgres`)
 - `RUN_MIGRATIONS` (default `true`)
 - `MIGRATIONS_DIR` (optional override)
-- `KEYCLOAK_BASE_URL` (default `http://localhost:18081/auth`, used to build issuer URL; docker-compose sets internal default `http://keycloak:8080/auth`)
+- `KEYCLOAK_BASE_URL` (default `http://localhost:18081/auth`, used to build issuer URL; docker-compose sets
+  `${KEYCLOAK_API_BASE_URL}` when provided, otherwise `http://keycloak:8080/auth`)
 - `KEYCLOAK_REALM` (default `index-replication`)
 - `KEYCLOAK_ISSUER_URL` (optional explicit issuer/discovery URL override)
 - `KEYCLOAK_CLIENT_ID` / `KEYCLOAK_SKIP_ISSUER_CHECK` / `KEYCLOAK_SKIP_CLIENT_ID_CHECK` are available overrides,
@@ -114,7 +115,8 @@ Environment variables live in `.env`. Key settings:
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)
 - `TELEGRAM_SOCKS5_PROXY` (optional; SOCKS5 proxy for Telegram API calls in format `socks5://user:pass@host:port`)
 - `TELEGRAM_POLL_TIMEOUT_SEC` (default `30`, Telegram long-poll timeout)
-- `WEB_APP_URL` (optional; absolute web app URL used in Telegram rebalance confirmation links, fallback is `http://$WEB_HOST:$TRAEFIK_PORT` when both are set)
+- `PUBLIC_BASE_URL` (optional; externally visible app base URL used by docker-compose defaults for web/auth callbacks)
+  Local `task dev` / `worker:dev` / `telegram:dev` set it to `http://localhost:3000` automatically.
 - `LOGIN_VERIFICATION_TTL_SECONDS` (default `300`, login challenge expiration)
 - `MOEX_MUTABLE_DAYS` (default `30`)
 - `MOEX_IMMUTABLE_BEFORE_DATE` (optional `YYYY-MM-DD`, immutable boundary)

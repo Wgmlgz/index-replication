@@ -113,6 +113,9 @@ Keycloak `web` client redirect URIs must include both login and silent callback 
 - `http://localhost:3000/auth/silent-callback`
 - `http://localhost:30000/auth/silent-callback`
 
+In docker-compose deployments, required redirect URIs are auto-derived from `PUBLIC_BASE_URL`
+and applied by Keycloak Terraform. `KEYCLOAK_WEB_REDIRECT_URIS` acts as optional extras.
+
 Keycloak hosted login UI is themed in a separate project:
 
 - `auth-theme/` (Keycloakify + shadcn components imported from `web/src`)
