@@ -1,30 +1,47 @@
-# Degree (ВКР по ГОСТ в Docker)
+# Degree Thesis Workspace
 
-Этот каталог содержит готовый LaTeX-старт для ВКР с Docker и `Taskfile`.
+This folder contains the LaTeX setup for the bachelor thesis document using a local template and Docker-based build tooling.
 
-Основа оформления взята из открытого шаблона:
+## Contents
 
-- `weterans/gost` (класс `gost-7-32`, ориентирован на ГОСТ 7.32-2017): https://github.com/weterans/gost
+- `src/main.tex` - main thesis source file.
+- `src/references.bib` - bibliography database.
+- `template/gost-7-32/` - local template files (based on `weterans/gost`).
+- `simular-works/` - sample thesis PDFs from other students (reference only).
+- `Taskfile.yml` - build/watch/clean task definitions.
+- `Dockerfile` - TeX Live container base.
+- `build/` - generated artifacts.
+- `AGENTS.md` - agent operating instructions for this folder.
 
-Шаблонные файлы подключены локально в `template/gost-7-32/` для воспроизводимой сборки.
+## Reference Base
 
-## Структура
+Template origin:
 
-- `src/main.tex` — ВКР-документ
-- `src/references.bib` — источники
-- `template/gost-7-32/` — файлы шаблона
-- `Taskfile.yml` — команды сборки
-- `Dockerfile` — контейнер для сборки PDF
+- `weterans/gost` (GOST 7.32-focused): https://github.com/weterans/gost
 
-## Команды
+The template is vendored locally to keep builds reproducible.
 
-Запускать из `degree/`:
+## Important Workflow Rule
 
-```bash
-task build
-task watch
-```
+PDF build execution is delegated to the user.
 
-# Похожие работы
+Agents should **not** run any PDF generation commands, including:
 
-In simular-works folder
+- `task build`
+- `task watch`
+- direct `latexmk` commands
+- `docker run ... latexmk ...`
+
+Agents should only edit source files and prepare changes for the user to build locally.
+
+## Typical Agent Tasks
+
+- Improve/expand chapter structure in `src/main.tex`.
+- Refine academic wording and formatting in LaTeX.
+- Add or normalize bibliography entries in `src/references.bib`.
+- Align section flow with patterns observed in `simular-works/*.pdf` (without copying text).
+- Keep compatibility with the existing template and task setup.
+
+## Notes
+
+- `build/` files are generated outputs and should not be edited manually.
