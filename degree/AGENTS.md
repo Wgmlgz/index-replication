@@ -15,5 +15,6 @@
 
 - Do not run PDF generation commands; this is delegated to the user.
 - Do not run `task build`, `task watch`, `latexmk`, or `docker ... latexmk`.
-- Use `simular-works/*.pdf` only for structure/pattern reference.
+- For similar works, use extracted `simular-works/*.md` files first.
+- Use `simular-works/*.pdf` only as fallback/verification when needed.
 - Edit source files only (`src/main.tex`, `src/references.bib`); do not edit `build/` artifacts.

@@ -7,7 +7,9 @@ This folder contains the LaTeX setup for the bachelor thesis document using a lo
 - `src/main.tex` - main thesis source file.
 - `src/references.bib` - bibliography database.
 - `template/gost-7-32/` - local template files (based on `weterans/gost`).
-- `simular-works/` - sample thesis PDFs from other students (reference only).
+- `simular-works/` - sample thesis references from other students:
+  - `*.md` extracted text (preferred for agent work)
+  - `*.pdf` originals (fallback/verification)
 - `Taskfile.yml` - build/watch/clean task definitions.
 - `Dockerfile` - TeX Live container base.
 - `build/` - generated artifacts.
@@ -39,8 +41,14 @@ Agents should only edit source files and prepare changes for the user to build l
 - Improve/expand chapter structure in `src/main.tex`.
 - Refine academic wording and formatting in LaTeX.
 - Add or normalize bibliography entries in `src/references.bib`.
-- Align section flow with patterns observed in `simular-works/*.pdf` (without copying text).
+- Align section flow with patterns observed in `simular-works/*.md` (without copying text).
 - Keep compatibility with the existing template and task setup.
+
+## Similar Works Workflow
+
+- Prefer `simular-works/*.md` for fast reading/searching and structure analysis.
+- Use `simular-works/*.pdf` only when extracted text is unclear or layout details must be checked.
+- Treat similar works as style/structure reference only; do not copy text verbatim.
 
 ## Notes
 
