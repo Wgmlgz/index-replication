@@ -171,20 +171,22 @@
   data/.style={box, fill=green!10},
   ext/.style={box, fill=blue!8}
 ]
-\node[box] (web) {Веб-клиент};
-\node[data] (db) at ($ (web.south) + (-2.5cm,-1.8cm) $) {База данных\\данные приложения\\и кэш рынка};
-\node[core] (api) at ($ (web.south) + (2.5cm,-1.8cm) $) {Серверное API\\и бизнес-логика};
+\node[ext] (auth) {Сервис\\аутентификации};
+
+\node[data] (db) at ($ (auth.south) + (-2.5cm,-1.8cm) $) {База данных\\данные приложения\\и кэш рынка};
+\node[core] (api) at ($ (auth.south) + (2.5cm,-1.8cm) $) {Серверное API\\и бизнес-логика};
 \node[core, below=2.0cm of $(db)!0.5!(api)$] (worker) {Фоновые процессы\\планирование, исполнение, расписания};
 
 \node[ext, right=of api] (moex) {MOEX\\рыночные данные};
-\node[ext, right=of web] (auth) {Сервис\\аутентификации};
+\node[box, right=of auth] (web) {Веб-клиент};
+
 \node[ext, below=of moex] (tbank) {Брокерская\\интеграция};
-\node[ext, below=of tbank] (telegram) {Сервис уведомлений\\и подтверждений};
+\node[ext, below=of tbank] (telegram) {Мессенджер};
 
 \draw[->] (web) -- (api);
 \draw[->] (api) -- (web);
-\draw[->] (web) -- (db);
-\draw[->] (db) -- (web);
+\draw[->] (db) -- (auth);
+\draw[->] (auth) -- (db);
 
 \draw[->] (api) -- (db);
 \draw[->] (db) -- (api);
