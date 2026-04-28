@@ -13,6 +13,7 @@ This folder contains the LaTeX setup for the bachelor thesis document using a lo
 - `Taskfile.yml` - build/watch/clean task definitions.
 - `Dockerfile` - TeX Live container base.
 - `build/` - generated artifacts.
+- `src/figures/` - thesis figures.
 - `AGENTS.md` - agent operating instructions for this folder.
 
 ## Reference Base
