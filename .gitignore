@@ -11,3 +11,4 @@ api/.env
 *.tfplan
 infra/terraform/**/.terraform.lock.hcl
 /.obsidian
+degree/.DS_Store
