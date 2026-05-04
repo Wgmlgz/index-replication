@@ -1,6 +1,7 @@
 # Degree Thesis Workspace
 
 This folder contains the LaTeX setup for the bachelor thesis document using a local template and Docker-based build tooling.
+Native watch workflows are also supported through a user-local TinyTeX installation.
 
 ## Contents
 
@@ -32,6 +33,7 @@ Agents should **not** run any PDF generation commands, including:
 
 - `task build`
 - `task watch`
+- `task watch:native`
 - direct `latexmk` commands
 - `docker run ... latexmk ...`
 

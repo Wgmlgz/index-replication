@@ -49,6 +49,15 @@ tasks:
         latexmk -pdf -interaction=nonstopmode -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} -pvc -view=none {{.MAIN_TEX}}
 
+  watch:native:
+    desc: Watch source files and continuously rebuild PDF using user-local TinyTeX
+    cmds:
+      - >-
+        TEXBIN="$(echo "$HOME"/Library/TinyTeX/bin/*)" &&
+        TEXINPUTS={{.TEXINPUTS}} BSTINPUTS={{.BSTINPUTS}}
+        "$TEXBIN/latexmk" -pdf -interaction=nonstopmode -file-line-error -synctex=1
+        -output-directory={{.OUT_DIR}} -pvc -view=none {{.MAIN_TEX}}
+
   clean:
     desc: Remove build artifacts
     cmds:

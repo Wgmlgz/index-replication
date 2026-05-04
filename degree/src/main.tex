@@ -7,7 +7,7 @@
 \usepackage{longtable}
 \usepackage{tikz}
 \usepackage{tabularx}
-\usetikzlibrary{arrows.meta,calc,positioning,shapes.multipart}
+\usetikzlibrary{arrows.meta,calc,fit,positioning,shapes.multipart}
 
 \renewcommand{\floatpagefraction}{0.8}
 
@@ -341,16 +341,74 @@ TODO
 TODO 
 
 \subsection{Процесс планирования и исполнения ребалансировки}
-1
+
+В данном подразделе целесообразно последовательно рассмотреть основные этапы жизненного цикла ребалансировки как отдельного асинхронного процесса.
+
+\textbf{Инициация процесса.} Запуск ребалансировки пользователем или по расписанию, создание отдельного запуска и перевод его в начальное состояние.
+
+\textbf{Планирование.} Сбор снимка состояния портфеля, денежных остатков, состава бенчмарка, цен и лотности инструментов, после чего формируется проект сделок.
+
+\textbf{Подтверждение и исполнение.} Подтверждение сформированного черновика пользователем и последовательная передача операций на исполнение через провайдера портфеля.
+
+\textbf{Фиксация результата.} Сохранение итогового статуса запуска, частично исполненных операций, ошибок и другой информации, необходимой для мониторинга процесса.
+
+\begin{figure}[h]
+\centering
+\small
+\begin{tikzpicture}[
+  >=Latex,
+  node distance=0.45cm,
+  state/.style={draw, rounded corners, align=center, minimum width=2.0cm, minimum height=0.8cm, fill=green!10},
+  terminal/.style={draw, rounded corners, align=center, minimum width=2.4cm, minimum height=0.8cm, fill=orange!12},
+  fail/.style={draw, rounded corners, align=center, minimum width=2.4cm, minimum height=0.8cm, fill=red!10},
+  group/.style={draw, dashed, rounded corners, inner sep=8pt}
+]
+\node[state, xshift=-3.2cm] (s1) {\texttt{planning\_queued}};
+\node[state, below=1.0cm of s1] (s2) {\texttt{planning}};
+\node[state, below=of s2] (s3) {\texttt{draft}};
+\node[state, below=1.0cm of s3] (s4) {\texttt{queued}};
+\node[state, below=of s4] (s5) {\texttt{executing}};
+
+\draw[->] (s1) -- (s2);
+\draw[->] (s2) -- (s3);
+\draw[->] (s3) -- (s4);
+\draw[->] (s4) -- (s5);
+
+\node[fail, right=1.2cm of s2] (pf) {\texttt{planning\_failed}};
+\draw[->] (s2.east) -- (pf.west);
+
+\node[terminal, below=1.0cm of s5, xshift=0cm] (done) {\texttt{completed}};
+\node[terminal, right=0.5cm of done] (part) {\texttt{partially\_completed}};
+\node[fail, right=0.5cm of part] (ff) {\texttt{failed}};
+
+\draw[->] (s5.south) -- (done.north);
+\draw[->] (s5.south) -- (part.north);
+\draw[->] (s5.south) -- (ff.north);
+
+\node[group, fit=(s1)] (g1) {};
+\node[group, fit=(s2)(s3)(pf)] (g2) {};
+\node[group, fit=(s4)(s5)] (g3) {};
+\node[group, fit=(done)(part)(ff)] (g4) {};
+
+\node[left=0.2cm of g1] {\footnotesize Инициация};
+\node[left=0.2cm of g2] {\footnotesize Планирование};
+\node[left=0.2cm of g3] {\footnotesize Исполнение};
+\node[left=0.2cm of g4] {\footnotesize Фиксация результата};
+
+\end{tikzpicture}
+\caption{Основные этапы и состояния процесса ребалансировки}
+\label{fig:rebalance-process}
+\end{figure}
 
 \subsection{Проектирование пользовательского интерфейса}
 
+1
 \subsection{Выводы по главе}
 
 \newpage
 \section{Реализация системы}
 
-TODO 
+TODO 1
 
 Для удобства разработки и дальнейшего развертывания используется Docker Compose, позволяющий  описать все сервисы в системе и предсказуемо из разворачивать. Он объединяет серверную часть, клиентское приложение, базу данных, сервис аутентификации и все другие вспомогательные сервисы используемые платформой. Использование Docker Compose снижает зависимость от индивидуальной конфигурации машины и среды разработки и развертывания. Для удобства выполнения повторяющихся команд используется утилита Task, содержащая команды запуска, тестирования, генерации API-клиента и других, описаных в едином формате.
 
