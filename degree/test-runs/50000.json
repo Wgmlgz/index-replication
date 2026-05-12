@@ -1,0 +1,1289 @@
+{
+    "run": {
+        "id": 28,
+        "run_index": 3,
+        "portfolio_id": 13,
+        "provider": "virtual",
+        "benchmark_secid": "IMOEX",
+        "mode_key": "full",
+        "mode_params": {},
+        "planning_params": {
+            "quantity_precision": 6
+        },
+        "execution_mode": "manual",
+        "confirmation_required": true,
+        "status": "draft",
+        "as_of_date": "2026-05-12",
+        "started_at": "2026-05-12T17:24:56.517963Z",
+        "ended_at": "2026-05-12T17:25:16.050297Z",
+        "created_at": "2026-05-12T17:24:56.321111Z",
+        "updated_at": "2026-05-12T17:25:16.051377Z"
+    },
+    "input": {
+        "as_of_at": "2026-05-12T00:00:00Z",
+        "mode_key": "full",
+        "mode_params": {},
+        "investable_capital": 50000,
+        "holdings": [],
+        "benchmark": [
+            {
+                "ticker": "AFKS",
+                "instrument_id": "AFKS",
+                "target_weight": 0.3100000023841858
+            },
+            {
+                "ticker": "AFLT",
+                "instrument_id": "AFLT",
+                "target_weight": 0.550000011920929
+            },
+            {
+                "ticker": "ALRS",
+                "instrument_id": "ALRS",
+                "target_weight": 0.4099999964237213
+            },
+            {
+                "ticker": "BSPB",
+                "instrument_id": "BSPB",
+                "target_weight": 0.3400000035762787
+            },
+            {
+                "ticker": "CBOM",
+                "instrument_id": "CBOM",
+                "target_weight": 0.44999998807907104
+            },
+            {
+                "ticker": "CHMF",
+                "instrument_id": "CHMF",
+                "target_weight": 0.8299999833106995
+            },
+            {
+                "ticker": "CNRU",
+                "instrument_id": "CNRU",
+                "target_weight": 0.2800000011920929
+            },
+            {
+                "ticker": "DOMRF",
+                "instrument_id": "DOMRF",
+                "target_weight": 0.5799999833106995
+            },
+            {
+                "ticker": "ENPG",
+                "instrument_id": "ENPG",
+                "target_weight": 0.3100000023841858
+            },
+            {
+                "ticker": "FLOT",
+                "instrument_id": "FLOT",
+                "target_weight": 0.30000001192092896
+            },
+            {
+                "ticker": "GAZP",
+                "instrument_id": "GAZP",
+                "target_weight": 9.720000267028809
+            },
+            {
+                "ticker": "GMKN",
+                "instrument_id": "GMKN",
+                "target_weight": 3.799999952316284
+            },
+            {
+                "ticker": "HEAD",
+                "instrument_id": "HEAD",
+                "target_weight": 0.75
+            },
+            {
+                "ticker": "IRAO",
+                "instrument_id": "IRAO",
+                "target_weight": 1.059999942779541
+            },
+            {
+                "ticker": "LENT",
+                "instrument_id": "LENT",
+                "target_weight": 0.25
+            },
+            {
+                "ticker": "LKOH",
+                "instrument_id": "LKOH",
+                "target_weight": 15.739999771118164
+            },
+            {
+                "ticker": "MAGN",
+                "instrument_id": "MAGN",
+                "target_weight": 0.5
+            },
+            {
+                "ticker": "MDMG",
+                "instrument_id": "MDMG",
+                "target_weight": 0.3400000035762787
+            },
+            {
+                "ticker": "MOEX",
+                "instrument_id": "MOEX",
+                "target_weight": 1.090000033378601
+            },
+            {
+                "ticker": "MSNG",
+                "instrument_id": "MSNG",
+                "target_weight": 0.20000000298023224
+            },
+            {
+                "ticker": "MTSS",
+                "instrument_id": "MTSS",
+                "target_weight": 1.0199999809265137
+            },
+            {
+                "ticker": "NLMK",
+                "instrument_id": "NLMK",
+                "target_weight": 0.7699999809265137
+            },
+            {
+                "ticker": "NVTK",
+                "instrument_id": "NVTK",
+                "target_weight": 4.210000038146973
+            },
+            {
+                "ticker": "OZON",
+                "instrument_id": "OZON",
+                "target_weight": 2.609999895095825
+            },
+            {
+                "ticker": "PHOR",
+                "instrument_id": "PHOR",
+                "target_weight": 0.6499999761581421
+            },
+            {
+                "ticker": "PIKK",
+                "instrument_id": "PIKK",
+                "target_weight": 0.75
+            },
+            {
+                "ticker": "PLZL",
+                "instrument_id": "PLZL",
+                "target_weight": 3.6700000762939453
+            },
+            {
+                "ticker": "POSI",
+                "instrument_id": "POSI",
+                "target_weight": 0.25
+            },
+            {
+                "ticker": "RENI",
+                "instrument_id": "RENI",
+                "target_weight": 0.1899999976158142
+            },
+            {
+                "ticker": "ROSN",
+                "instrument_id": "ROSN",
+                "target_weight": 2.75
+            },
+            {
+                "ticker": "RTKM",
+                "instrument_id": "RTKM",
+                "target_weight": 0.5099999904632568
+            },
+            {
+                "ticker": "RUAL",
+                "instrument_id": "RUAL",
+                "target_weight": 1.0499999523162842
+            },
+            {
+                "ticker": "SBER",
+                "instrument_id": "SBER",
+                "target_weight": 13.449999809265137
+            },
+            {
+                "ticker": "SBERP",
+                "instrument_id": "SBERP",
+                "target_weight": 2.5999999046325684
+            },
+            {
+                "ticker": "SNGS",
+                "instrument_id": "SNGS",
+                "target_weight": 1.7799999713897705
+            }
+        ],
+        "instruments": [
+            {
+                "ticker": "AFKS",
+                "instrument_id": "AFKS",
+                "price": 10.890000343322754,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 100
+            },
+            {
+                "ticker": "AFLT",
+                "instrument_id": "AFLT",
+                "price": 48.720001220703125,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "ALRS",
+                "instrument_id": "ALRS",
+                "price": 28.6299991607666,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "BSPB",
+                "instrument_id": "BSPB",
+                "price": 343.7799987792969,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "CBOM",
+                "instrument_id": "CBOM",
+                "price": 6.140999794006348,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 100
+            },
+            {
+                "ticker": "CHMF",
+                "instrument_id": "CHMF",
+                "price": 755.4000244140625,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "CNRU",
+                "instrument_id": "CNRU",
+                "price": 622.5999755859375,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "DOMRF",
+                "instrument_id": "DOMRF",
+                "price": 2258.60009765625,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "ENPG",
+                "instrument_id": "ENPG",
+                "price": 400.6499938964844,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "FLOT",
+                "instrument_id": "FLOT",
+                "price": 78.5,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "GAZP",
+                "instrument_id": "GAZP",
+                "price": 120.68000030517578,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "GMKN",
+                "instrument_id": "GMKN",
+                "price": 133.36000061035156,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "HEAD",
+                "instrument_id": "HEAD",
+                "price": 2905,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "IRAO",
+                "instrument_id": "IRAO",
+                "price": 3.183500051498413,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 100
+            },
+            {
+                "ticker": "LENT",
+                "instrument_id": "LENT",
+                "price": 1797.5,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "LKOH",
+                "instrument_id": "LKOH",
+                "price": 5200,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "MAGN",
+                "instrument_id": "MAGN",
+                "price": 25.700000762939453,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "MDMG",
+                "instrument_id": "MDMG",
+                "price": 1313.9000244140625,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "MOEX",
+                "instrument_id": "MOEX",
+                "price": 170.74000549316406,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "MSNG",
+                "instrument_id": "MSNG",
+                "price": 1.937999963760376,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1000
+            },
+            {
+                "ticker": "MTSS",
+                "instrument_id": "MTSS",
+                "price": 219.64999389648438,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "NLMK",
+                "instrument_id": "NLMK",
+                "price": 86.05999755859375,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "NVTK",
+                "instrument_id": "NVTK",
+                "price": 1165.0999755859375,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "OZON",
+                "instrument_id": "OZON",
+                "price": 4290,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "PHOR",
+                "instrument_id": "PHOR",
+                "price": 6753,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "PIKK",
+                "instrument_id": "PIKK",
+                "price": 538.5,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "PLZL",
+                "instrument_id": "PLZL",
+                "price": 2181.60009765625,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "POSI",
+                "instrument_id": "POSI",
+                "price": 1047.4000244140625,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "RENI",
+                "instrument_id": "RENI",
+                "price": 85.73999786376953,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "ROSN",
+                "instrument_id": "ROSN",
+                "price": 411.8500061035156,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "RTKM",
+                "instrument_id": "RTKM",
+                "price": 53.45000076293945,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "RUAL",
+                "instrument_id": "RUAL",
+                "price": 38.095001220703125,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 10
+            },
+            {
+                "ticker": "SBER",
+                "instrument_id": "SBER",
+                "price": 323.75,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "SBERP",
+                "instrument_id": "SBERP",
+                "price": 323.739990234375,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 1
+            },
+            {
+                "ticker": "SNGS",
+                "instrument_id": "SNGS",
+                "price": 19.854999542236328,
+                "currency": "RUB",
+                "as_of_at": "2026-05-12T00:00:00Z",
+                "source": "market_asof",
+                "lot_size": 100
+            }
+        ],
+        "money": [
+            {
+                "currency": "RUB",
+                "available": 50000,
+                "blocked": 0
+            }
+        ],
+        "params": {
+            "quantity_precision": 6
+        }
+    },
+    "output": {
+        "items": [
+            {
+                "ticker": "AFKS",
+                "instrument_id": "AFKS",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.31,
+                "reference_price": 10.89000034,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "AFLT",
+                "instrument_id": "AFLT",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 10,
+                "delta_quantity": 10,
+                "current_weight": 0,
+                "target_weight": 0.9744,
+                "ideal_weight": 0.55,
+                "reference_price": 48.72000122,
+                "planned_amount": 487.2,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "ALRS",
+                "instrument_id": "ALRS",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 10,
+                "delta_quantity": 10,
+                "current_weight": 0,
+                "target_weight": 0.5726,
+                "ideal_weight": 0.41,
+                "reference_price": 28.62999916,
+                "planned_amount": 286.3,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "BSPB",
+                "instrument_id": "BSPB",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.34,
+                "reference_price": 343.77999878,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "CBOM",
+                "instrument_id": "CBOM",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.45,
+                "reference_price": 6.14099979,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "CHMF",
+                "instrument_id": "CHMF",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 1,
+                "delta_quantity": 1,
+                "current_weight": 0,
+                "target_weight": 1.5108,
+                "ideal_weight": 0.83,
+                "reference_price": 755.40002441,
+                "planned_amount": 755.4,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "CNRU",
+                "instrument_id": "CNRU",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.28,
+                "reference_price": 622.59997559,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "DOMRF",
+                "instrument_id": "DOMRF",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.58,
+                "reference_price": 2258.60009766,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "ENPG",
+                "instrument_id": "ENPG",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 1,
+                "delta_quantity": 1,
+                "current_weight": 0,
+                "target_weight": 0.8013,
+                "ideal_weight": 0.31,
+                "reference_price": 400.6499939,
+                "planned_amount": 400.65,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "FLOT",
+                "instrument_id": "FLOT",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.3,
+                "reference_price": 78.5,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "GAZP",
+                "instrument_id": "GAZP",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 50,
+                "delta_quantity": 50,
+                "current_weight": 0,
+                "target_weight": 12.068,
+                "ideal_weight": 9.72,
+                "reference_price": 120.68000031,
+                "planned_amount": 6034,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "GMKN",
+                "instrument_id": "GMKN",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 20,
+                "delta_quantity": 20,
+                "current_weight": 0,
+                "target_weight": 5.3344,
+                "ideal_weight": 3.8,
+                "reference_price": 133.36000061,
+                "planned_amount": 2667.2,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "HEAD",
+                "instrument_id": "HEAD",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.75,
+                "reference_price": 2905,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "IRAO",
+                "instrument_id": "IRAO",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 200,
+                "delta_quantity": 200,
+                "current_weight": 0,
+                "target_weight": 1.2734,
+                "ideal_weight": 1.06,
+                "reference_price": 3.18350005,
+                "planned_amount": 636.7,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "LENT",
+                "instrument_id": "LENT",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.25,
+                "reference_price": 1797.5,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "LKOH",
+                "instrument_id": "LKOH",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 2,
+                "delta_quantity": 2,
+                "current_weight": 0,
+                "target_weight": 20.8,
+                "ideal_weight": 15.74,
+                "reference_price": 5200,
+                "planned_amount": 10400,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "MAGN",
+                "instrument_id": "MAGN",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 10,
+                "delta_quantity": 10,
+                "current_weight": 0,
+                "target_weight": 0.514,
+                "ideal_weight": 0.5,
+                "reference_price": 25.70000076,
+                "planned_amount": 257,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "MDMG",
+                "instrument_id": "MDMG",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.34,
+                "reference_price": 1313.90002441,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "MOEX",
+                "instrument_id": "MOEX",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 1.09,
+                "reference_price": 170.74000549,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "MSNG",
+                "instrument_id": "MSNG",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.2,
+                "reference_price": 1.93799996,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "MTSS",
+                "instrument_id": "MTSS",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 1.02,
+                "reference_price": 219.6499939,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "NLMK",
+                "instrument_id": "NLMK",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 10,
+                "delta_quantity": 10,
+                "current_weight": 0,
+                "target_weight": 1.7212,
+                "ideal_weight": 0.77,
+                "reference_price": 86.05999756,
+                "planned_amount": 860.6,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "NVTK",
+                "instrument_id": "NVTK",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 2,
+                "delta_quantity": 2,
+                "current_weight": 0,
+                "target_weight": 4.6604,
+                "ideal_weight": 4.21,
+                "reference_price": 1165.09997559,
+                "planned_amount": 2330.2,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "OZON",
+                "instrument_id": "OZON",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 2.61,
+                "reference_price": 4290,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "PHOR",
+                "instrument_id": "PHOR",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.65,
+                "reference_price": 6753,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "PIKK",
+                "instrument_id": "PIKK",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 1,
+                "delta_quantity": 1,
+                "current_weight": 0,
+                "target_weight": 1.077,
+                "ideal_weight": 0.75,
+                "reference_price": 538.5,
+                "planned_amount": 538.5,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "PLZL",
+                "instrument_id": "PLZL",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 1,
+                "delta_quantity": 1,
+                "current_weight": 0,
+                "target_weight": 4.3632,
+                "ideal_weight": 3.67,
+                "reference_price": 2181.60009766,
+                "planned_amount": 2181.6001,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "POSI",
+                "instrument_id": "POSI",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.25,
+                "reference_price": 1047.40002441,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "RENI",
+                "instrument_id": "RENI",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 0,
+                "delta_quantity": 0,
+                "current_weight": 0,
+                "target_weight": 0,
+                "ideal_weight": 0.19,
+                "reference_price": 85.73999786,
+                "planned_amount": 0,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "ROSN",
+                "instrument_id": "ROSN",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 5,
+                "delta_quantity": 5,
+                "current_weight": 0,
+                "target_weight": 4.1185,
+                "ideal_weight": 2.75,
+                "reference_price": 411.8500061,
+                "planned_amount": 2059.25,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "RTKM",
+                "instrument_id": "RTKM",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 10,
+                "delta_quantity": 10,
+                "current_weight": 0,
+                "target_weight": 1.069,
+                "ideal_weight": 0.51,
+                "reference_price": 53.45000076,
+                "planned_amount": 534.5,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "RUAL",
+                "instrument_id": "RUAL",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 20,
+                "delta_quantity": 20,
+                "current_weight": 0,
+                "target_weight": 1.5238,
+                "ideal_weight": 1.05,
+                "reference_price": 38.09500122,
+                "planned_amount": 761.9,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "SBER",
+                "instrument_id": "SBER",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 28,
+                "delta_quantity": 28,
+                "current_weight": 0,
+                "target_weight": 18.13,
+                "ideal_weight": 13.45,
+                "reference_price": 323.75,
+                "planned_amount": 9065,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "SBERP",
+                "instrument_id": "SBERP",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 5,
+                "delta_quantity": 5,
+                "current_weight": 0,
+                "target_weight": 3.2374,
+                "ideal_weight": 2.6,
+                "reference_price": 323.73999023,
+                "planned_amount": 1618.7,
+                "status": "planned",
+                "metadata": {}
+            },
+            {
+                "ticker": "SNGS",
+                "instrument_id": "SNGS",
+                "side": "buy",
+                "current_quantity": 0,
+                "target_quantity": 100,
+                "delta_quantity": 100,
+                "current_weight": 0,
+                "target_weight": 3.971,
+                "ideal_weight": 1.78,
+                "reference_price": 19.85499954,
+                "planned_amount": 1985.5,
+                "status": "planned",
+                "metadata": {}
+            }
+        ],
+        "warnings": [],
+        "money": [
+            {
+                "currency": "RUB",
+                "available": 6139.7999,
+                "blocked": 0
+            }
+        ]
+    },
+    "summary": {
+        "items_total": 35,
+        "actionable_items": 35,
+        "unresolved_items": 0,
+        "filtered_zero_delta": 0,
+        "estimated_turnover_abs": 43860.2,
+        "investable_capital": 50000
+    },
+    "transactions": [
+        {
+            "sequence": 1,
+            "ticker": "AFLT",
+            "instrument_id": "AFLT",
+            "side": "buy",
+            "quantity": 10,
+            "price": 48.72000122,
+            "amount": 487.2,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 2,
+            "ticker": "ALRS",
+            "instrument_id": "ALRS",
+            "side": "buy",
+            "quantity": 10,
+            "price": 28.62999916,
+            "amount": 286.3,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 3,
+            "ticker": "CHMF",
+            "instrument_id": "CHMF",
+            "side": "buy",
+            "quantity": 1,
+            "price": 755.40002441,
+            "amount": 755.4,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 4,
+            "ticker": "ENPG",
+            "instrument_id": "ENPG",
+            "side": "buy",
+            "quantity": 1,
+            "price": 400.6499939,
+            "amount": 400.65,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 5,
+            "ticker": "GAZP",
+            "instrument_id": "GAZP",
+            "side": "buy",
+            "quantity": 50,
+            "price": 120.68000031,
+            "amount": 6034,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 6,
+            "ticker": "GMKN",
+            "instrument_id": "GMKN",
+            "side": "buy",
+            "quantity": 20,
+            "price": 133.36000061,
+            "amount": 2667.2,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 7,
+            "ticker": "IRAO",
+            "instrument_id": "IRAO",
+            "side": "buy",
+            "quantity": 200,
+            "price": 3.18350005,
+            "amount": 636.7,
+            "currency": "RUB",
+            "lot_size": 100
+        },
+        {
+            "sequence": 8,
+            "ticker": "LKOH",
+            "instrument_id": "LKOH",
+            "side": "buy",
+            "quantity": 2,
+            "price": 5200,
+            "amount": 10400,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 9,
+            "ticker": "MAGN",
+            "instrument_id": "MAGN",
+            "side": "buy",
+            "quantity": 10,
+            "price": 25.70000076,
+            "amount": 257,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 10,
+            "ticker": "NLMK",
+            "instrument_id": "NLMK",
+            "side": "buy",
+            "quantity": 10,
+            "price": 86.05999756,
+            "amount": 860.6,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 11,
+            "ticker": "NVTK",
+            "instrument_id": "NVTK",
+            "side": "buy",
+            "quantity": 2,
+            "price": 1165.09997559,
+            "amount": 2330.2,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 12,
+            "ticker": "PIKK",
+            "instrument_id": "PIKK",
+            "side": "buy",
+            "quantity": 1,
+            "price": 538.5,
+            "amount": 538.5,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 13,
+            "ticker": "PLZL",
+            "instrument_id": "PLZL",
+            "side": "buy",
+            "quantity": 1,
+            "price": 2181.60009766,
+            "amount": 2181.6001,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 14,
+            "ticker": "ROSN",
+            "instrument_id": "ROSN",
+            "side": "buy",
+            "quantity": 5,
+            "price": 411.8500061,
+            "amount": 2059.25,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 15,
+            "ticker": "RTKM",
+            "instrument_id": "RTKM",
+            "side": "buy",
+            "quantity": 10,
+            "price": 53.45000076,
+            "amount": 534.5,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 16,
+            "ticker": "RUAL",
+            "instrument_id": "RUAL",
+            "side": "buy",
+            "quantity": 20,
+            "price": 38.09500122,
+            "amount": 761.9,
+            "currency": "RUB",
+            "lot_size": 10
+        },
+        {
+            "sequence": 17,
+            "ticker": "SBER",
+            "instrument_id": "SBER",
+            "side": "buy",
+            "quantity": 28,
+            "price": 323.75,
+            "amount": 9065,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 18,
+            "ticker": "SBERP",
+            "instrument_id": "SBERP",
+            "side": "buy",
+            "quantity": 5,
+            "price": 323.73999023,
+            "amount": 1618.7,
+            "currency": "RUB",
+            "lot_size": 1
+        },
+        {
+            "sequence": 19,
+            "ticker": "SNGS",
+            "instrument_id": "SNGS",
+            "side": "buy",
+            "quantity": 100,
+            "price": 19.85499954,
+            "amount": 1985.5,
+            "currency": "RUB",
+            "lot_size": 100
+        }
+    ]
+}
