@@ -4,12 +4,35 @@
 \usepackage{amssymb}
 \usepackage{array}
 \usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
 \usepackage{longtable}
 \usepackage{tikz}
 \usepackage{tabularx}
 \usetikzlibrary{arrows.meta,calc,fit,positioning,shapes.multipart}
 
 \renewcommand{\floatpagefraction}{0.8}
+\lstdefinestyle{thesiscode}{
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  framerule=0.2pt,
+  keepspaces=true,
+  numbers=none,
+  rulecolor=\color{black!40},
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=0pt,
+  xrightmargin=0pt
+}
+\lstset{style=thesiscode}
+\newcounter{codelisting}
+\newcommand{\codelistingcaption}[1]{%
+  \refstepcounter{codelisting}%
+  \noindent\textbf{Листинг \thecodelisting{} --- #1}\par\vspace{0.4em}%
+}
 
 \begin{document}
 
@@ -709,7 +732,7 @@
 \end{itemize}
 
 
-\subsubsection{Фоновые процессы синхронизации MOEX}
+\subsubsection{Фоновые процессы синхронизации мосбиржи}
 
 Платформа хранит кешированные исторические данные Мосбиржи в базе данных и использует их без запросов к API в реальном времени. Для заполнения и синхронизации этих данных используются следующие фоновые задачи:
 
@@ -851,7 +874,206 @@ AS = \frac{1}{2} \sum_{i=1}^{n} |w_i - \hat{w}_i|,
 \bibliography{src/references}
 
 \newpage
-\appendix{text}
+\appendix{Фрагменты программного кода}
+
+В приложении приведены фрагменты программного кода, отражающие ключевые элементы реализации платформы: подготовку данных для ребалансировки, расчет целевого состава портфеля и обновление статуса длительной операции в клиентском интерфейсе.
+
+\codelistingcaption{Подготовка данных портфеля и бенчмарка для планирования}
+\begin{lstlisting}
+portfolioComposition, err := provider.GetComposition(ctx, providerProfile, resolvedAsOfDate)
+if err != nil {
+    return nil, fmt.Errorf("%w: provider composition read: %v", ErrPlanningFailed, err)
+}
+
+summary, err := provider.GetSummary(ctx, providerProfile)
+if err != nil {
+    return nil, fmt.Errorf("%w: provider summary read: %v", ErrPlanningFailed, err)
+}
+
+benchmarkComposition, _, err := l.benchmarkRead.GetIndexComposition(ctx, benchmarkSecid, resolvedAsOfDate, "en")
+if err != nil {
+    return nil, fmt.Errorf("%w: benchmark composition read: %v", ErrPlanningFailed, err)
+}
+
+typedPlanningParams, planningParamsSnapshot := normalizePlanningParams(planningParams)
+holdings := toPlannerHoldings(portfolioComposition)
+targets := toPlannerTargets(benchmarkComposition)
+resolutionWarnings := l.resolvePlannerInstrumentIDs(ctx, provider, providerProfile, holdings, targets)
+instruments := l.resolvePlannerInstruments(ctx, providerProfile.Provider, resolvedAsOfAt, portfolioComposition, targets)
+money := toPlannerMoney(summary)
+totalValue := resolvePortfolioTotalValue(summary, portfolioComposition)
+cashAvailable := resolveCashAvailable(summary)
+modeParams := mapFromJSONMap(replicationConfig.ModeParams)
+modeKey := strings.ToLower(strings.TrimSpace(replicationConfig.ModeKey))
+if modeKey == "" {
+    modeKey = "full"
+}
+
+snapshot := &PlanningSnapshot{
+    UserID:                 userID,
+    PortfolioProfileID:     portfolioID,
+    Provider:               providerProfile.Provider,
+    BenchmarkSecid:         benchmarkSecid,
+    ModeKey:                modeKey,
+    ModeParams:             modeParams,
+    AsOfDate:               resolvedAsOfDate,
+    PlanningParams:         typedPlanningParams,
+    PlanningParamsSnapshot: planningParamsSnapshot,
+    PlannerInput: planner.Input{
+        AsOfAt:            resolvedAsOfAt,
+        ModeKey:           modeKey,
+        ModeParams:        modeParams,
+        InvestableCapital: totalValue,
+        Holdings:          holdings,
+        Benchmark:         targets,
+        Instruments:       instruments,
+        Money:             money,
+        Params:            typedPlanningParams,
+    },
+    CashAvailable:  cashAvailable,
+    HoldingsCount:  len(holdings),
+    BenchmarkCount: len(targets),
+    Warnings:       resolutionWarnings,
+}
+return snapshot, nil
+\end{lstlisting}
+
+\codelistingcaption{Фрагмент алгоритма планирования ребалансировки}
+\begin{lstlisting}
+targetDollars := make(map[string]float64, len(assets))
+effectiveBudget := 0.0
+allocatableKeys := make([]string, 0, len(assets))
+for _, asset := range assets {
+    if totalTargetWeight > 0 && asset.targetWeightRaw > 0 {
+        targetDollars[asset.key] = input.InvestableCapital * (asset.targetWeightRaw / totalTargetWeight)
+    } else {
+        targetDollars[asset.key] = 0
+    }
+    if asset.targetWeightRaw > 0 && asset.price > 0 {
+        effectiveBudget += targetDollars[asset.key]
+        allocatableKeys = append(allocatableKeys, asset.key)
+    }
+}
+sort.Strings(allocatableKeys)
+
+targetQuantityByKey := make(map[string]float64, len(assets))
+spent := 0.0
+minLotCost := math.Inf(1)
+for _, key := range allocatableKeys {
+    asset := assets[key]
+    lot := normalizedLotSize(asset.lotSize)
+    lotCost := asset.price * float64(lot)
+    if lotCost < minLotCost {
+        minLotCost = lotCost
+    }
+    dollars := targetDollars[key]
+    lots := math.Floor((dollars + 1e-9) / lotCost)
+    targetQuantity := lots * float64(lot)
+    targetQuantityByKey[key] = targetQuantity
+    spent += targetQuantity * asset.price
+}
+
+remaining := effectiveBudget - spent
+for len(allocatableKeys) > 0 && remaining+1e-9 >= minLotCost {
+    bestKey := ""
+    bestImprovement := 0.0
+
+    for _, key := range allocatableKeys {
+        asset := assets[key]
+        lot := normalizedLotSize(asset.lotSize)
+        lotCost := asset.price * float64(lot)
+        if lotCost > remaining+1e-9 {
+            continue
+        }
+
+        currentDollars := targetQuantityByKey[key] * asset.price
+        nextDollars := (targetQuantityByKey[key] + float64(lot)) * asset.price
+        improvement := math.Abs(targetDollars[key]-currentDollars) - math.Abs(targetDollars[key]-nextDollars)
+
+        if improvement > bestImprovement+1e-12 || (math.Abs(improvement-bestImprovement) <= 1e-12 && (bestKey == "" || key < bestKey)) {
+            bestImprovement = improvement
+            bestKey = key
+        }
+    }
+
+    if bestKey == "" || bestImprovement <= 1e-12 {
+        break
+    }
+
+    lot := normalizedLotSize(assets[bestKey].lotSize)
+    lotCost := assets[bestKey].price * float64(lot)
+    targetQuantityByKey[bestKey] += float64(lot)
+    spent += lotCost
+    remaining = effectiveBudget - spent
+}
+\end{lstlisting}
+
+\codelistingcaption{Получение и периодическое обновление статуса ребалансировки}
+\begin{lstlisting}
+const refreshStatus = useCallback(
+  async (options?: LoadStatusOptions) => {
+    if (!portfolioID || !rebalanceID) {
+      return null;
+    }
+    const silent = options?.silent === true;
+    if (!silent) {
+      setStatusLoading(true);
+    }
+    try {
+      const response = await portfolioApi.mePortfoliosIdRebalancesRebalanceIdStatusGet(
+        portfolioID,
+        rebalanceID,
+      );
+      const nextStatus = response.data ?? null;
+      setStatus(nextStatus);
+      setStatusError('');
+      const nextRun = nextStatus?.run;
+      if (nextRun) {
+        onRunUpdate(nextRun);
+      }
+      return nextStatus;
+    } catch (error) {
+      if (!silent) {
+        setStatusError(
+          parseErrorMessage(
+            error,
+            t('portfolio.replication.errors.loadStatus'),
+          ),
+        );
+      }
+      return null;
+    } finally {
+      if (!silent) {
+        setStatusLoading(false);
+      }
+    }
+  },
+  [onRunUpdate, parseErrorMessage, portfolioID, rebalanceID, t],
+);
+
+useEffect(() => {
+  clearStatus();
+}, [clearStatus, portfolioID, rebalanceID]);
+
+useEffect(() => {
+  if (!enabled || !portfolioID || !rebalanceID) {
+    return;
+  }
+  void refreshStatus();
+}, [enabled, portfolioID, rebalanceID, refreshStatus]);
+
+useEffect(() => {
+  if (!enabled || !portfolioID || !rebalanceID) {
+    return;
+  }
+  const timerID = window.setInterval(() => {
+    void refreshStatus({ silent: true });
+  }, STATUS_POLLING_MS);
+  return () => {
+    window.clearInterval(timerID);
+  };
+}, [enabled, portfolioID, rebalanceID, refreshStatus]);
+\end{lstlisting}
 
 
 
