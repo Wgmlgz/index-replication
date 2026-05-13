@@ -43,6 +43,10 @@
     "themeDark": "Dark",
     "themeSystem": "System"
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Welcome. Choose a section to get started."
+  },
   "landing": {
     "features": {
       "indexes": {
