@@ -28,6 +28,7 @@
 % Only three of them must appear in TOC: introduction, conclusion and references
 %
 \newcommand{\introduction}{
+    \phantomsection
     \addcontentsline{toc}{section}{ВВЕДЕНИЕ}
     \begin{center}
         \bfseries\large
@@ -36,6 +37,7 @@
 }
 
 \newcommand{\conclusion}{
+    \phantomsection
     \addcontentsline{toc}{section}{ЗАКЛЮЧЕНИЕ}
     \begin{center}
         \bfseries\large
@@ -44,6 +46,7 @@
 }
 
 \newcommand{\references}{
+    \phantomsection
     \addcontentsline{toc}{section}{СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ}
     \begin{center}
         \bfseries\large
@@ -99,6 +102,7 @@
     % Now I can increment appendices counter and use it
     \stepcounter{appendixcnt}
     
+    \phantomsection
     \addcontentsline{toc}{section}{ПРИЛОЖЕНИЕ \theappendixcnt. #1}
     \begin{center}
         \bfseries\large
