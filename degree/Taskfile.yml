@@ -7,6 +7,7 @@ vars:
   OUT_DIR: build
   TEXINPUTS: "./template/gost-7-32/tex/latex:"
   BSTINPUTS: "./template/gost-7-32/bibtex/bst:"
+  LATEXMK_ENGINE: "-xelatex"
 
 tasks:
   default:
@@ -17,7 +18,7 @@ tasks:
   docker:build:
     desc: Build Docker image with TeX Live
     cmds:
-      - docker build -t {{.IMAGE}} .
+      - docker build --pull=false -t {{.IMAGE}} .
 
   build:
     desc: Generate PDF once
@@ -31,7 +32,7 @@ tasks:
         -e TEXINPUTS={{.TEXINPUTS}}
         -e BSTINPUTS={{.BSTINPUTS}}
         {{.IMAGE}}
-        latexmk -pdf -interaction=nonstopmode -file-line-error -synctex=1
+        latexmk {{.LATEXMK_ENGINE}} -interaction=nonstopmode -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} {{.MAIN_TEX}}
 
   watch:
@@ -46,7 +47,7 @@ tasks:
         -e TEXINPUTS={{.TEXINPUTS}}
         -e BSTINPUTS={{.BSTINPUTS}}
         {{.IMAGE}}
-        latexmk -pdf -interaction=nonstopmode -file-line-error -synctex=1
+        latexmk {{.LATEXMK_ENGINE}} -interaction=nonstopmode -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} -pvc -view=none {{.MAIN_TEX}}
 
   watch:native:
@@ -55,10 +56,10 @@ tasks:
       - >-
         TEXBIN="$(echo "$HOME"/Library/TinyTeX/bin/*)" &&
         TEXINPUTS={{.TEXINPUTS}} BSTINPUTS={{.BSTINPUTS}}
-        "$TEXBIN/latexmk" -pdf -interaction=nonstopmode -file-line-error -synctex=1
+        "$TEXBIN/latexmk" {{.LATEXMK_ENGINE}} -interaction=nonstopmode -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} -pvc -view=none {{.MAIN_TEX}}
 
   clean:
     desc: Remove build artifacts
     cmds:
-      - rm -rf {{.OUT_DIR}}/*.aux {{.OUT_DIR}}/*.bbl {{.OUT_DIR}}/*.blg {{.OUT_DIR}}/*.fdb_latexmk {{.OUT_DIR}}/*.fls {{.OUT_DIR}}/*.log {{.OUT_DIR}}/*.out {{.OUT_DIR}}/*.synctex.gz {{.OUT_DIR}}/*.toc {{.OUT_DIR}}/*.pdf
+      - rm -rf {{.OUT_DIR}}/*.aux {{.OUT_DIR}}/*.bbl {{.OUT_DIR}}/*.blg {{.OUT_DIR}}/*.fdb_latexmk {{.OUT_DIR}}/*.fls {{.OUT_DIR}}/*.log {{.OUT_DIR}}/*.out {{.OUT_DIR}}/*.synctex.gz {{.OUT_DIR}}/*.toc {{.OUT_DIR}}/*.xdv {{.OUT_DIR}}/*.pdf
