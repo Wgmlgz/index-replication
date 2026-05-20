@@ -32,7 +32,7 @@ tasks:
         -e TEXINPUTS={{.TEXINPUTS}}
         -e BSTINPUTS={{.BSTINPUTS}}
         {{.IMAGE}}
-        latexmk {{.LATEXMK_ENGINE}} -interaction=nonstopmode -file-line-error -synctex=1
+        latexmk {{.LATEXMK_ENGINE}} -g -interaction=nonstopmode -halt-on-error -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} {{.MAIN_TEX}}
 
   watch:
@@ -47,7 +47,7 @@ tasks:
         -e TEXINPUTS={{.TEXINPUTS}}
         -e BSTINPUTS={{.BSTINPUTS}}
         {{.IMAGE}}
-        latexmk {{.LATEXMK_ENGINE}} -interaction=nonstopmode -file-line-error -synctex=1
+        latexmk {{.LATEXMK_ENGINE}} -g -interaction=nonstopmode -halt-on-error -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} -pvc -view=none {{.MAIN_TEX}}
 
   watch:native:
@@ -56,7 +56,7 @@ tasks:
       - >-
         TEXBIN="$(echo "$HOME"/Library/TinyTeX/bin/*)" &&
         TEXINPUTS={{.TEXINPUTS}} BSTINPUTS={{.BSTINPUTS}}
-        "$TEXBIN/latexmk" {{.LATEXMK_ENGINE}} -interaction=nonstopmode -file-line-error -synctex=1
+        "$TEXBIN/latexmk" {{.LATEXMK_ENGINE}} -g -interaction=nonstopmode -halt-on-error -file-line-error -synctex=1
         -output-directory={{.OUT_DIR}} -pvc -view=none {{.MAIN_TEX}}
 
   clean:

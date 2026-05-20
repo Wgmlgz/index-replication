@@ -1,8 +1,61 @@
 % !TeX program = xelatex
 \documentclass[14pt]{gost-7-32}
 
-\usepackage{fontspec}
-\setmainfont{Times New Roman}
+\usepackage[no-math]{fontspec}
+\IfFileExists{/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf}{%
+  \setmainfont[
+    Path=/usr/share/fonts/truetype/msttcorefonts/,
+    Extension=.ttf,
+    UprightFont=*,
+    BoldFont=*_Bold,
+    ItalicFont=*_Italic,
+    BoldItalicFont=*_Bold_Italic
+  ]{Times_New_Roman}%
+}{%
+  \IfFileExists{/System/Library/Fonts/Supplemental/Times New Roman.ttf}{%
+    \setmainfont[
+      Path={/System/Library/Fonts/Supplemental/},
+      Extension=.ttf,
+      UprightFont=*,
+      BoldFont=* Bold,
+      ItalicFont=* Italic,
+      BoldItalicFont=* Bold Italic
+    ]{Times New Roman}%
+  }{%
+    \IfFontExistsTF{Times New Roman}{%
+      \setmainfont{Times New Roman}%
+    }{%
+      \setmainfont{Tinos}%
+    }%
+  }%
+}
+\IfFileExists{/usr/share/fonts/truetype/msttcorefonts/Courier_New.ttf}{%
+  \setmonofont[
+    Path=/usr/share/fonts/truetype/msttcorefonts/,
+    Extension=.ttf,
+    UprightFont=*,
+    BoldFont=*_Bold,
+    ItalicFont=*_Italic,
+    BoldItalicFont=*_Bold_Italic
+  ]{Courier_New}%
+}{%
+  \IfFileExists{/System/Library/Fonts/Supplemental/Courier New.ttf}{%
+    \setmonofont[
+      Path={/System/Library/Fonts/Supplemental/},
+      Extension=.ttf,
+      UprightFont=*,
+      BoldFont=* Bold,
+      ItalicFont=* Italic,
+      BoldItalicFont=* Bold Italic
+    ]{Courier New}%
+  }{%
+    \IfFontExistsTF{Courier New}{%
+      \setmonofont{Courier New}%
+    }{%
+      \setmonofont{DejaVu Sans Mono}%
+    }%
+  }%
+}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -14,6 +67,8 @@
 \usepackage{tikz}
 \usepackage{tabularx}
 \usetikzlibrary{arrows.meta,calc,fit,positioning,shapes.multipart}
+
+\setlist[itemize, 2]{label={\(\bullet\)}}
 
 \renewcommand{\floatpagefraction}{0.8}
 \lstdefinestyle{thesiscode}{
@@ -37,6 +92,12 @@
   \refstepcounter{codelisting}%
   \noindent\textbf{Листинг \thecodelisting{} --- #1}\par\vspace{0.4em}%
 }
+
+\usepackage{float}
+\floatstyle{plaintop}
+\restylefloat{table}
+
+
 
 \begin{document}
 
@@ -402,17 +463,17 @@
 
 
 \begin{itemize}
-    \item Инициализация --- точка входа, состояние \verb|planning_queued|, выполняется переход в следующее состояние по готовности системы, подробнее описанное в подразделе~\ref{sec:impl-orchestration-rebalance}.
-    \item Планирование --- состояние \verb|planning|, система получает текущее состояние портфеля, состояние индекса и рассчитывает, как привести текущее состояние к близкому к бенчмарку виду, подробнее описанному в подразделе~\ref{sec:design-rebalance-planning}. В зависимости от результата выполняется переход в следующие состояния:
+    \item Инициализация --- точка входа, состояние \texttt{planning\_queued}, выполняется переход в следующее состояние по готовности системы, подробнее описанное в подразделе~\ref{sec:impl-orchestration-rebalance}.
+    \item Планирование --- состояние \texttt{planning}, система получает текущее состояние портфеля, состояние индекса и рассчитывает, как привести текущее состояние к близкому к бенчмарку виду, подробнее описанному в подразделе~\ref{sec:design-rebalance-planning}. В зависимости от результата выполняется переход в следующие состояния:
     \begin{itemize}
-        \item \verb|planning_failed| --- планирование не удалось, весь процесс останавливается
-        \item \verb|draft| --- планирование удалось, есть план по совершению сделок
+        \item \texttt{planning\_failed} --- планирование не удалось, весь процесс останавливается
+        \item \texttt{draft} --- планирование удалось, есть план по совершению сделок
     \end{itemize}
-    \item Исполнение --- начальное состояние \verb|draft|, в зависимости от одобрения пользователя выполняется переход в \verb|queued| или \verb|failed|. По готовности выполняется переход в \verb|executing|: система пытается исполнить план транзакций в реальных рыночных условиях. В зависимости от результата выполняется переход в следующие состояния:
+    \item Исполнение --- начальное состояние \texttt{draft}, в зависимости от одобрения пользователя выполняется переход в \texttt{queued} или \texttt{failed}. По готовности выполняется переход в \texttt{executing}: система пытается исполнить план транзакций в реальных рыночных условиях. В зависимости от результата выполняется переход в следующие состояния:
     \begin{itemize}
-        \item \verb|failed| --- не удалось либо инициализировать процесс, либо совершить хотя бы одну транзакцию успешно
-        \item \verb|partially_completed| --- часть транзакций была выполнена успешно, но не все
-        \item \verb|completed| --- все транзакции были выполнены успешно
+        \item \texttt{failed} --- не удалось либо инициализировать процесс, либо совершить хотя бы одну транзакцию успешно
+        \item \texttt{partially\_completed} --- часть транзакций была выполнена успешно, но не все
+        \item \texttt{completed} --- все транзакции были выполнены успешно
     \end{itemize}
 \end{itemize}
 
