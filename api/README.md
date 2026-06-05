@@ -109,7 +109,7 @@ Environment variables live in `.env`. Key settings:
 - `KEYCLOAK_ISSUER_URL` (optional explicit issuer/discovery URL override)
 - `KEYCLOAK_CLIENT_ID` / `KEYCLOAK_SKIP_ISSUER_CHECK` / `KEYCLOAK_SKIP_CLIENT_ID_CHECK` are available overrides,
   but docker-compose now hardcodes `KEYCLOAK_CLIENT_ID=` and both skip flags to `true`.
-- `MOEX_BASE_URL` (default `https://iss.amogos.pro/iss`)
+- `MOEX_BASE_URL` (default `https://iss.moex.com/iss`)
 - `ISDAYOFF_BASE_URL` (default `https://isdayoff.ru`, used by rebalance schedule preview calendar)
 - `TELEGRAM_BOT_TOKEN` (optional; enables Telegram login verification transport)
 - `TELEGRAM_BOT_USERNAME` (optional; used to build Telegram connect links)

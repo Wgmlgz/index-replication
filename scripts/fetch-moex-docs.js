@@ -8,7 +8,7 @@ const rootDir = path.resolve(__dirname, '..');
 const outDir = path.join(rootDir, 'docs', 'moex');
 const htmlDir = path.join(outDir, 'html');
 const mdDir = path.join(outDir, 'md');
-const referenceBaseUrl = 'https://iss.amogos.pro/iss/reference/';
+const referenceBaseUrl = 'https://iss.moex.com/iss/reference/';
 const referenceLang = 'en';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

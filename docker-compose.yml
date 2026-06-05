@@ -308,7 +308,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - MOEX_BASE_URL=${MOEX_BASE_URL:-https://iss.amogos.pro/iss}
+      - MOEX_BASE_URL=${MOEX_BASE_URL:-https://iss.moex.com/iss}
       - MOEX_MUTABLE_DAYS=${MOEX_MUTABLE_DAYS:-30}
       - MOEX_IMMUTABLE_BEFORE_DATE=${MOEX_IMMUTABLE_BEFORE_DATE:-}
       - MOEX_SCHEDULE_TIMEZONE=${MOEX_SCHEDULE_TIMEZONE:-Europe/Moscow}

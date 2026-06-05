@@ -82,7 +82,7 @@ func LoadConfig() *Config {
 		TelegramPollTimeoutSec:         getEnvInt("TELEGRAM_POLL_TIMEOUT_SEC", 30),
 		WebAppURL:                      resolveWebAppURL(),
 		LoginVerificationTTLSeconds:    getEnvInt("LOGIN_VERIFICATION_TTL_SECONDS", 300),
-		MoexBaseURL:                    getEnv("MOEX_BASE_URL", "https://iss.amogos.pro/iss"),
+		MoexBaseURL:                    getEnv("MOEX_BASE_URL", "https://iss.moex.com/iss"),
 		IsDayOffBaseURL:                getEnv("ISDAYOFF_BASE_URL", "https://isdayoff.ru"),
 		MoexMutableDays:                getEnvInt("MOEX_MUTABLE_DAYS", 30),
 		MoexImmutableBeforeDate:        getEnv("MOEX_IMMUTABLE_BEFORE_DATE", ""),

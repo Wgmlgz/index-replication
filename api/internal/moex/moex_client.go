@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultMoexBaseURL  = "https://iss.amogos.pro/iss"
+	defaultMoexBaseURL  = "https://iss.moex.com/iss"
 	moexIndexColumns    = "SECID,SHORTNAME,NAME,CURRENCYID,DECIMALS,BOARDID,CALCMODE,ANNUALHIGH,ANNUALLOW"
 	moexIndexGroupID    = 12
 	moexDefaultPageSize = 1000
