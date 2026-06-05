@@ -5,7 +5,11 @@ import { useIsRestoring, useQuery, useQueryClient } from '@tanstack/react-query'
 import { authApi, usersApi as api } from '@/lib/api';
 import { Permission } from '@/api-client';
 import axios from 'axios';
-import { clearKeycloakTokens, logoutFromKeycloak } from '@/lib/keycloak-auth';
+import {
+  clearKeycloakTokens,
+  isExplicitLogoutInEffect,
+  logoutFromKeycloak,
+} from '@/lib/keycloak-auth';
 
 type RoleKey = string;
 
@@ -59,6 +63,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const { data, isPending, refetch } = useQuery<MeData>({
     queryKey: USER_QUERY_KEY,
     queryFn: async () => {
+      if (isExplicitLogoutInEffect()) {
+        await clearKeycloakTokens();
+        return emptyMeData;
+      }
+
       try {
         const resp = await api.meGet();
         return {
@@ -78,7 +87,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     },
     retry: false,
-    initialData: () => queryClient.getQueryData<MeData>(USER_QUERY_KEY),
+    initialData: () =>
+      isExplicitLogoutInEffect()
+        ? emptyMeData
+        : queryClient.getQueryData<MeData>(USER_QUERY_KEY),
     refetchOnMount: 'always',
     enabled: !isSilentCallbackRoute,
   });

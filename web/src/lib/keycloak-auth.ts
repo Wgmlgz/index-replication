@@ -10,6 +10,8 @@ type KeycloakConfig = {
 const LEGACY_TOKEN_STORAGE_KEY = 'keycloak-tokens';
 const LEGACY_PENDING_STORAGE_KEY = 'keycloak-pending-auth';
 const THEME_STORAGE_KEY = 'theme';
+const LOGOUT_SUPPRESS_RENEW_STORAGE_KEY = 'keycloak-explicit-logout';
+export const LOGGED_OUT_QUERY_PARAM = 'logged_out';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 
@@ -43,6 +45,30 @@ const resolveOptionalURL = (value: string | undefined): string | undefined => {
     return trimmed;
   }
   return new URL(trimmed, window.location.origin).toString();
+};
+
+const clearExplicitLogoutMarker = (): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  sessionStorage.removeItem(LOGOUT_SUPPRESS_RENEW_STORAGE_KEY);
+};
+
+const markExplicitLogout = (): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  sessionStorage.setItem(LOGOUT_SUPPRESS_RENEW_STORAGE_KEY, '1');
+};
+
+export const isExplicitLogoutInEffect = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  if (sessionStorage.getItem(LOGOUT_SUPPRESS_RENEW_STORAGE_KEY) === '1') {
+    return true;
+  }
+  return new URLSearchParams(window.location.search).get(LOGGED_OUT_QUERY_PARAM) === '1';
 };
 
 const normalizeThemePreference = (value: string | null): ThemePreference | null => {
@@ -118,10 +144,17 @@ export const clearKeycloakTokens = async (): Promise<void> => {
   await manager.removeUser().catch(() => {});
 };
 
+const getPostLogoutRedirectURI = (): string => {
+  const url = new URL('/login', window.location.origin);
+  url.searchParams.set(LOGGED_OUT_QUERY_PARAM, '1');
+  return url.toString();
+};
+
 export const logoutFromKeycloak = async (): Promise<boolean> => {
   if (typeof window === 'undefined') {
     return false;
   }
+  markExplicitLogout();
 
   const manager = getUserManager();
   if (!manager) {
@@ -140,10 +173,11 @@ export const logoutFromKeycloak = async (): Promise<boolean> => {
 
   try {
     const cfg = getConfig();
+    const postLogoutRedirectURI = getPostLogoutRedirectURI();
     await manager.clearStaleState();
     await manager.signoutRedirect({
       id_token_hint: idTokenHint,
-      post_logout_redirect_uri: `${window.location.origin}/login`,
+      post_logout_redirect_uri: postLogoutRedirectURI,
       extraQueryParams: {
         client_id: cfg.clientID,
       },
@@ -164,6 +198,7 @@ export const beginKeycloakLogin = async (
   if (!manager || !isKeycloakAuthConfigured()) {
     throw new Error('Keycloak auth is not configured');
   }
+  clearExplicitLogoutMarker();
 
   const redirectURL = new URL('/login', window.location.origin);
   if (nextPath) {
@@ -203,6 +238,7 @@ export const consumeKeycloakLoginCallback = async (
   }
 
   await manager.signinCallback(window.location.href);
+  clearExplicitLogoutMarker();
   return true;
 };
 
@@ -222,6 +258,9 @@ export const consumeKeycloakSilentCallback = async (): Promise<boolean> => {
 
 export const renewKeycloakIDToken = async (): Promise<string | null> => {
   if (typeof window === 'undefined') {
+    return null;
+  }
+  if (isExplicitLogoutInEffect()) {
     return null;
   }
 
@@ -251,6 +290,11 @@ export const renewKeycloakIDToken = async (): Promise<string | null> => {
 
 export const getValidKeycloakIDToken = async (): Promise<string | null> => {
   if (typeof window === 'undefined') {
+    return null;
+  }
+  if (isExplicitLogoutInEffect()) {
+    const manager = getUserManager();
+    await manager?.removeUser().catch(() => {});
     return null;
   }
 

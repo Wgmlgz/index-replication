@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { FullPageRedirectStatus } from '@/components/full-page-redirect-status';
 import { useUser } from '@/components/user-context';
+import { Button } from '@/components/ui/button';
 import { usersApi } from '@/lib/api';
 import {
   beginKeycloakLogin,
   consumeKeycloakLoginCallback,
+  isExplicitLogoutInEffect,
   isKeycloakAuthConfigured,
+  LOGGED_OUT_QUERY_PARAM,
 } from '@/lib/keycloak-auth';
 import { DEFAULT_AUTHENTICATED_ROUTE, getSafeNextPath } from '@/lib/routes';
 
@@ -23,6 +26,10 @@ export default function Page() {
   const searchParams = useSearchParams();
   const { refreshUser } = useUser();
   const searchParamsString = searchParams.toString();
+  const [explicitLogoutActive] = useState(() => isExplicitLogoutInEffect());
+  const isLoggedOut =
+    new URLSearchParams(searchParamsString).get(LOGGED_OUT_QUERY_PARAM) === '1'
+    || explicitLogoutActive;
 
   const onLoginSuccess = useCallback(async (): Promise<boolean> => {
     setError('');
@@ -90,6 +97,10 @@ export default function Page() {
     }
 
     const run = async () => {
+      if (isExplicitLogoutInEffect()) {
+        return;
+      }
+
       if (!isKeycloakAuthConfigured()) {
         setError(t('auth.login.keycloak.configError'));
         return;
@@ -111,6 +122,35 @@ export default function Page() {
 
     void run();
   }, [searchParamsString, t]);
+
+  const handleSignIn = useCallback(async () => {
+    setError('');
+    const params = new URLSearchParams(searchParamsString);
+    const nextPath = getSafeNextPath(params.get('next'));
+    const redirectTarget = nextPath ?? DEFAULT_AUTHENTICATED_ROUTE;
+    try {
+      await beginKeycloakLogin(redirectTarget);
+    } catch (err) {
+      if (err instanceof Error && err.message) {
+        setError(err.message);
+      } else {
+        setError(t('auth.login.keycloak.callbackError'));
+      }
+    }
+  }, [searchParamsString, t]);
+
+  if (!error && isLoggedOut) {
+    return (
+      <FullPageRedirectStatus
+        title={t('auth.logout.title')}
+        description={t('auth.logout.description')}
+      >
+        <Button className='mt-4' onClick={() => { void handleSignIn(); }}>
+          {t('auth.logout.signIn')}
+        </Button>
+      </FullPageRedirectStatus>
+    );
+  }
 
   return (
     <FullPageRedirectStatus
