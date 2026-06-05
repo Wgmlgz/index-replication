@@ -49,25 +49,24 @@
   },
   "landing": {
     "features": {
-      "indexes": {
-        "title": "MOEX analytics",
-        "description": "Inspect index history and composition with interactive charts."
+      "benchmark": {
+        "title": "Choose a benchmark",
+        "description": "Explore available indexes and use them as a reference point for portfolio structure."
       },
-      "audit": {
-        "title": "Operations visibility",
-        "description": "Review audit trails and manage users with role-based access."
+      "portfolio": {
+        "title": "Manage your portfolio",
+        "description": "Track holdings, operations, cash balances, and how closely the portfolio follows its target structure."
       },
-      "access": {
-        "title": "Secure access",
-        "description": "Use OIDC login via your organization identity provider."
+      "rebalance": {
+        "title": "Plan rebalancing",
+        "description": "Prepare portfolio updates based on target weights, available capital, trading constraints, and schedule settings."
       }
     },
-    "primaryAuthenticated": "Open dashboard",
+    "primaryAuthenticated": "Open portfolio",
     "primaryGuest": "Sign in",
     "kicker": "Index Replication Platform",
-    "title": "Track indexes, manage integrations, and operate from one workspace.",
-    "description": "Sign in to access dashboards, audit logs, user management, and T-Bank tools.",
-    "secondaryGuest": "Continue to login"
+    "title": "Personalized index investing made easier.",
+    "description": "A platform for creating, tracking, and maintaining portfolios that follow a selected market benchmark while preserving user control over composition and rebalancing."
   },
   "settings": {
     "telegram": {

@@ -2,33 +2,34 @@
 
 import Link from 'next/link';
 import type { ComponentType } from 'react';
-import { ArrowRight, ChartNoAxesCombined, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/components/user-context';
 import { Button } from '@/components/ui/button';
-import { DEFAULT_AUTHENTICATED_ROUTE } from '@/lib/routes';
 
 type FeatureItem = {
-  key: 'indexes' | 'audit' | 'access';
+  key: 'benchmark' | 'portfolio' | 'rebalance';
   icon: ComponentType<{ className?: string }>;
 };
 
 const features: FeatureItem[] = [
-  { key: 'indexes', icon: ChartNoAxesCombined },
-  { key: 'audit', icon: Users },
-  { key: 'access', icon: ShieldCheck },
+  { key: 'benchmark', icon: ChartNoAxesCombined },
+  { key: 'portfolio', icon: BriefcaseBusiness },
+  { key: 'rebalance', icon: RefreshCw },
 ];
 
 export default function LandingPage() {
   const { t } = useTranslation();
   const { authState } = useUser();
+  const portfolioHref = '/portfolio';
   const primaryHref =
-    authState === 'authenticated' ? DEFAULT_AUTHENTICATED_ROUTE : '/login';
+    authState === 'authenticated'
+      ? portfolioHref
+      : `/login?next=${encodeURIComponent(portfolioHref)}`;
   const primaryLabel =
     authState === 'authenticated'
       ? t('landing.primaryAuthenticated')
       : t('landing.primaryGuest');
-  const loginHref = `/login?next=${encodeURIComponent(DEFAULT_AUTHENTICATED_ROUTE)}`;
 
   return (
     <div className='min-h-svh bg-gradient-to-b from-background via-background to-muted/30'>
@@ -48,11 +49,6 @@ export default function LandingPage() {
                 <ArrowRight className='ml-2 h-4 w-4' />
               </Link>
             </Button>
-            {authState !== 'authenticated' ? (
-              <Button asChild size='lg' variant='outline'>
-                <Link href={loginHref}>{t('landing.secondaryGuest')}</Link>
-              </Button>
-            ) : null}
           </div>
         </div>
 
