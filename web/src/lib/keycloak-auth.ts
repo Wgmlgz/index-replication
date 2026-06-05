@@ -71,6 +71,24 @@ export const isExplicitLogoutInEffect = (): boolean => {
   return new URLSearchParams(window.location.search).get(LOGGED_OUT_QUERY_PARAM) === '1';
 };
 
+export const hasKeycloakCallbackParams = (
+  params: URLSearchParams | string,
+): boolean => {
+  const searchParams =
+    typeof params === 'string'
+      ? new URLSearchParams(params)
+      : params;
+  return searchParams.has('code') || searchParams.has('state') || searchParams.has('error');
+};
+
+export const isKeycloakLoginCallbackRoute = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return window.location.pathname === '/login'
+    && hasKeycloakCallbackParams(window.location.search);
+};
+
 const normalizeThemePreference = (value: string | null): ThemePreference | null => {
   if (value === 'light' || value === 'dark' || value === 'system') {
     return value;

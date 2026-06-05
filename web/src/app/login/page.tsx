@@ -10,6 +10,7 @@ import { usersApi } from '@/lib/api';
 import {
   beginKeycloakLogin,
   consumeKeycloakLoginCallback,
+  hasKeycloakCallbackParams,
   isExplicitLogoutInEffect,
   isKeycloakAuthConfigured,
   LOGGED_OUT_QUERY_PARAM,
@@ -24,7 +25,7 @@ export default function Page() {
   const [error, setError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refreshUser } = useUser();
+  const { setMeData } = useUser();
   const searchParamsString = searchParams.toString();
   const [explicitLogoutActive] = useState(() => isExplicitLogoutInEffect());
   const isLoggedOut =
@@ -39,8 +40,11 @@ export default function Page() {
     // Wait for /me to succeed before navigation.
     for (let attempt = 0; attempt < 8; attempt++) {
       try {
-        await usersApi.meGet();
-        await refreshUser();
+        const resp = await usersApi.meGet();
+        setMeData({
+          user: resp.data.user ?? null,
+          permissions: resp.data.permissions ?? [],
+        });
         router.replace(redirectTarget);
         return true;
       } catch {
@@ -50,13 +54,12 @@ export default function Page() {
 
     setError(t('auth.login.keycloak.profileNotReady'));
     return false;
-  }, [refreshUser, router, searchParams, t]);
+  }, [router, searchParams, setMeData, t]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParamsString);
-    const hasKeycloakCallbackParams =
-      params.has('code') || params.has('state') || params.has('error');
-    if (!hasKeycloakCallbackParams) {
+    const isKeycloakCallback = hasKeycloakCallbackParams(params);
+    if (!isKeycloakCallback) {
       return;
     }
 
@@ -90,9 +93,8 @@ export default function Page() {
 
   useEffect(() => {
     const params = new URLSearchParams(searchParamsString);
-    const hasKeycloakCallbackParams =
-      params.has('code') || params.has('state') || params.has('error');
-    if (hasKeycloakCallbackParams) {
+    const isKeycloakCallback = hasKeycloakCallbackParams(params);
+    if (isKeycloakCallback) {
       return;
     }
 

@@ -14,6 +14,7 @@ import { FullPageRedirectStatus } from '@/components/full-page-redirect-status';
 import { Toaster } from 'sonner';
 import { initI18n, setLanguage } from '@/lib/i18n';
 import { userSettingsClient } from '@/lib/user-settings-client';
+import { hasKeycloakCallbackParams } from '@/lib/keycloak-auth';
 import {
   DEFAULT_AUTHENTICATED_ROUTE,
   getSafeNextPath,
@@ -40,6 +41,8 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   const isPublic = isPublicRoute(pathname);
   const searchParamsString = searchParams.toString();
   const nextPath = getSafeNextPath(searchParams.get('next'));
+  const isLoginCallbackRoute =
+    pathname === '/login' && hasKeycloakCallbackParams(searchParamsString);
 
   useEffect(() => {
     if (!isPublic && authState === 'unauthenticated') {
@@ -50,10 +53,13 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   }, [authState, isPublic, pathname, router, searchParamsString]);
 
   useEffect(() => {
+    if (isLoginCallbackRoute) {
+      return;
+    }
     if (pathname === '/login' && authState === 'authenticated') {
       router.replace(nextPath ?? DEFAULT_AUTHENTICATED_ROUTE);
     }
-  }, [authState, nextPath, pathname, router]);
+  }, [authState, isLoginCallbackRoute, nextPath, pathname, router]);
 
   useEffect(() => {
     const lower = (i18n.language || 'en').toLowerCase();
@@ -79,7 +85,7 @@ function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   }, [authState]);
 
   if (isPublic) {
-    if (pathname === '/login' && authState === 'authenticated') {
+    if (pathname === '/login' && authState === 'authenticated' && !isLoginCallbackRoute) {
       return null;
     }
 

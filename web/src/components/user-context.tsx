@@ -8,6 +8,7 @@ import axios from 'axios';
 import {
   clearKeycloakTokens,
   isExplicitLogoutInEffect,
+  isKeycloakLoginCallbackRoute,
   logoutFromKeycloak,
 } from '@/lib/keycloak-auth';
 
@@ -32,6 +33,7 @@ interface UserContextValue {
   user: User | null;
   permissions: Permission[];
   setUser: (user: User | null) => void;
+  setMeData: (meData: MeData) => void;
   loading: boolean;
   authState: AuthState;
   refreshUser: () => Promise<void>;
@@ -59,6 +61,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const isRestoring = useIsRestoring();
   const isSilentCallbackRoute =
     typeof window !== 'undefined' && window.location.pathname === '/auth/silent-callback';
+  const isLoginCallbackRoute = isKeycloakLoginCallbackRoute();
 
   const { data, isPending, refetch } = useQuery<MeData>({
     queryKey: USER_QUERY_KEY,
@@ -88,11 +91,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     retry: false,
     initialData: () =>
-      isExplicitLogoutInEffect()
+      isExplicitLogoutInEffect() || isKeycloakLoginCallbackRoute()
         ? emptyMeData
         : queryClient.getQueryData<MeData>(USER_QUERY_KEY),
     refetchOnMount: 'always',
-    enabled: !isSilentCallbackRoute,
+    enabled: !isSilentCallbackRoute && !isLoginCallbackRoute,
   });
 
   const loading = isRestoring || (isPending && !data);
@@ -117,6 +120,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const setMeData = (nextMeData: MeData) => {
+    queryClient.setQueryData<MeData>(USER_QUERY_KEY, {
+      user: nextMeData.user,
+      permissions: nextMeData.user ? nextMeData.permissions : [],
+    });
+  };
+
   const setUser = (nextUser: User | null) => {
     queryClient.setQueryData<MeData>(USER_QUERY_KEY, prev => {
       const current = prev ?? emptyMeData;
@@ -133,6 +143,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         user: data?.user ?? null,
         permissions: data?.permissions ?? [],
         setUser,
+        setMeData,
         loading,
         authState,
         refreshUser,
